@@ -1,0 +1,47 @@
+import { useEffect, useState } from 'react';
+import { ScrollView, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { appStore, getRunSummary } from '@/store/appStore';
+import { getLineText, getSong } from '@/data/fakeData';
+import { colors } from '@/constants/theme';
+import { ScreenHeader } from '@/components/Header';
+import { Cover } from '@/components/Cover';
+import { PixelFrame } from '@/components/PixelFrame';
+import { Button, Label, PixelToggle, styles } from '@/components/ui';
+import type { Rank } from '@/types/domain';
+
+/** Completed Run summarizes tested lines and lets each miss enter ReviewList. */
+export default function ResultsScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const song = getSong(appStore(state => state.songId));
+  const run = appStore(state => state.run);
+  const { hits, total, missed, rank } = getRunSummary(song, run);
+  const [send, setSend] = useState(() => Object.fromEntries(missed.map(line => [line.id, true])));
+  const reviewCount = Object.values(send).filter(Boolean).length;
+  const ranks: Rank[] = ['C', 'B', 'A', 'S'];
+  const improved = !song.rank || ranks.indexOf(rank) > ranks.indexOf(song.rank);
+  useEffect(() => { missed.forEach(line => appStore.getState().sendToReview(line.id, true)); }, [song.id, run.answers]);
+  return <View style={styles.page}><ScreenHeader title="Results" close />
+    <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: Math.max(insets.bottom, 20) }}>
+      <View style={styles.row}><Cover song={song} size={60} /><View><Label style={styles.title}>{song.title}</Label><Label muted>{song.artist}</Label></View></View>
+      <View style={{ alignItems: 'center', gap: 6 }}><Label style={{ fontSize: 100, lineHeight: 115, fontWeight: '900', color: colors.combo }}>{rank}</Label>
+        <Label style={{ fontSize: 12, fontWeight: '700', color: colors.combo }}>{improved ? `NEW BEST · was ${song.rank ?? 'unranked'}` : `BEST ${song.rank}`}</Label>
+      </View>
+      <PixelFrame fill={colors.surface} contentStyle={[styles.row, { padding: 18, justifyContent: 'space-around' }]}>
+        {[{ value: `${hits} / ${total}`, label: 'hits' }, { value: run.bestCombo, label: 'best combo' }, { value: reviewCount, label: reviewCount === 1 ? 'review' : 'reviews' }].map(stat => <View key={stat.label} style={{ alignItems: 'center' }}><Label style={{ fontSize: 26, fontWeight: '700', lineHeight: 34 }}>{stat.value}</Label><Label muted style={{ fontSize: 11 }}>{stat.label}</Label></View>)}
+      </PixelFrame>
+      <Label style={{ fontSize: 18, fontWeight: '600' }}>Missed lines</Label>
+      {!missed.length && <Label muted>No missed lines</Label>}
+      {missed.map(line => <PixelFrame key={line.id} fill={colors.surface} contentStyle={[styles.row, { padding: 14 }]}>
+        <View style={{ flex: 1 }}><Label>{getLineText(line)}</Label><Label muted style={{ fontSize: 11, marginTop: 4 }}>send to review</Label></View>
+        <PixelToggle label={`Send ${getLineText(line)} to review`} on={send[line.id] ?? false} onPress={() => { const enabled = !send[line.id]; setSend(value => ({ ...value, [line.id]: enabled })); appStore.getState().sendToReview(line.id, enabled); }} />
+      </PixelFrame>)}
+      <View style={styles.row}>
+        <Button style={{ flex: 1 }} onPress={() => { appStore.getState().restartRun(); router.replace('/player'); }}><Label>Again</Label></Button>
+        <Button style={{ flex: 1 }} fill={colors.coral} onPress={() => { appStore.getState().nextSong(); router.replace('/player'); }}><Label>Next song</Label></Button>
+      </View>
+    </ScrollView>
+  </View>;
+}

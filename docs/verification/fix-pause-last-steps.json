@@ -1,0 +1,32 @@
+[
+  {
+    "command": "press",
+    "input": {
+      "target": {
+        "kind": "selector",
+        "selector": "label=\"The dawn bus keeps going\""
+      }
+    }
+  },
+  {
+    "command": "press",
+    "input": {
+      "target": {
+        "kind": "selector",
+        "selector": "label=\"Pause\""
+      }
+    }
+  },
+  {
+    "command": "wait",
+    "input": {
+      "durationMs": 1800
+    }
+  },
+  {
+    "command": "snapshot",
+    "input": {
+      "interactiveOnly": true
+    }
+  }
+]

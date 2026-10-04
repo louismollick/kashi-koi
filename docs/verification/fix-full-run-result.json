@@ -1,0 +1,738 @@
+{
+  "success": true,
+  "data": {
+    "total": 28,
+    "executed": 28,
+    "totalDurationMs": 14322,
+    "results": [
+      {
+        "step": 1,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 27,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 1\" (27, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 1\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 1\"",
+            "label=\"Jump to line 1\""
+          ],
+          "refLabel": "Jump to line 1",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 499
+      },
+      {
+        "step": 2,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 592,
+          "message": "Tapped label=\"Unsaid words sleep in my chest\" (201, 592)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Unsaid words sleep in my chest\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Unsaid words sleep in my chest\"",
+            "label=\"Unsaid words sleep in my chest\""
+          ],
+          "refLabel": "Unsaid words sleep in my chest",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 490
+      },
+      {
+        "step": 3,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 54,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 2\" (54, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 2\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 2\"",
+            "label=\"Jump to line 2\""
+          ],
+          "refLabel": "Jump to line 2",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 512
+      },
+      {
+        "step": 4,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Your face reflected in the window\" (201, 660)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Your face reflected in the window\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Your face reflected in the window\"",
+            "label=\"Your face reflected in the window\""
+          ],
+          "refLabel": "Your face reflected in the window",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 507
+      },
+      {
+        "step": 5,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 81,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 3\" (81, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 3\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 3\"",
+            "label=\"Jump to line 3\""
+          ],
+          "refLabel": "Jump to line 3",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 525
+      },
+      {
+        "step": 6,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "message": "Tapped label=\"Unsaid words sleep in my chest\" (201, 660)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Unsaid words sleep in my chest\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Unsaid words sleep in my chest\"",
+            "label=\"Unsaid words sleep in my chest\""
+          ],
+          "refLabel": "Unsaid words sleep in my chest",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 510
+      },
+      {
+        "step": 7,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 108,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 4\" (108, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 4\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 4\"",
+            "label=\"Jump to line 4\""
+          ],
+          "refLabel": "Jump to line 4",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 515
+      },
+      {
+        "step": 8,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "message": "Tapped label=\"Counting the fading town lights\" (201, 660)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Counting the fading town lights\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Counting the fading town lights\"",
+            "label=\"Counting the fading town lights\""
+          ],
+          "refLabel": "Counting the fading town lights",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 493
+      },
+      {
+        "step": 9,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 134,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 5\" (134, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 5\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 5\"",
+            "label=\"Jump to line 5\""
+          ],
+          "refLabel": "Jump to line 5",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 517
+      },
+      {
+        "step": 10,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "message": "Tapped label=\"Goodbye never suited us\" (201, 660)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Goodbye never suited us\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Goodbye never suited us\"",
+            "label=\"Goodbye never suited us\""
+          ],
+          "refLabel": "Goodbye never suited us",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 500
+      },
+      {
+        "step": 11,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 161,
+          "y": 165,
+          "message": "Tapped label=\"Jump to line 6\" (161, 165)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 6\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 6\"",
+            "label=\"Jump to line 6\""
+          ],
+          "refLabel": "Jump to line 6",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 503
+      },
+      {
+        "step": 12,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"I meant to get off at the next stop\" (201, 660)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"I meant to get off at the next stop\"",
+          "selectorChain": [
+            "role=\"button\" label=\"I meant to get off at the next stop\"",
+            "label=\"I meant to get off at the next stop\""
+          ],
+          "refLabel": "I meant to get off at the next stop",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 509
+      },
+      {
+        "step": 13,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 188,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 7\" (188, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 7\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 7\"",
+            "label=\"Jump to line 7\""
+          ],
+          "refLabel": "Jump to line 7",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 513
+      },
+      {
+        "step": 14,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "message": "Tapped label=\"I thought you smiled through the glass\" (201, 660)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"I thought you smiled through the glass\"",
+          "selectorChain": [
+            "role=\"button\" label=\"I thought you smiled through the glass\"",
+            "label=\"I thought you smiled through the glass\""
+          ],
+          "refLabel": "I thought you smiled through the glass",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 499
+      },
+      {
+        "step": 15,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 214,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 8\" (214, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 8\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 8\"",
+            "label=\"Jump to line 8\""
+          ],
+          "refLabel": "Jump to line 8",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 519
+      },
+      {
+        "step": 16,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "message": "Tapped label=\"Morning light fell on the empty seat\" (201, 660)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Morning light fell on the empty seat\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Morning light fell on the empty seat\"",
+            "label=\"Morning light fell on the empty seat\""
+          ],
+          "refLabel": "Morning light fell on the empty seat",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 505
+      },
+      {
+        "step": 17,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 241,
+          "y": 165,
+          "message": "Tapped label=\"Jump to line 9\" (241, 165)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 9\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 9\"",
+            "label=\"Jump to line 9\""
+          ],
+          "refLabel": "Jump to line 9",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 517
+      },
+      {
+        "step": 18,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"All I heard was the engine\" (201, 660)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"All I heard was the engine\"",
+          "selectorChain": [
+            "role=\"button\" label=\"All I heard was the engine\"",
+            "label=\"All I heard was the engine\""
+          ],
+          "refLabel": "All I heard was the engine",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 507
+      },
+      {
+        "step": 19,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 268,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 10\" (268, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 10\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 10\"",
+            "label=\"Jump to line 10\""
+          ],
+          "refLabel": "Jump to line 10",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 509
+      },
+      {
+        "step": 20,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "message": "Tapped label=\"The sunrise colors the sky\" (201, 660)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"The sunrise colors the sky\"",
+          "selectorChain": [
+            "role=\"button\" label=\"The sunrise colors the sky\"",
+            "label=\"The sunrise colors the sky\""
+          ],
+          "refLabel": "The sunrise colors the sky",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 512
+      },
+      {
+        "step": 21,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 295,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 11\" (295, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 11\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 11\"",
+            "label=\"Jump to line 11\""
+          ],
+          "refLabel": "Jump to line 11",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 507
+      },
+      {
+        "step": 22,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "message": "Tapped label=\"Calling your name cannot reach you\" (201, 660)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Calling your name cannot reach you\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Calling your name cannot reach you\"",
+            "label=\"Calling your name cannot reach you\""
+          ],
+          "refLabel": "Calling your name cannot reach you",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 511
+      },
+      {
+        "step": 23,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 321,
+          "y": 165,
+          "message": "Tapped label=\"Jump to line 12\" (321, 165)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 12\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 12\"",
+            "label=\"Jump to line 12\""
+          ],
+          "refLabel": "Jump to line 12",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 519
+      },
+      {
+        "step": 24,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "message": "Tapped label=\"How far does this road go?\" (201, 660)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"How far does this road go?\"",
+          "selectorChain": [
+            "role=\"button\" label=\"How far does this road go?\"",
+            "label=\"How far does this road go?\""
+          ],
+          "refLabel": "How far does this road go?",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 615
+      },
+      {
+        "step": 25,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 348,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 13\" (348, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 13\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 13\"",
+            "label=\"Jump to line 13\""
+          ],
+          "refLabel": "Jump to line 13",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 515
+      },
+      {
+        "step": 26,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"I wanted to see you one more time\" (201, 660)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"I wanted to see you one more time\"",
+          "selectorChain": [
+            "role=\"button\" label=\"I wanted to see you one more time\"",
+            "label=\"I wanted to see you one more time\""
+          ],
+          "refLabel": "I wanted to see you one more time",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 485
+      },
+      {
+        "step": 27,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 375,
+          "y": 165,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Jump to line 14\" (375, 165)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Jump to line 14\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Jump to line 14\"",
+            "label=\"Jump to line 14\""
+          ],
+          "refLabel": "Jump to line 14",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 503
+      },
+      {
+        "step": 28,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "message": "Tapped label=\"The dawn bus keeps going\" (201, 660)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"The dawn bus keeps going\"",
+          "selectorChain": [
+            "role=\"button\" label=\"The dawn bus keeps going\"",
+            "label=\"The dawn bus keeps going\""
+          ],
+          "refLabel": "The dawn bus keeps going",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 506
+      }
+    ]
+  }
+}
