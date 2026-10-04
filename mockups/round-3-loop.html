@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 3: the loop</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .mode { font-size: 26px; font-weight: 800; letter-spacing: 1px; }
+  .rules { max-width: 900px; margin: 4px 0 18px; font-size: 12px; }
+  .rules li { margin-left: 18px; }
+  .mk { display: inline-block; width: 8px; color: var(--due); font-size: 10px; margin-right: 4px; }
+  .toast { border: 1px solid #333; padding: 10px 12px; font-size: 12px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .toast a { margin-left: auto; color: var(--blue); }
+  .cand { padding: 7px 8px; font-size: 13px; border: 1px solid var(--line); margin-bottom: 4px; display: flex; gap: 8px; }
+  .cand.on { border-color: var(--due); color: var(--due); }
+  .cand small { color: var(--mute); margin-left: auto; font-size: 10px; }
+  .lost { height: 120px; display: flex; align-items: center; justify-content: center; flex-direction: column; background: var(--due); color: #000; font-size: 28px; font-weight: 800; margin-bottom: 14px; }
+  .lost small { font-size: 11px; font-weight: 400; }
+  .hub > div { padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; align-items: baseline; gap: 10px; }
+  .hub .n { font-size: 26px; font-weight: 700; min-width: 34px; }
+  .hub .x { margin-left: auto; color: var(--blue); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Round 3: the loop</h1>
+<div class="m" style="max-width:900px">Walk and Sit are now fully separate. Neutral styling here; see <a href="round-3-styles.html">round-3-styles.html</a> for six game-style directions.</div>
+<nav>
+  <a href="round-2.html">← Round 2</a>
+  <a href="#walk">Walk</a>
+  <a href="#sit">Sit</a>
+  <a href="round-3-styles.html">Styles →</a>
+</nav>
+
+<!-- ============================ WALK ============================ -->
+<section id="walk">
+  <div class="mode">WALK</div>
+  <ul class="rules m">
+    <li>A normal player. Lyrics are always on screen; furigana and translation are display toggles that never affect any score.</li>
+    <li>One button: <b style="color:#fff">Lost it</b>, on screen and on the lock screen. A tap records <i>when</i> you got lost, not a verdict on a line. You confirm which line later, in Sit.</li>
+    <li>Nothing you do or don't do in Walk counts toward a song being understood.</li>
+  </ul>
+  <div class="row">
+    <figure>
+      <div class="phone">
+        <div class="status"><span>8:31</span><span>●●●</span></div>
+        <div class="scr">
+          <div class="np"><div class="art"></div><div><div class="t">夜明けのバス</div><div class="a">ミナミ · 環状線</div></div><div class="r" style="color:#fff">ふ　EN</div></div>
+          <div class="bar"><i style="width:30%"></i></div>
+          <div class="lyr" style="font-size:16px">
+            <p><span class="mk"></span>夜明けのバスに<ruby>揺<rt>ゆ</rt></ruby>られて</p>
+            <p><span class="mk"></span><ruby>窓<rt>まど</rt></ruby>に<ruby>映<rt>うつ</rt></ruby>る<ruby>君<rt>きみ</rt></ruby>の<ruby>面影<rt>おもかげ</rt></ruby></p>
+            <p><span class="mk">●</span><ruby>言<rt>い</rt></ruby>えなかった<ruby>言葉<rt>ことば</rt></ruby>が <ruby>胸<rt>むね</rt></ruby>の<ruby>奥<rt>おく</rt></ruby>で<ruby>眠<rt>ねむ</rt></ruby>ってる</p>
+            <p class="cur"><span class="mk"></span><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</p>
+            <p class="next"><span class="mk"></span>「さよなら」なんて <ruby>似合<rt>にあ</rt></ruby>わないよ</p>
+          </div>
+          <div class="lost">Lost it<small>tap anywhere in this area</small></div>
+        </div>
+      </div>
+      <figcaption><b>1.</b> Normal listening. Furigana and translation (ふ, EN) are just display toggles. A huge target for the one button.</figcaption>
+    </figure>
+    <figure>
+      <div class="phone">
+        <div class="status"><span>8:31</span><span>●●●</span></div>
+        <div class="scr">
+          <div class="np"><div class="art"></div><div><div class="t">夜明けのバス</div><div class="a">ミナミ · 環状線</div></div><div class="r" style="color:#fff">ふ　EN</div></div>
+          <div class="bar"><i style="width:31%"></i></div>
+          <div class="lyr" style="font-size:16px">
+            <p><span class="mk"></span>窓に映る君の面影</p>
+            <p><span class="mk">●</span>言えなかった言葉が 胸の奥で眠ってる</p>
+            <p><span class="mk">●</span>遠ざかる街の灯りを ひとつずつ数えてた</p>
+            <p class="cur"><span class="mk"></span>「さよなら」なんて 似合わないよ</p>
+            <p class="next"><span class="mk"></span>次の停留所で 降りるつもりだった</p>
+          </div>
+          <div class="toast"><span style="color:var(--due)">●</span> Marked at 1:12<a>it was earlier ↑</a></div>
+          <div class="lost" style="height:84px;opacity:.5">Lost it</div>
+        </div>
+      </div>
+      <figcaption><b>2.</b> After a tap, a small dot appears in the margin. The mark is just a timestamp, so pulling your phone out late doesn't matter: you pick the real line in Sit. "It was earlier" is an optional quick fix.</figcaption>
+    </figure>
+    <figure>
+      <div class="phone lock">
+        <div class="status"><span></span><span>●●●</span></div>
+        <div class="scr" style="padding:0">
+          <div class="date">Saturday, October 3</div>
+          <div class="clock">8:31</div>
+          <div class="la">
+            <div style="display:flex;gap:10px;align-items:center"><div class="art sm"></div><div style="flex:1"><div style="font-size:12px;font-weight:600">夜明けのバス</div><div class="small">ミナミ · 2 marks this song</div></div></div>
+            <div style="margin:10px 0 2px;font-size:13px">遠ざかる街の灯りを ひとつずつ数えてた</div>
+            <div class="btns" style="margin-top:10px"><div class="btn" style="background:var(--due);color:#000;border-color:var(--due);padding:14px 0;font-size:14px">Lost it</div></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>3.</b> A Live Activity shows the current line and one button. You never unlock the phone.</figcaption>
+    </figure>
+    <dl class="notes">
+      <dt>Why a timestamp, not a line</dt>
+      <dd>You realise you're lost after the line is over, and grabbing the phone takes a few more seconds. Recording "lost around 1:12" and choosing the line later means you're never wrong in Walk.</dd>
+      <dt>Fog</dt>
+      <dd>The dots are the only Walk visual. No ✓ button, no fog to clear by tapping.</dd>
+      <dt>Open</dt>
+      <dd>Does a mark also need AirPods / Control Center access? Live Activity covers the lock screen; Siri ("lost it") is possible later.</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ============================ SIT ============================ -->
+<section id="sit">
+  <div class="mode">SIT</div>
+  <ul class="rules m">
+    <li>Three things to do: <b style="color:#fff">Sort</b> your Walk marks into lines, <b style="color:#fff">Review</b> those lines, <b style="color:#fff">Play</b> a song in Meaning Match.</li>
+    <li>Everything in Sit is tested, never self-reported. Review is Meaning Match too, just with clips of your lines from different songs.</li>
+    <li>Each song has a <b style="color:#fff">Rank</b> (best Meaning Match run) and a separate, manual <b style="color:#fff">Understood</b> mark. Neither depends on Walk.</li>
+  </ul>
+  <div class="row">
+    <figure>
+      <div class="phone">
+        <div class="status"><span>21:00</span><span>●●●</span></div>
+        <div class="scr">
+          <div class="hub">
+            <div><span class="n" style="color:var(--due)">5</span><span>marks to sort<br><span class="small">from 3 songs today</span></span><span class="x">Sort ›</span></div>
+            <div><span class="n">8</span><span>lines to review<br><span class="small">5 songs · about 4 min</span></span><span class="x">Review ›</span></div>
+            <div><span class="n">▶</span><span>Play a song<br><span class="small">夜明けのバス · best B</span></span><span class="x">Play ›</span></div>
+          </div>
+          <div style="font-weight:700;margin:18px 0 6px">Recently played</div>
+          <div class="list">
+            <div><div class="art sm"></div><div><div>夜明けのバス</div><div class="small">2 in review</div></div><span class="x"><span style="color:#fff;font-weight:700">B</span></span></div>
+            <div><div class="art sm" style="background:linear-gradient(135deg,#0f3d3e,#4ade80)"></div><div><div>硝子の街 <span class="k">understood</span></div><div class="small">0 in review</div></div><span class="x"><span style="color:#fff;font-weight:700">S</span></span></div>
+            <div><div class="art sm" style="background:linear-gradient(135deg,#1e3a8a,#93c5fd)"></div><div><div>雨宿り</div><div class="small">never played</div></div><span class="x">-</span></div>
+          </div>
+        </div>
+        <div class="tabs"><span class="on">Sit</span><span>Library</span><span>Player</span><span>Me</span></div>
+      </div>
+      <figcaption><b>1.</b> The Sit hub: sort, review, play.</figcaption>
+    </figure>
+    <figure>
+      <div class="phone">
+        <div class="status"><span>21:01</span><span>●●●</span></div>
+        <div class="scr">
+          <div class="small" style="padding:6px 0 10px">Mark 1 of 5 · 夜明けのバス · tapped at 1:12</div>
+          <div class="small" style="margin-bottom:6px">Which line lost you? Pick one or more.</div>
+          <div class="cand">言えなかった言葉が 胸の奥で眠ってる<small>0:58</small></div>
+          <div class="cand on">遠ざかる街の灯りを ひとつずつ数えてた<small>1:05</small></div>
+          <div class="cand">「さよなら」なんて 似合わないよ<small>1:12</small></div>
+          <div class="small" style="margin:8px 0">▶ replay from 0:58</div>
+          <div class="small">The line that was playing a few seconds before your tap is preselected.</div>
+          <div class="btns" style="margin-top:auto;margin-bottom:14px"><div class="btn">Dismiss</div><div class="btn p">Add to review</div></div>
+        </div>
+      </div>
+      <figcaption><b>2.</b> Sort: each mark shows the lines around it, with the likely one preselected. This is where timing slop gets fixed.</figcaption>
+    </figure>
+    <figure>
+      <div class="phone">
+        <div class="status"><span>21:05</span><span>●●●</span></div>
+        <div class="scr">
+          <div style="display:flex;gap:10px;align-items:center;padding:6px 0 10px"><div class="art"></div><div style="flex:1"><div style="font-weight:700">夜明けのバス</div><div class="small">ミナミ · 14 lines</div></div><div style="text-align:right"><div class="big" style="line-height:1">B</div><div class="small">rank</div></div></div>
+          <div class="tiles" style="grid-template-columns:repeat(14,1fr);gap:2px"><i class="c"></i><i class="c"></i><i class="q"></i><i class="q"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i></i><i class="c"></i><i class="c"></i><i class="c"></i></div>
+          <div class="small" style="margin:4px 0 12px">white = hit in a run · yellow = in review · dark = not yet hit</div>
+          <div class="list" style="font-size:13px">
+            <div><span class="lm g"></span>夜明けのバスに揺られて</div>
+            <div><span class="lm g"></span>窓に映る君の面影</div>
+            <div><span class="lm f"></span>言えなかった言葉が 胸の奥で眠ってる</div>
+            <div><span class="lm f"></span>遠ざかる街の灯りを ひとつずつ数えてた</div>
+          </div>
+          <div class="btns" style="margin-top:auto"><div class="btn">✓ Mark understood</div></div>
+          <div class="btns" style="margin:8px 0 14px"><div class="btn p">▶ Play Meaning Match</div></div>
+        </div>
+      </div>
+      <figcaption><b>3.</b> Song page. The fog strip is a picture of where you stand, not a completion bar. "Understood" is your call.</figcaption>
+    </figure>
+    <figure>
+      <div class="phone">
+        <div class="status"><span>21:08</span><span>●●●</span></div>
+        <div class="scr">
+          <div class="np"><div class="art"></div><div><div class="t">Review · 3 of 8</div><div class="a">夜明けのバス · clip 1:05</div></div><div class="r" style="color:var(--due)">×3</div></div>
+          <div class="bar due"><i style="width:55%"></i></div>
+          <div style="font-size:18px;line-height:1.7;margin:22px 0 18px">遠ざかる街の灯りを<br>ひとつずつ数えてた</div>
+          <div class="opt">I meant to get off at the next stop</div>
+          <div class="opt hit">Counting the fading town lights, one by one</div>
+          <div class="opt">Unsaid words sleep deep in my chest</div>
+          <div class="small" style="margin-top:4px">Get it right on 3 separate days and the line leaves review. <a>Study this line</a> opens the Help Ladder (no score).</div>
+        </div>
+      </div>
+      <figcaption><b>4.</b> Review is a medley: clips of your lines from different songs, played as Meaning Match.</figcaption>
+    </figure>
+  </div>
+</section>
+
+</body>
+</html>

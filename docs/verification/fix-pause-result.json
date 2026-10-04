@@ -1,0 +1,788 @@
+{
+  "success": true,
+  "data": {
+    "total": 5,
+    "executed": 5,
+    "totalDurationMs": 3425,
+    "results": [
+      {
+        "step": 1,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 307,
+          "y": 815,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Play\" (307, 815)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Play\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Play\"",
+            "label=\"Play\""
+          ],
+          "refLabel": "Play",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 508
+      },
+      {
+        "step": 2,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 201,
+          "y": 660,
+          "runnerMainThreadBusy": false,
+          "message": "Tapped label=\"Counting the fading town lights\" (201, 660)",
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Counting the fading town lights\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Counting the fading town lights\"",
+            "label=\"Counting the fading town lights\""
+          ],
+          "refLabel": "Counting the fading town lights",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 513
+      },
+      {
+        "step": 3,
+        "command": "press",
+        "ok": true,
+        "data": {
+          "x": 307,
+          "y": 815,
+          "message": "Tapped label=\"Pause\" (307, 815)",
+          "runnerMainThreadBusy": false,
+          "referenceWidth": 402,
+          "referenceHeight": 874,
+          "targetKind": "selector",
+          "selector": "label=\"Pause\"",
+          "selectorChain": [
+            "role=\"button\" label=\"Pause\"",
+            "label=\"Pause\""
+          ],
+          "refLabel": "Pause",
+          "resolution": {
+            "source": "runtime",
+            "phase": "pre-action",
+            "kind": "unique"
+          }
+        },
+        "durationMs": 516
+      },
+      {
+        "step": 4,
+        "command": "wait",
+        "ok": true,
+        "data": {
+          "waitedMs": 1800
+        },
+        "durationMs": 1806
+      },
+      {
+        "step": 5,
+        "command": "snapshot",
+        "ok": true,
+        "data": {
+          "nodes": [
+            {
+              "index": 0,
+              "type": "Application",
+              "role": "UIApplication",
+              "label": "Kashi-Koi!",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "width": 402,
+                "height": 874
+              },
+              "enabled": true,
+              "depth": 0,
+              "pid": 8872,
+              "hittable": false,
+              "ref": "e1",
+              "kind": "application"
+            },
+            {
+              "index": 1,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Back",
+              "rect": {
+                "x": 12,
+                "y": 77,
+                "width": 44,
+                "height": 44
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e2",
+              "kind": "button"
+            },
+            {
+              "index": 2,
+              "parentIndex": 0,
+              "type": "StaticText",
+              "role": "RCTParagraphComponentView",
+              "subrole": "UIView",
+              "label": "夜明けのバス",
+              "rect": {
+                "x": 66,
+                "y": 78,
+                "width": 233.33334350585938,
+                "height": 21
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e3",
+              "kind": "text"
+            },
+            {
+              "index": 3,
+              "parentIndex": 0,
+              "type": "StaticText",
+              "role": "RCTParagraphComponentView",
+              "subrole": "UIView",
+              "label": "QUIZ",
+              "rect": {
+                "x": 309.3333435058594,
+                "y": 88.33333325386047,
+                "width": 30.666656494140625,
+                "height": 21
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e4",
+              "kind": "text"
+            },
+            {
+              "index": 4,
+              "parentIndex": 0,
+              "type": "Switch",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Quiz toggle",
+              "value": "1",
+              "rect": {
+                "x": 346.0000114440918,
+                "y": 86,
+                "width": 44,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e5",
+              "kind": "switch"
+            },
+            {
+              "index": 5,
+              "parentIndex": 0,
+              "type": "StaticText",
+              "role": "RCTParagraphComponentView",
+              "subrole": "UIView",
+              "label": "ミナミ · line 4 of 14",
+              "rect": {
+                "x": 66,
+                "y": 99,
+                "width": 233.33334350585938,
+                "height": 21
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e6",
+              "kind": "text"
+            },
+            {
+              "index": 6,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 1",
+              "rect": {
+                "x": 16,
+                "y": 152,
+                "width": 22.666667938232422,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e7",
+              "kind": "button"
+            },
+            {
+              "index": 7,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 2",
+              "rect": {
+                "x": 42.66666793823242,
+                "y": 152,
+                "width": 22.666667938232422,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e8",
+              "kind": "button"
+            },
+            {
+              "index": 8,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 3",
+              "rect": {
+                "x": 69.33333587646484,
+                "y": 152,
+                "width": 22.666664123535156,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e9",
+              "kind": "button"
+            },
+            {
+              "index": 9,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 4",
+              "rect": {
+                "x": 96,
+                "y": 152,
+                "width": 23,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e10",
+              "kind": "button"
+            },
+            {
+              "index": 10,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 5",
+              "rect": {
+                "x": 123,
+                "y": 152,
+                "width": 22.666671752929688,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e11",
+              "kind": "button"
+            },
+            {
+              "index": 11,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 6",
+              "rect": {
+                "x": 149.6666717529297,
+                "y": 152,
+                "width": 22.666656494140625,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e12",
+              "kind": "button"
+            },
+            {
+              "index": 12,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 7",
+              "rect": {
+                "x": 176.3333282470703,
+                "y": 152,
+                "width": 22.666671752929688,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e13",
+              "kind": "button"
+            },
+            {
+              "index": 13,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 8",
+              "rect": {
+                "x": 203,
+                "y": 152,
+                "width": 22.666671752929688,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e14",
+              "kind": "button"
+            },
+            {
+              "index": 14,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 9",
+              "rect": {
+                "x": 229.6666717529297,
+                "y": 152,
+                "width": 22.666656494140625,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e15",
+              "kind": "button"
+            },
+            {
+              "index": 15,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 10",
+              "rect": {
+                "x": 256.3333435058594,
+                "y": 152,
+                "width": 22.666656494140625,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e16",
+              "kind": "button"
+            },
+            {
+              "index": 16,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 11",
+              "rect": {
+                "x": 283,
+                "y": 152,
+                "width": 23,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e17",
+              "kind": "button"
+            },
+            {
+              "index": 17,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 12",
+              "rect": {
+                "x": 310,
+                "y": 152,
+                "width": 22.666656494140625,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e18",
+              "kind": "button"
+            },
+            {
+              "index": 18,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 13",
+              "rect": {
+                "x": 336.6666564941406,
+                "y": 152,
+                "width": 22.66668701171875,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e19",
+              "kind": "button"
+            },
+            {
+              "index": 19,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Jump to line 14",
+              "rect": {
+                "x": 363.3333435058594,
+                "y": 152,
+                "width": 22.666656494140625,
+                "height": 26
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e20",
+              "kind": "button"
+            },
+            {
+              "index": 20,
+              "parentIndex": 0,
+              "type": "ScrollView",
+              "role": "RCTEnhancedScrollView",
+              "subrole": "UIScrollView",
+              "rect": {
+                "x": 0,
+                "y": 190,
+                "width": 402,
+                "height": 583
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e21",
+              "kind": "scroll-area"
+            },
+            {
+              "index": 21,
+              "parentIndex": 20,
+              "type": "Cell",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "遠ざかる街の灯りを ひとつずつ数えてた",
+              "rect": {
+                "x": 34,
+                "y": 208,
+                "width": 334,
+                "height": 96
+              },
+              "enabled": true,
+              "depth": 2,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e22",
+              "kind": "cell"
+            },
+            {
+              "index": 22,
+              "parentIndex": 20,
+              "type": "Other",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Mascot bobbing",
+              "rect": {
+                "x": 24,
+                "y": 326,
+                "width": 233,
+                "height": 233
+              },
+              "enabled": true,
+              "depth": 2,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e23",
+              "kind": "other"
+            },
+            {
+              "index": 23,
+              "parentIndex": 20,
+              "type": "StaticText",
+              "role": "RCTParagraphComponentView",
+              "subrole": "UIView",
+              "label": "NICE!",
+              "rect": {
+                "x": 307.01414025828444,
+                "y": 390.3210114469248,
+                "width": 57.63839505105807,
+                "height": 25.69130535322074
+              },
+              "enabled": true,
+              "depth": 2,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e24",
+              "kind": "text"
+            },
+            {
+              "index": 24,
+              "parentIndex": 20,
+              "type": "StaticText",
+              "role": "RCTParagraphComponentView",
+              "subrole": "UIView",
+              "label": "COMBO",
+              "rect": {
+                "x": 326,
+                "y": 426.66666412353516,
+                "width": 52,
+                "height": 21
+              },
+              "enabled": true,
+              "depth": 2,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e25",
+              "kind": "text"
+            },
+            {
+              "index": 25,
+              "parentIndex": 20,
+              "type": "StaticText",
+              "role": "RCTParagraphComponentView",
+              "subrole": "UIView",
+              "label": "1",
+              "rect": {
+                "x": 358.33333587646484,
+                "y": 455.66666412353516,
+                "width": 19.666656494140625,
+                "height": 42
+              },
+              "enabled": true,
+              "depth": 2,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e26",
+              "kind": "text"
+            },
+            {
+              "index": 26,
+              "parentIndex": 20,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "I meant to get off at the next stop",
+              "rect": {
+                "x": 16,
+                "y": 563,
+                "width": 370,
+                "height": 58
+              },
+              "enabled": true,
+              "depth": 2,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e27",
+              "kind": "button"
+            },
+            {
+              "index": 27,
+              "parentIndex": 20,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Counting the fading town lights",
+              "rect": {
+                "x": 16,
+                "y": 631,
+                "width": 370,
+                "height": 58
+              },
+              "enabled": true,
+              "depth": 2,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e28",
+              "kind": "button"
+            },
+            {
+              "index": 28,
+              "parentIndex": 20,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Unsaid words sleep in my chest",
+              "rect": {
+                "x": 16,
+                "y": 699,
+                "width": 370,
+                "height": 58
+              },
+              "enabled": true,
+              "depth": 2,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e29",
+              "kind": "button"
+            },
+            {
+              "index": 29,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Previous line",
+              "rect": {
+                "x": 228,
+                "y": 793,
+                "width": 44,
+                "height": 44
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e30",
+              "kind": "button"
+            },
+            {
+              "index": 30,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Play",
+              "rect": {
+                "x": 282,
+                "y": 790,
+                "width": 50,
+                "height": 50
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e31",
+              "kind": "button"
+            },
+            {
+              "index": 31,
+              "parentIndex": 0,
+              "type": "Button",
+              "role": "RCTViewComponentView",
+              "subrole": "UIView",
+              "label": "Next line",
+              "rect": {
+                "x": 342,
+                "y": 793,
+                "width": 44,
+                "height": 44
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e32",
+              "kind": "button"
+            },
+            {
+              "index": 32,
+              "parentIndex": 0,
+              "type": "StaticText",
+              "role": "RCTParagraphComponentView",
+              "subrole": "UIView",
+              "label": "1:12 / 3:58",
+              "rect": {
+                "x": 68,
+                "y": 804.3333339691162,
+                "width": 150,
+                "height": 21
+              },
+              "enabled": true,
+              "depth": 1,
+              "pid": 8872,
+              "hittable": true,
+              "ref": "e33",
+              "kind": "text"
+            }
+          ],
+          "truncated": false,
+          "visibility": {
+            "partial": false,
+            "visibleNodeCount": 33,
+            "totalNodeCount": 33,
+            "reasons": []
+          },
+          "snapshotDiagnostics": {
+            "stats": {
+              "count": 26,
+              "p50Ms": 89,
+              "p95Ms": 118,
+              "maxMs": 176,
+              "slowThresholdMs": 1500,
+              "platform": "ios",
+              "backends": {
+                "xctest": 26
+              }
+            }
+          },
+          "appName": "com.kashikoi.shell",
+          "appBundleId": "com.kashikoi.shell",
+          "refsGeneration": 159073
+        },
+        "durationMs": 82
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Kashi-Koi!",
+    "slug": "kashi-koi",
+    "version": "1.0.0",
+    "scheme": "kashikoi",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "platforms": ["ios"],
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.kashikoi.shell" },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}

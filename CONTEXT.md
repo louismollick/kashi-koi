@@ -1,0 +1,90 @@
+# Kashi-Koi!
+
+An iOS music player for a self-hosted Navidrome library, built to help you understand the Japanese songs you already listen to, line by line.
+
+## Language
+
+### Lyrics
+
+**Song**:
+A track in the user's Navidrome library, with lyrics provided by Navidrome.
+_Avoid_: Track (except when talking about playback)
+
+**Line**:
+One distinct line of a song's lyrics, and the unit of learning. Understanding is tracked per line, not per word. A line repeated in a song (a chorus) is one line that occurs several times.
+_Avoid_: Sentence, lyric, card
+
+**Word**:
+A dictionary term inside a line. Looking up words helps you understand a line, but words are not tracked or scheduled for their own sake.
+_Avoid_: Vocab, card
+
+**Synced lyrics**:
+Lyrics with a timestamp per line, which is what the app needs to follow, mark and quiz a song. Plain-text lyrics without timestamps count as no lyrics.
+_Avoid_: Timed lyrics, LRC
+
+**Hidden song**:
+A song without synced lyrics, left out of browsing, search, Recently played and queues while the hide setting is on (the default). An album or artist with no visible songs is hidden too.
+_Avoid_: Filtered song, unsupported song
+
+**Lyrics scan**:
+A pass over the whole library that checks each song for synced lyrics and caches the result on the phone, so hidden songs can be known without asking the server each time.
+_Avoid_: Sync, index
+
+### Modes
+
+**Quiz toggle**:
+The switch on the player that decides how songs play: quiz mode when on, listen mode when off.
+
+**Listen mode**:
+Playback with the quiz toggle off. A normal player whose only learning input is the lost mark. Nothing in listen mode counts toward a song being understood.
+_Avoid_: Walk mode, passive mode
+
+**Quiz mode**:
+Playback with the quiz toggle on. Every song played is a run of Meaning Match. Everything scored here is tested, never self-reported.
+_Avoid_: Sit mode, game mode, study session
+
+### Progress
+
+**Lost mark**:
+A tap in listen mode meaning "I just lost the thread". It immediately puts a guessed line (the one playing just before the tap) on the review list as a new line.
+_Avoid_: Flag, unknown line, "didn't understand" (that's the button's label, not the concept)
+
+**New line**:
+A line added to the review list by a lost mark that hasn't been confirmed yet. Its guessed line can be moved earlier or later until it's reviewed once.
+_Avoid_: Unsorted mark, pending mark
+
+**Review list**:
+The lines the user has explicitly chosen to study, either from lost marks or from the results of a run. Each line comes back on a spaced schedule: right answers push it further out, wrong ones bring it back sooner.
+_Avoid_: Deck, queue, quest log
+
+**Due line**:
+A line on the review list whose scheduled time has come. Answering it correctly in any run, or in a clip review, completes its review for the day.
+_Avoid_: Card, review item
+
+**Clip review**:
+Reviewing due lines one at a time by replaying just their clip, with no timer. A tested, game-free alternative to a full run.
+_Avoid_: Flashcards, quiet mode
+
+**Review mix**:
+A playlist of songs that contain due lines, played as normal runs. Starting one turns quiz mode on for that queue; the previous setting returns when it ends.
+_Avoid_: Review playlist, station
+
+**Meaning Match**:
+The game played in quiz mode: as each line is sung, the user picks its meaning from a few choices drawn from the same song.
+_Avoid_: Quiz, rhythm mode
+
+**Run**:
+One play-through of a song (or of review lines) in Meaning Match. A missed line goes onto the review list only if the user picks it on the results screen.
+_Avoid_: Session, attempt
+
+**Combo**:
+The number of lines answered correctly in a row within a run. A miss resets it to zero.
+_Avoid_: Streak (reserve for daily habits, if ever)
+
+**Rank**:
+A song's best run grade. Separate from, and never implies, understood.
+_Avoid_: Score, stars
+
+**Understood**:
+A song the user has manually marked as understood. It is a personal claim, not computed from anything.
+_Avoid_: Mastered, cleared, completed

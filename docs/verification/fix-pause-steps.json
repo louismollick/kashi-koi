@@ -1,0 +1,7 @@
+[
+  {"command":"press","input":{"target":{"kind":"selector","selector":"label=\"Play\""}}},
+  {"command":"press","input":{"target":{"kind":"selector","selector":"label=\"Counting the fading town lights\""}}},
+  {"command":"press","input":{"target":{"kind":"selector","selector":"label=\"Pause\""}}},
+  {"command":"wait","input":{"durationMs":1800}},
+  {"command":"snapshot","input":{"interactiveOnly":true}}
+]
