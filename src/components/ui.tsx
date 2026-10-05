@@ -24,13 +24,13 @@ export function Button({ children, onPress, fill = colors.slate, border, style, 
  * Square icon control. Framed by default (transport, back, close); `plain` drops the
  * frame for icons that sit directly on a card, like the mini player's pause.
  */
-export function IconButton({ name, onPress, label, fill = colors.panel, border, color = colors.text, size = 44, iconScale = 0.55, plain = false }: {
+export function IconButton({ name, onPress, label, fill = colors.panel, border, color = colors.text, size = 44, iconScale = 0.55, plain = false, selected }: {
   name: ComponentProps<typeof Icon>['name']; onPress: () => void; label: string; fill?: string; border?: string | null;
-  color?: string; size?: number; iconScale?: number; plain?: boolean;
+  color?: string; size?: number; iconScale?: number; plain?: boolean; selected?: boolean;
 }) {
   const icon = <Icon name={name} color={color} size={size * iconScale} />;
   const box = { width: size, height: size, alignItems: 'center', justifyContent: 'center' } as const;
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={4} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={selected === undefined ? undefined : { selected }} onPress={onPress} hitSlop={4} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
     {plain ? <View style={box}>{icon}</View> : <PixelFrame fill={fill} border={border ?? '#4b4d6a'} contentStyle={box}>{icon}</PixelFrame>}
   </Pressable>;
 }

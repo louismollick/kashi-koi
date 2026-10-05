@@ -15,29 +15,31 @@ import { LineCard, FuriganaLine } from '@/components/LineCard';
 import { Mascot } from '@/components/Mascot';
 import { Answers } from '@/components/Answers';
 import { PlayerBar } from '@/components/PlayerBar';
-import { Button, Label, PixelToggle, styles } from '@/components/ui';
+import { Button, IconButton, Label, PixelToggle, styles } from '@/components/ui';
 
-/** NICE appears on each hit; the sprite itself stays in the combo-selected loop. */
+/** Sprite and feedback shrink to the space left between the line and answers. */
 function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
   const pop = useSharedValue(0);
-  const [size, setSize] = useState(220);
+  const [size, setSize] = useState(0);
   useEffect(() => { pop.value = nice ? withSpring(1, { damping: 12 }) : withTiming(0, { duration: 140 }); }, [nice, pop]);
   const animatedStyle = useAnimatedStyle(() => ({ opacity: pop.value, transform: [{ scale: 0.75 + pop.value * 0.25 }, { rotate: '-4deg' }] }));
-  const note = { position: 'absolute', color: colors.coral, fontSize: 30, fontWeight: '900', textShadowColor: colors.cream, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 } as const;
-  return <View onLayout={({ nativeEvent }) => setSize(Math.min(250, Math.max(160, nativeEvent.layout.height - 8)))} style={[styles.row, { flex: 1, minHeight: 168, paddingHorizontal: 4 }]}>
+  const note = { position: 'absolute', color: colors.coral, fontSize: Math.min(30, size * 0.14), fontWeight: '900', textShadowColor: colors.cream, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 } as const;
+  return <View onLayout={({ nativeEvent: { layout } }) => setSize(Math.max(0, Math.min(250, layout.height - 8, layout.width - 128)))} style={[styles.row, { flex: 1, minHeight: 0, paddingHorizontal: 4 }]}>
     <View>
       <Mascot combo={combo} size={size} />
-      {combo >= 3 && <><Text style={[note, { left: 0, top: size * 0.12 }]}>♪</Text><Text style={[note, { right: size * 0.18, top: size * 0.02, fontSize: 24 }]}>♪</Text></>}
+      {combo >= 3 && <><Text style={[note, { left: 0, top: size * 0.12 }]}>♪</Text><Text style={[note, { right: size * 0.18, top: size * 0.02, fontSize: Math.min(24, size * 0.11) }]}>♪</Text></>}
     </View>
-    <View style={{ flex: 1, alignItems: 'flex-end', gap: 6 }}>
-      <Animated.View style={animatedStyle}>
-        <PixelFrame fill={colors.cream} border={colors.coral} contentStyle={{ paddingHorizontal: 14, paddingVertical: 6 }}>
-          <Label style={{ color: colors.coralDeep, fontWeight: '900', fontSize: 22, lineHeight: 26 }}>NICE!</Label>
-        </PixelFrame>
-        <View style={{ position: 'absolute', bottom: -6, left: 14, width: 12, height: 12, backgroundColor: colors.cream, borderRightWidth: 2, borderBottomWidth: 2, borderColor: colors.coral, transform: [{ rotate: '45deg' }] }} />
-      </Animated.View>
-      <Label style={{ color: colors.combo, fontSize: 15, fontWeight: '800', letterSpacing: 1.5, marginTop: 6 }}>COMBO</Label>
-      <Label style={{ color: colors.cream, fontSize: 48, lineHeight: 52, fontWeight: '900', textShadowColor: colors.coralDeep, textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0 }}>{combo}</Label>
+    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+      <View style={{ width: 110, height: 140, justifyContent: 'flex-end', alignItems: 'flex-end', gap: 6, transform: [{ scale: Math.min(1, size / 140) }], transformOrigin: 'right center' }}>
+        <Animated.View style={animatedStyle}>
+          <PixelFrame fill={colors.cream} border={colors.coral} contentStyle={{ paddingHorizontal: 14, paddingVertical: 6 }}>
+            <Label style={{ color: colors.coralDeep, fontWeight: '900', fontSize: 22, lineHeight: 26 }}>NICE!</Label>
+          </PixelFrame>
+          <View style={{ position: 'absolute', bottom: -6, left: 14, width: 12, height: 12, backgroundColor: colors.cream, borderRightWidth: 2, borderBottomWidth: 2, borderColor: colors.coral, transform: [{ rotate: '45deg' }] }} />
+        </Animated.View>
+        <Label style={{ color: colors.combo, fontSize: 15, fontWeight: '800', letterSpacing: 1.5, marginTop: 6 }}>COMBO</Label>
+        <Label style={{ color: colors.cream, fontSize: 48, lineHeight: 52, fontWeight: '900', textShadowColor: colors.coralDeep, textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0 }}>{combo}</Label>
+      </View>
     </View>
   </View>;
 }
@@ -89,9 +91,7 @@ export default function PlayerScreen() {
   if (!song) return <View style={styles.page}><ScreenHeader title="Player" /><Label>No song playing</Label></View>;
   return <View style={styles.page}>
     <ScreenHeader title={song?.title} subtitle={reviewProgress ? `Review mix · song ${reviewProgress.position} of ${reviewProgress.total}` : currentLine ? `${song?.artist} · line ${lineIndex + 1} of ${lines.length}` : song?.artist}
-      right={<View style={{ gap: 8, alignItems: 'flex-end' }}><View style={[styles.row, { gap: 6 }]}><Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label><PixelToggle disabled={!hasTranslations(songId)} label="Quiz toggle" on={quizToggle} onPress={() => quizToggle && reviewMix ? setConfirm(true) : appStore.getState().setQuizToggle(!quizToggle)} /></View>
-        {!quizToggle && <View style={[styles.row, { gap: 6 }]}><Label style={{ fontSize: 12 }}>Translations</Label><PixelToggle label="Translations toggle" on={showTranslations} onPress={() => appStore.getState().toggleTranslations()} /></View>}
-      </View>} />
+      right={<View style={[styles.row, { gap: 6 }]}><Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label><PixelToggle disabled={!hasTranslations(songId)} label="Quiz toggle" on={quizToggle} onPress={() => quizToggle && reviewMix ? setConfirm(true) : appStore.getState().setQuizToggle(!quizToggle)} /></View>} />
     {!hasTranslations(songId) && lines.length > 0 && <Label muted style={{ paddingHorizontal: 16 }}>{translationHint(song.id)}</Label>}
     {lines.length > 0 && <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
       {lines.map((line, index) => <Pressable key={`${index}:${line.id}`} accessibilityRole="button" accessibilityLabel={`Jump to line ${index + 1}`} onPress={() => appStore.getState().jumpToLine(index)} style={{ flex: 1, paddingVertical: 7 }}>
@@ -101,16 +101,16 @@ export default function PlayerScreen() {
     </View>}
     {!lines.length ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <Label muted>No lyrics for this song</Label>
-    </View> : quizToggle && currentLine ? <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
+    </View> : quizToggle && currentLine ? <View style={{ flex: 1, minHeight: 0, paddingHorizontal: 16, paddingBottom: 16 }}>
       <LineCard line={currentLine} />
       <ComboRow combo={run.combo} nice={currentLine ? run.answers[currentLine.id]?.correct === true : false} />
-      <Answers choices={run.choices[currentLine.id] ?? []} translation={currentLine.translation} selected={selectedAnswer} onAnswer={choice => appStore.getState().answer(choice)} />
-    </ScrollView> : <>
+      <Answers compact choices={run.choices[currentLine.id] ?? []} translation={currentLine.translation} selected={selectedAnswer} onAnswer={choice => appStore.getState().answer(choice)} />
+    </View> : <>
       <View style={{ flex: 1 }}>
         <ScrollView ref={scroll} onContentSizeChange={followLine} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 20, gap: 18 }}>
           {lines.map((line, index) => {
             const color = index < lineIndex ? colors.muted : colors.text;
-            return <View key={`${index}:${line.id}`} onLayout={({ nativeEvent }) => { positions.current[index] = nativeEvent.layout.y; }}>
+            return <View key={`${index}:${line.id}`} onLayout={({ nativeEvent }) => { positions.current[index] = nativeEvent.layout.y; if (index === lineIndex) followLine(); }}>
             {index === lineIndex ? <LineCard line={line} furigana={showTranslations} translation={showTranslations} /> : <Pressable accessibilityRole="button" accessibilityLabel={`Play line ${index + 1}`} onPress={() => appStore.getState().jumpToLine(index)}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
                 <View style={{ flexShrink: 1 }}>{showTranslations ? <FuriganaLine line={line} compact color={color} /> : <Label style={{ fontSize: 20, lineHeight: 30, color }}>{getLineText(line)}</Label>}</View>
@@ -130,10 +130,13 @@ export default function PlayerScreen() {
         </Svg>
       </View>
       <View style={{ padding: 16, gap: 10 }}>
-        {showToast ? <PixelFrame fill={colors.slate} contentStyle={[styles.row, { paddingHorizontal: 12, paddingVertical: 4 }]}>
-          <Label style={{ flex: 1, fontSize: 13, color: colors.green }}>✓ Added · {inReview} in review</Label>
-          <Button label="Undo added line" onPress={() => appStore.getState().undoLostMark()}><Label style={{ fontSize: 12, color: colors.cream, fontWeight: '700' }}>UNDO</Label></Button>
-        </PixelFrame> : <Label muted={!alreadyInReview} style={{ fontSize: 12, color: alreadyInReview ? colors.green : colors.muted }}>{alreadyInReview ? '✓ Already in review' : `● ${inReview} lines from this song in review`}</Label>}
+        <View style={[styles.row, { minHeight: 44 }]}>
+          {showToast ? <PixelFrame style={{ flex: 1 }} fill={colors.slate} contentStyle={[styles.row, { paddingHorizontal: 10 }]}>
+            <Label numberOfLines={1} style={{ flex: 1, fontSize: 12, color: colors.green }}>✓ Added · {inReview} in review</Label>
+            <Button label="Undo added line" contentStyle={{ minHeight: 44, paddingHorizontal: 10, paddingVertical: 8 }} onPress={() => appStore.getState().undoLostMark()}><Label style={{ fontSize: 12, color: colors.cream, fontWeight: '700' }}>UNDO</Label></Button>
+          </PixelFrame> : <Label numberOfLines={1} muted={!alreadyInReview} style={{ flex: 1, fontSize: 12, color: alreadyInReview ? colors.green : colors.muted }}>{alreadyInReview ? '✓ Already in review' : `● ${inReview} lines from this song in review`}</Label>}
+          <IconButton name="translate" label="Translations" selected={showTranslations} fill={showTranslations ? colors.lavender : colors.panel} border={showTranslations ? colors.lavender : colors.track} color={showTranslations ? colors.bg : colors.muted} onPress={() => appStore.getState().toggleTranslations()} />
+        </View>
         <Button disabled={!currentLine} label="Didn't understand, add this line to review" fill={colors.coral} border="#ff9aa5" contentStyle={{ paddingVertical: 16 }} onPress={() => {
           if (reviewList.some(line => line.lineId === currentLine?.id)) setAlreadyInReview(true);
           else { setAlreadyInReview(false); appStore.getState().addLostMark(); }

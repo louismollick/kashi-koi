@@ -27,7 +27,7 @@ export function ScreenHeader({ title, subtitle, close = false, right }: {
   return <View style={{ backgroundColor: colors.header, paddingTop: insets.top }}>
     <View style={[styles.row, { paddingHorizontal: 14, paddingVertical: 10, minHeight: 68 }]}>
       <IconButton name={close ? 'close' : 'back'} label={close ? 'Close' : 'Back'} onPress={() => router.canGoBack() ? router.back() : router.replace('/')} />
-      <View style={{ flex: 1 }}>{title && <Label style={{ fontWeight: '700', fontSize: 19, lineHeight: 24 }}>{title}</Label>}{subtitle && <Label muted style={{ fontSize: 13 }}>{subtitle}</Label>}</View>
+      <View style={{ flex: 1 }}>{title && <Label numberOfLines={1} style={{ fontWeight: '700', fontSize: 19, lineHeight: 24 }}>{title}</Label>}{subtitle && <Label numberOfLines={1} muted style={{ fontSize: 13 }}>{subtitle}</Label>}</View>
       {right}
     </View>
   </View>;
