@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { PixelFrame } from './PixelFrame';
 import { Label, Tag } from './ui';
 import { colors } from '@/constants/theme';
-import { getLineText } from '@/data/fakeData';
+import { getLineText } from '@/store/libraryStore';
 import type { Line } from '@/types/domain';
 
 /** Ruby belongs to its kanji; phrases wrap at spaces, long phrases between characters. */

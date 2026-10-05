@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
-    "test": "tsx --test scripts/fake-state.test.ts",
+    "test": "tsx --test scripts/*.test.ts",
     "start": "expo start",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
@@ -11,10 +11,14 @@
   },
   "dependencies": {
     "expo": "57.0.26",
+    "expo-audio": "~57.0.5",
     "expo-constants": "~57.0.20",
+    "expo-crypto": "~57.0.3",
     "expo-image": "~57.0.5",
     "expo-linking": "~57.0.11",
     "expo-router": "57.0.24",
+    "expo-secure-store": "~57.0.4",
+    "expo-sqlite": "~57.0.3",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",

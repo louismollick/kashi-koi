@@ -1,3 +1,4 @@
+import { libraryStore } from '@/store/libraryStore';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -15,7 +16,8 @@ import { Label, SectionHeader, Tag, styles } from '@/components/ui';
 export default function HomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const nothingDue = appStore(state => state.nothingDue);
+  libraryStore(state => state.songs);
+  const ranks = appStore(state => state.ranks);
   const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
   const reviewList = appStore(state => state.reviewList);
   const count = reviewList.filter(line => line.kind !== 'later').length;
@@ -29,16 +31,15 @@ export default function HomeScreen() {
       </View>
       <View style={{ marginTop: -26, paddingHorizontal: 16, gap: 14 }}>
         <Pressable accessibilityRole="button" accessibilityLabel="Open review list" onPress={() => router.navigate('/review')}>
-          {nothingDue || count === 0 ? <PixelFrame fill={colors.surface} border="#363a5e" contentStyle={[styles.row, { padding: 14 }]}>
+          {count === 0 ? <PixelFrame fill={colors.surface} border="#363a5e" contentStyle={[styles.row, { padding: 14 }]}>
             <Icon name="check" color={colors.green} size={22} /><Label style={{ fontSize: 15, fontWeight: '600' }}>All caught up</Label>
-            <Label muted style={{ fontSize: 13, marginLeft: 'auto' }}>next due tomorrow</Label>
           </PixelFrame> : <PixelFrame fill={colors.coralDeep} border="#ff8f9b" contentStyle={[styles.row, { paddingVertical: 14, paddingHorizontal: 18, minHeight: 122 }]}>
             <Icon name="musicFilled" size={54} color={colors.cream} />
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Label style={{ fontSize: 22, lineHeight: 26, fontWeight: '800', letterSpacing: 1 }}>REVIEW</Label>
               <Label style={{ fontSize: 34, lineHeight: 38, fontWeight: '800' }}>{count}</Label>
               <Label style={{ fontSize: 15, fontWeight: '600' }}>lines to review</Label>
-              <Label style={{ fontSize: 13, opacity: 0.85 }}>3 new from listening</Label>
+              <Label style={{ fontSize: 13, opacity: 0.85 }}>{reviewList.filter(line => line.kind === 'new').length} new from listening</Label>
             </View>
             <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: colors.coralSoft, alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="play" size={28} />
@@ -47,9 +48,9 @@ export default function HomeScreen() {
         </Pressable>
         <SectionHeader title="Recently played" chevron />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {getRecentlyPlayed(hiding, nothingDue ? 6 : 3).map(song => <Pressable key={song.id} style={{ width: coverSize }} accessibilityRole="button" accessibilityLabel={`Play ${song.title}`} onPress={() => { appStore.getState().startSong(song.id); router.push('/player'); }}>
+          {getRecentlyPlayed(hiding, 6).map(song => <Pressable key={song.id} style={{ width: coverSize }} accessibilityRole="button" accessibilityLabel={`Play ${song.title}`} onPress={() => { appStore.getState().startSong(song.id); router.push('/player'); }}>
             <Cover song={song} size={coverSize} />
-            <View style={{ position: 'absolute', right: 6, top: 6 }}><Tag fill={colors.bg}>{song.rank ?? '·'}</Tag></View>
+            <View style={{ position: 'absolute', right: 6, top: 6 }}><Tag fill={colors.bg}>{ranks[song.id] ?? '·'}</Tag></View>
             <Label numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', marginTop: 6 }}>{song.title}</Label>
             <Label muted numberOfLines={1} style={{ fontSize: 12 }}>{song.artist}</Label>
           </Pressable>)}

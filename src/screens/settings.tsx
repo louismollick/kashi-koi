@@ -1,35 +1,34 @@
+import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { colors } from '@/constants/theme';
-import { songs } from '@/data/fakeData';
-import { getVisibleSongs } from '@/data/libraryVisibility';
+import { libraryStore } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
+import { sessionStore, logout } from '@/navidrome/session';
+import { syncLibrary, scanLyrics } from '@/navidrome/sync';
 import { ScreenHeader } from '@/components/Header';
 import { Button, Label, PixelToggle, SectionHeader, styles } from '@/components/ui';
 
-/** Global library visibility and the fake library's Lyrics scan status. */
+const date = (at: number | null) => at ? new Date(at).toLocaleString() : 'never';
+/** Account, library sync and full lyrics scan controls. */
 export default function SettingsScreen() {
-  const nothingDue = appStore(state => state.nothingDue);
-  const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
-  const ready = getVisibleSongs(songs, true).length;
-  const withoutSyncedLyrics = songs.length - ready;
-  return <View style={styles.page}><ScreenHeader title="Settings" />
-    <ScrollView contentContainerStyle={styles.content}>
-      <SectionHeader title="Library" />
-      <View style={styles.row}>
-        <Label style={{ flex: 1 }}>Hide songs without synced lyrics</Label>
-        <PixelToggle label="Hide songs without synced lyrics" on={hiding} onPress={() => appStore.getState().toggleHideSongsWithoutSyncedLyrics()} />
-      </View>
-      <Label muted style={{ fontSize: 11.5 }}>Songs you can't follow or quiz stay out of your library and queues.</Label>
-      <SectionHeader title="Lyrics scan" />
-      <Button label="Scan library" fill={colors.coral} border="#ff9aa5" onPress={() => {
-        // Will run the Navidrome lyrics scan.
-      }}><Label style={{ fontWeight: '700' }}>Scan library</Label></Button>
-      <View style={{ gap: 4 }}>
-        <Label>{ready.toLocaleString('en-US')} songs ready to learn</Label>
-        <Label muted>{withoutSyncedLyrics.toLocaleString('en-US')} songs without synced lyrics</Label>
-        <Label muted>Last scan: never</Label>
-      </View>
-      {__DEV__ && <Button label="Toggle nothing due" onPress={() => appStore.getState().toggleNothingDue()}><Label>Dev · nothing due {nothingDue ? 'on' : 'off'}</Label></Button>}
-    </ScrollView>
-  </View>;
+  const [loggingOut, setLoggingOut] = useState(false), [accountError, setAccountError] = useState<string | null>(null);
+  const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics), lastSync = appStore(state => state.lastSyncAt), lastScan = appStore(state => state.lastScanAt);
+  const songs = libraryStore(state => state.songs), progress = libraryStore(state => state.progress), error = libraryStore(state => state.error);
+  const session = sessionStore(state => state.session), ready = songs.filter(song => song.lyricsStatus === 'synced').length;
+  return <View style={styles.page}><ScreenHeader title="Settings" /><ScrollView contentContainerStyle={styles.content}>
+    <SectionHeader title="Account" />
+    <Label>{session ? new URL(session.url).host : ''}</Label><Label>{session?.username}</Label>
+    <Button label="Log out" disabled={loggingOut} onPress={async () => { setLoggingOut(true); setAccountError(null); try { await logout(); } catch (error) { setAccountError(error instanceof Error ? error.message : 'Could not log out'); } finally { setLoggingOut(false); } }}><Label>Log out</Label></Button>
+    {accountError && <Label style={{ color: colors.red }}>{accountError}</Label>}
+    <SectionHeader title="Library" />
+    <View style={styles.row}><Label style={{ flex: 1 }}>Hide songs without synced lyrics</Label><PixelToggle label="Hide songs without synced lyrics" on={hiding} onPress={() => appStore.getState().toggleHideSongsWithoutSyncedLyrics()} /></View>
+    <Button label="Sync library" disabled={!!progress} onPress={() => { void syncLibrary(); }}><Label>Sync library</Label></Button>
+    <Label muted>Last sync: {date(lastSync)}</Label>
+    <SectionHeader title="Lyrics scan" />
+    <Button label="Rescan lyrics" fill={colors.coral} disabled={!!progress} onPress={() => { void scanLyrics({ all: true }); }}><Label>Rescan lyrics</Label></Button>
+    <Label>{ready} songs ready to learn · {songs.filter(song => song.lyricsStatus === 'none').length} without synced lyrics</Label>
+    <Label muted>Last scan: {date(lastScan)}</Label>
+    {progress && <Label>{progress.kind === 'sync' ? 'Syncing library' : 'Checking lyrics'}… {progress.completed} / {progress.total}</Label>}
+    {error && <Label style={{ color: colors.red }}>{error}</Label>}
+  </ScrollView></View>;
 }

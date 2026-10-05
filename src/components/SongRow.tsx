@@ -1,7 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { getAlbum } from '@/data/fakeData';
+import { getAlbum } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
 import { Cover } from './Cover';
 import { Icon } from './Icon';
@@ -12,8 +12,8 @@ import type { Song } from '@/types/domain';
 export function SongRow({ song, number }: { song: Song; number?: number }) {
   const router = useRouter();
   const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
-  const duration = `${Math.floor(song.duration / 60)}:${String(song.duration % 60).padStart(2, '0')}`;
-  return <Pressable accessibilityRole="button" accessibilityLabel={`Play ${song.title}${song.hasLyrics ? '' : ', no lyrics'}`} onPress={() => {
+  const duration = `${Math.floor(song.duration / 60)}:${String(Math.floor(song.duration) % 60).padStart(2, '0')}`;
+  return <Pressable accessibilityRole="button" accessibilityLabel={`Play ${song.title}${(song.lyricsStatus === 'synced') ? '' : ', no lyrics'}`} onPress={() => {
     appStore.getState().startSong(song.id);
     router.push('/player');
   }} style={({ pressed }) => [styles.row, { minHeight: 64, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.track, opacity: pressed ? 0.7 : 1 }]}>
@@ -21,7 +21,7 @@ export function SongRow({ song, number }: { song: Song; number?: number }) {
     <View style={{ flex: 1 }}>
       <View style={[styles.row, { gap: 6 }]}>
         <Label numberOfLines={1} style={{ fontWeight: '700', fontSize: 16, flexShrink: 1 }}>{song.title}</Label>
-        {!hiding && !song.hasLyrics && <Icon name="micOff" color={colors.muted} size={16} accessibilityLabel="No synced lyrics" />}
+        {!hiding && !(song.lyricsStatus === 'synced') && <Icon name="micOff" color={colors.muted} size={16} accessibilityLabel="No synced lyrics" />}
       </View>
       {number === undefined && <Label muted numberOfLines={1} style={{ fontSize: 13 }}>{song.artist}</Label>}
     </View>
