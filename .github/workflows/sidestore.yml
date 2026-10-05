@@ -1,0 +1,130 @@
+name: SideStore
+
+# Publishes unsigned iOS builds to one SideStore source:
+#   https://github.com/louismollick/kashi-koi/releases/download/ios-source/source.json
+# Pushes to main update the main app. A PR builds only while it has the `ios-build` label;
+# removing the label or closing the PR removes its app from the source.
+#
+# Each app lives in its own release (ios-main, ios-pr-<n>) holding the IPA and its source
+# entry (app.json). source.json is rebuilt from those releases, so it never drifts.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**/*.md', 'docs/**', 'mockups/**']
+  pull_request:
+    types: [labeled, synchronize, reopened]
+  # Cleanup runs base-branch code only, and unlike pull_request it still fires on conflicted PRs.
+  pull_request_target:
+    types: [unlabeled, closed]
+
+permissions:
+  contents: write
+
+# GH_TOKEN is set per step, never on steps that run PR code (npm ci, the build script).
+env:
+  GH_REPO: ${{ github.repository }}
+  RELEASE_TAG: ${{ github.event_name == 'push' && 'ios-main' || format('ios-pr-{0}', github.event.pull_request.number) }}
+
+jobs:
+  build:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       ((contains(github.event.pull_request.labels.*.name, 'ios-build') &&
+         contains(fromJSON('["synchronize", "reopened"]'), github.event.action)) ||
+        (github.event.action == 'labeled' && github.event.label.name == 'ios-build')))
+    runs-on: macos-26
+    timeout-minutes: 60
+    # Shared with cleanup so closing a PR cancels its in-flight build.
+    concurrency:
+      group: sidestore-${{ github.event.pull_request.number || 'main' }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build IPA
+        env:
+          CHANNEL: ${{ github.event_name == 'push' && 'main' || 'pr' }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: scripts/build-sidestore-ipa.sh
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 ||
+            gh release create "$RELEASE_TAG" --prerelease --title "$RELEASE_TAG" --notes 'Unsigned SideStore build.'
+          # IPA before app.json, so the entry never points at a missing file.
+          gh release upload "$RELEASE_TAG" build/sidestore/*.ipa --clobber
+          gh release upload "$RELEASE_TAG" build/sidestore/app.json --clobber
+          # Keep the previous IPA too, for anyone still holding the old source.json.
+          for OLD in $(gh release view "$RELEASE_TAG" --json assets --jq '
+            .assets | map(select(.name | endswith(".ipa"))) | sort_by(.createdAt) | reverse | .[2:][].name'); do
+            gh release delete-asset "$RELEASE_TAG" "$OLD" --yes
+          done
+
+  cleanup:
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      (github.event.action == 'closed' || github.event.label.name == 'ios-build')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: sidestore-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release delete "$RELEASE_TAG" --cleanup-tag --yes
+          fi
+
+  source:
+    needs: [build, cleanup]
+    if: always() && contains(needs.*.result, 'success')
+    runs-on: ubuntu-latest
+    # Every run rebuilds from all releases, so a queued run superseding another loses nothing.
+    concurrency:
+      group: sidestore-source
+      cancel-in-progress: false
+    steps:
+      - name: Rebuild source.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Main first, then newest PRs.
+          TAGS=$(gh release list --limit 1000 --json tagName --jq '
+            [.[].tagName | select(test("^ios-(main|pr-[0-9]+)$"))]
+            | sort_by(if . == "ios-main" then -1e9 else -(ltrimstr("ios-pr-") | tonumber) end)[]')
+          touch apps.jsonl
+          for TAG in $TAGS; do
+            # Skips a release mid-upload or mid-delete; the run that touched it rebuilds after.
+            gh release download "$TAG" --pattern app.json --output - >> apps.jsonl ||
+              echo "::warning::Skipped $TAG"
+          done
+          jq -s --arg repo "$GH_REPO" '{
+            name: "Kashi-Koi!",
+            identifier: "com.kashikoi.sidestore",
+            subtitle: "main and PR builds",
+            iconURL: "https://raw.githubusercontent.com/\($repo)/main/assets/sidestore-icon.png",
+            website: "https://github.com/\($repo)",
+            tintColor: "#000000",
+            apps: .,
+            news: []
+          }' apps.jsonl > source.json
+          cat source.json
+          gh release view ios-source >/dev/null 2>&1 ||
+            gh release create ios-source --prerelease --title 'SideStore source' \
+              --notes "Add https://github.com/$GH_REPO/releases/download/ios-source/source.json to SideStore."
+          gh release upload ios-source source.json --clobber

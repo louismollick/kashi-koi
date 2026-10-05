@@ -21,6 +21,12 @@ python3 scripts/process-sprites.py
 
 Sprite processing requires Pillow, already installed on the implementation machine. It reads the five original PNG assets without changing them. Generated strips and metadata are included in `assets/sprites/`.
 
+## Install builds
+
+Add this source in SideStore: `https://github.com/louismollick/kashi-koi/releases/download/ios-source/source.json`
+
+It lists the latest `main` build plus one app per PR labeled `ios-build`. PR apps install side by side with main. Removing the label or closing the PR removes its app from the source. See `.github/workflows/sidestore.yml`.
+
 ## Try the flows
 
 - Home's review card opens Review. Clips starts untimed Clip review; Songs starts a Review mix with Quiz mode on.
