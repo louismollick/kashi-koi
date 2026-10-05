@@ -3,15 +3,17 @@ import { ScrollView, View } from 'react-native';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
+import { refreshAlbumArt } from '@/store/artStore';
 import { sessionStore, logout } from '@/navidrome/session';
 import { syncLibrary, scanLyrics } from '@/navidrome/sync';
 import { ScreenHeader } from '@/components/Header';
 import { Button, Label, PixelToggle, SectionHeader, styles } from '@/components/ui';
 
 const date = (at: number | null) => at ? new Date(at).toLocaleString() : 'never';
-/** Account, library sync and full lyrics scan controls. */
+/** Account, library sync, artwork refresh and lyrics scan controls. */
 export default function SettingsScreen() {
   const [loggingOut, setLoggingOut] = useState(false), [accountError, setAccountError] = useState<string | null>(null);
+  const [refreshingArt, setRefreshingArt] = useState(false), [artMessage, setArtMessage] = useState<string | null>(null);
   const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics), lastSync = appStore(state => state.lastSyncAt), lastScan = appStore(state => state.lastScanAt);
   const songs = libraryStore(state => state.songs), progress = libraryStore(state => state.progress), error = libraryStore(state => state.error);
   const session = sessionStore(state => state.session), ready = songs.filter(song => song.lyricsStatus === 'synced').length;
@@ -24,6 +26,8 @@ export default function SettingsScreen() {
     <View style={styles.row}><Label style={{ flex: 1 }}>Hide songs without synced lyrics</Label><PixelToggle label="Hide songs without synced lyrics" on={hiding} onPress={() => appStore.getState().toggleHideSongsWithoutSyncedLyrics()} /></View>
     <Button label="Sync library" disabled={!!progress} onPress={() => { void syncLibrary(); }}><Label>Sync library</Label></Button>
     <Label muted>Last sync: {date(lastSync)}</Label>
+    <Button label="Refresh album art" disabled={refreshingArt} onPress={async () => { setRefreshingArt(true); setArtMessage(null); try { await refreshAlbumArt(); setArtMessage('Album art cache cleared'); } catch { setArtMessage('Could not clear album art cache'); } finally { setRefreshingArt(false); } }}><Label>Refresh album art</Label></Button>
+    {artMessage && <Label>{artMessage}</Label>}
     <SectionHeader title="Lyrics scan" />
     <Button label="Rescan lyrics" fill={colors.coral} disabled={!!progress} onPress={() => { void scanLyrics({ all: true }); }}><Label>Rescan lyrics</Label></Button>
     <Label>{ready} songs ready to learn · {songs.filter(song => song.lyricsStatus === 'none').length} without synced lyrics</Label>

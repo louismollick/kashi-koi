@@ -7,6 +7,7 @@ import { colors } from '@/constants/theme';
 import { PixelFrame } from './PixelFrame';
 import { Cover } from './Cover';
 import { Icon } from './Icon';
+import { Marquee } from './Marquee';
 import { IconButton, Label, styles } from './ui';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 
@@ -27,11 +28,11 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
   const count = reviewList.filter(line => line.kind !== 'later').length;
   return <View style={{ backgroundColor: colors.bg, paddingBottom: Math.max(insets.bottom - 6, 10) }}>
     {song && <Pressable accessibilityRole="button" accessibilityLabel="Open player" onPress={() => router.push('/player')} style={{ marginHorizontal: 14, marginBottom: 6 }}>
-      <PixelFrame fill={colors.mini} border="#d8cfe2" contentStyle={[styles.row, { padding: 8, paddingRight: 6 }]}>
+      <PixelFrame fill={colors.mini} border="#d8cfe2" contentStyle={[styles.row, { height: 64, padding: 8, paddingRight: 6 }]}>
         <Cover song={song} size={48} />
-        <View style={{ flex: 1 }}>
-          <Label style={{ color: colors.bg, fontWeight: '700', fontSize: 16 }}>{song.title}</Label>
-          <Label style={{ color: '#4a4560', fontSize: 13 }}>{song.artist}</Label>
+        <View style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <Marquee key={songId} style={{ color: colors.bg, fontWeight: '700', fontSize: 16 }}>{song.title}</Marquee>
+          <Label numberOfLines={1} style={{ color: '#4a4560', fontSize: 13 }}>{song.artist}</Label>
         </View>
         <IconButton plain name={playing ? 'pause' : 'play'} color={colors.bg} iconScale={0.7} label={playing ? 'Pause' : 'Play'} onPress={() => appStore.getState().setPlaying(!playing)} />
       </PixelFrame>
