@@ -30,6 +30,10 @@ _Avoid_: Filtered song, unsupported song
 A pass over the whole library that checks each song for synced lyrics and caches the result on the phone, so hidden songs can be known without asking the server each time.
 _Avoid_: Sync, index
 
+**Library sync**:
+Re-fetching the song, album and artist list from Navidrome into the phone's copy of the library. It checks lyrics only for songs never scanned; a full Lyrics scan is separate.
+_Avoid_: Refresh, import
+
 ### Modes
 
 **Quiz toggle**:

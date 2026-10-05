@@ -36,8 +36,8 @@ export function IconButton({ name, onPress, label, fill = colors.panel, border, 
 }
 
 /** Pill switch used for QuizToggle and results review choices. */
-export function PixelToggle({ on, onPress, label }: { on: boolean; onPress: () => void; label: string }) {
-  return <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: on }} onPress={onPress} hitSlop={10}>
+export function PixelToggle({ on, onPress, label, disabled = false }: { disabled?: boolean; on: boolean; onPress: () => void; label: string }) {
+  return <Pressable disabled={disabled} accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: on }} onPress={onPress} hitSlop={10}>
     <PixelFrame fill={on ? colors.green : colors.track} border={null} contentStyle={{ width: 52, height: 30, padding: 4, alignItems: on ? 'flex-end' : 'flex-start' }}>
       <PixelFrame fill="#ffffff" border={null} contentStyle={{ width: 22, height: 22 }} />
     </PixelFrame>

@@ -1,5 +1,8 @@
-import type { Album, Artist, Line, ReviewList, Song } from '@/types/domain';
+import type { Line, ReviewList, Song as LibrarySong, SongLyrics } from '@/types/domain';
 
+type Song = Omit<LibrarySong, 'lyricsStatus'> & { color: string; accent: string; rank: string | null; lines: Line[]; hasLyrics: boolean };
+type Album = Pick<Song, 'id' | 'title' | 'artist' | 'artistId' | 'color' | 'accent'> & { year: number };
+type Artist = Pick<Song, 'id' | 'color' | 'accent'> & { name: string };
 const lyrics = {
   dawn: [
     { segments: [{ text: '夜', reading: 'よ' }, { text: '明', reading: 'あ' }, { text: 'けのバスに' }, { text: '揺', reading: 'ゆ' }, { text: 'られて' }], meaning: 'Swaying on the dawn bus' },
@@ -97,7 +100,7 @@ function makeLines(songId: keyof typeof lyrics): Line[] {
 /** Plain lyrics for lists, labels, and neighbors that do not show ruby. */
 export function getLineText(line: Line) { return line.segments.map(segment => segment.text).join(''); }
 
-export const songs: Song[] = [
+const legacySongs: Song[] = [
   { id: 'dawn', title: '夜明けのバス', artist: 'ミナミ', album: '環状線', color: '#5c284e', accent: '#ee9255', rank: 'B', lines: makeLines('dawn'), albumId: 'dawn', artistId: 'minami', duration: 238, hasLyrics: true },
   { id: 'glass', title: '硝子の街', artist: 'ミナミ', album: '硝子の街', color: '#164b4e', accent: '#74c58f', rank: 'S', lines: makeLines('glass'), albumId: 'glass', artistId: 'minami', duration: 214, hasLyrics: true },
   { id: 'rain', title: '雨宿り', artist: '深海少女', album: '深海', color: '#293c6b', accent: '#a4c5ef', rank: 'A', lines: makeLines('rain'), albumId: 'rain', artistId: 'deep-sea', duration: 267, hasLyrics: true },
@@ -106,29 +109,29 @@ export const songs: Song[] = [
   { id: 'summer', title: '夏草の線路', artist: 'ヨルシカ', album: '夏草の線路', color: '#23484a', accent: '#8bbfb3', rank: null, lines: makeLines('summer'), albumId: 'summer', artistId: 'yorushika', duration: 251, hasLyrics: true },
 ];
 
-export const firstSong = songs[0]!;
+
 
 /** Each album uses its original song's cover crop and palette. */
-export const albums: Album[] = songs.map(song => ({
+const legacyAlbums: Album[] = legacySongs.map(song => ({
   id: song.albumId, title: song.album, artist: song.artist, artistId: song.artistId,
   color: song.color, accent: song.accent, year: song.id === 'dawn' ? 2024 : 2023,
 }));
 
-export const artists: Artist[] = [
-  { id: 'minami', name: 'ミナミ', color: firstSong.color, accent: firstSong.accent },
-  { id: 'yorushika', name: 'ヨルシカ', color: songs[4]!.color, accent: songs[4]!.accent },
-  { id: 'deep-sea', name: '深海少女', color: songs[2]!.color, accent: songs[2]!.accent },
+const legacyArtists: Artist[] = [
+  { id: 'minami', name: 'ミナミ', color: legacySongs[0]!.color, accent: legacySongs[0]!.accent },
+  { id: 'yorushika', name: 'ヨルシカ', color: legacySongs[4]!.color, accent: legacySongs[4]!.accent },
+  { id: 'deep-sea', name: '深海少女', color: legacySongs[2]!.color, accent: legacySongs[2]!.accent },
 ];
 
-/** Filler songs share their album artwork and have no lyric or review fixtures. */
+/** Filler legacySongs share their album artwork and have no lyric or review fixtures. */
 const fillerTitles: Record<string, string[]> = {
   dawn: ['始発駅', '眠らない街', '帰り道'], glass: ['窓辺', '街の灯'],
   rain: ['水面', '深い青'], dream: ['まどろみ', '夢の続き'],
   bluebird: ['風の便り', '小さな羽'], summer: ['夕立', '夏の終わり'],
 };
-for (const album of albums) {
+for (const album of legacyAlbums) {
   for (const [index, title] of fillerTitles[album.id]!.entries()) {
-    songs.push({ id: `${album.id}-song-${index + 2}`, title, artist: album.artist, album: album.title,
+    legacySongs.push({ id: `${album.id}-song-${index + 2}`, title, artist: album.artist, album: album.title,
       albumId: album.id, artistId: album.artistId, color: album.color, accent: album.accent,
       duration: 180 + index * 27, rank: null, lines: [], hasLyrics: false });
   }
@@ -137,23 +140,14 @@ for (const album of albums) {
 /** One no-lyrics artist and album make cascade hiding and cover badges visible. */
 const instrumental: Song = { id: 'tide', title: '潮の音', artist: '凪', album: '潮の音', artistId: 'nagi', albumId: 'tide',
   color: '#293c6b', accent: '#a4c5ef', duration: 204, rank: null, lines: [], hasLyrics: false };
-songs.push(instrumental);
-albums.push({ id: instrumental.albumId, title: instrumental.album, artist: instrumental.artist, artistId: instrumental.artistId,
+legacySongs.push(instrumental);
+legacyAlbums.push({ id: instrumental.albumId, title: instrumental.album, artist: instrumental.artist, artistId: instrumental.artistId,
   color: instrumental.color, accent: instrumental.accent, year: 2024 });
-artists.push({ id: instrumental.artistId, name: instrumental.artist, color: instrumental.color, accent: instrumental.accent });
-
-/** Ordered fixture songs for an album's numbered list and Play action. */
-export function getAlbumSongs(albumId: string) { return songs.filter(song => song.albumId === albumId); }
-
-/** Albums belonging to an artist, in library order. */
-export function getArtistAlbums(artistId: string) { return albums.filter(album => album.artistId === artistId); }
-
-export function getAlbum(id: string) { return albums.find(album => album.id === id); }
-export function getArtist(id: string) { return artists.find(artist => artist.id === id); }
+legacyArtists.push({ id: instrumental.artistId, name: instrumental.artist, color: instrumental.color, accent: instrumental.accent });
 
 /** Twelve ready lines plus a separate later group, matching the mockup counts. */
 export function makeReviewList(): ReviewList {
-  const lyricSongs = songs.filter(song => song.hasLyrics);
+  const lyricSongs = legacySongs.filter(song => song.hasLyrics);
   return [
     { id: 'new-dawn', songId: 'dawn', lineId: 'dawn-3', kind: 'new' },
     { id: 'new-rain', songId: 'rain', lineId: 'rain-7', kind: 'new' },
@@ -166,11 +160,16 @@ export function makeReviewList(): ReviewList {
   ];
 }
 
-/** Resolve fixture IDs in screens and store actions. */
-export function getSong(id: string) { return songs.find(song => song.id === id) ?? firstSong; }
 
-/** The correct meaning sits between two meanings from the same song. */
-export function getAnswers(song: Song, lineIndex: number) {
-  return [song.lines[(lineIndex + 2) % song.lines.length]!.meaning,
-    song.lines[lineIndex]!.meaning, song.lines[(lineIndex + song.lines.length - 1) % song.lines.length]!.meaning];
+export const songLyrics: Record<string, SongLyrics> = Object.fromEntries(legacySongs.map(song => [song.id, { songId: song.id,
+  lines: song.lines.map(line => ({ ...line, id: `${song.id}:${getLineText(line).trim()}` })),
+  timeline: song.lines.map((line, index) => ({ lineId: `${song.id}:${getLineText(line).trim()}`, startMs: index * 9000, endMs: (index + 1) * 9000 })) }]));
+export const songs: LibrarySong[] = legacySongs.map(({ color, accent, rank, lines, hasLyrics, ...song }, index) => ({ ...song, track: index + 1, played: 1000 - index, lyricsStatus: hasLyrics ? 'synced' : 'none' }));
+export const albums = legacyAlbums.map(({ color, accent, ...album }) => ({ ...album, songCount: songs.filter(song => song.albumId === album.id).length }));
+export const artists = legacyArtists.map(({ color, accent, ...artist }) => artist);
+export const firstSong = songs[0]!;
+export function fixtureLine(id: string) {
+  const song = legacySongs.find(song => song.lines.some(line => line.id === id))!;
+  return `${song.id}:${getLineText(song.lines.find(line => line.id === id)!).trim()}`;
 }
+export function fixtureReviewList() { return makeReviewList().map(item => ({ ...item, lineId: fixtureLine(item.lineId) })); }

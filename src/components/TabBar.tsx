@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { appStore } from '@/store/appStore';
-import { getSong } from '@/data/fakeData';
+import { getSong, getLyrics, libraryStore } from '@/store/libraryStore';
 import { colors } from '@/constants/theme';
 import { PixelFrame } from './PixelFrame';
 import { Cover } from './Cover';
@@ -20,13 +20,13 @@ const tabs = [
 export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const song = getSong(appStore(state => state.songId));
+  const songId = appStore(state => state.songId);
+  const song = libraryStore(state => songId ? state.bySong[songId] : undefined);
   const playing = appStore(state => state.playing);
   const reviewList = appStore(state => state.reviewList);
-  const nothingDue = appStore(state => state.nothingDue);
-  const count = nothingDue ? 0 : reviewList.filter(line => line.kind !== 'later').length;
+  const count = reviewList.filter(line => line.kind !== 'later').length;
   return <View style={{ backgroundColor: colors.bg, paddingBottom: Math.max(insets.bottom - 6, 10) }}>
-    <Pressable accessibilityRole="button" accessibilityLabel="Open player" onPress={() => router.push('/player')} style={{ marginHorizontal: 14, marginBottom: 6 }}>
+    {song && <Pressable accessibilityRole="button" accessibilityLabel="Open player" onPress={() => router.push('/player')} style={{ marginHorizontal: 14, marginBottom: 6 }}>
       <PixelFrame fill={colors.mini} border="#d8cfe2" contentStyle={[styles.row, { padding: 8, paddingRight: 6 }]}>
         <Cover song={song} size={48} />
         <View style={{ flex: 1 }}>
@@ -35,7 +35,7 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
         </View>
         <IconButton plain name={playing ? 'pause' : 'play'} color={colors.bg} iconScale={0.7} label={playing ? 'Pause' : 'Play'} onPress={() => appStore.getState().setPlaying(!playing)} />
       </PixelFrame>
-    </Pressable>
+    </Pressable>}
     <View style={[styles.row, { paddingTop: 6, gap: 0 }]}>
       {tabs.map(tab => {
         const route = state.routes.find(route => route.name === tab.name)!;

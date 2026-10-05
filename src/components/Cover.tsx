@@ -1,26 +1,21 @@
-import { View } from 'react-native';
+import { View, PixelRatio } from 'react-native';
 import { Image } from 'expo-image';
 import { PixelFrame, tint } from './PixelFrame';
-import type { Song } from '@/types/domain';
+import { paletteFor } from '@/data/palette';
+import { sessionStore } from '@/navidrome/session';
+import { mediaUrl } from '@/navidrome/subsonic';
 
-// Zoomed crops of the harbor art stand in for album covers until Navidrome art is wired up.
-// Each crop is the [x, y] position of the window within the art, from 0 to 1, keyed by fake song id.
-const crops: Record<string, readonly [number, number]> = {
-  dawn: [0.75, 0.6], glass: [0.92, 0.4], rain: [0.05, 0.75], dream: [0.5, 0.15], bluebird: [0.2, 0.35], summer: [0.35, 0.9],
-};
-const artAspect = 1498 / 1050;
-const zoom = 2.3;
-
-/** Square artwork for songs, albums, and artists, using their palette and crop ID. */
-export function Cover({ song, size = 44 }: { song: Pick<Song, 'id' | 'color' | 'accent'>; size?: number }) {
-  const [x, y] = crops[song.id] ?? crops[song.id.split('-song-')[0]!] ?? [0.5, 0.5];
-  const inner = size - 4;
-  const height = inner * zoom;
-  const width = height * artAspect;
-  return <PixelFrame fill={song.color} border={tint(song.accent, 0.35)} contentStyle={{ width: size, height: size, padding: 2 }}>
-    <View style={{ flex: 1, borderRadius: size > 60 ? 5 : 3, overflow: 'hidden' }}>
-      <Image source={require('../../assets/background.png')} contentFit="fill" style={{ position: 'absolute', width, height, left: -x * (width - inner), top: -y * (height - inner) }} />
-      <View style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: song.color, opacity: 0.3 }} />
+/** Disk-cached server artwork, with a centered harbor crop when artwork is absent. */
+export function Cover({ song, size = 44 }: { song: { id: string; coverArt?: string }; size?: number }) {
+  const session = sessionStore(state => state.session), palette = paletteFor(song.id);
+  const uri = session && song.coverArt ? mediaUrl(session, 'getCoverArt', song.coverArt, size * PixelRatio.get()) : null;
+  const inner = size - 4, height = inner * 2.3, width = height * 1498 / 1050;
+  return <PixelFrame fill={palette.color} border={tint(palette.accent, 0.35)} contentStyle={{ width: size, height: size, padding: 2 }}>
+    <View style={{ flex: 1, overflow: 'hidden' }}>
+      {uri ? <Image source={{ uri }} cachePolicy="disk" contentFit="cover" style={{ width: '100%', height: '100%' }} /> : <>
+        <Image source={require('../../assets/background.png')} style={{ position: 'absolute', width, height, left: -(width - inner) / 2, top: -(height - inner) / 2 }} />
+        <View style={{ position: 'absolute', inset: 0, backgroundColor: palette.color, opacity: 0.3 }} />
+      </>}
     </View>
   </PixelFrame>;
 }

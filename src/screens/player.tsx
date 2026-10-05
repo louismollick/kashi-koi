@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
-import { getLineText, getSong } from '@/data/fakeData';
+import { getLineText, getSong, getLyrics, libraryStore } from '@/store/libraryStore';
 import { getReviewMixProgress } from '@/data/libraryVisibility';
 import { appStore } from '@/store/appStore';
 import { ScreenHeader } from '@/components/Header';
@@ -43,7 +43,8 @@ function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
 /** ListenMode and QuizMode share one header, tappable line lane, and transport. */
 export default function PlayerScreen() {
   const router = useRouter();
-  const song = getSong(appStore(state => state.songId));
+  const songId = appStore(state => state.songId);
+  const song = libraryStore(state => songId ? state.bySong[songId] : undefined);
   const lineIndex = appStore(state => state.lineIndex);
   const quizToggle = appStore(state => state.quizToggle);
   const run = appStore(state => state.run);
@@ -51,17 +52,20 @@ export default function PlayerScreen() {
   const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
   const reviewProgress = reviewMix ? getReviewMixProgress(reviewMix, hiding) : null;
   const reviewList = appStore(state => state.reviewList);
-  const playing = appStore(state => state.playing);
   const addedId = appStore(state => state.addedId);
   const addedExpiresAt = appStore(state => state.addedExpiresAt);
   const [confirm, setConfirm] = useState(false);
   const [alreadyInReview, setAlreadyInReview] = useState(false);
   const scroll = useRef<ScrollView>(null);
   const positions = useRef<Record<number, number>>({});
-  const currentLine = song.lines[lineIndex];
+  const lyrics = libraryStore(state => state.lyrics[songId ?? '']);
+  const timeline = lyrics?.timeline ?? [];
+  const lines = timeline.map(occurrence => lyrics!.lines.find(line => line.id === occurrence.lineId)!);
+  const currentLine = lines[lineIndex];
+  const playbackError = appStore(state => state.playbackError);
   const selectedAnswer = currentLine ? run.answers[currentLine.id]?.choice ?? null : null;
   const showToast = addedId !== null && addedExpiresAt !== null && Date.now() < addedExpiresAt;
-  const inReview = reviewList.filter(line => line.songId === song.id).length;
+  const inReview = reviewList.filter(line => line.songId === song?.id).length;
   const followLine = useCallback(() => scroll.current?.scrollTo({ y: Math.max(0, (positions.current[lineIndex] ?? 0) - 125), animated: true }), [lineIndex]);
 
   useEffect(followLine, [followLine]);
@@ -75,44 +79,30 @@ export default function PlayerScreen() {
     const timer = setTimeout(() => setAlreadyInReview(false), 3000);
     return () => clearTimeout(timer);
   }, [alreadyInReview]);
-  useFocusEffect(useCallback(() => {
-    if (!song.lines.length) return;
-    if (quizToggle && playing && selectedAnswer !== null && !confirm) {
-      const timer = setTimeout(() => {
-        if (!appStore.getState().playing) return;
-        appStore.getState().advanceLine();
-        if (appStore.getState().run.finished) router.replace('/results');
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
-    if (!quizToggle && playing && !confirm) {
-      const timer = setInterval(() => appStore.getState().advancePlayback(), 9000);
-      return () => clearInterval(timer);
-    }
-  }, [quizToggle, selectedAnswer, lineIndex, playing, router, song.id, song.lines.length, confirm]));
-
   useEffect(() => { if (run.finished && quizToggle) router.replace('/results'); }, [run.finished, quizToggle, router]);
 
+  if (!song) return <View style={styles.page}><ScreenHeader title="Player" /><Label>No song playing</Label></View>;
   return <View style={styles.page}>
-    <ScreenHeader title={song.title} subtitle={reviewProgress ? `Review mix · song ${reviewProgress.position} of ${reviewProgress.total}` : currentLine ? `${song.artist} · line ${lineIndex + 1} of ${song.lines.length}` : song.artist}
-      right={<View style={[styles.row, { gap: 6 }]}><Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label><PixelToggle label="Quiz toggle" on={quizToggle} onPress={() => quizToggle && reviewMix ? setConfirm(true) : appStore.getState().setQuizToggle(!quizToggle)} /></View>} />
-    {currentLine && <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
-      {song.lines.map((line, index) => <Pressable key={line.id} accessibilityRole="button" accessibilityLabel={`Jump to line ${index + 1}`} onPress={() => appStore.getState().jumpToLine(index)} style={{ flex: 1, paddingVertical: 7 }}>
+    <ScreenHeader title={song?.title} subtitle={reviewProgress ? `Review mix · song ${reviewProgress.position} of ${reviewProgress.total}` : currentLine ? `${song?.artist} · line ${lineIndex + 1} of ${lines.length}` : song?.artist}
+      right={<View style={[styles.row, { gap: 6 }]}><Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label><PixelToggle disabled={!lyrics?.lines.every(line => line.meaning) || !lines.length} label="Quiz toggle" on={quizToggle} onPress={() => quizToggle && reviewMix ? setConfirm(true) : appStore.getState().setQuizToggle(!quizToggle)} /></View>} />
+    {(!lyrics?.lines.every(line => line.meaning) || !lines.length) && <Label muted style={{ paddingHorizontal: 16 }}>Needs translations</Label>}
+    {lines.length > 0 && <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
+      {lines.map((line, index) => <Pressable key={`${index}:${line.id}`} accessibilityRole="button" accessibilityLabel={`Jump to line ${index + 1}`} onPress={() => appStore.getState().jumpToLine(index)} style={{ flex: 1, paddingVertical: 7 }}>
         <PixelFrame fill={index === lineIndex ? colors.bg : run.answers[line.id]?.correct === true ? colors.green : run.answers[line.id]?.correct === false ? colors.red : !quizToggle && reviewList.some(item => item.lineId === line.id) ? colors.coral : index < lineIndex ? colors.track : colors.laneEmpty}
           border={index === lineIndex ? colors.text : null} contentStyle={{ height: 14 }} />
       </Pressable>)}
     </View>}
-    {!currentLine ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    {!lines.length ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <Label muted>No lyrics for this song</Label>
-    </View> : quizToggle ? <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
+    </View> : quizToggle && currentLine ? <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
       <LineCard line={currentLine} />
       <ComboRow combo={run.combo} nice={selectedAnswer === 1} />
-      <Answers song={song} lineIndex={lineIndex} selected={selectedAnswer} onAnswer={choice => appStore.getState().answer(choice)} />
+      <Answers song={song!} lineIndex={lineIndex} selected={selectedAnswer} onAnswer={choice => appStore.getState().answer(choice)} />
     </ScrollView> : <>
       <View style={{ flex: 1 }}>
         <ScrollView ref={scroll} onContentSizeChange={followLine} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 20, gap: 18 }}>
-          {song.lines.map((line, index) => <View key={line.id} onLayout={({ nativeEvent }) => { positions.current[index] = nativeEvent.layout.y; }}>
-            {index === lineIndex ? <LineCard line={line} /> : <Pressable accessibilityRole="button" accessibilityLabel={`Play line ${index + 1}`} disabled={index > lineIndex} onPress={() => appStore.getState().jumpToLine(index)}>
+          {lines.map((line, index) => <View key={`${index}:${line.id}`} onLayout={({ nativeEvent }) => { positions.current[index] = nativeEvent.layout.y; }}>
+            {index === lineIndex ? <LineCard line={line} /> : <Pressable accessibilityRole="button" accessibilityLabel={`Play line ${index + 1}`} onPress={() => appStore.getState().jumpToLine(index)}>
               <Label style={{ fontSize: 20, lineHeight: 30, color: index < lineIndex ? colors.muted : colors.text }}>{getLineText(line)}{reviewList.some(item => item.lineId === line.id) && <Label style={{ color: colors.coral }}> ●</Label>}</Label>
             </Pressable>}
           </View>)}
@@ -130,8 +120,8 @@ export default function PlayerScreen() {
           <Label style={{ flex: 1, fontSize: 13, color: colors.green }}>✓ Added · {inReview} in review</Label>
           <Button label="Undo added line" onPress={() => appStore.getState().undoLostMark()}><Label style={{ fontSize: 12, color: colors.cream, fontWeight: '700' }}>UNDO</Label></Button>
         </PixelFrame> : <Label muted={!alreadyInReview} style={{ fontSize: 12, color: alreadyInReview ? colors.green : colors.muted }}>{alreadyInReview ? '✓ Already in review' : `● ${inReview} lines from this song in review`}</Label>}
-        <Button label="Didn't understand, add this line to review" fill={colors.coral} border="#ff9aa5" contentStyle={{ paddingVertical: 16 }} onPress={() => {
-          if (reviewList.some(line => line.lineId === currentLine.id)) setAlreadyInReview(true);
+        <Button disabled={!currentLine} label="Didn't understand, add this line to review" fill={colors.coral} border="#ff9aa5" contentStyle={{ paddingVertical: 16 }} onPress={() => {
+          if (reviewList.some(line => line.lineId === currentLine?.id)) setAlreadyInReview(true);
           else { setAlreadyInReview(false); appStore.getState().addLostMark(); }
         }}>
           <Label style={{ fontSize: 26, lineHeight: 30, fontWeight: '900', textAlign: 'center', letterSpacing: 0.5 }}>DIDN'T{'\n'}UNDERSTAND</Label>
@@ -139,6 +129,7 @@ export default function PlayerScreen() {
         </Button>
       </View>
     </>}
+    {playbackError && <Label style={{ color: colors.red, paddingHorizontal: 16 }}>{playbackError}</Label>}
     <PlayerBar />
     <Modal visible={confirm} transparent animationType="fade" onRequestClose={() => setConfirm(false)}>
       <View style={{ flex: 1, backgroundColor: '#090a16bb', justifyContent: 'center', padding: 28 }}>

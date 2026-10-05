@@ -1,7 +1,7 @@
-import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Pressable, FlatList, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { getAlbum, getAlbumSongs } from '@/data/fakeData';
+import { getAlbum, getAlbumSongs, libraryStore } from '@/store/libraryStore';
 import { getVisibleSongs } from '@/data/libraryVisibility';
 import { appStore } from '@/store/appStore';
 import { Cover } from '@/components/Cover';
@@ -16,6 +16,7 @@ export default function AlbumDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  libraryStore(state => state.songs);
   const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
   const album = getAlbum(id);
   if (!album) return <View style={styles.page}><ScreenHeader title="Album" /><Label muted style={{ padding: 16 }}>Album not found</Label></View>;
@@ -27,7 +28,7 @@ export default function AlbumDetailScreen() {
   };
   return <View style={styles.page}>
     <ScreenHeader />
-    <ScrollView contentContainerStyle={styles.content}>
+    <FlatList data={tracks} keyExtractor={song => song.id} contentContainerStyle={styles.content} renderItem={({ item, index }) => <SongRow song={item} number={index + 1} />} ListHeaderComponent={<View style={{ gap: 16 }}>
       <View style={{ alignItems: 'center' }}><Cover song={album} size={Math.min(236, width - 64)} /></View>
       <View style={{ gap: 4 }}>
         <Label style={styles.title}>{album.title}</Label>
@@ -42,8 +43,8 @@ export default function AlbumDetailScreen() {
         </Button>
         <Button label="Shuffle album" border="#4b4f80" style={{ flex: 1 }} disabled={!tracks.length} onPress={() => startAlbum(true)}><Label style={{ fontWeight: '700' }}>Shuffle</Label></Button>
       </View>
-      <View>{tracks.map((song, index) => <SongRow key={song.id} song={song} number={index + 1} />)}</View>
+    </View>} ListFooterComponent={
       <HiddenSongsRow count={allTracks.length - getVisibleSongs(allTracks, true).length} album />
-    </ScrollView>
+    } />
   </View>;
 }

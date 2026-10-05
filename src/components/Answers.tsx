@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { colors } from '@/constants/theme';
-import { getAnswers } from '@/data/fakeData';
+import { getAnswers } from '@/store/libraryStore';
 import { Icon } from './Icon';
 import { Button, Label } from './ui';
 import type { Song } from '@/types/domain';

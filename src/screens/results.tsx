@@ -3,7 +3,7 @@ import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { appStore, getRunSummary } from '@/store/appStore';
-import { getLineText, getSong } from '@/data/fakeData';
+import { getLineText, getSong, libraryStore } from '@/store/libraryStore';
 import { colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/Header';
 import { Cover } from '@/components/Cover';
@@ -15,19 +15,22 @@ import type { Rank } from '@/types/domain';
 export default function ResultsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const song = getSong(appStore(state => state.songId));
+  const songId = appStore(state => state.songId);
+  const song = libraryStore(state => songId ? state.bySong[songId] : undefined);
   const run = appStore(state => state.run);
-  const { hits, total, missed, rank } = getRunSummary(song, run);
+  const { hits, total, missed, rank } = song ? getRunSummary(song, run) : { hits: 0, total: 0, missed: [], rank: 'C' as const };
   const [send, setSend] = useState(() => Object.fromEntries(missed.map(line => [line.id, true])));
   const reviewCount = Object.values(send).filter(Boolean).length;
   const ranks: Rank[] = ['C', 'B', 'A', 'S'];
-  const improved = !song.rank || ranks.indexOf(rank) > ranks.indexOf(song.rank);
-  useEffect(() => { missed.forEach(line => appStore.getState().sendToReview(line.id, true)); }, [song.id, run.answers]);
+  const best = appStore(state => state.ranks[songId ?? '']);
+  const improved = !best || ranks.indexOf(rank) > ranks.indexOf(best);
+  useEffect(() => { missed.forEach(line => appStore.getState().sendToReview(line.id, true)); }, [songId, run.answers]);
+  if (!song) return null;
   return <View style={styles.page}><ScreenHeader title="Results" close />
     <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: Math.max(insets.bottom, 20) }}>
       <View style={styles.row}><Cover song={song} size={60} /><View><Label style={styles.title}>{song.title}</Label><Label muted>{song.artist}</Label></View></View>
       <View style={{ alignItems: 'center', gap: 6 }}><Label style={{ fontSize: 100, lineHeight: 115, fontWeight: '900', color: colors.combo }}>{rank}</Label>
-        <Label style={{ fontSize: 12, fontWeight: '700', color: colors.combo }}>{improved ? `NEW BEST · was ${song.rank ?? 'unranked'}` : `BEST ${song.rank}`}</Label>
+        <Label style={{ fontSize: 12, fontWeight: '700', color: colors.combo }}>{improved ? `NEW BEST · was ${best ?? 'unranked'}` : `BEST ${best}`}</Label>
       </View>
       <PixelFrame fill={colors.surface} contentStyle={[styles.row, { padding: 18, justifyContent: 'space-around' }]}>
         {[{ value: `${hits} / ${total}`, label: 'hits' }, { value: run.bestCombo, label: 'best combo' }, { value: reviewCount, label: reviewCount === 1 ? 'review' : 'reviews' }].map(stat => <View key={stat.label} style={{ alignItems: 'center' }}><Label style={{ fontSize: 26, fontWeight: '700', lineHeight: 34 }}>{stat.value}</Label><Label muted style={{ fontSize: 11 }}>{stat.label}</Label></View>)}
