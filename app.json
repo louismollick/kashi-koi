@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "platforms": ["ios"],
-    "ios": { "supportsTablet": false, "bundleIdentifier": "com.kashikoi.shell" },
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.kashikoi" },
     "plugins": ["expo-router"],
     "experiments": { "typedRoutes": true }
   }
