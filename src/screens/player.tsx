@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, Easing, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
 import { getLineText, libraryStore, hasTranslations } from '@/store/libraryStore';
 import { getReviewMixProgress } from '@/data/libraryVisibility';
@@ -44,6 +44,14 @@ function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
   </View>;
 }
 
+/** Drain the deadline without adding a scrolling container to quiz mode. */
+function AnswerTimeBar({ until }: { until: number }) {
+  const remaining = useSharedValue(1);
+  useEffect(() => { const ms = Math.max(0, until - Date.now()); remaining.value = 1; remaining.value = withTiming(0, { duration: ms, easing: Easing.linear }); }, [until, remaining]);
+  const animatedStyle = useAnimatedStyle(() => ({ width: `${remaining.value * 100}%` }));
+  return <View style={{ height: 3, marginTop: 6, backgroundColor: colors.track }}><Animated.View style={[{ height: 3, backgroundColor: colors.coral }, animatedStyle]} /></View>;
+}
+
 /** ListenMode and QuizMode share one header, tappable line lane, and transport. */
 export default function PlayerScreen() {
   const router = useRouter();
@@ -54,6 +62,7 @@ export default function PlayerScreen() {
   libraryStore(state => state.translationStatus);
   const showTranslations = appStore(state => state.showTranslations);
   const quizToggle = appStore(state => state.quizToggle);
+  const answerWait = appStore(state => state.answerWait);
   const run = appStore(state => state.run);
   const reviewMix = appStore(state => state.reviewMix);
   const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
@@ -103,6 +112,7 @@ export default function PlayerScreen() {
       <Label muted>No lyrics for this song</Label>
     </View> : quizToggle && currentLine ? <View style={{ flex: 1, minHeight: 0, paddingHorizontal: 16, paddingBottom: 16 }}>
       <LineCard line={currentLine} />
+      {answerWait?.until != null && <AnswerTimeBar until={answerWait.until} />}
       <ComboRow combo={run.combo} nice={currentLine ? run.answers[currentLine.id]?.correct === true : false} />
       <Answers compact choices={run.choices[currentLine.id] ?? []} translation={currentLine.translation} selected={selectedAnswer} onAnswer={choice => appStore.getState().answer(choice)} />
     </View> : <>

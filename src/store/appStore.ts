@@ -10,11 +10,27 @@ import type { ClipReview, ListenMode, QuizMode, QuizToggle, ReviewList, ReviewMi
 export type Transport = { load(song: Song, startMs?: number): void; play(): void; pause(): void; seek(ms: number): void };
 const noopTransport: Transport = { load() {}, play() {}, pause() {}, seek() {} };
 let transport = noopTransport, loadedSongId: string | null = null;
+let answerTimer: ReturnType<typeof setTimeout> | null = null, releasedIndex: number | null = null;
+
+/** Cancel the wait, preserving its occurrence guard unless starting a new pass. */
+function clearAnswerWait(reset = false) {
+  if (answerTimer !== null) clearTimeout(answerTimer);
+  answerTimer = null;
+  const wait = appStore.getState().answerWait;
+  if (reset) releasedIndex = null; else if (wait) releasedIndex = wait.lineIndex;
+  if (wait) appStore.setState({ answerWait: null });
+}
+
+/** Release the held line after its deadline or answer feedback. */
+function releaseAnswerWait() { if (appStore.getState().answerWait) appStore.getState().setPlaying(true); }
+
+/** Share one timer between the answer deadline and the result beat. */
+function scheduleAnswerRelease(ms: number) { if (answerTimer !== null) clearTimeout(answerTimer); answerTimer = setTimeout(releaseAnswerWait, ms); }
 /** Cleanup only detaches the transport it installed. */
 export const setTransport = (next: Transport) => { transport = next; loadedSongId = null; return () => { if (transport !== next) return false; transport = noopTransport; return true; }; };
 
 /** Load and play the song after publishing its queue position. */
-function playSong(id: string) { appStore.setState({ clipPlayback: null }); prioritizeTranslations([id, ...(appStore.getState().playbackQueue ?? appStore.getState().reviewMix?.songIds ?? [])]); const song = getSong(id); if (song) { loadedSongId = id; transport.load(song); transport.play(); } }
+function playSong(id: string) { clearAnswerWait(true); appStore.setState({ clipPlayback: null }); prioritizeTranslations([id, ...(appStore.getState().playbackQueue ?? appStore.getState().reviewMix?.songIds ?? [])]); const song = getSong(id); if (song) { loadedSongId = id; transport.load(song); transport.play(); } }
 
 /** Play the first occurrence of the current review line. */
 function playReviewClip() {
@@ -49,6 +65,7 @@ export function getRunSummary(song: Song, run: Run) {
 type AppState = {
   positionMs: number; durationMs: number; playbackError: string | null; songId: string | null; lineIndex: number; quizToggle: QuizToggle; mode: ListenMode | QuizMode;
   ranks: Record<string, Rank>; lastSyncAt: number | null; lastScanAt: number | null; playing: boolean; hideSongsWithoutSyncedLyrics: boolean; playbackQueue: string[] | null; reviewList: ReviewList; run: Run;
+  answerTime: number | null; answerWait: { lineIndex: number; until: number | null } | null; cycleAnswerTime: () => void;
   clipPlayback: { songId: string; startMs: number; endMs: number; positionMs: number } | null;
   reviewMix: ReviewMix | null; clipReview: ClipReview | null; addedId: string | null; addedExpiresAt: number | null; nextReviewId: number;
   startSong: (songId: string) => void; startAlbum: (albumId: string, shuffle?: boolean) => void; restartRun: () => void; setQuizToggle: (enabled: boolean) => void;
@@ -68,6 +85,7 @@ type AppState = {
 /** Learning state and queue actions, independent of native playback. */
 export const appStore = create<AppState>()(persist((set, get) => ({
   positionMs: 0, durationMs: 0, playbackError: null, songId: null, lineIndex: 0, quizToggle: false, mode: 'listen', playing: false, ranks: {}, lastSyncAt: null, lastScanAt: null,
+  answerTime: null, answerWait: null,
   showTranslations: false, translationPrompted: false, hideSongsWithoutSyncedLyrics: true, playbackQueue: null, reviewList: [], run: newRun(),
   reviewMix: null, clipReview: null, clipPlayback: null, addedId: null, addedExpiresAt: null, nextReviewId: 1,
   startSong: songId => {
@@ -88,6 +106,8 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     set({ playbackQueue: tracks.map(song => song.id) });
     prioritizeTranslations(tracks.map(song => song.id));
   },
+  // Cycle the fixed answer-time presets for future stops.
+  cycleAnswerTime: () => { const presets = [null, 10, 5, 3, 0]; set({ answerTime: presets[(presets.indexOf(get().answerTime) + 1) % presets.length]! }); },
   toggleTranslations: () => set(state => ({ showTranslations: !state.showTranslations })),
   ensureChoices: () => set(state => {
     const line = occurrenceLine(state.songId, state.lineIndex), song = getSong(state.songId);
@@ -102,8 +122,8 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     return { clipReview: { ...clip, choices: { ...clip.choices, [item.lineId]: getAnswers(song, index) } } };
   }),
   toggleHideSongsWithoutSyncedLyrics: () => set(state => ({ hideSongsWithoutSyncedLyrics: !state.hideSongsWithoutSyncedLyrics })),
-  restartRun: () => { set({ lineIndex: 0, positionMs: 0, run: newRun() }); if (!get().clipPlayback) transport.seek(0); get().setPlaying(true); },
-  setQuizToggle: enabled => { if (enabled && !hasTranslations(get().songId)) return; set({ quizToggle: enabled, mode: enabled ? 'quiz' : 'listen', run: newRun() }); },
+  restartRun: () => { clearAnswerWait(true); set({ lineIndex: 0, positionMs: 0, run: newRun() }); if (!get().clipPlayback) transport.seek(0); get().setPlaying(true); },
+  setQuizToggle: enabled => { if (enabled && !hasTranslations(get().songId)) return; const waiting = !!get().answerWait; clearAnswerWait(); set({ quizToggle: enabled, mode: enabled ? 'quiz' : 'listen', run: newRun() }); if (waiting) get().setPlaying(true); },
   startReviewMix: () => {
     const state = get(), ready = readyReviewLines(get().reviewList);
     const songIds = getVisibleSongs(libraryStore.getState().songs, state.hideSongsWithoutSyncedLyrics).filter(song => ready.some(line => line.songId === song.id)).map(song => song.id);
@@ -114,7 +134,7 @@ export const appStore = create<AppState>()(persist((set, get) => ({
   },
   finishReviewMix: () => {
     const mix = get().reviewMix;
-    if (mix) set({ quizToggle: mix.previousQuizToggle, mode: mix.previousQuizToggle ? 'quiz' : 'listen', reviewMix: null });
+    if (mix) { const waiting = !!get().answerWait; clearAnswerWait(); set({ quizToggle: mix.previousQuizToggle, mode: mix.previousQuizToggle ? 'quiz' : 'listen', reviewMix: null }); if (waiting) get().setPlaying(true); }
   },
   nextSong: () => {
     const { reviewMix, songId, playbackQueue, hideSongsWithoutSyncedLyrics } = get();
@@ -152,13 +172,16 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     if (!timeline.length) return;
     const positionMs = index < 0 ? 0 : Math.max(0, timeline[Math.min(index, timeline.length - 1)]!.startMs), lineIndex = currentOccurrence(timeline, positionMs);
     const clip = get().clipPlayback, song = getSong(get().songId);
+    const waiting = !!get().answerWait; clearAnswerWait(true);
     set({ lineIndex, positionMs, clipPlayback: null });
     if (clip && song && loadedSongId !== song.id) { loadedSongId = song.id; transport.load(song, positionMs); }
     else transport.seek(positionMs);
+    if (waiting) get().setPlaying(true);
   },
   playClip: (songId, startMs, endMs) => {
     const song = getSong(songId);
     if (!song || startMs < 0 || endMs <= startMs) return;
+    clearAnswerWait();
     transport.pause();
     set({ clipPlayback: { songId, startMs, endMs, positionMs: startMs }, playing: true, playbackError: null });
     if (loadedSongId !== songId) { loadedSongId = songId; transport.load(song, startMs); }
@@ -176,29 +199,47 @@ export const appStore = create<AppState>()(persist((set, get) => ({
       if (ended && wasPlaying) transport.pause();
       return;
     }
-    const lineIndex = currentOccurrence(getLyrics(get().songId).timeline, positionMs);
+    const state = get();
+    if (state.answerWait) {
+      set({ positionMs, durationMs, playing: false });
+      return;
+    }
+    const timeline = getLyrics(state.songId).timeline, occurrence = timeline[state.lineIndex], line = occurrenceLine(state.songId, state.lineIndex);
+    if (state.mode === 'quiz' && state.answerTime !== 0 && !state.run.finished && occurrence && line && isJapanese(getLineText(line)) && state.run.choices[line.id]?.length && !state.run.answers[line.id] && releasedIndex !== state.lineIndex && positionMs >= occurrence.endMs - 100) {
+      const until = state.answerTime === null ? null : Date.now() + state.answerTime * 1000;
+      set({ positionMs, durationMs, playing: false, answerWait: { lineIndex: state.lineIndex, until } });
+      transport.pause();
+      if (state.answerTime !== null) scheduleAnswerRelease(state.answerTime * 1000);
+      return;
+    }
+    const lineIndex = currentOccurrence(timeline, positionMs);
     set(state => ({ positionMs, durationMs, playing, ...(lineIndex !== state.lineIndex ? { lineIndex } : {}) }));
   },
   completeRun: () => {
+    clearAnswerWait();
     const song = getSong(get().songId);
     if (!song) return;
     const rank = getRunSummary(song, get().run).rank, order: Rank[] = ['C', 'B', 'A', 'S'], previous = get().ranks[song.id];
     set({ run: { ...get().run, finished: true }, playing: false, ranks: !previous || order.indexOf(rank) > order.indexOf(previous) ? { ...get().ranks, [song.id]: rank } : get().ranks });
     transport.pause();
   },
-  answer: choice => set(state => {
-    const line = occurrenceLine(state.songId, state.lineIndex);
-    if (!line || !isJapanese(getLineText(line))) return state;
-    const lineId = line.id;
-    if (state.run.answers[lineId] || state.run.finished) return state;
-    if (!line.translation) return state;
-    const correct = choice === line.translation;
-    const combo = correct ? state.run.combo + 1 : 0;
-    return {
-      run: { ...state.run, combo, bestCombo: Math.max(combo, state.run.bestCombo), answers: { ...state.run.answers, [lineId]: { choice, correct } } },
-      reviewList: correct ? state.reviewList.map(line => line.lineId === lineId ? { ...line, kind: 'later' as const } : line) : state.reviewList,
-    };
-  }),
+  answer: choice => {
+    const before = get().run;
+    set(state => {
+      const line = occurrenceLine(state.songId, state.lineIndex);
+      if (!line || !isJapanese(getLineText(line))) return state;
+      const lineId = line.id;
+      if (state.run.answers[lineId] || state.run.finished) return state;
+      if (!line.translation) return state;
+      const correct = choice === line.translation;
+      const combo = correct ? state.run.combo + 1 : 0;
+      return {
+        run: { ...state.run, combo, bestCombo: Math.max(combo, state.run.bestCombo), answers: { ...state.run.answers, [lineId]: { choice, correct } } },
+        reviewList: correct ? state.reviewList.map(line => line.lineId === lineId ? { ...line, kind: 'later' as const } : line) : state.reviewList,
+      };
+    });
+    if (get().answerWait && get().run !== before) { set({ answerWait: { ...get().answerWait!, until: null } }); scheduleAnswerRelease(800); }
+  },
   advanceLine: () => {
     const state = get(), length = getLyrics(state.songId).timeline.length;
     if (!length) return;
@@ -206,6 +247,12 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     else state.jumpToLine(state.lineIndex + 1);
   },
   setPlaying: playing => {
+    const wait = get().answerWait;
+    if (playing && wait && wait.lineIndex === getLyrics(get().songId).timeline.length - 1) {
+      get().completeRun();
+      return;
+    }
+    clearAnswerWait();
     const state = get();
     if (playing && state.clipPlayback) {
       const song = getSong(state.songId);
@@ -272,7 +319,7 @@ export const appStore = create<AppState>()(persist((set, get) => ({
 }), {
   name: 'learning-state', skipHydration: true,
   storage: createJSONStorage(() => ({ getItem: () => null, setItem() {}, removeItem() {} })),
-  partialize: state => ({ reviewList: state.reviewList, ranks: state.ranks, quizToggle: state.quizToggle, showTranslations: state.showTranslations, translationPrompted: state.translationPrompted, hideSongsWithoutSyncedLyrics: state.hideSongsWithoutSyncedLyrics, lastSyncAt: state.lastSyncAt, lastScanAt: state.lastScanAt, nextReviewId: state.nextReviewId }),
+  partialize: state => ({ answerTime: state.answerTime, reviewList: state.reviewList, ranks: state.ranks, quizToggle: state.quizToggle, showTranslations: state.showTranslations, translationPrompted: state.translationPrompted, hideSongsWithoutSyncedLyrics: state.hideSongsWithoutSyncedLyrics, lastSyncAt: state.lastSyncAt, lastScanAt: state.lastScanAt, nextReviewId: state.nextReviewId }),
 }));
 
 /** Native storage is injected at boot so store imports stay safe in plain Node. */
@@ -287,6 +334,7 @@ export async function hydrateAppState(storage: StateStorage) {
 }
 
 export function resetAppState() {
+  clearAnswerWait(true);
   transport.pause();
   appStore.setState(appStore.getInitialState(), true);
   return appStore.persist.clearStorage();

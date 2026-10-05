@@ -33,7 +33,7 @@ It lists the latest `main` build plus one app per PR labeled `ios-build`. PR app
 - Library shows albums, artists and songs. Songs without synced lyrics are hidden by default. Change this in Settings.
 - Play an album or song. Lyrics follow audio, including repeated lines. Tap a line or the lane to seek. Audio continues in the background with lock-screen play, pause and seek controls.
 - DIDN'T UNDERSTAND adds the current line to your review list. UNDO lasts three seconds. Repeated chorus occurrences share one review entry.
-- Turn on Translations in listen mode to show English translations and furigana. Quiz mode always shows furigana and asks you to choose a Line's translation in Meaning Match. Choices come from the same song and are shuffled. Lines without Japanese stay outside grading and review.
+- Turn on Translations in listen mode to show English translations and furigana. Quiz mode always shows furigana and asks you to choose a Line's translation in Meaning Match. Choices come from the same song and are shuffled. Unanswered Japanese lines pause at their end until you answer, then resume after 0.8 seconds. Settings offers Answer time: No limit, 10s, 5s, 3s or 0s to keep playing. A timed-out line counts as missed. Lines without Japanese stay outside grading and review.
 - Results shows missed Lines and their translations. Review lets you move or remove a Line, replay Clips, or start a Songs review mix once their songs are translated.
 - Settings offers Sync library, Rescan lyrics and Log out. Sync library retries unchecked and failed songs. Rescan lyrics checks every song. Log out clears local account, library and learning state.
 

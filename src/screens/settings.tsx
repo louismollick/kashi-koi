@@ -17,6 +17,7 @@ export default function SettingsScreen() {
   const [downloading, setDownloading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false), [accountError, setAccountError] = useState<string | null>(null);
   const [refreshingArt, setRefreshingArt] = useState(false), [artMessage, setArtMessage] = useState<string | null>(null);
+  const answerTime = appStore(state => state.answerTime);
   const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics), lastSync = appStore(state => state.lastSyncAt), lastScan = appStore(state => state.lastScanAt);
   const songs = libraryStore(state => state.songs), progress = libraryStore(state => state.progress), error = libraryStore(state => state.error);
   const session = sessionStore(state => state.session), ready = songs.filter(song => song.lyricsStatus === 'synced').length;
@@ -25,6 +26,8 @@ export default function SettingsScreen() {
     <Label>{session ? new URL(session.url).host : ''}</Label><Label>{session?.username}</Label>
     <Button label="Log out" disabled={loggingOut} onPress={async () => { setLoggingOut(true); setAccountError(null); try { await logout(); } catch (error) { setAccountError(error instanceof Error ? error.message : 'Could not log out'); } finally { setLoggingOut(false); } }}><Label>Log out</Label></Button>
     {accountError && <Label style={{ color: colors.red }}>{accountError}</Label>}
+    <SectionHeader title="Quiz" />
+    <View style={styles.row}><Label style={{ flex: 1 }}>Answer time</Label><Button label="Answer time" onPress={() => appStore.getState().cycleAnswerTime()}><Label>{answerTime === null ? 'No limit' : `${answerTime}s`}</Label></Button></View>
     <SectionHeader title="Library" />
     <View style={styles.row}><Label style={{ flex: 1 }}>Hide songs without synced lyrics</Label><PixelToggle label="Hide songs without synced lyrics" on={hiding} onPress={() => appStore.getState().toggleHideSongsWithoutSyncedLyrics()} /></View>
     <Button label="Sync library" disabled={!!progress} onPress={() => { void syncLibrary(); }}><Label>Sync library</Label></Button>

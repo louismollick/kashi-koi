@@ -89,6 +89,10 @@ _Avoid_: Review playlist, station
 The game played in quiz mode: as each line is sung, the user picks its translation from a few choices drawn from the same song.
 _Avoid_: Quiz, rhythm mode
 
+**Answer time**:
+How long the song waits at the end of a line for an answer in quiz mode. No limit by default; 0s keeps the song playing. A line left unanswered counts as missed.
+_Avoid_: Timer, time limit
+
 **Run**:
 One play-through of a song (or of review lines) in Meaning Match. A missed line goes onto the review list only if the user picks it on the results screen.
 _Avoid_: Session, attempt
