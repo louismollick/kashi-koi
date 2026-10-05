@@ -560,3 +560,155 @@ test('stale transport cleanup leaves the newer transport active', () => {
   appStore.getState().setPlaying(true);
   assert.deepEqual(calls, ['play']);
 });
+
+/** Record audio requests without importing the native player. */
+function clipTransport() {
+  const calls: string[] = [];
+  const detach = setTransport({ load: (song, startMs) => { calls.push(`load:${song.id}:${startMs ?? 0}`); }, play: () => { calls.push('play'); }, pause: () => { calls.push('pause'); }, seek: ms => { calls.push(`seek:${ms}`); } });
+  return { calls, detach };
+}
+
+test('starting clip review pauses music and autoplays the first occurrence', () => {
+  const { calls, detach } = clipTransport();
+  try {
+    appStore.getState().startSong('glass');
+    appStore.getState().setQuizToggle(true);
+    appStore.setState({ playbackQueue: ['glass', 'dawn'] });
+    const before = appStore.getState();
+    calls.length = 0;
+    appStore.getState().startClipReview();
+    const state = appStore.getState(), item = state.reviewList.find(item => item.id === state.clipReview!.ids[0])!;
+    const occurrence = getLyrics(item.songId).timeline.find(occurrence => occurrence.lineId === item.lineId)!;
+    assert.deepEqual(calls, ['pause', 'pause', `load:${item.songId}:${occurrence.startMs}`, 'play']);
+    assert.equal(state.clipPlayback?.positionMs, occurrence.startMs);
+    assert.equal(state.playing, true);
+    assert.equal(state.songId, 'glass');
+    assert.equal(state.run, before.run);
+    assert.equal(state.quizToggle, before.quizToggle);
+    assert.equal(state.playbackQueue, before.playbackQueue);
+    assert.equal(state.reviewMix, before.reviewMix);
+  } finally { detach(); }
+});
+
+test('different-song clips load at their start while same-song replays seek', () => {
+  const { calls, detach } = clipTransport();
+  try {
+    appStore.getState().startSong('glass');
+    calls.length = 0;
+    appStore.getState().playClip('dawn', 18000, 24000);
+    appStore.getState().setPlaying(false);
+    appStore.getState().playClip('dawn', 18000, 24000);
+    assert.deepEqual(calls, ['pause', 'load:dawn:18000', 'play', 'pause', 'pause', 'seek:18000', 'play']);
+  } finally { detach(); }
+});
+
+test('clips pause at their end without advancing or changing the main learning state', () => {
+  const { calls, detach } = clipTransport();
+  const nextSong = appStore.getState().nextSong;
+  let nextCalls = 0;
+  try {
+    appStore.getState().startReviewMix();
+    appStore.setState({ playbackQueue: ['dawn', 'glass'], nextSong: () => { nextCalls++; } });
+    const before = appStore.getState();
+    appStore.getState().playClip('rain', 18000, 24000);
+    appStore.getState().updatePlayback(18000, 238000, false);
+    assert.equal(appStore.getState().playing, true);
+    appStore.getState().updatePlayback(23999, 238000, true);
+    assert.equal(appStore.getState().playing, true);
+    appStore.getState().updatePlayback(24100, 238000, true);
+    appStore.getState().updatePlayback(24200, 238000, true);
+    const after = appStore.getState();
+    assert.equal(after.playing, false);
+    assert.equal(after.clipPlayback?.positionMs, 24000);
+    assert.equal(after.positionMs, before.positionMs);
+    assert.equal(after.songId, before.songId);
+    assert.equal(after.lineIndex, before.lineIndex);
+    assert.equal(after.quizToggle, before.quizToggle);
+    assert.equal(after.mode, before.mode);
+    assert.equal(after.run, before.run);
+    assert.equal(after.reviewMix, before.reviewMix);
+    assert.equal(after.playbackQueue, before.playbackQueue);
+    assert.equal(nextCalls, 0);
+    assert.equal(calls.at(-1), 'pause');
+    assert.equal(calls.filter(call => call === 'pause').length, 2);
+  } finally { appStore.setState({ nextSong }); detach(); }
+});
+
+test('Next autoplays and finishing or leaving review pauses audio', () => {
+  const { calls, detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview();
+    appStore.getState().nextClip();
+    const state = appStore.getState(), item = state.reviewList.find(item => item.id === state.clipReview!.ids[1])!;
+    const occurrence = getLyrics(item.songId).timeline.find(occurrence => occurrence.lineId === item.lineId)!;
+    assert.equal(state.clipPlayback?.startMs, occurrence.startMs);
+    assert.equal(state.clipPlayback?.songId, item.songId);
+    assert.equal(state.playing, true);
+    appStore.getState().stopClipReview();
+    assert.equal(appStore.getState().playing, false);
+    assert.equal(appStore.getState().clipReview, null);
+    assert.equal(calls.at(-1), 'pause');
+    appStore.getState().startClipReview();
+    while (appStore.getState().clipReview) appStore.getState().nextClip();
+    assert.equal(appStore.getState().playing, false);
+    assert.equal(calls.at(-1), 'pause');
+  } finally { detach(); }
+});
+
+test('moving or removing the current review line pauses its old clip', () => {
+  const { detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview();
+    let state = appStore.getState(), item = state.reviewList.find(item => item.id === state.clipReview!.ids[0])!;
+    const target = getLyrics(item.songId).lines.find(line => !state.reviewList.some(item => item.lineId === line.id))!;
+    appStore.getState().moveReviewLine(item.id, target.id);
+    assert.equal(appStore.getState().playing, false);
+    appStore.getState().startClipReview();
+    state = appStore.getState();
+    appStore.getState().removeReviewLine(state.clipReview!.ids[0]!);
+    assert.equal(appStore.getState().playing, false);
+  } finally { detach(); }
+});
+
+test('main player resumes its original song and position after a clip', () => {
+  const { calls, detach } = clipTransport();
+  try {
+    appStore.getState().startSong('glass');
+    appStore.getState().updatePlayback(9000, 200000, true);
+    const run = appStore.getState().run;
+    appStore.getState().playClip('dawn', 18000, 24000);
+    appStore.getState().stopClipReview();
+    calls.length = 0;
+    appStore.getState().setPlaying(true);
+    assert.deepEqual(calls, ['pause', 'load:glass:9000', 'play']);
+    assert.equal(appStore.getState().clipPlayback, null);
+    assert.equal(appStore.getState().run, run);
+  } finally { detach(); }
+});
+
+test('clip review uses the first occurrence when the line repeats', () => {
+  const { calls, detach } = clipTransport();
+  try {
+    const lyrics = getLyrics('dawn'), first = { ...lyrics.timeline[0]!, startMs: 1000, endMs: 6000 };
+    libraryStore.getState().setLyricsResult('dawn', 'synced', { ...lyrics, timeline: [first, { ...first, startMs: 11000, endMs: 16000 }] });
+    appStore.setState({ reviewList: [{ id: 'repeated', songId: 'dawn', lineId: first.lineId, kind: 'new' }] });
+    appStore.getState().startClipReview();
+    assert.deepEqual(calls, ['pause', 'pause', 'load:dawn:1000', 'play']);
+    assert.equal(appStore.getState().clipPlayback?.endMs, 6000);
+  } finally { detach(); }
+});
+
+test('main-player line seeking restores the original source after a different-song clip', () => {
+  const { calls, detach } = clipTransport();
+  try {
+    appStore.getState().startSong('glass');
+    appStore.getState().playClip('dawn', 18000, 24000);
+    appStore.getState().stopClipReview();
+    calls.length = 0;
+    appStore.getState().jumpToLine(2);
+    assert.deepEqual(calls, ['load:glass:18000']);
+    assert.equal(appStore.getState().clipPlayback, null);
+    assert.equal(appStore.getState().playing, false);
+    assert.equal(appStore.getState().positionMs, 18000);
+  } finally { detach(); }
+});

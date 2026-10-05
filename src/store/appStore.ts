@@ -7,14 +7,22 @@ import { getAlbumSongs, getSong, getLyrics, occurrenceLine, hasTranslations, lib
 import { getVisibleSongs, isHiddenSong } from '@/data/libraryVisibility';
 import type { ClipReview, ListenMode, QuizMode, QuizToggle, ReviewList, ReviewMix, Run, Song, Rank } from '@/types/domain';
 
-export type Transport = { load(song: Song): void; play(): void; pause(): void; seek(ms: number): void };
+export type Transport = { load(song: Song, startMs?: number): void; play(): void; pause(): void; seek(ms: number): void };
 const noopTransport: Transport = { load() {}, play() {}, pause() {}, seek() {} };
-let transport = noopTransport;
+let transport = noopTransport, loadedSongId: string | null = null;
 /** Cleanup only detaches the transport it installed. */
-export const setTransport = (next: Transport) => { transport = next; return () => { if (transport !== next) return false; transport = noopTransport; return true; }; };
+export const setTransport = (next: Transport) => { transport = next; loadedSongId = null; return () => { if (transport !== next) return false; transport = noopTransport; return true; }; };
 
 /** Load and play the song after publishing its queue position. */
-function playSong(id: string) { prioritizeTranslations([id, ...(appStore.getState().playbackQueue ?? appStore.getState().reviewMix?.songIds ?? [])]); const song = getSong(id); if (song) { transport.load(song); transport.play(); } }
+function playSong(id: string) { appStore.setState({ clipPlayback: null }); prioritizeTranslations([id, ...(appStore.getState().playbackQueue ?? appStore.getState().reviewMix?.songIds ?? [])]); const song = getSong(id); if (song) { loadedSongId = id; transport.load(song); transport.play(); } }
+
+/** Play the first occurrence of the current review line. */
+function playReviewClip() {
+  const state = appStore.getState(), clip = state.clipReview;
+  const item = state.reviewList.find(item => item.id === clip?.ids[clip.index]);
+  const occurrence = item && getLyrics(item.songId).timeline.find(occurrence => occurrence.lineId === item.lineId);
+  if (item && occurrence) state.playClip(item.songId, occurrence.startMs, occurrence.endMs);
+}
 
 const newRun = (): Run => ({ choices: {}, answers: {}, combo: 0, bestCombo: 0, finished: false });
 
@@ -41,6 +49,7 @@ export function getRunSummary(song: Song, run: Run) {
 type AppState = {
   positionMs: number; durationMs: number; playbackError: string | null; songId: string | null; lineIndex: number; quizToggle: QuizToggle; mode: ListenMode | QuizMode;
   ranks: Record<string, Rank>; lastSyncAt: number | null; lastScanAt: number | null; playing: boolean; hideSongsWithoutSyncedLyrics: boolean; playbackQueue: string[] | null; reviewList: ReviewList; run: Run;
+  clipPlayback: { songId: string; startMs: number; endMs: number; positionMs: number } | null;
   reviewMix: ReviewMix | null; clipReview: ClipReview | null; addedId: string | null; addedExpiresAt: number | null; nextReviewId: number;
   startSong: (songId: string) => void; startAlbum: (albumId: string, shuffle?: boolean) => void; restartRun: () => void; setQuizToggle: (enabled: boolean) => void;
   startReviewMix: () => void; finishReviewMix: () => void; nextSong: () => void; previousSong: () => void;
@@ -49,7 +58,7 @@ type AppState = {
   toggleHideSongsWithoutSyncedLyrics: () => void;
   jumpToLine: (index: number) => void; answer: (choice: string) => void; advanceLine: () => void;
   updatePlayback: (positionMs: number, durationMs: number, playing: boolean) => void; completeRun: () => void;
-  setPlaying: (playing: boolean) => void;
+  setPlaying: (playing: boolean) => void; playClip: (songId: string, startMs: number, endMs: number) => void; stopClipReview: () => void;
   addLostMark: () => void; undoLostMark: () => void; dismissToast: () => void;
   moveReviewLine: (id: string, lineId: string) => void; removeReviewLine: (id: string) => void;
   startClipReview: () => void; answerClip: (choice: string) => void; nextClip: () => void;
@@ -60,7 +69,7 @@ type AppState = {
 export const appStore = create<AppState>()(persist((set, get) => ({
   positionMs: 0, durationMs: 0, playbackError: null, songId: null, lineIndex: 0, quizToggle: false, mode: 'listen', playing: false, ranks: {}, lastSyncAt: null, lastScanAt: null,
   showTranslations: false, translationPrompted: false, hideSongsWithoutSyncedLyrics: true, playbackQueue: null, reviewList: [], run: newRun(),
-  reviewMix: null, clipReview: null, addedId: null, addedExpiresAt: null, nextReviewId: 1,
+  reviewMix: null, clipReview: null, clipPlayback: null, addedId: null, addedExpiresAt: null, nextReviewId: 1,
   startSong: songId => {
     if (!getSong(songId)) return;
     const state = get(), quizToggle = hasTranslations(songId) && (state.reviewMix?.previousQuizToggle ?? state.quizToggle);
@@ -93,7 +102,7 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     return { clipReview: { ...clip, choices: { ...clip.choices, [item.lineId]: getAnswers(song, index) } } };
   }),
   toggleHideSongsWithoutSyncedLyrics: () => set(state => ({ hideSongsWithoutSyncedLyrics: !state.hideSongsWithoutSyncedLyrics })),
-  restartRun: () => { set({ lineIndex: 0, positionMs: 0, run: newRun(), playing: true }); transport.seek(0); transport.play(); },
+  restartRun: () => { set({ lineIndex: 0, positionMs: 0, run: newRun() }); if (!get().clipPlayback) transport.seek(0); get().setPlaying(true); },
   setQuizToggle: enabled => { if (enabled && !hasTranslations(get().songId)) return; set({ quizToggle: enabled, mode: enabled ? 'quiz' : 'listen', run: newRun() }); },
   startReviewMix: () => {
     const state = get(), ready = readyReviewLines(get().reviewList);
@@ -142,9 +151,31 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     const timeline = getLyrics(get().songId).timeline;
     if (!timeline.length) return;
     const positionMs = index < 0 ? 0 : Math.max(0, timeline[Math.min(index, timeline.length - 1)]!.startMs), lineIndex = currentOccurrence(timeline, positionMs);
-    set({ lineIndex, positionMs }); transport.seek(positionMs);
+    const clip = get().clipPlayback, song = getSong(get().songId);
+    set({ lineIndex, positionMs, clipPlayback: null });
+    if (clip && song && loadedSongId !== song.id) { loadedSongId = song.id; transport.load(song, positionMs); }
+    else transport.seek(positionMs);
   },
+  playClip: (songId, startMs, endMs) => {
+    const song = getSong(songId);
+    if (!song || startMs < 0 || endMs <= startMs) return;
+    transport.pause();
+    set({ clipPlayback: { songId, startMs, endMs, positionMs: startMs }, playing: true, playbackError: null });
+    if (loadedSongId !== songId) { loadedSongId = songId; transport.load(song, startMs); }
+    else transport.seek(startMs);
+    transport.play();
+  },
+  stopClipReview: () => { get().setPlaying(false); set({ clipReview: null }); },
   updatePlayback: (positionMs, durationMs, playing) => {
+    const clip = get().clipPlayback;
+    if (clip) {
+      // Native seek/buffering emits paused status before the requested play starts.
+      const ended = positionMs >= Math.min(clip.endMs, durationMs || clip.endMs);
+      const wasPlaying = get().playing;
+      set({ clipPlayback: { ...clip, positionMs: Math.min(positionMs, clip.endMs) }, playing: !ended && wasPlaying });
+      if (ended && wasPlaying) transport.pause();
+      return;
+    }
     const lineIndex = currentOccurrence(getLyrics(get().songId).timeline, positionMs);
     set(state => ({ positionMs, durationMs, playing, ...(lineIndex !== state.lineIndex ? { lineIndex } : {}) }));
   },
@@ -174,7 +205,18 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     if (state.lineIndex + 1 >= length) { if (state.quizToggle) state.completeRun(); else state.nextSong(); }
     else state.jumpToLine(state.lineIndex + 1);
   },
-  setPlaying: playing => { set({ playing }); if (playing) transport.play(); else transport.pause(); },
+  setPlaying: playing => {
+    const state = get();
+    if (playing && state.clipPlayback) {
+      const song = getSong(state.songId);
+      if (!song) return;
+      transport.pause();
+      set({ clipPlayback: null, playing: true });
+      if (loadedSongId !== song.id) { loadedSongId = song.id; transport.load(song, state.positionMs); }
+      else transport.seek(state.positionMs);
+    } else set({ playing });
+    if (playing) transport.play(); else transport.pause();
+  },
   addLostMark: () => set(state => {
     let line = occurrenceLine(state.songId, state.lineIndex);
     for (let index = state.lineIndex - 1; line && !isJapanese(getLineText(line)) && index >= 0; index--) line = occurrenceLine(state.songId, index);
@@ -205,7 +247,7 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     return { reviewList: state.reviewList.filter(line => line.id !== id),
       clipReview: clip && ids ? ids.length ? { ...clip, ids, index: Math.min(clip.index, ids.length - 1), answered: null, choice: null } : null : clip };
   }),
-  startClipReview: () => set(state => ({ clipReview: { ids: readyReviewLines(state.reviewList).map(line => line.id), index: 0, answered: null, choice: null, choices: {} } })),
+  startClipReview: () => { get().setPlaying(false); set(state => ({ clipReview: { ids: readyReviewLines(state.reviewList).map(line => line.id), index: 0, answered: null, choice: null, choices: {} } })); playReviewClip(); },
   answerClip: choice => set(state => {
     const clip = state.clipReview;
     if (!clip || clip.answered !== null) return state;
@@ -215,11 +257,11 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     const correct = choice === line.translation;
     return { clipReview: { ...clip, answered: correct, choice }, reviewList: state.reviewList.map(line => line.id !== id ? line : correct ? { ...line, kind: 'later' as const } : { ...line, kind: 'due' as const, misses: line.kind === 'due' ? line.misses + 1 : 1 }) };
   }),
-  nextClip: () => set(state => {
+  nextClip: () => { get().setPlaying(false); set(state => {
     const clip = state.clipReview;
     if (!clip) return state;
     return { clipReview: clip.index + 1 < clip.ids.length ? { ...clip, index: clip.index + 1, answered: null, choice: null } : null };
-  }),
+  }); playReviewClip(); },
   sendToReview: (lineId, enabled) => set(state => {
     if (!getLyrics(state.songId).lines.some(line => line.id === lineId && isJapanese(getLineText(line)))) return state;
     const exists = state.reviewList.some(line => line.lineId === lineId);
@@ -251,7 +293,12 @@ export function resetAppState() {
 }
 
 /** Cache choices as the current line changes, including repeated occurrences and edited clips. */
-appStore.subscribe(state => {
-  if (state.quizToggle) state.ensureChoices();
+appStore.subscribe((state, previous) => {
+  if (state.quizToggle && !state.clipPlayback) state.ensureChoices();
   if (state.clipReview) state.ensureClipChoices();
+  if (state.clipPlayback && state.playing && (state.reviewList !== previous.reviewList || state.clipReview !== previous.clipReview) && (state.clipReview || previous.clipReview)) {
+    const clip = state.clipReview, item = state.reviewList.find(item => item.id === clip?.ids[clip.index]);
+    const occurrence = item && getLyrics(item.songId).timeline.find(occurrence => occurrence.lineId === item.lineId);
+    if (!item || item.songId !== state.clipPlayback.songId || occurrence?.startMs !== state.clipPlayback.startMs || occurrence.endMs !== state.clipPlayback.endMs) state.setPlaying(false);
+  }
 });

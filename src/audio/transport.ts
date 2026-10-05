@@ -12,15 +12,35 @@ export async function setupTransport(valid = () => true) {
   await setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' });
   if (!valid()) return () => {};
   const player = createAudioPlayer(null, { updateInterval: 200, keepAudioSessionActive: true });
-  let song: Song | null = null, submitted = false, finished = false, awaitingStart = false;
-  const fail = (error: unknown) => appStore.setState({ playbackError: error instanceof Error ? error.message : typeof error === 'string' ? error : 'Could not play this song', playing: false });
+  let song: Song | null = null, submitted = false, finished = false, awaitingStart = false, seeking = false, wantsPlay = false, startMs = 0, revision = 0;
+  const fail = (error: unknown) => { wantsPlay = false; appStore.setState({ playbackError: error instanceof Error ? error.message : typeof error === 'string' ? error : 'Could not play this song', playing: false }); };
+  /** Pause through seeks; only the latest request may resume playback. */
+  const seek = (ms: number) => {
+    startMs = ms;
+    if (awaitingStart) return;
+    const request = ++revision;
+    seeking = true;
+    player.pause();
+    void player.seekTo(ms / 1000, 0, 0).then(() => {
+      if (request !== revision) return;
+      seeking = false;
+      if (wantsPlay) player.play();
+    }).catch(error => { if (request === revision) { seeking = false; fail(error); } });
+  };
   const subscription = player.addListener('playbackStatusUpdate', status => {
     if (!song) return;
     if (status.error) { fail(status.error); return; }
-    if (!status.isLoaded || awaitingStart && status.currentTime >= 1) return;
-    awaitingStart = false;
+    if (!status.isLoaded || seeking) return;
+    if (awaitingStart) {
+      if (status.currentTime >= 1) return;
+      awaitingStart = false;
+      seek(startMs);
+      return;
+    }
     const positionMs = status.currentTime * 1000, durationMs = (status.duration || song.duration) * 1000;
+    const clip = appStore.getState().clipPlayback;
     appStore.getState().updatePlayback(positionMs, durationMs, status.playing);
+    if (clip) return;
     if (!submitted && positionMs >= Math.min(durationMs / 2, 240000) && durationMs > 0) {
       submitted = true;
       const session = sessionStore.getState().session, at = Date.now();
@@ -35,19 +55,20 @@ export async function setupTransport(valid = () => true) {
     }
   });
   const detach = setTransport({
-    load: next => {
+    load: (next, offset = 0) => {
       const session = sessionStore.getState().session;
       if (!session) return;
+      ++revision; player.pause(); wantsPlay = false; seeking = false; startMs = offset;
       song = next; submitted = false; finished = false; awaitingStart = true;
       try {
         player.replace({ uri: mediaUrl(session, 'stream', next.id) });
         player.setActiveForLockScreen(true, { title: next.title, artist: next.artist, albumTitle: next.album, artworkUrl: next.coverArt ? mediaUrl(session, 'getCoverArt', next.coverArt, 600) : undefined }, { showSeekBackward: false, showSeekForward: false });
-        void request(session, 'scrobble', { id: next.id, submission: false }).catch(() => appStore.setState({ playbackError: 'Could not announce this song to the server' }));
+        if (!appStore.getState().clipPlayback) void request(session, 'scrobble', { id: next.id, submission: false }).catch(() => appStore.setState({ playbackError: 'Could not announce this song to the server' }));
       } catch (error) { fail(error); }
     },
-    play: () => { try { player.play(); } catch (error) { fail(error); } },
-    pause: () => player.pause(),
-    seek: ms => { void player.seekTo(ms / 1000).catch(fail); },
+    play: () => { wantsPlay = true; try { if (!awaitingStart && !seeking) player.play(); } catch (error) { fail(error); } },
+    pause: () => { wantsPlay = false; player.pause(); },
+    seek,
   });
-  return () => { song = null; player.pause(); player.clearLockScreenControls(); subscription.remove(); player.remove(); if (detach()) void setIsAudioActiveAsync(false).catch(() => {}); };
+  return () => { ++revision; wantsPlay = false; song = null; player.pause(); player.clearLockScreenControls(); subscription.remove(); player.remove(); if (detach()) void setIsAudioActiveAsync(false).catch(() => {}); };
 }

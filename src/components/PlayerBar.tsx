@@ -11,7 +11,7 @@ const time = (ms: number) => { const seconds = Math.floor(ms / 1000); return `${
 export function PlayerBar() {
   const insets = useSafeAreaInsets(), songId = appStore(state => state.songId);
   const song = libraryStore(state => songId ? state.bySong[songId] : undefined);
-  const playing = appStore(state => state.playing), index = appStore(state => state.lineIndex);
+  const playing = appStore(state => state.playing && !state.clipPlayback), index = appStore(state => state.lineIndex);
   const position = appStore(state => state.positionMs), duration = appStore(state => state.durationMs);
   if (!song) return null;
   const synced = song.lyricsStatus === 'synced';
