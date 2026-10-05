@@ -12,7 +12,7 @@ export async function setupTransport(valid = () => true) {
   await setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' });
   if (!valid()) return () => {};
   const player = createAudioPlayer(null, { updateInterval: 200, keepAudioSessionActive: true });
-  let song: Song | null = null, submitted = false, finished = false, awaitingStart = false, seeking = false, wantsPlay = false, startMs = 0, revision = 0;
+  let song: Song | null = null, submitted = false, finished = false, awaitingStart = false, seeking = false, wantsPlay = false, pausePending = false, startMs = 0, revision = 0;
   const fail = (error: unknown) => { wantsPlay = false; appStore.setState({ playbackError: error instanceof Error ? error.message : typeof error === 'string' ? error : 'Could not play this song', playing: false }); };
   /** Pause through seeks; only the latest request may resume playback. */
   const seek = (ms: number) => {
@@ -28,6 +28,7 @@ export async function setupTransport(valid = () => true) {
     }).catch(error => { if (request === revision) { seeking = false; fail(error); } });
   };
   const subscription = player.addListener('playbackStatusUpdate', status => {
+    if (!status.playing) pausePending = false;
     if (!song) return;
     if (status.error) { fail(status.error); return; }
     if (!status.isLoaded || seeking) return;
@@ -36,6 +37,13 @@ export async function setupTransport(valid = () => true) {
       awaitingStart = false;
       seek(startMs);
       return;
+    }
+    // A queued playing status cannot acknowledge a pause or release an answer wait.
+    if (status.playing && !wantsPlay && !pausePending && !seeking && !awaitingStart) {
+      wantsPlay = true;
+      appStore.getState().setPlaying(true);
+      // Releasing the last line completes the run and pauses again.
+      if (!wantsPlay) return;
     }
     const positionMs = status.currentTime * 1000, durationMs = (status.duration || song.duration) * 1000;
     const clip = appStore.getState().clipPlayback;
@@ -48,7 +56,7 @@ export async function setupTransport(valid = () => true) {
       void savePlayed(song.id, at).catch(() => appStore.setState({ playbackError: 'Could not save Recently played' }));
       if (session) void request(session, 'scrobble', { id: song.id, submission: true, time: at }).catch(() => appStore.setState({ playbackError: 'Could not scrobble this song' }));
     }
-    if (status.didJustFinish && !finished) {
+    if (status.didJustFinish && !finished && !appStore.getState().answerWait) {
       finished = true;
       if (appStore.getState().quizToggle && getLyrics(song.id).lines.some(line => line.translation)) appStore.getState().completeRun();
       else appStore.getState().nextSong();
@@ -58,7 +66,7 @@ export async function setupTransport(valid = () => true) {
     load: (next, offset = 0) => {
       const session = sessionStore.getState().session;
       if (!session) return;
-      ++revision; player.pause(); wantsPlay = false; seeking = false; startMs = offset;
+      ++revision; player.pause(); wantsPlay = false; pausePending = false; seeking = false; startMs = offset;
       song = next; submitted = false; finished = false; awaitingStart = true;
       try {
         player.replace({ uri: mediaUrl(session, 'stream', next.id) });
@@ -66,8 +74,8 @@ export async function setupTransport(valid = () => true) {
         if (!appStore.getState().clipPlayback) void request(session, 'scrobble', { id: next.id, submission: false }).catch(() => appStore.setState({ playbackError: 'Could not announce this song to the server' }));
       } catch (error) { fail(error); }
     },
-    play: () => { wantsPlay = true; try { if (!awaitingStart && !seeking) player.play(); } catch (error) { fail(error); } },
-    pause: () => { wantsPlay = false; player.pause(); },
+    play: () => { wantsPlay = true; pausePending = false; try { if (!awaitingStart && !seeking) player.play(); } catch (error) { fail(error); } },
+    pause: () => { wantsPlay = false; pausePending = true; player.pause(); },
     seek,
   });
   return () => { ++revision; wantsPlay = false; song = null; player.pause(); player.clearLockScreenControls(); subscription.remove(); player.remove(); if (detach()) void setIsAudioActiveAsync(false).catch(() => {}); };
