@@ -7,13 +7,13 @@ import { IconButton, Label, styles } from './ui';
 import type { ReactNode } from 'react';
 
 /** Logo band on the three tabs; its safe-area background matches the chrome. */
-export function Header({ settings = false }: { settings?: boolean }) {
+export function Header() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   return <View style={{ paddingTop: insets.top, backgroundColor: colors.header }}>
     <View style={[styles.row, { height: 60, paddingLeft: 8, paddingRight: 12, justifyContent: 'space-between' }]}>
       <Image source={require('../../assets/kashikoi-logo.png')} contentFit="contain" contentPosition="left" style={{ width: 210, height: 60 }} accessibilityLabel="Kashi-Koi!" />
-      {settings && <IconButton plain name="settings" size={44} iconScale={0.68} label="Settings" onPress={() => router.push('/settings')} />}
+      <IconButton plain name="settings" size={44} iconScale={0.68} label="Settings" onPress={() => router.push('/settings')} />
     </View>
   </View>;
 }

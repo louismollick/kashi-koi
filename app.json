@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "scheme": "kashikoi",
     "orientation": "portrait",
+    "icon": "./assets/sidestore-icon.png",
     "userInterfaceStyle": "dark",
     "platforms": ["ios"],
     "ios": { "supportsTablet": false, "bundleIdentifier": "com.kashikoi" },
