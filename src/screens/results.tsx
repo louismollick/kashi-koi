@@ -17,6 +17,7 @@ export default function ResultsScreen() {
   const insets = useSafeAreaInsets();
   const songId = appStore(state => state.songId);
   const song = libraryStore(state => songId ? state.bySong[songId] : undefined);
+  libraryStore(state => state.lyrics);
   const run = appStore(state => state.run);
   const { hits, total, missed, rank } = song ? getRunSummary(song, run) : { hits: 0, total: 0, missed: [], rank: 'C' as const };
   const [send, setSend] = useState(() => Object.fromEntries(missed.map(line => [line.id, true])));
@@ -38,7 +39,7 @@ export default function ResultsScreen() {
       <Label style={{ fontSize: 18, fontWeight: '600' }}>Missed lines</Label>
       {!missed.length && <Label muted>No missed lines</Label>}
       {missed.map(line => <PixelFrame key={line.id} fill={colors.surface} contentStyle={[styles.row, { padding: 14 }]}>
-        <View style={{ flex: 1 }}><Label>{getLineText(line)}</Label><Label muted style={{ fontSize: 11, marginTop: 4 }}>send to review</Label></View>
+        <View style={{ flex: 1 }}><Label>{getLineText(line)}</Label><Label muted style={{ marginTop: 4 }}>{line.translation}</Label><Label muted style={{ fontSize: 11, marginTop: 4 }}>send to review</Label></View>
         <PixelToggle label={`Send ${getLineText(line)} to review`} on={send[line.id] ?? false} onPress={() => { const enabled = !send[line.id]; setSend(value => ({ ...value, [line.id]: enabled })); appStore.getState().sendToReview(line.id, enabled); }} />
       </PixelFrame>)}
       <View style={styles.row}>

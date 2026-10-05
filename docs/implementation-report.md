@@ -250,3 +250,29 @@ Screenshots: [login](screenshots/login.png), [library](screenshots/library-real.
 Fix pass: logout invalidates work immediately; failed rescans retain cached lyrics; scan workers drain after write failures; successful lyric replacements prune stale review lines. Playback rejects old-source status events, keeps the preceding line through gaps, waits for transport setup, and stops clips without recursive updates.
 `npm run typecheck`, all 47 plain-Node tests and the iOS rebuild passed. Rechecked login, library/scan, line following through the 0:16–0:20 gap with a preceding-line lost mark, auto-advance, Sync, Rescan and logout on iPhone 17 Pro against Docker Navidrome; logout emptied SQLite and persisted learning state.
 T3 device access was disabled, so native QA used agent-device and simctl. Native setup failures and clip boundaries were not injected, and audible output was not measured; clip review remains gated by missing translations. Stopped only this pass's Metro on 8085; port 8765 was untouched. No commits.
+
+
+## Translations
+
+Implemented phases 1-3 and the docs from phase 4 on `translations`, without commits or pushes. Added the local `KashiJapanese` Expo module, iOS 26 minimum, text-keyed SQLite translation cache, foreground serial queue with playback priority, language download flow and Settings status. Renamed the domain and fixtures to Translation, excluded non-Japanese Lines from learning, and cached shuffled text choices for runs and clips. Listen mode now has the persisted Translations toggle; Results and Edit line show translations. Furigana uses the native tokenizer and tested TypeScript okurigana alignment.
+
+Verification commands:
+
+```sh
+npm test
+npm run typecheck
+grep -rn "meaning\|hasMeanings\|Needs translations" src scripts
+git diff --check
+npx expo prebuild --platform ios --clean
+xcodebuild -workspace ios/KashiKoi.xcworkspace -scheme KashiKoi -configuration Debug -sdk iphonesimulator -destination 'id=9F392E78-0BEE-4A03-A9D2-318A66CD9253' -derivedDataPath /tmp/kashi-translations-build CODE_SIGN_IDENTITY=-
+npx expo export --platform ios --output-dir .expo/translations-export
+xcodebuild -workspace ios/KashiKoi.xcworkspace -scheme KashiKoi -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath /tmp/kashi-translations-device-build CODE_SIGNING_ALLOWED=NO
+```
+
+All 60 Node tests pass, including alignment, Japanese detection, distinct shuffled choices, English-only answering and lost marks, readiness gates, queue priority during active work, persistence, restart/foreground resume, missing language packs, failed batches and writes, Rescan preservation, and persisted settings. Typecheck, diff check, clean prebuild, simulator build and bundle export pass. The terminology grep has no matches. The generated app's minimum OS is 26.0. Local builds use Xcode 27.0 and SDK 27.0; the booted iPhone 17 Pro runs iOS 26.5. The final simulator build has no KashiJapanese Swift warnings or errors; Expo/dependency warnings remain.
+
+Simulator QA used `npx --yes agent-device` and `xcrun simctl` against the existing Docker Navidrome on localhost:4533 and `/tmp/kashi-navidrome/music`. Verified the enabled Quiz toggle, correct translations in both first and middle positions, combo increments, 2 / 3 distinct-Line Results, a missed Line's translation and review toggle, enabled Clips/Songs, clip miss feedback and incremented misses, Edit line translations, a review mix, and Translations hiding/showing furigana and translations. Six cached translations survived Rescan and relaunch; SQLite lyrics rows remained untranslated, and the Translations toggle survived relaunch. Rescan reported two lyric-check errors; cached synced songs remained usable. Metro used port 8086; only this task's Metro process was stopped, and port 8765 was untouched. An initial unsigned app could not write SecureStore; rebuilding with simulator ad hoc signing enabled login.
+
+Screenshots: [listen](screenshots/translations-listen.png), [quiz](screenshots/translations-quiz.png), [results](screenshots/translations-results.png), [review](screenshots/translations-review.png), [clip](screenshots/translations-clip.png), [edit](screenshots/translations-edit.png), [mix](screenshots/translations-mix.png), [settings](screenshots/translations-settings.png).
+
+No plan deviations. Real-phone QA was skipped as requested: Apple's actual language download, cancellation/download continuation and translation quality remain unverified. The CI Xcode 26 / iOS 26.5 SDK build was not run locally. An additional unsigned device-target build passed, including the real Translation framework paths excluded from simulator builds.

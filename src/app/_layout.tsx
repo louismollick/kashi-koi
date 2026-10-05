@@ -1,3 +1,8 @@
+import { AppState } from 'react-native';
+import Japanese from '../../modules/kashi-japanese';
+import { setTranslator, pauseTranslations, prepareTranslation, setTranslationForeground } from '@/japanese/translate';
+import { saveTranslations } from '@/navidrome/db';
+import { libraryStore } from '@/store/libraryStore';
 import Storage from 'expo-sqlite/kv-store';
 import { appStore, hydrateAppState, setTransport } from '@/store/appStore';
 import { setupTransport } from '@/audio/transport';
@@ -7,6 +12,8 @@ import { loadSession, sessionStore } from '@/navidrome/session';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '@/constants/theme';
+
+setTranslator(Japanese, saveTranslations);
 
 const navigationTheme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.bg, card: colors.header, text: colors.text } };
 
@@ -26,8 +33,22 @@ export default function RootLayout() {
       dispose = setTransport({ load: fail, play: fail, pause() {}, seek() {} });
       setTransportReady(session);
     });
-    void syncLibrary();
-    return () => { cancelled = true; dispose?.(); };
+    const start = async () => {
+      void setTranslationForeground(AppState.currentState === 'active');
+      void syncLibrary();
+      try {
+        const status = await Japanese.translationStatus();
+        if (cancelled) return;
+        libraryStore.setState({ translationStatus: status });
+        if (!appStore.getState().translationPrompted && status === 'supported') {
+          appStore.setState({ translationPrompted: true });
+          await prepareTranslation();
+        }
+      } catch { if (!cancelled) libraryStore.setState({ translationError: 'Could not prepare Japanese translation' }); }
+    };
+    void start();
+    const subscription = AppState.addEventListener('change', state => { void setTranslationForeground(state === 'active'); });
+    return () => { cancelled = true; subscription.remove(); dispose?.(); void pauseTranslations(); };
   }, [session]);
   if (!ready || session && transportReady !== session) return null;
   return <ThemeProvider value={navigationTheme}>

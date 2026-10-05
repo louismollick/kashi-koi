@@ -1,3 +1,4 @@
+import { isJapanese } from '@/japanese/text';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,7 +30,7 @@ export default function EditLineScreen() {
         {getLyrics(song.id).lines.slice(Math.max(0, index - 4), Math.min(getLyrics(song.id).lines.length, index + 5)).map(line => {
           const inReview = reviewList.some(entry => entry.id !== item.id && entry.lineId === line.id);
           return <PixelFrame key={line.id} fill={line.id === item.lineId ? colors.coralDeep : colors.surface} contentStyle={[styles.row, { padding: 8 }]}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`Move to ${getLineText(line)}`} disabled={inReview} accessibilityState={{ disabled: inReview }} onPress={() => appStore.getState().moveReviewLine(item.id, line.id)} style={{ flex: 1, padding: 4, opacity: inReview ? 0.45 : 1 }}><Label style={{ fontSize: 16, lineHeight: 25 }}>{getLineText(line)}</Label>{inReview && <Label muted style={{ fontSize: 10 }}>in review</Label>}</Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Move to ${getLineText(line)}`} disabled={inReview || !isJapanese(getLineText(line))} accessibilityState={{ disabled: inReview || !isJapanese(getLineText(line)) }} onPress={() => appStore.getState().moveReviewLine(item.id, line.id)} style={{ flex: 1, padding: 4, opacity: inReview ? 0.45 : 1 }}><Label style={{ fontSize: 16, lineHeight: 25 }}>{getLineText(line)}</Label><Label muted style={{ fontSize: 12 }}>{line.translation}</Label>{inReview && <Label muted style={{ fontSize: 10 }}>in review</Label>}</Pressable>
           <IconButton name="play" label={`Preview ${getLineText(line)}`} size={32} fill={colors.slate} onPress={() => { /* Clip preview is intentionally silent in the UI shell. */ }} />
         </PixelFrame>; })}
       </ScrollView>

@@ -2,8 +2,17 @@ import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { appStore, getRunSummary, setTransport, hydrateAppState, resetAppState } from '../src/store/appStore';
 import { albums, artists, firstSong, songs, songLyrics, fixtureLine, fixtureReviewList } from './fixtures';
-import { getAlbumSongs, getArtistAlbums, getLineText, getLyrics, libraryStore } from '../src/store/libraryStore';
+import { getAlbumSongs, getArtistAlbums, getLineText, getLyrics, libraryStore, occurrenceLine } from '../src/store/libraryStore';
 import { albumHasSyncedLyrics, artistHasSyncedLyrics, getRecentlyPlayed, getReviewMixProgress, getVisibleLibrary, getVisibleSongs } from '../src/data/libraryVisibility';
+
+
+// Existing state sequences choose a translation explicitly, independent of button order.
+const correctAnswer = () => occurrenceLine(appStore.getState().songId, appStore.getState().lineIndex)?.translation ?? 'no translation';
+const clipAnswer = () => {
+  const state = appStore.getState(), clip = state.clipReview!;
+  const item = state.reviewList.find(item => item.id === clip.ids[clip.index])!;
+  return getLyrics(item.songId).lines.find(line => line.id === item.lineId)!.translation!;
+};
 
 const initialState = appStore.getState();
 beforeEach(() => { libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics }); appStore.setState({ ...initialState, songId: firstSong.id, playing: true, lineIndex: 3, reviewList: fixtureReviewList() }, true); });
@@ -32,14 +41,14 @@ test('edit moves a new line and removal persists through the clip flow', () => {
 test('three hits build a headbang combo and a miss resets it without completing due lines', () => {
   appStore.getState().setQuizToggle(true);
   for (let index = 0; index < 3; index++) {
-    appStore.getState().answer(1);
+    appStore.getState().answer(correctAnswer());
     // A second tap during feedback must not count twice.
-    appStore.getState().answer(1);
+    appStore.getState().answer(correctAnswer());
     assert.equal(appStore.getState().run.combo, index + 1);
     appStore.getState().advanceLine();
   }
   assert.equal(appStore.getState().run.combo, 3);
-  appStore.getState().answer(0);
+  appStore.getState().answer('wrong');
   assert.equal(appStore.getState().run.combo, 0);
   assert.equal(appStore.getState().run.bestCombo, 3);
   assert.ok(appStore.getState().reviewList.some(line => line.lineId === fixtureLine('glass-6') && line.kind === 'due'));
@@ -47,13 +56,13 @@ test('three hits build a headbang combo and a miss resets it without completing 
 
 test('clip review is untimed and moves answered new lines onto the later schedule', () => {
   appStore.getState().startClipReview();
-  appStore.getState().answerClip(1);
+  appStore.getState().answerClip(clipAnswer());
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-dawn')?.kind, 'later');
   assert.equal(appStore.getState().clipReview?.index, 0);
   appStore.getState().nextClip();
   assert.equal(appStore.getState().clipReview?.index, 1);
   assert.equal(appStore.getState().clipReview?.answered, null);
-  appStore.getState().answerClip(0);
+  appStore.getState().answerClip('wrong');
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-rain')?.kind, 'due');
 });
 
@@ -75,7 +84,7 @@ test('a full run finishes and only selected misses are sent to review', () => {
   appStore.getState().setQuizToggle(true);
   appStore.getState().jumpToLine(0);
   for (let index = 0; index < getLyrics(firstSong.id).lines.length; index++) {
-    appStore.getState().answer(index === 0 ? 0 : 1);
+    appStore.getState().answer(index === 0 ? 'wrong' : correctAnswer());
     appStore.getState().advanceLine();
   }
   assert.equal(appStore.getState().run.finished, true);
@@ -125,11 +134,11 @@ test('moving a lost mark frees its line without reusing the entry id', () => {
 
 test('moving an answered current clip resets it to new and permits another answer', () => {
   appStore.getState().startClipReview();
-  appStore.getState().answerClip(1);
+  appStore.getState().answerClip(clipAnswer());
   appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-4'));
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-dawn')?.kind, 'new');
   assert.equal(appStore.getState().clipReview?.answered, null);
-  appStore.getState().answerClip(0);
+  appStore.getState().answerClip('wrong');
   assert.equal(appStore.getState().clipReview?.answered, false);
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-dawn')?.kind, 'due');
   appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-5'));
@@ -140,30 +149,30 @@ test('moving an answered current clip resets it to new and permits another answe
 test('revisiting hits and misses preserves their recorded choice and cannot rescore', () => {
   appStore.getState().setQuizToggle(true);
   appStore.getState().jumpToLine(0);
-  appStore.getState().answer(2);
+  appStore.getState().answer('wrong');
   const miss = appStore.getState().run.answers[fixtureLine('dawn-0')];
-  assert.deepEqual(miss, { choice: 2, correct: false });
+  assert.deepEqual(miss, { choice: 'wrong', correct: false });
   appStore.getState().jumpToLine(1);
-  appStore.getState().answer(1);
+  appStore.getState().answer(correctAnswer());
   const hit = appStore.getState().run.answers[fixtureLine('dawn-1')];
-  assert.deepEqual(hit, { choice: 1, correct: true });
+  assert.deepEqual(hit, { choice: correctAnswer(), correct: true });
   appStore.getState().jumpToLine(0);
-  appStore.getState().answer(1);
+  appStore.getState().answer(correctAnswer());
   assert.deepEqual(appStore.getState().run.answers[fixtureLine('dawn-0')], miss);
   assert.equal(appStore.getState().run.combo, 1);
   appStore.getState().jumpToLine(1);
-  appStore.getState().answer(0);
+  appStore.getState().answer('wrong');
   assert.deepEqual(appStore.getState().run.answers[fixtureLine('dawn-1')], hit);
   assert.equal(appStore.getState().run.combo, 1);
   assert.equal(appStore.getState().run.bestCombo, 1);
   appStore.getState().restartRun();
-  appStore.getState().answer(1);
+  appStore.getState().answer(correctAnswer());
   assert.equal(appStore.getState().run.combo, 1);
 });
 
 test('moving onto another review entry is rejected, including later lines', () => {
   appStore.getState().startClipReview();
-  appStore.getState().answerClip(1);
+  appStore.getState().answerClip(clipAnswer());
   const before = appStore.getState();
   appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-2'));
   assert.deepEqual(appStore.getState().reviewList, before.reviewList);
@@ -200,7 +209,7 @@ test('undo has an absolute three-second window which cannot restart after leavin
 test('answering only the last line grades against the entire song and counts skipped lines as misses', () => {
   appStore.getState().setQuizToggle(true);
   appStore.getState().jumpToLine(getLyrics(firstSong.id).lines.length - 1);
-  appStore.getState().answer(1);
+  appStore.getState().answer(correctAnswer());
   appStore.getState().advanceLine();
   const summary = getRunSummary(firstSong, appStore.getState().run);
   assert.equal(appStore.getState().run.finished, true);
@@ -210,7 +219,7 @@ test('answering only the last line grades against the entire song and counts ski
   assert.equal(summary.missed.length, 13);
   appStore.getState().restartRun();
   for (let index = 0; index < getLyrics(firstSong.id).lines.length; index++) {
-    appStore.getState().answer(1);
+    appStore.getState().answer(correctAnswer());
     appStore.getState().advanceLine();
   }
   assert.equal(getRunSummary(firstSong, appStore.getState().run).rank, 'S');
@@ -231,7 +240,7 @@ test('result entry ids also survive moving and adding the original line again', 
 
 test('moving another clip preserves the current answer', () => {
   appStore.getState().startClipReview();
-  appStore.getState().answerClip(1);
+  appStore.getState().answerClip(clipAnswer());
   appStore.getState().moveReviewLine('new-rain', fixtureLine('rain-4'));
   assert.equal(appStore.getState().clipReview?.answered, true);
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-rain')?.kind, 'new');
@@ -289,7 +298,7 @@ test('a no-lyrics song starts safely in listen and quiz modes with working trans
     const before = appStore.getState().reviewList;
     appStore.getState().jumpToLine(-1);
     appStore.getState().jumpToLine(100);
-    appStore.getState().answer(1);
+    appStore.getState().answer(correctAnswer());
     appStore.getState().addLostMark();
     appStore.getState().advanceLine();
     assert.equal(appStore.getState().lineIndex, 0);
@@ -491,7 +500,7 @@ test('learning state survives hydration while playback stays transient, and rese
   appStore.getState().jumpToLine(5);
   appStore.getState().addLostMark();
   const mark = appStore.getState().reviewList.at(-1)!;
-  appStore.setState({ ranks: { dawn: 'A' }, lastSyncAt: 1234, hideSongsWithoutSyncedLyrics: false });
+  appStore.setState({ ranks: { dawn: 'A' }, lastSyncAt: 1234, hideSongsWithoutSyncedLyrics: false, showTranslations: true, translationPrompted: true });
   const saved = values.get('learning-state')!;
   const data = JSON.parse(saved) as { state: Record<string, unknown> };
   assert.equal('songId' in data.state, false);
@@ -502,11 +511,15 @@ test('learning state survives hydration while playback stays transient, and rese
   await appStore.persist.rehydrate();
   assert.ok(appStore.getState().reviewList.some(item => item.id === mark.id && item.lineId === mark.lineId));
   assert.equal(appStore.getState().ranks.dawn, 'A');
+  assert.equal(appStore.getState().showTranslations, true);
+  assert.equal(appStore.getState().translationPrompted, true);
   assert.equal(appStore.getState().songId, null);
   assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, false);
   await resetAppState();
   assert.equal(values.has('learning-state'), false);
   assert.deepEqual(appStore.getState().reviewList, []);
+  assert.equal(appStore.getState().showTranslations, false);
+  assert.equal(appStore.getState().translationPrompted, false);
 });
 
 test('a lost mark in an instrumental gap marks the preceding line', () => {

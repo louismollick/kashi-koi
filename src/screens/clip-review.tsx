@@ -10,13 +10,12 @@ import { LineCard } from '@/components/LineCard';
 import { Answers } from '@/components/Answers';
 import { Button, IconButton, Label, Tag, styles } from '@/components/ui';
 
-/** Untimed meaning match for one review line, with shared editing and Next. */
+/** Untimed Meaning Match for one review line, with shared editing and Next. */
 export default function ClipReviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const clip = appStore(state => state.clipReview);
   const reviewList = appStore(state => state.reviewList);
-  const [selected, setSelected] = useState<number | null>(null);
   const [replaying, setReplaying] = useState(false);
   const item = reviewList.find(line => line.id === clip?.ids[clip.index]);
   const endMs = item ? getLyrics(item.songId).timeline.find(occurrence => occurrence.lineId === item.lineId)?.endMs : undefined;
@@ -44,10 +43,10 @@ export default function ClipReviewScreen() {
         <IconButton name={replaying ? 'pause' : 'play'} label="Replay clip" fill={colors.coral} size={64} onPress={() => { if (replaying) appStore.getState().setPlaying(false); else { appStore.getState().startSong(song.id); appStore.getState().jumpToLine(lineIndex); } setReplaying(value => !value); }} />
         <View><Label style={{ fontSize: 13 }}>{song.title} · {song.artist}</Label><Label muted style={{ fontSize: 11 }}>{Math.floor(occurrence.startMs / 1000)}s to {Math.floor(occurrence.endMs / 1000)}s · tap to replay</Label></View>
       </View>
-      <Answers song={song} lineIndex={lineIndex} selected={clip.answered === null ? null : selected} onAnswer={choice => { if (clip.answered === null) { setSelected(choice); appStore.getState().answerClip(choice); } }} />
+      <Answers choices={clip.choices[line.id] ?? []} translation={line.translation} selected={clip.choice} onAnswer={choice => appStore.getState().answerClip(choice)} />
       {clip.answered !== null && <View style={[styles.row, { justifyContent: 'space-between' }]}>
         <Tag fill={colors.slate}>{clip.answered ? 'next in 9 days' : 'next tomorrow'}</Tag>
-        <Button label="Next clip" fill={colors.coral} onPress={() => { appStore.getState().nextClip(); setSelected(null); setReplaying(false); }}><Label>Next ▸</Label></Button>
+        <Button label="Next clip" fill={colors.coral} onPress={() => { appStore.getState().nextClip(); setReplaying(false); }}><Label>Next ▸</Label></Button>
       </View>}
     </ScrollView>
   </View>;

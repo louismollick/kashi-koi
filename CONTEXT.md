@@ -11,12 +11,20 @@ A track in the user's Navidrome library, with lyrics provided by Navidrome.
 _Avoid_: Track (except when talking about playback)
 
 **Line**:
-One distinct line of a song's lyrics, and the unit of learning. Understanding is tracked per line, not per word. A line repeated in a song (a chorus) is one line that occurs several times.
+One distinct line of a song's lyrics, and the unit of learning. Understanding is tracked per line, not per word. A line repeated in a song (a chorus) is one line that occurs several times. A line with no Japanese in it is treated like an instrumental gap: shown, but never quizzed or reviewed.
 _Avoid_: Sentence, lyric, card
 
 **Word**:
 A dictionary term inside a line. Looking up words helps you understand a line, but words are not tracked or scheduled for their own sake.
 _Avoid_: Vocab, card
+
+**Translation**:
+A machine translation of a line into English, made on the phone. It is the right answer in Meaning Match, but it can miss what the line actually means.
+_Avoid_: Meaning, gloss
+
+**Furigana**:
+Kana readings shown above the kanji in a line, guessed on the phone. Quiz mode and Clip review always show them; listen mode shows them with the Translations toggle. They are dictionary readings and can miss how a word is actually sung.
+_Avoid_: Ruby, readings
 
 **Synced lyrics**:
 Lyrics with a timestamp per line, which is what the app needs to follow, mark and quiz a song. Plain-text lyrics without timestamps count as no lyrics.
@@ -27,7 +35,7 @@ A song without synced lyrics, left out of browsing, search, Recently played and 
 _Avoid_: Filtered song, unsupported song
 
 **Lyrics scan**:
-A pass over the whole library that checks each song for synced lyrics and caches the result on the phone, so hidden songs can be known without asking the server each time.
+A pass over the whole library that checks each song for synced lyrics, translates them, and caches the result on the phone, so hidden songs can be known without asking the server each time.
 _Avoid_: Sync, index
 
 **Library sync**:
@@ -42,6 +50,10 @@ The switch on the player that decides how songs play: quiz mode when on, listen 
 **Listen mode**:
 Playback with the quiz toggle off. A normal player whose only learning input is the lost mark. Nothing in listen mode counts toward a song being understood.
 _Avoid_: Walk mode, passive mode
+
+**Translations toggle**:
+A listen-mode switch that shows each line's translation and furigana. Off by default, so listening stays a test of what you understand.
+_Avoid_: Help mode, hints
 
 **Quiz mode**:
 Playback with the quiz toggle on. Every song played is a run of Meaning Match. Everything scored here is tested, never self-reported.
@@ -74,7 +86,7 @@ A playlist of songs that contain due lines, played as normal runs. Starting one 
 _Avoid_: Review playlist, station
 
 **Meaning Match**:
-The game played in quiz mode: as each line is sung, the user picks its meaning from a few choices drawn from the same song.
+The game played in quiz mode: as each line is sung, the user picks its translation from a few choices drawn from the same song.
 _Avoid_: Quiz, rhythm mode
 
 **Run**:

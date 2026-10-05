@@ -1,7 +1,7 @@
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { getLineText, getSong, getLyrics, libraryStore, hasMeanings } from '@/store/libraryStore';
+import { getLineText, getSong, getLyrics, libraryStore, readyReviewLines } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
 import { Header } from '@/components/Header';
 import { Cover } from '@/components/Cover';
@@ -36,20 +36,22 @@ export default function ReviewScreen() {
   const newLines = reviewList.filter(line => line.kind === 'new');
   const dueLines = reviewList.filter(line => line.kind === 'due');
   const count = newLines.length + dueLines.length;
-  const songCount = new Set([...newLines, ...dueLines].map(line => line.songId)).size;
+  const ready = readyReviewLines(reviewList);
+  const waiting = count - ready.length;
+  const songCount = new Set(ready.map(line => line.songId)).size;
   return <View style={styles.page}><Header />
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={[styles.row, { alignItems: 'stretch' }]}>
-        <Button label="Start clip review" fill={colors.coral} border="#ff9aa5" disabled={!count || !reviewList.filter(item => item.kind !== 'later').every(item => hasMeanings(item.songId))} style={{ flex: 1 }} contentStyle={{ minHeight: 84 }} onPress={() => { appStore.getState().startClipReview(); router.push('/clip-review'); }}>
+        <Button label="Start clip review" fill={colors.coral} border="#ff9aa5" disabled={!ready.length} style={{ flex: 1 }} contentStyle={{ minHeight: 84 }} onPress={() => { appStore.getState().startClipReview(); router.push('/clip-review'); }}>
           <View style={styles.row}><Icon name="play" size={30} color={colors.cream} /><Label style={styles.title}>Clips</Label></View>
-          <Label style={{ fontSize: 13, marginTop: 2 }}>{count} lines · ~4 min</Label>
+          <Label style={{ fontSize: 13, marginTop: 2 }}>{ready.length} lines · ~4 min</Label>
         </Button>
-        <Button label="Start review mix" fill={colors.slate} border="#4b4f80" disabled={!count || !reviewList.filter(item => item.kind !== 'later').every(item => hasMeanings(item.songId))} style={{ flex: 1 }} contentStyle={{ minHeight: 84 }} onPress={() => { appStore.getState().startReviewMix(); router.push('/player'); }}>
+        <Button label="Start review mix" fill={colors.slate} border="#4b4f80" disabled={!ready.length} style={{ flex: 1 }} contentStyle={{ minHeight: 84 }} onPress={() => { appStore.getState().startReviewMix(); router.push('/player'); }}>
           <View style={styles.row}><Icon name="musicFilled" size={30} color={colors.lavender} /><Label style={styles.title}>Songs</Label></View>
           <Label style={{ fontSize: 13, marginTop: 2, color: '#d6d2ee' }}>{songCount} songs · {songCount * 4} min</Label>
         </Button>
       </View>
-      {count > 0 && !reviewList.filter(item => item.kind !== 'later').every(item => hasMeanings(item.songId)) && <Label muted>Needs translations</Label>}
+      {waiting > 0 && <Label muted>{waiting} lines waiting for translations</Label>}
       <SectionHeader title="New from listening" hint="Check the line" />
       {newLines.map(item => <ReviewLineRow key={item.id} item={item} />)}
       <SectionHeader title="Due today" count={dueLines.length} hint="Review these lines" />

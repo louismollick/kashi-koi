@@ -1,3 +1,4 @@
+import { prepareTranslation } from '@/japanese/translate';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { colors } from '@/constants/theme';
@@ -12,6 +13,8 @@ import { Button, Label, PixelToggle, SectionHeader, styles } from '@/components/
 const date = (at: number | null) => at ? new Date(at).toLocaleString() : 'never';
 /** Account, library sync, artwork refresh and lyrics scan controls. */
 export default function SettingsScreen() {
+  const status = libraryStore(state => state.translationStatus), translationProgress = libraryStore(state => state.translationProgress), translationError = libraryStore(state => state.translationError);
+  const [downloading, setDownloading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false), [accountError, setAccountError] = useState<string | null>(null);
   const [refreshingArt, setRefreshingArt] = useState(false), [artMessage, setArtMessage] = useState<string | null>(null);
   const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics), lastSync = appStore(state => state.lastSyncAt), lastScan = appStore(state => state.lastScanAt);
@@ -33,6 +36,11 @@ export default function SettingsScreen() {
     <Label>{ready} songs ready to learn · {songs.filter(song => song.lyricsStatus === 'none').length} without synced lyrics</Label>
     <Label muted>Last scan: {date(lastScan)}</Label>
     {progress && <Label>{progress.kind === 'sync' ? 'Syncing library' : 'Checking lyrics'}… {progress.completed} / {progress.total}</Label>}
+    <View style={styles.row}><Label style={{ flex: 1 }}>Japanese translation: {status === 'installed' ? 'Installed' : status === 'unsupported' ? 'Unavailable' : 'Not installed'}</Label>
+      {status === 'supported' && <Button label="Download Japanese translation" disabled={downloading} onPress={async () => { setDownloading(true); try { await prepareTranslation(); } catch { libraryStore.setState({ translationError: 'Could not download Japanese translation' }); } finally { setDownloading(false); } }}><Label>Download</Label></Button>}
+    </View>
+    {translationProgress && <Label>Translating… {translationProgress.completed} / {translationProgress.total}</Label>}
+    {translationError && <Label style={{ color: colors.red }}>{translationError}</Label>}
     {error && <Label style={{ color: colors.red }}>{error}</Label>}
   </ScrollView></View>;
 }

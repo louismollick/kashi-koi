@@ -30,7 +30,7 @@ export async function setupTransport(valid = () => true) {
     }
     if (status.didJustFinish && !finished) {
       finished = true;
-      if (appStore.getState().quizToggle && getLyrics(song.id).lines.some(line => line.meaning)) appStore.getState().completeRun();
+      if (appStore.getState().quizToggle && getLyrics(song.id).lines.some(line => line.translation)) appStore.getState().completeRun();
       else appStore.getState().nextSong();
     }
   });

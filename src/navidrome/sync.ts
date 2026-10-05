@@ -1,4 +1,6 @@
-import { carryLyrics, libraryStore } from '@/store/libraryStore';
+import { isJapanese } from '@/japanese/text';
+import { resumeTranslations } from '@/japanese/translate';
+import { carryLyrics, libraryStore, getLineText } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
 import { sessionStore } from './session';
 import { pickEntry, toSongLyrics } from './lyrics';
@@ -34,7 +36,7 @@ export function syncLibrary() {
     const { replaceLibrary } = await import('./db');
     await replaceLibrary(library);
     if (!valid()) return;
-    libraryStore.getState().setLibrary(library);
+    libraryStore.getState().setLibrary({ ...library, translations: libraryStore.getState().translations });
     const ids = new Set(songs.map(song => song.id));
     appStore.setState(state => ({ reviewList: state.reviewList.filter(item => ids.has(item.songId)), lastSyncAt: Date.now() }));
     await scan(session, false, valid);
@@ -66,7 +68,7 @@ export async function scan(session: Session, all: boolean, valid: () => boolean,
           if (!valid() || stopped) break;
           libraryStore.getState().setLyricsResult(song.id, status, lyrics);
           if (status !== 'error') {
-            const ids = new Set(lyrics?.lines.map(line => line.id));
+            const ids = new Set(lyrics?.lines.filter(line => isJapanese(getLineText(line))).map(line => line.id));
             appStore.setState(state => ({ reviewList: state.reviewList.filter(item => item.songId !== song.id || ids.has(item.lineId)) }));
           }
         }
@@ -78,6 +80,7 @@ export async function scan(session: Session, all: boolean, valid: () => boolean,
   if (stopped) throw failure;
   if (valid()) {
     appStore.setState({ lastScanAt: Date.now() });
+    void resumeTranslations();
     if (errors) libraryStore.setState({ error: `${errors} songs could not be checked. Rescan lyrics to retry.` });
   }
 }

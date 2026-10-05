@@ -1,15 +1,17 @@
+import { isJapanese } from '@/japanese/text';
+import { translationHint } from '@/japanese/translate';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
-import { getLineText, getSong, getLyrics, libraryStore } from '@/store/libraryStore';
+import { getLineText, libraryStore, hasTranslations } from '@/store/libraryStore';
 import { getReviewMixProgress } from '@/data/libraryVisibility';
 import { appStore } from '@/store/appStore';
 import { ScreenHeader } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
-import { LineCard } from '@/components/LineCard';
+import { LineCard, FuriganaLine } from '@/components/LineCard';
 import { Mascot } from '@/components/Mascot';
 import { Answers } from '@/components/Answers';
 import { PlayerBar } from '@/components/PlayerBar';
@@ -46,6 +48,9 @@ export default function PlayerScreen() {
   const songId = appStore(state => state.songId);
   const song = libraryStore(state => songId ? state.bySong[songId] : undefined);
   const lineIndex = appStore(state => state.lineIndex);
+  libraryStore(state => state.translationSongIds.has(songId ?? ''));
+  libraryStore(state => state.translationStatus);
+  const showTranslations = appStore(state => state.showTranslations);
   const quizToggle = appStore(state => state.quizToggle);
   const run = appStore(state => state.run);
   const reviewMix = appStore(state => state.reviewMix);
@@ -84,11 +89,13 @@ export default function PlayerScreen() {
   if (!song) return <View style={styles.page}><ScreenHeader title="Player" /><Label>No song playing</Label></View>;
   return <View style={styles.page}>
     <ScreenHeader title={song?.title} subtitle={reviewProgress ? `Review mix · song ${reviewProgress.position} of ${reviewProgress.total}` : currentLine ? `${song?.artist} · line ${lineIndex + 1} of ${lines.length}` : song?.artist}
-      right={<View style={[styles.row, { gap: 6 }]}><Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label><PixelToggle disabled={!lyrics?.lines.every(line => line.meaning) || !lines.length} label="Quiz toggle" on={quizToggle} onPress={() => quizToggle && reviewMix ? setConfirm(true) : appStore.getState().setQuizToggle(!quizToggle)} /></View>} />
-    {(!lyrics?.lines.every(line => line.meaning) || !lines.length) && <Label muted style={{ paddingHorizontal: 16 }}>Needs translations</Label>}
+      right={<View style={{ gap: 8, alignItems: 'flex-end' }}><View style={[styles.row, { gap: 6 }]}><Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label><PixelToggle disabled={!hasTranslations(songId)} label="Quiz toggle" on={quizToggle} onPress={() => quizToggle && reviewMix ? setConfirm(true) : appStore.getState().setQuizToggle(!quizToggle)} /></View>
+        {!quizToggle && <View style={[styles.row, { gap: 6 }]}><Label style={{ fontSize: 12 }}>Translations</Label><PixelToggle label="Translations toggle" on={showTranslations} onPress={() => appStore.getState().toggleTranslations()} /></View>}
+      </View>} />
+    {!hasTranslations(songId) && lines.length > 0 && <Label muted style={{ paddingHorizontal: 16 }}>{translationHint(song.id)}</Label>}
     {lines.length > 0 && <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
       {lines.map((line, index) => <Pressable key={`${index}:${line.id}`} accessibilityRole="button" accessibilityLabel={`Jump to line ${index + 1}`} onPress={() => appStore.getState().jumpToLine(index)} style={{ flex: 1, paddingVertical: 7 }}>
-        <PixelFrame fill={index === lineIndex ? colors.bg : run.answers[line.id]?.correct === true ? colors.green : run.answers[line.id]?.correct === false ? colors.red : !quizToggle && reviewList.some(item => item.lineId === line.id) ? colors.coral : index < lineIndex ? colors.track : colors.laneEmpty}
+        <PixelFrame fill={!isJapanese(getLineText(line)) ? colors.track : index === lineIndex ? colors.bg : run.answers[line.id]?.correct === true ? colors.green : run.answers[line.id]?.correct === false ? colors.red : !quizToggle && reviewList.some(item => item.lineId === line.id) ? colors.coral : index < lineIndex ? colors.track : colors.laneEmpty}
           border={index === lineIndex ? colors.text : null} contentStyle={{ height: 14 }} />
       </Pressable>)}
     </View>}
@@ -96,16 +103,23 @@ export default function PlayerScreen() {
       <Label muted>No lyrics for this song</Label>
     </View> : quizToggle && currentLine ? <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
       <LineCard line={currentLine} />
-      <ComboRow combo={run.combo} nice={selectedAnswer === 1} />
-      <Answers song={song!} lineIndex={lineIndex} selected={selectedAnswer} onAnswer={choice => appStore.getState().answer(choice)} />
+      <ComboRow combo={run.combo} nice={currentLine ? run.answers[currentLine.id]?.correct === true : false} />
+      <Answers choices={run.choices[currentLine.id] ?? []} translation={currentLine.translation} selected={selectedAnswer} onAnswer={choice => appStore.getState().answer(choice)} />
     </ScrollView> : <>
       <View style={{ flex: 1 }}>
         <ScrollView ref={scroll} onContentSizeChange={followLine} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 20, gap: 18 }}>
-          {lines.map((line, index) => <View key={`${index}:${line.id}`} onLayout={({ nativeEvent }) => { positions.current[index] = nativeEvent.layout.y; }}>
-            {index === lineIndex ? <LineCard line={line} /> : <Pressable accessibilityRole="button" accessibilityLabel={`Play line ${index + 1}`} onPress={() => appStore.getState().jumpToLine(index)}>
-              <Label style={{ fontSize: 20, lineHeight: 30, color: index < lineIndex ? colors.muted : colors.text }}>{getLineText(line)}{reviewList.some(item => item.lineId === line.id) && <Label style={{ color: colors.coral }}> ●</Label>}</Label>
+          {lines.map((line, index) => {
+            const color = index < lineIndex ? colors.muted : colors.text;
+            return <View key={`${index}:${line.id}`} onLayout={({ nativeEvent }) => { positions.current[index] = nativeEvent.layout.y; }}>
+            {index === lineIndex ? <LineCard line={line} furigana={showTranslations} translation={showTranslations} /> : <Pressable accessibilityRole="button" accessibilityLabel={`Play line ${index + 1}`} onPress={() => appStore.getState().jumpToLine(index)}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                <View style={{ flexShrink: 1 }}>{showTranslations ? <FuriganaLine line={line} compact color={color} /> : <Label style={{ fontSize: 20, lineHeight: 30, color }}>{getLineText(line)}</Label>}</View>
+                {reviewList.some(item => item.lineId === line.id) && <Label style={{ color: colors.coral, lineHeight: 30 }}> ●</Label>}
+              </View>
+              {showTranslations && <Label muted style={{ marginTop: 4 }}>{line.translation}</Label>}
             </Pressable>}
-          </View>)}
+          </View>;
+          })}
         </ScrollView>
         <Svg pointerEvents="none" width="100%" height="100%" style={{ position: 'absolute' }}>
           <Defs><LinearGradient id="lyricFade" x1="0" y1="0" x2="0" y2="1">
