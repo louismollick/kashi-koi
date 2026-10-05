@@ -21,8 +21,8 @@ on:
 permissions:
   contents: write
 
+# GH_TOKEN is set per step, never on steps that run PR code (npm ci, the build script).
 env:
-  GH_TOKEN: ${{ github.token }}
   GH_REPO: ${{ github.repository }}
   RELEASE_TAG: ${{ github.event_name == 'push' && 'ios-main' || format('ios-pr-{0}', github.event.pull_request.number) }}
 
@@ -45,6 +45,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -59,6 +60,8 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: scripts/build-sidestore-ipa.sh
       - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$RELEASE_TAG" >/dev/null 2>&1 ||
             gh release create "$RELEASE_TAG" --prerelease --title "$RELEASE_TAG" --notes 'Unsigned SideStore build.'
@@ -80,7 +83,9 @@ jobs:
       group: sidestore-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     steps:
-      - run: |
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release delete "$RELEASE_TAG" --cleanup-tag --yes
           fi
@@ -95,6 +100,8 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Rebuild source.json
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Main first, then newest PRs.
           TAGS=$(gh release list --limit 1000 --json tagName --jq '
