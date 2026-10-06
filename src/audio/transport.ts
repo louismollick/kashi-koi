@@ -48,7 +48,11 @@ export async function setupTransport(valid = () => true) {
     }
     const positionMs = status.currentTime * 1000, durationMs = (status.duration || song.duration) * 1000;
     const clip = appStore.getState().clipPlayback;
-    appStore.getState().updatePlayback(positionMs, durationMs, status.playing);
+    // Native EOF may arrive just short of duration; clips still need their refresh state.
+    const clipPositionMs = status.didJustFinish ? durationMs : positionMs;
+    // Clip controls follow native pauses, while buffering and queued pause statuses keep the requested state.
+    const clipPlaying = wantsPlay && (status.playing || status.isBuffering);
+    appStore.getState().updatePlayback(clip ? clipPositionMs : positionMs, durationMs, clip ? clipPlaying : status.playing);
     if (clip) return;
     if (!submitted && positionMs >= Math.min(durationMs / 2, 240000) && durationMs > 0) {
       submitted = true;

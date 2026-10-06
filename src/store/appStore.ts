@@ -76,7 +76,7 @@ type AppState = {
   positionMs: number; durationMs: number; loading: boolean; playbackError: string | null; songId: string | null; lineIndex: number; quizToggle: QuizToggle; mode: ListenMode | QuizMode;
   ranks: Record<string, Rank>; lastSyncAt: number | null; lastScanAt: number | null; playing: boolean; hideSongsWithoutSyncedLyrics: boolean; playbackQueue: string[] | null; reviewList: ReviewList; run: Run;
   answerTime: number | null; answerWait: { lineIndex: number; until: number | null } | null; cycleAnswerTime: () => void;
-  clipPlayback: { songId: string; startMs: number; endMs: number; positionMs: number } | null;
+  clipPlayback: { songId: string; startMs: number; endMs: number; positionMs: number; ended: boolean } | null;
   reviewMix: ReviewMix | null; clipReview: ClipReview | null; addedId: string | null; addedExpiresAt: number | null; nextReviewId: number;
   startSong: (songId: string) => void; startAlbum: (albumId: string, shuffle?: boolean) => void; restartRun: () => void; setQuizToggle: (enabled: boolean) => void;
   startReviewMix: () => void; finishReviewMix: () => void; nextSong: () => void; previousSong: () => void; skipBack: () => void;
@@ -191,13 +191,13 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     if (waiting) get().setPlaying(true);
   },
   // Replay clears the deadline and occurrence guard, so the line can stop again.
-  replayLine: () => { const index = get().answerWait?.lineIndex ?? get().lineIndex; get().jumpToLine(index); get().setPlaying(true); },
+  replayLine: () => { const index = get().answerWait?.lineIndex ?? get().lineIndex; clearAnswerWait(true); get().jumpToLine(index); get().setPlaying(true); },
   playClip: (songId, startMs, endMs) => {
     const song = getSong(songId);
     if (!song || startMs < 0 || endMs <= startMs) return;
     clearAnswerWait();
     transport.pause();
-    set({ clipPlayback: { songId, startMs, endMs, positionMs: startMs }, playing: true, playbackError: null });
+    set({ clipPlayback: { songId, startMs, endMs, positionMs: startMs, ended: false }, playing: true, playbackError: null });
     if (loadedSongId !== songId) { loadedSongId = songId; transport.load(song, startMs); }
     else transport.seek(startMs);
     transport.play();
@@ -206,10 +206,10 @@ export const appStore = create<AppState>()(persist((set, get) => ({
   updatePlayback: (positionMs, durationMs, playing) => {
     const clip = get().clipPlayback;
     if (clip) {
-      // Native seek/buffering emits paused status before the requested play starts.
-      const ended = positionMs >= Math.min(clip.endMs, durationMs || clip.endMs);
+      // Transport suppresses seek statuses; native pauses and early EOF belong to the clip.
+      const ended = clip.ended || positionMs >= Math.min(clip.endMs, durationMs || clip.endMs);
       const wasPlaying = get().playing;
-      set({ clipPlayback: { ...clip, positionMs: Math.min(positionMs, clip.endMs) }, playing: !ended && wasPlaying });
+      set({ clipPlayback: { ...clip, positionMs: Math.min(positionMs, clip.endMs), ended }, playing: !ended && playing });
       if (ended && wasPlaying) transport.pause();
       return;
     }
@@ -270,7 +270,7 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     const state = get();
     if (playing && state.clipPlayback && state.clipReview) {
       const clip = state.clipPlayback;
-      if (clip.positionMs >= clip.endMs) { get().playClip(clip.songId, clip.startMs, clip.endMs); return; }
+      if (clip.ended) { get().playClip(clip.songId, clip.startMs, clip.endMs); return; }
       set({ playing: true }); transport.play(); return;
     }
     if (playing && state.clipPlayback) {
@@ -298,21 +298,24 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     addedId: null, addedExpiresAt: null,
   })),
   dismissToast: () => set({ addedId: null, addedExpiresAt: null }),
-  moveReviewLine: (id, lineId) => { clearClipTimer(); set(state => {
+  moveReviewLine: (id, lineId) => set(state => {
     const item = state.reviewList.find(line => line.id === id);
     if (!item || item.lineId === lineId || !getLyrics(item.songId).lines.some(line => line.id === lineId && isJapanese(getLineText(line)))
       || state.reviewList.some(line => line.id !== id && line.lineId === lineId)) return state;
     const clip = state.clipReview;
+    if (clip?.ids[clip.index] === id) clearClipTimer();
     return { reviewList: state.reviewList.map(line => line.id === id
       ? { id: line.id, songId: line.songId, lineId, kind: 'new' as const } : line),
-      clipReview: clip && clip.ids[clip.index] === id ? { ...clip, answers: Object.fromEntries(Object.entries(clip.answers).filter(([key]) => key !== id)) } : clip };
-  }); },
-  removeReviewLine: id => { clearClipTimer(); set(state => {
+      clipReview: clip ? { ...clip, answers: Object.fromEntries(Object.entries(clip.answers).filter(([key]) => key !== id)) } : clip };
+  }),
+  removeReviewLine: id => set(state => {
     const clip = state.clipReview;
+    if (clip?.ids[clip.index] === id) clearClipTimer();
     const ids = clip?.ids.filter(lineId => lineId !== id);
+    const current = clip && ids ? ids.indexOf(clip.ids[clip.index]!) : -1;
     return { reviewList: state.reviewList.filter(line => line.id !== id),
-      clipReview: clip && ids ? ids.length ? { ...clip, ids, index: Math.min(clip.index, ids.length - 1) } : null : clip };
-  }); },
+      clipReview: clip && ids ? ids.length ? { ...clip, ids, index: current < 0 ? Math.min(clip.index, ids.length - 1) : current } : null : clip };
+  }),
   startClipReview: () => { clearClipTimer(); get().setPlaying(false); set(state => ({ clipReview: { ids: readyReviewLines(state.reviewList).map(line => line.id), index: 0, answers: {}, combo: 0, choices: {} } })); playReviewClip(); },
   answerClip: choice => {
     const before = get().clipReview;
@@ -327,9 +330,9 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     if (get().clipReview !== before) { get().setPlaying(false); clearClipTimer(); clipTimer = setTimeout(() => { clipTimer = null; get().nextClip(); }, 800); }
   },
   jumpToClip: index => {
-    clearClipTimer(); const clip = get().clipReview;
+    const clip = get().clipReview;
     if (!clip || index < 0 || index >= clip.ids.length) return;
-    get().setPlaying(false); set({ clipReview: { ...clip, index } }); playReviewClip();
+    clearClipTimer(); get().setPlaying(false); set({ clipReview: { ...clip, index } }); playReviewClip();
   },
   nextClip: () => {
     const clip = get().clipReview;

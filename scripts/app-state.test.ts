@@ -631,7 +631,7 @@ test('clips pause at their end without advancing or changing the main learning s
     const before = appStore.getState();
     appStore.getState().playClip('rain', 18000, 24000);
     appStore.getState().updatePlayback(18000, 238000, false);
-    assert.equal(appStore.getState().playing, true);
+    assert.equal(appStore.getState().playing, false);
     appStore.getState().updatePlayback(23999, 238000, true);
     assert.equal(appStore.getState().playing, true);
     appStore.getState().updatePlayback(24100, 238000, true);
@@ -944,7 +944,7 @@ for (const direction of ['nextSong', 'previousSong'] as const) test(`review-mix 
 /** Replace only native audio and SQLite; run the real transport listener and store. */
 async function nativePacingRun(t: TestContext) {
   const calls: string[] = [];
-  type Status = { playing: boolean; currentTime: number; duration: number; isLoaded: boolean; didJustFinish: boolean };
+  type Status = { playing: boolean; currentTime: number; duration: number; isLoaded: boolean; didJustFinish: boolean; isBuffering: boolean };
   let listener: (status: Status) => void = () => {};
   const player = {
     play: () => { calls.push('play'); },
@@ -983,7 +983,7 @@ async function nativePacingRun(t: TestContext) {
   sessionStore.setState({ session: { url: 'https://music.test', username: 'user', token: 'token', salt: 'salt' } });
   t.mock.method(globalThis, 'fetch', async () => Response.json({ 'subsonic-response': { status: 'ok' } }));
   const detach = await setupTransport();
-  const status = (positionMs: number, playing: boolean, didJustFinish = false) => listener({ currentTime: positionMs / 1000, duration: 238, isLoaded: true, playing, didJustFinish });
+  const status = (positionMs: number, playing: boolean, didJustFinish = false, isBuffering = false) => listener({ currentTime: positionMs / 1000, duration: 238, isLoaded: true, playing, didJustFinish, isBuffering });
   appStore.getState().startSong('dawn');
   appStore.getState().setQuizToggle(true);
   status(0, false);
@@ -1079,7 +1079,7 @@ for (const which of ['first', 'last'] as const) test(`refresh replays the stoppe
     assert.equal(appStore.getState().answerWait, null);
     assert.equal(appStore.getState().run.finished, false);
     assert.equal(appStore.getState().playing, true);
-    assert.deepEqual(calls, [`seek:${occurrence.startMs}`, 'play', 'play']);
+    assert.deepEqual(calls, [`seek:${occurrence.startMs}`, 'play']);
     appStore.getState().updatePlayback(occurrence.startMs + 100, 238000, true);
     t.mock.timers.tick(3000);
     assert.equal(appStore.getState().answerWait, null);
@@ -1207,5 +1207,128 @@ test('native loaded status ends loading and clip EOF does not mark played, scrob
     assert.equal(complete.mock.callCount(), 0);
     assert.equal(appStore.getState().clipReview?.index, 0);
     assert.equal(appStore.getState().playing, false);
+  } finally { detach(); }
+});
+
+for (const edit of ['invalid move', 'other move', 'other removal', 'invalid jump'] as const) test(`${edit} preserves the current clip's 800 ms answer beat`, t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview();
+    appStore.getState().answerClip(clipAnswer());
+    const first = appStore.getState().clipReview!.ids[0]!;
+    if (edit === 'invalid move') appStore.getState().moveReviewLine(first, 'missing');
+    if (edit === 'other move') appStore.getState().moveReviewLine('new-rain', fixtureLine('rain-0'));
+    if (edit === 'other removal') appStore.getState().removeReviewLine('new-rain');
+    if (edit === 'invalid jump') appStore.getState().jumpToClip(-1);
+    t.mock.timers.tick(799);
+    assert.equal(appStore.getState().clipReview?.index, 0);
+    t.mock.timers.tick(1);
+    assert.equal(appStore.getState().clipReview?.index, 1);
+    assert.equal(appStore.getState().playing, true);
+    assert.equal(appStore.getState().clipReview?.answers[first]?.correct, true);
+  } finally { detach(); }
+});
+
+test('removing an earlier clip preserves the selected review ID and does not skip its successor', t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview();
+    const ids = appStore.getState().clipReview!.ids;
+    appStore.getState().jumpToClip(1);
+    appStore.getState().answerClip(clipAnswer());
+    appStore.getState().removeReviewLine(ids[0]!);
+    const clip = appStore.getState().clipReview!;
+    assert.equal(clip.ids[clip.index], ids[1]);
+    assert.equal(clip.index, 0);
+    t.mock.timers.tick(800);
+    const next = appStore.getState().clipReview!;
+    assert.equal(next.ids[next.index], ids[2]);
+    assert.equal(appStore.getState().playing, true);
+  } finally { detach(); }
+});
+
+test('editing an answered clip while another is selected clears only the edited answer', () => {
+  const { detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview();
+    appStore.getState().answerClip(clipAnswer());
+    appStore.getState().jumpToClip(1);
+    appStore.getState().answerClip(clipAnswer());
+    const second = appStore.getState().clipReview!.answers['new-rain'];
+    appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-4'));
+    assert.equal(appStore.getState().clipReview?.answers['new-dawn'], undefined);
+    assert.equal(appStore.getState().clipReview?.answers['new-rain'], second);
+    appStore.getState().jumpToClip(0);
+    appStore.getState().answerClip(clipAnswer());
+    assert.equal(appStore.getState().clipReview?.answers['new-dawn']?.correct, true);
+    assert.equal(appStore.getState().reviewList.find(item => item.id === 'new-dawn')?.kind, 'later');
+  } finally { detach(); }
+});
+
+test('audio ending before the lyric boundary marks a clip finished and refresh seeks to its start', () => {
+  const { calls, detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview();
+    const clip = appStore.getState().clipPlayback!;
+    appStore.getState().updatePlayback(clip.endMs - 500, clip.endMs - 500, false);
+    assert.equal(appStore.getState().clipPlayback?.ended, true);
+    assert.equal(appStore.getState().playing, false);
+    calls.length = 0;
+    appStore.getState().setPlaying(true);
+    assert.deepEqual(calls, ['pause', `seek:${clip.startMs}`, 'play']);
+    assert.equal(appStore.getState().clipPlayback?.ended, false);
+    assert.equal(appStore.getState().clipPlayback?.positionMs, clip.startMs);
+  } finally { detach(); }
+});
+
+test('native EOF finishes a clip even when its final position is short of duration', async t => {
+  const { calls, status, detach } = await nativePacingRun(t);
+  try {
+    appStore.setState({ reviewList: [{ id: 'native', songId: 'dawn', lineId: fixtureLine('dawn-0'), kind: 'new' }] });
+    appStore.getState().startClipReview();
+    status(0, false);
+    await Promise.resolve();
+    const clip = appStore.getState().clipPlayback!;
+    appStore.setState({ clipPlayback: { ...clip, endMs: 240000 } });
+    status(237990, false, true);
+    assert.equal(appStore.getState().clipPlayback?.ended, true);
+    assert.equal(appStore.getState().playing, false);
+    assert.equal(appStore.getState().clipReview?.index, 0);
+    calls.length = 0;
+    appStore.getState().setPlaying(true);
+    await Promise.resolve();
+    assert.ok(calls.includes(`seek:${clip.startMs}`));
+    assert.equal(appStore.getState().clipPlayback?.ended, false);
+  } finally { detach(); }
+});
+
+test('native clip pause and resume follow lock-screen controls while seek, buffering and queued statuses remain guarded', async t => {
+  const { calls, status, detach } = await nativePacingRun(t);
+  try {
+    appStore.setState({ reviewList: [{ id: 'native', songId: 'dawn', lineId: fixtureLine('dawn-0'), kind: 'new' }] });
+    appStore.getState().startClipReview();
+    status(0, false);
+    assert.equal(appStore.getState().playing, true);
+    await Promise.resolve();
+    status(0, false, false, true);
+    assert.equal(appStore.getState().playing, true);
+    status(1000, true);
+    status(1200, false);
+    assert.equal(appStore.getState().playing, false);
+    assert.equal(appStore.getState().clipPlayback?.positionMs, 1200);
+    calls.length = 0;
+    appStore.getState().setPlaying(true);
+    assert.deepEqual(calls, ['play']);
+    status(1300, true);
+    appStore.getState().setPlaying(false);
+    status(1350, true);
+    assert.equal(appStore.getState().playing, false);
+    status(1350, false);
+    status(1350, true);
+    assert.equal(appStore.getState().playing, true);
+    assert.ok(appStore.getState().clipPlayback);
+    assert.equal(appStore.getState().clipReview?.index, 0);
   } finally { detach(); }
 });

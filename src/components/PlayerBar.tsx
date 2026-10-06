@@ -18,7 +18,7 @@ export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
   const playing = appStore(state => state.playing && (clipReview || !state.clipPlayback));
   const position = appStore(state => state.positionMs), duration = appStore(state => state.durationMs);
   if (!song) return null;
-  const ended = clipReview ? !!clip && clip.positionMs >= clip.endMs : waiting;
+  const ended = clipReview ? !!clip?.ended : waiting;
   const elapsed = clipReview && clip ? Math.max(0, clip.positionMs - clip.startMs) : position;
   const total = clipReview && clip ? clip.endMs - clip.startMs : duration;
   return <View style={[styles.row, { paddingHorizontal: 16, paddingTop: 12, paddingBottom: Math.max(insets.bottom - 4, 14), backgroundColor: colors.panel }]}>
