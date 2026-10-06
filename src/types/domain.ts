@@ -18,7 +18,7 @@ export type NewLine = ReviewLine & { kind: 'new' };
 export type DueLine = ReviewLine & { kind: 'due'; misses: number };
 export type LaterLine = ReviewLine & { kind: 'later' };
 export type ReviewList = (NewLine | DueLine | LaterLine)[];
-export type ClipReview = { ids: string[]; index: number; answered: boolean | null; choices: Record<string, string[]>; choice: string | null };
+export type ClipReview = { ids: string[]; index: number; answers: Record<string, { choice: string; correct: boolean }>; choices: Record<string, string[]>; combo: Combo };
 export type ReviewMix = { songIds: string[]; index: number; previousQuizToggle: QuizToggle };
 /** Each line keeps its first answer until the next run. */
 export type Run = {

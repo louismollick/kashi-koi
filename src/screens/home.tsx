@@ -48,7 +48,7 @@ export default function HomeScreen() {
         </Pressable>
         <SectionHeader title="Recently played" chevron />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {getRecentlyPlayed(hiding, 6).map(song => <Pressable key={song.id} style={{ width: coverSize }} accessibilityRole="button" accessibilityLabel={`Play ${song.title}`} onPress={() => { appStore.getState().startSong(song.id); router.push('/player'); }}>
+          {getRecentlyPlayed(hiding, 6).map(song => <Pressable key={song.id} style={{ width: coverSize }} accessibilityRole="button" accessibilityLabel={`Play ${song.title}`} onPress={() => { router.push('/player'); appStore.getState().startSong(song.id); }}>
             <Cover song={song} size={coverSize} />
             <View style={{ position: 'absolute', right: 6, top: 6 }}><Tag fill={colors.bg}>{ranks[song.id] ?? '·'}</Tag></View>
             <Label numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', marginTop: 6 }}>{song.title}</Label>

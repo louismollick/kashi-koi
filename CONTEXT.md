@@ -78,7 +78,7 @@ A line on the review list whose scheduled time has come. Answering it correctly 
 _Avoid_: Card, review item
 
 **Clip review**:
-Reviewing due lines one at a time by replaying just their clip, with no timer. A tested, game-free alternative to a full run.
+Reviewing due lines one at a time by replaying just their clip, in the same layout as quiz mode but with no timer. Answering moves on to the next clip. A tested alternative to a full run that skips the rest of each song.
 _Avoid_: Flashcards, quiet mode
 
 **Review mix**:

@@ -1,23 +1,20 @@
 import { useEffect } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { appStore } from '@/store/appStore';
-import { getLineText, getSong, getLyrics, occurrenceLine } from '@/store/libraryStore';
+import { getSong, getLyrics, occurrenceLine, libraryStore } from '@/store/libraryStore';
 import { colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/Header';
-import { LineCard } from '@/components/LineCard';
-import { Cover } from '@/components/Cover';
-import { Answers } from '@/components/Answers';
-import { Button, IconButton, Label, Tag, styles } from '@/components/ui';
+import { QuizColumn, QuizLane } from '@/components/QuizLayout';
+import { PlayerBar } from '@/components/PlayerBar';
+import { Button, Label, styles } from '@/components/ui';
 
-/** Untimed translation review with bounded audio replay. */
+/** Untimed clips share the quiz column and keep their first answer when revisited. */
 export default function ClipReviewScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const clip = appStore(state => state.clipReview);
   const reviewList = appStore(state => state.reviewList);
-  const replaying = appStore(state => state.playing && !!state.clipPlayback);
+  libraryStore(state => state.lyrics);
   const item = reviewList.find(line => line.id === clip?.ids[clip.index]);
   useEffect(() => {
     if (!appStore.getState().clipReview) appStore.getState().setPlaying(false);
@@ -27,24 +24,11 @@ export default function ClipReviewScreen() {
   const song = getSong(item.songId);
   if (!song) return null;
   const lyrics = getLyrics(song.id), lineIndex = lyrics.timeline.findIndex(occurrence => occurrence.lineId === item.lineId);
-  const line = occurrenceLine(song.id, lineIndex), occurrence = lyrics.timeline[lineIndex];
-  if (!line || !occurrence) return null;
+  const line = occurrenceLine(song.id, lineIndex), answer = clip.answers[item.id];
   return <View style={styles.page}>
     <ScreenHeader title={song.title} subtitle={`${song.artist} · clip ${clip.index + 1} of ${clip.ids.length}`} close />
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: Math.max(insets.bottom, 16), gap: 18 }} showsVerticalScrollIndicator={false}>
-      <Label muted style={{ textAlign: 'center', fontSize: 14 }}>{lineIndex > 0 ? getLineText(occurrenceLine(song.id, lineIndex - 1)!) : '♪'}</Label>
-      <LineCard line={line} isNew={item.kind === 'new'} />
-      <Label muted style={{ textAlign: 'center', fontSize: 14 }}>{lineIndex + 1 < lyrics.timeline.length ? getLineText(occurrenceLine(song.id, lineIndex + 1)!) : '♪'}</Label>
-      <View style={styles.row}>
-        <Cover song={song} size={80} />
-        <View style={{ flex: 1, gap: 4 }}><Label numberOfLines={2} style={{ fontSize: 14 }}>{song.title}</Label><Label muted numberOfLines={1} style={{ fontSize: 12 }}>{song.artist}</Label><Label muted style={{ fontSize: 11 }}>{Math.floor(occurrence.startMs / 1000)}s to {Math.floor(occurrence.endMs / 1000)}s</Label></View>
-        <IconButton name={replaying ? 'pause' : 'play'} label={replaying ? 'Pause clip' : 'Replay clip'} fill={colors.coral} size={64} onPress={() => replaying ? appStore.getState().setPlaying(false) : appStore.getState().playClip(song.id, occurrence.startMs, occurrence.endMs)} />
-      </View>
-      <Answers choices={clip.choices[line.id] ?? []} translation={line.translation} selected={clip.choice} onAnswer={choice => appStore.getState().answerClip(choice)} />
-      {clip.answered !== null && <View style={[styles.row, { justifyContent: 'space-between' }]}>
-        <Tag fill={colors.slate}>{clip.answered ? 'next in 9 days' : 'next tomorrow'}</Tag>
-        <Button label="Next clip" fill={colors.coral} onPress={() => appStore.getState().nextClip()}><Label>Next ▸</Label></Button>
-      </View>}
-    </ScrollView>
+    <QuizLane index={clip.index} label="clip" onJump={index => appStore.getState().jumpToClip(index)} segments={clip.ids.map(id => ({ id, fill: clip.answers[id]?.correct === true ? colors.green : clip.answers[id]?.correct === false ? colors.red : colors.laneEmpty }))} />
+    <QuizColumn line={line} isNew={item.kind === 'new'} choices={clip.choices[item.lineId] ?? []} selected={answer?.choice ?? null} nice={answer?.correct === true} combo={clip.combo} onAnswer={choice => appStore.getState().answerClip(choice)} />
+    <PlayerBar clipReview />
   </View>;
 }

@@ -16,6 +16,9 @@ const clipAnswer = () => {
   return getLyrics(item.songId).lines.find(line => line.id === item.lineId)!.translation!;
 };
 
+/** Read feedback for the selected review ID, including a clip with no answer yet. */
+function clipResult() { const clip = appStore.getState().clipReview; return clip ? clip.answers[clip.ids[clip.index]!] ?.correct ?? null : null; }
+
 const initialState = appStore.getState();
 beforeEach(() => { void resetAppState(); libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics }); appStore.setState({ ...initialState, songId: firstSong.id, playing: true, lineIndex: 3, reviewList: fixtureReviewList() }, true); });
 
@@ -63,7 +66,7 @@ test('clip review is untimed and moves answered new lines onto the later schedul
   assert.equal(appStore.getState().clipReview?.index, 0);
   appStore.getState().nextClip();
   assert.equal(appStore.getState().clipReview?.index, 1);
-  assert.equal(appStore.getState().clipReview?.answered, null);
+  assert.equal(clipResult(), null);
   appStore.getState().answerClip('wrong');
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-rain')?.kind, 'due');
 });
@@ -139,13 +142,13 @@ test('moving an answered current clip resets it to new and permits another answe
   appStore.getState().answerClip(clipAnswer());
   appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-4'));
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-dawn')?.kind, 'new');
-  assert.equal(appStore.getState().clipReview?.answered, null);
+  assert.equal(clipResult(), null);
   appStore.getState().answerClip('wrong');
-  assert.equal(appStore.getState().clipReview?.answered, false);
+  assert.equal(clipResult(), false);
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-dawn')?.kind, 'due');
   appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-5'));
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-dawn')?.kind, 'new');
-  assert.equal(appStore.getState().clipReview?.answered, null);
+  assert.equal(clipResult(), null);
 });
 
 test('revisiting hits and misses preserves their recorded choice and cannot rescore', () => {
@@ -183,7 +186,7 @@ test('moving onto another review entry is rejected, including later lines', () =
   assert.deepEqual(appStore.getState().reviewList, before.reviewList);
   appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-3'));
   assert.deepEqual(appStore.getState().reviewList, before.reviewList);
-  assert.equal(appStore.getState().clipReview?.answered, true);
+  assert.equal(clipResult(), true);
 });
 
 test('undo has an absolute three-second window which cannot restart after leaving the player', t => {
@@ -244,7 +247,7 @@ test('moving another clip preserves the current answer', () => {
   appStore.getState().startClipReview();
   appStore.getState().answerClip(clipAnswer());
   appStore.getState().moveReviewLine('new-rain', fixtureLine('rain-4'));
-  assert.equal(appStore.getState().clipReview?.answered, true);
+  assert.equal(clipResult(), true);
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-rain')?.kind, 'new');
 });
 
@@ -1046,3 +1049,149 @@ for (const eof of ['before wait', 'during wait'] as const) {
     } finally { detach(); }
   });
 }
+
+for (const which of ['first', 'last'] as const) test(`refresh replays the stopped ${which} line, pauses its timer and stops again`, t => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const { calls, detach } = pacingRun(3);
+  const last = getLyrics('dawn').timeline.length - 1, index = which === 'first' ? 0 : last;
+  try {
+    appStore.getState().jumpToLine(index);
+    const occurrence = getLyrics('dawn').timeline[index]!;
+    appStore.getState().updatePlayback(occurrence.endMs - 100, 238000, true);
+    assert.equal(appStore.getState().answerWait?.lineIndex, index);
+    calls.length = 0;
+    appStore.getState().replayLine();
+    assert.equal(appStore.getState().positionMs, occurrence.startMs);
+    assert.equal(appStore.getState().answerWait, null);
+    assert.equal(appStore.getState().run.finished, false);
+    assert.equal(appStore.getState().playing, true);
+    assert.deepEqual(calls, [`seek:${occurrence.startMs}`, 'play', 'play']);
+    appStore.getState().updatePlayback(occurrence.startMs + 100, 238000, true);
+    t.mock.timers.tick(3000);
+    assert.equal(appStore.getState().answerWait, null);
+    appStore.getState().updatePlayback(occurrence.endMs - 100, 238000, true);
+    assert.equal(appStore.getState().answerWait?.lineIndex, index);
+    assert.equal(appStore.getState().playing, false);
+    appStore.getState().advanceLine();
+    assert.equal(appStore.getState().answerWait, null);
+    if (index === last) assert.equal(appStore.getState().run.finished, true);
+    else assert.equal(appStore.getState().lineIndex, index + 1);
+  } finally { detach(); }
+});
+
+test('clip controls resume inside a clip and refresh from its start after the end', () => {
+  const { calls, detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview();
+    const clip = appStore.getState().clipPlayback!;
+    appStore.getState().updatePlayback(clip.startMs + 1000, 238000, true);
+    appStore.getState().setPlaying(false);
+    calls.length = 0;
+    appStore.getState().setPlaying(true);
+    assert.deepEqual(calls, ['play']);
+    assert.equal(appStore.getState().clipPlayback?.positionMs, clip.startMs + 1000);
+    appStore.getState().updatePlayback(clip.endMs, 238000, true);
+    assert.equal(appStore.getState().playing, false);
+    calls.length = 0;
+    appStore.getState().setPlaying(true);
+    assert.deepEqual(calls, ['pause', `seek:${clip.startMs}`, 'play']);
+    assert.equal(appStore.getState().clipPlayback?.positionMs, clip.startMs);
+    assert.equal(appStore.getState().clipReview?.index, 0);
+  } finally { detach(); }
+});
+
+test('clip feedback advances after 800 ms, preserves prior answers and grades combo only once', t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview();
+    appStore.getState().answerClip(clipAnswer());
+    const first = appStore.getState().clipReview!;
+    const answer = first.answers[first.ids[0]!]!;
+    assert.equal(first.combo, 1);
+    t.mock.timers.tick(799);
+    assert.equal(appStore.getState().clipReview?.index, 0);
+    t.mock.timers.tick(1);
+    assert.equal(appStore.getState().clipReview?.index, 1);
+    assert.equal(appStore.getState().playing, true);
+    appStore.getState().answerClip(clipAnswer());
+    assert.equal(appStore.getState().clipReview?.combo, 2);
+    t.mock.timers.tick(800);
+    appStore.getState().jumpToClip(0);
+    assert.deepEqual(appStore.getState().clipReview?.answers[first.ids[0]!], answer);
+    const reviewed = appStore.getState().reviewList;
+    appStore.getState().answerClip('wrong');
+    assert.equal(appStore.getState().reviewList, reviewed);
+    assert.equal(appStore.getState().clipReview?.combo, 2);
+    t.mock.timers.tick(800);
+    assert.equal(appStore.getState().clipReview?.index, 0);
+    appStore.getState().jumpToClip(2);
+    appStore.getState().answerClip('wrong');
+    assert.equal(appStore.getState().clipReview?.combo, 0);
+    appStore.getState().jumpToClip(first.ids.length - 1);
+    appStore.getState().answerClip(clipAnswer());
+    t.mock.timers.tick(800);
+    assert.equal(appStore.getState().clipReview, null);
+    assert.equal(appStore.getState().playing, false);
+  } finally { detach(); }
+});
+
+test('leaving clip review cancels the pending answer beat', t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { calls, detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview(); appStore.getState().answerClip(clipAnswer());
+    appStore.getState().stopClipReview(); const before = [...calls];
+    t.mock.timers.tick(800); assert.deepEqual(calls, before);
+    assert.equal(appStore.getState().clipReview, null);
+  } finally { detach(); }
+});
+
+test('prelude keeps quiz mode at lineIndex -1 with no answer choices', () => {
+  const { detach } = pacingRun();
+  try {
+    const lyrics = getLyrics('dawn');
+    libraryStore.setState({ lyrics: { ...libraryStore.getState().lyrics, dawn: { ...lyrics, timeline: lyrics.timeline.map(line => ({ ...line, startMs: line.startMs + 1000, endMs: line.endMs + 1000 })) } } });
+    appStore.getState().updatePlayback(0, 238000, true);
+    assert.equal(appStore.getState().lineIndex, -1);
+    assert.equal(appStore.getState().mode, 'quiz');
+    assert.equal(appStore.getState().quizToggle, true);
+    assert.equal(occurrenceLine('dawn', -1), undefined);
+    assert.equal(appStore.getState().answerWait, null);
+  } finally { detach(); }
+});
+
+test('repeated song taps during loading issue one load and retain the current run', () => {
+  const { calls, detach } = clipTransport();
+  try {
+    appStore.getState().startSong('dawn'); const run = appStore.getState().run;
+    appStore.getState().startSong('dawn');
+    assert.deepEqual(calls, ['load:dawn:0', 'play']);
+    assert.equal(appStore.getState().run, run);
+    assert.equal(appStore.getState().loading, true);
+    appStore.getState().startSong('glass'); appStore.getState().startSong('glass');
+    assert.deepEqual(calls.slice(2), ['load:glass:0', 'play']);
+    assert.equal(appStore.getState().songId, 'glass');
+  } finally { detach(); }
+});
+
+test('native loaded status ends loading and clip EOF does not mark played, scrobble or advance songs', async t => {
+  const { status, detach } = await nativePacingRun(t);
+  try {
+    assert.equal(appStore.getState().loading, false);
+    const fetches = t.mock.method(globalThis, 'fetch', async () => Response.json({ 'subsonic-response': { status: 'ok' } }));
+    const played = t.mock.method(libraryStore.getState(), 'markPlayed', () => {});
+    const next = t.mock.method(appStore.getState(), 'nextSong', () => {});
+    const complete = t.mock.method(appStore.getState(), 'completeRun', () => {});
+    appStore.setState({ reviewList: [{ id: 'end', songId: 'glass', lineId: fixtureLine('glass-0'), kind: 'due', misses: 1 }] });
+    appStore.getState().startClipReview();
+    status(0, false); await Promise.resolve();
+    status(238000, false, true);
+    assert.equal(fetches.mock.callCount(), 0);
+    assert.equal(played.mock.callCount(), 0);
+    assert.equal(next.mock.callCount(), 0);
+    assert.equal(complete.mock.callCount(), 0);
+    assert.equal(appStore.getState().clipReview?.index, 0);
+    assert.equal(appStore.getState().playing, false);
+  } finally { detach(); }
+});

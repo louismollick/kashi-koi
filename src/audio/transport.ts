@@ -13,7 +13,7 @@ export async function setupTransport(valid = () => true) {
   if (!valid()) return () => {};
   const player = createAudioPlayer(null, { updateInterval: 200, keepAudioSessionActive: true });
   let song: Song | null = null, submitted = false, finished = false, awaitingStart = false, seeking = false, wantsPlay = false, pausePending = false, startMs = 0, revision = 0;
-  const fail = (error: unknown) => { wantsPlay = false; appStore.setState({ playbackError: error instanceof Error ? error.message : typeof error === 'string' ? error : 'Could not play this song', playing: false }); };
+  const fail = (error: unknown) => { wantsPlay = false; appStore.setState({ loading: false, playbackError: error instanceof Error ? error.message : typeof error === 'string' ? error : 'Could not play this song', playing: false }); };
   /** Pause through seeks; only the latest request may resume playback. */
   const seek = (ms: number) => {
     startMs = ms;
@@ -35,6 +35,7 @@ export async function setupTransport(valid = () => true) {
     if (awaitingStart) {
       if (status.currentTime >= 1) return;
       awaitingStart = false;
+      appStore.setState({ loading: false });
       seek(startMs);
       return;
     }

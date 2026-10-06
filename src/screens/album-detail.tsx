@@ -23,8 +23,8 @@ export default function AlbumDetailScreen() {
   const allTracks = getAlbumSongs(album.id);
   const tracks = getVisibleSongs(allTracks, hiding);
   const startAlbum = (shuffle = false) => {
-    appStore.getState().startAlbum(album.id, shuffle);
     router.push('/player');
+    appStore.getState().startAlbum(album.id, shuffle);
   };
   return <View style={styles.page}>
     <ScreenHeader />

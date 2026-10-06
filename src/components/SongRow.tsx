@@ -14,8 +14,8 @@ export function SongRow({ song, number }: { song: Song; number?: number }) {
   const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
   const duration = `${Math.floor(song.duration / 60)}:${String(Math.floor(song.duration) % 60).padStart(2, '0')}`;
   return <Pressable accessibilityRole="button" accessibilityLabel={`Play ${song.title}${(song.lyricsStatus === 'synced') ? '' : ', no lyrics'}`} onPress={() => {
-    appStore.getState().startSong(song.id);
     router.push('/player');
+    appStore.getState().startSong(song.id);
   }} style={({ pressed }) => [styles.row, { minHeight: 64, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.track, opacity: pressed ? 0.7 : 1 }]}>
     {number === undefined ? <Cover song={getAlbum(song.albumId) ?? song} size={46} /> : <Label muted style={{ width: 26, textAlign: 'center', fontSize: 14 }}>{number}</Label>}
     <View style={{ flex: 1 }}>

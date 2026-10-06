@@ -68,7 +68,7 @@ test('quiz and review gates accept translated songs despite English lines and pa
   assert.equal(readyReviewLines(appStore.getState().reviewList).length, 1);
   appStore.getState().startReviewMix(); assert.deepEqual(appStore.getState().reviewMix!.songIds, ['0']); appStore.getState().finishReviewMix();
   appStore.getState().startClipReview(); assert.deepEqual(appStore.getState().clipReview!.ids, ['ready']);
-  const choice = appStore.getState().clipReview!.choices['0:0']![0]!; appStore.getState().answerClip(choice); assert.equal(appStore.getState().clipReview!.answered, true);
+  const choice = appStore.getState().clipReview!.choices['0:0']![0]!; appStore.getState().answerClip(choice); assert.equal(appStore.getState().clipReview!.answers['ready']?.correct, true);
   appStore.getState().startReviewMix(); assert.equal(appStore.getState().reviewMix, null); // The only translated line was reviewed.
 });
 

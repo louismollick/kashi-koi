@@ -1,10 +1,9 @@
 import { isJapanese } from '@/japanese/text';
 import { translationHint } from '@/japanese/translate';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
-import Animated, { useAnimatedStyle, useSharedValue, Easing, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
 import { getLineText, libraryStore, hasTranslations } from '@/store/libraryStore';
 import { getReviewMixProgress } from '@/data/libraryVisibility';
@@ -12,45 +11,9 @@ import { appStore } from '@/store/appStore';
 import { ScreenHeader } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { LineCard, FuriganaLine } from '@/components/LineCard';
-import { Mascot } from '@/components/Mascot';
-import { Answers } from '@/components/Answers';
+import { QuizColumn, QuizLane } from '@/components/QuizLayout';
 import { PlayerBar } from '@/components/PlayerBar';
 import { Button, IconButton, Label, PixelToggle, styles } from '@/components/ui';
-
-/** Sprite and feedback shrink to the space left between the line and answers. */
-function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
-  const pop = useSharedValue(0);
-  const [size, setSize] = useState(0);
-  useEffect(() => { pop.value = nice ? withSpring(1, { damping: 12 }) : withTiming(0, { duration: 140 }); }, [nice, pop]);
-  const animatedStyle = useAnimatedStyle(() => ({ opacity: pop.value, transform: [{ scale: 0.75 + pop.value * 0.25 }, { rotate: '-4deg' }] }));
-  const note = { position: 'absolute', color: colors.coral, fontSize: Math.min(30, size * 0.14), fontWeight: '900', textShadowColor: colors.cream, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 } as const;
-  return <View onLayout={({ nativeEvent: { layout } }) => setSize(Math.max(0, Math.min(250, layout.height - 8, layout.width - 128)))} style={[styles.row, { flex: 1, minHeight: 0, paddingHorizontal: 4 }]}>
-    <View>
-      <Mascot combo={combo} size={size} />
-      {combo >= 3 && <><Text style={[note, { left: 0, top: size * 0.12 }]}>♪</Text><Text style={[note, { right: size * 0.18, top: size * 0.02, fontSize: Math.min(24, size * 0.11) }]}>♪</Text></>}
-    </View>
-    <View style={{ flex: 1, alignItems: 'flex-end' }}>
-      <View style={{ width: 110, height: 140, justifyContent: 'flex-end', alignItems: 'flex-end', gap: 6, transform: [{ scale: Math.min(1, size / 140) }], transformOrigin: 'right center' }}>
-        <Animated.View style={animatedStyle}>
-          <PixelFrame fill={colors.cream} border={colors.coral} contentStyle={{ paddingHorizontal: 14, paddingVertical: 6 }}>
-            <Label style={{ color: colors.coralDeep, fontWeight: '900', fontSize: 22, lineHeight: 26 }}>NICE!</Label>
-          </PixelFrame>
-          <View style={{ position: 'absolute', bottom: -6, left: 14, width: 12, height: 12, backgroundColor: colors.cream, borderRightWidth: 2, borderBottomWidth: 2, borderColor: colors.coral, transform: [{ rotate: '45deg' }] }} />
-        </Animated.View>
-        <Label style={{ color: colors.combo, fontSize: 15, fontWeight: '800', letterSpacing: 1.5, marginTop: 6 }}>COMBO</Label>
-        <Label style={{ color: colors.cream, fontSize: 48, lineHeight: 52, fontWeight: '900', textShadowColor: colors.coralDeep, textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0 }}>{combo}</Label>
-      </View>
-    </View>
-  </View>;
-}
-
-/** Drain the deadline without adding a scrolling container to quiz mode. */
-function AnswerTimeBar({ until }: { until: number }) {
-  const remaining = useSharedValue(1);
-  useEffect(() => { const ms = Math.max(0, until - Date.now()); remaining.value = 1; remaining.value = withTiming(0, { duration: ms, easing: Easing.linear }); }, [until, remaining]);
-  const animatedStyle = useAnimatedStyle(() => ({ width: `${remaining.value * 100}%` }));
-  return <View style={{ height: 3, marginTop: 6, backgroundColor: colors.track }}><Animated.View style={[{ height: 3, backgroundColor: colors.coral }, animatedStyle]} /></View>;
-}
 
 /** ListenMode and QuizMode share one header, tappable line lane, and transport. */
 export default function PlayerScreen() {
@@ -78,6 +41,7 @@ export default function PlayerScreen() {
   const timeline = lyrics?.timeline ?? [];
   const lines = timeline.map(occurrence => lyrics!.lines.find(line => line.id === occurrence.lineId)!);
   const currentLine = lines[lineIndex];
+  const loading = appStore(state => state.loading);
   const playbackError = appStore(state => state.playbackError);
   const selectedAnswer = currentLine ? run.answers[currentLine.id]?.choice ?? null : null;
   const showToast = addedId !== null && addedExpiresAt !== null && Date.now() < addedExpiresAt;
@@ -102,20 +66,12 @@ export default function PlayerScreen() {
     <ScreenHeader title={song?.title} subtitle={reviewProgress ? `Review mix · song ${reviewProgress.position} of ${reviewProgress.total}` : currentLine ? `${song?.artist} · line ${lineIndex + 1} of ${lines.length}` : song?.artist}
       right={<View style={[styles.row, { gap: 6 }]}><Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label><PixelToggle disabled={!hasTranslations(songId)} label="Quiz toggle" on={quizToggle} onPress={() => quizToggle && reviewMix ? setConfirm(true) : appStore.getState().setQuizToggle(!quizToggle)} /></View>} />
     {!hasTranslations(songId) && lines.length > 0 && <Label muted style={{ paddingHorizontal: 16 }}>{translationHint(song.id)}</Label>}
-    {lines.length > 0 && <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
-      {lines.map((line, index) => <Pressable key={`${index}:${line.id}`} accessibilityRole="button" accessibilityLabel={`Jump to line ${index + 1}`} onPress={() => appStore.getState().jumpToLine(index)} style={{ flex: 1, paddingVertical: 7 }}>
-        <PixelFrame fill={!isJapanese(getLineText(line)) ? colors.track : index === lineIndex ? colors.bg : run.answers[line.id]?.correct === true ? colors.green : run.answers[line.id]?.correct === false ? colors.red : !quizToggle && reviewList.some(item => item.lineId === line.id) ? colors.coral : index < lineIndex ? colors.track : colors.laneEmpty}
-          border={index === lineIndex ? colors.text : null} contentStyle={{ height: 14 }} />
-      </Pressable>)}
-    </View>}
-    {!lines.length ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <Label muted>No lyrics for this song</Label>
-    </View> : quizToggle && currentLine ? <View style={{ flex: 1, minHeight: 0, paddingHorizontal: 16, paddingBottom: 16 }}>
-      <LineCard line={currentLine} />
-      {answerWait?.until != null && <AnswerTimeBar until={answerWait.until} />}
-      <ComboRow combo={run.combo} nice={currentLine ? run.answers[currentLine.id]?.correct === true : false} />
-      <Answers compact choices={run.choices[currentLine.id] ?? []} translation={currentLine.translation} selected={selectedAnswer} onAnswer={choice => appStore.getState().answer(choice)} />
-    </View> : <>
+    {!loading && lines.length > 0 && <QuizLane index={lineIndex} label="line" onJump={index => appStore.getState().jumpToLine(index)} segments={lines.map((line, index) => ({ id: line.id,
+      fill: !isJapanese(getLineText(line)) ? colors.track : run.answers[line.id]?.correct === true ? colors.green : run.answers[line.id]?.correct === false ? colors.red : !quizToggle && reviewList.some(item => item.lineId === line.id) ? colors.coral : index < lineIndex ? colors.track : colors.laneEmpty,
+    }))} />}
+    {loading ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator size="small" color={colors.coral} accessibilityLabel="Loading song" /></View>
+    : quizToggle ? <QuizColumn line={currentLine} until={answerWait?.until} combo={run.combo} nice={!!currentLine && run.answers[currentLine.id]?.correct === true} choices={currentLine ? run.choices[currentLine.id] ?? [] : []} selected={selectedAnswer} onAnswer={choice => appStore.getState().answer(choice)} />
+    : !lines.length ? <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}><Label muted>No lyrics for this song</Label></View> : <>
       <View style={{ flex: 1 }}>
         <ScrollView ref={scroll} onContentSizeChange={followLine} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 20, gap: 18 }}>
           {lines.map((line, index) => {
