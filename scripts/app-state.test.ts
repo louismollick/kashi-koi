@@ -409,6 +409,20 @@ test('next and previous songs wrap while skipping hidden songs in library order'
   assert.equal(appStore.getState().songId, 'summer');
 });
 
+test('Previous restarts the song after 3 s and goes to the previous song before that', () => {
+  appStore.getState().startSong('summer');
+  appStore.getState().nextSong();
+  appStore.getState().setQuizToggle(true);
+  appStore.getState().updatePlayback(5000, 238000, true);
+  appStore.getState().skipBack();
+  assert.equal(appStore.getState().songId, 'dawn');
+  assert.equal(appStore.getState().positionMs, 0);
+  assert.deepEqual(appStore.getState().run.answers, {});
+  appStore.getState().updatePlayback(2000, 238000, true);
+  appStore.getState().skipBack();
+  assert.equal(appStore.getState().songId, 'summer');
+});
+
 test('album Play and Shuffle build visible queues and skip songs hidden after starting', t => {
   t.mock.method(Math, 'random', () => 0);
   for (const shuffle of [false, true]) {

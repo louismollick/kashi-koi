@@ -8,7 +8,7 @@ Extracted from `src/screens/player.tsx` and used by both screens:
 
 - **Lane**: one segment per line (quiz) or per clip (Clip review). Current outlined, answered green or red, tap to jump.
 - **Quiz column**: `LineCard`, the Answer time drain bar, `ComboRow` (mascot, NICE!, combo), `Answers`. Never scrolls.
-- **PlayerBar** at the bottom with the cover. The center button is coral everywhere, including listen mode.
+- **PlayerBar** at the bottom with the cover. The center button is coral everywhere, including listen mode. Previous and Next are always songs, never lines: Previous restarts the song after 3 s, otherwise goes to the previous song. Clip review hides both.
 
 Clip review drops its own layout: the previous and next context lines, the cover row, the `next in 9 days` tag and the Next button go. Header keeps `title`, `artist · clip n of m` and the close button.
 
@@ -29,7 +29,7 @@ Mirrors a run:
 
 - `ClipReview` stores `answers: Record<reviewId, { choice; correct }>` and `combo`, replacing `answered` and `choice`. Review list updates on answer are unchanged.
 - After an answer, the result shows for 0.8 s, then the next clip loads and autoplays, same beat as quiz. The last clip ends on "All done for now" as today.
-- PlayerBar Previous and Next move between clips; the lane jumps to any clip. Going back to an answered clip shows its answer and does not re-grade.
+- The lane jumps to any clip; the PlayerBar has no Previous or Next here. Going back to an answered clip shows its answer and does not re-grade.
 - PlayerBar time shows position within the clip.
 
 ## Bugs

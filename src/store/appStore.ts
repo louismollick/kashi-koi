@@ -79,7 +79,7 @@ type AppState = {
   clipPlayback: { songId: string; startMs: number; endMs: number; positionMs: number } | null;
   reviewMix: ReviewMix | null; clipReview: ClipReview | null; addedId: string | null; addedExpiresAt: number | null; nextReviewId: number;
   startSong: (songId: string) => void; startAlbum: (albumId: string, shuffle?: boolean) => void; restartRun: () => void; setQuizToggle: (enabled: boolean) => void;
-  startReviewMix: () => void; finishReviewMix: () => void; nextSong: () => void; previousSong: () => void;
+  startReviewMix: () => void; finishReviewMix: () => void; nextSong: () => void; previousSong: () => void; skipBack: () => void;
   showTranslations: boolean; translationPrompted: boolean; toggleTranslations: () => void;
   ensureChoices: () => void; ensureClipChoices: () => void;
   toggleHideSongsWithoutSyncedLyrics: () => void;
@@ -177,6 +177,8 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     const previous = queueStep(playbackQueue ?? libraryStore.getState().songs.map(song => song.id), songId, -1, hideSongsWithoutSyncedLyrics);
     if (previous) { set({ quizToggle: get().quizToggle && hasTranslations(previous.id), mode: get().quizToggle && hasTranslations(previous.id) ? 'quiz' : 'listen', songId: previous.id, lineIndex: 0, positionMs: 0, playbackError: null, run: newRun(), playing: true }); playSong(previous.id); }
   },
+  // Previous restarts the song after 3 s, like a music player; a second press goes to the previous song.
+  skipBack: () => { if (get().positionMs > 3000) get().restartRun(); else get().previousSong(); },
   jumpToLine: index => {
     const timeline = getLyrics(get().songId).timeline;
     if (!timeline.length) return;
