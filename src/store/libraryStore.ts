@@ -53,8 +53,12 @@ export const getArtistAlbums = (id: string) => libraryStore.getState().albums.fi
 export const getLineText = (line: Line) => line.segments.map(segment => segment.text).join('');
 export const japaneseLines = (id: string | null) => getLyrics(id).lines.filter(line => isJapanese(getLineText(line)));
 export const hasTranslations = (id: string | null) => { const lines = japaneseLines(id); return !!lines.length && lines.every(line => !!line.translation); };
+/** New and missed lines are ready now; scheduled lines return at their due time. */
+export const isDue = (line: ReviewList[number], now = Date.now()) => line.kind !== 'later' || line.dueAt <= now;
+/** Due today excludes the separate new-from-listening group. */
+export const dueLines = (list: ReviewList, now = Date.now()) => list.filter(line => line.kind !== 'new' && isDue(line, now));
 /** Review actions need at least one Japanese line in a fully translated song. */
-export const readyReviewLines = (list: ReviewList) => list.filter(item => item.kind !== 'later' && hasTranslations(item.songId) && japaneseLines(item.songId).some(line => line.id === item.lineId));
+export const readyReviewLines = (list: ReviewList, now = Date.now()) => list.filter(item => isDue(item, now) && hasTranslations(item.songId) && japaneseLines(item.songId).some(line => line.id === item.lineId));
 export const occurrenceLine = (id: string | null, index: number) => { const lyrics = getLyrics(id); return lyrics.lines.find(line => line.id === lyrics.timeline[index]?.lineId); };
 
 /** Pick distinct same-song translations, then shuffle once when a line becomes current. */

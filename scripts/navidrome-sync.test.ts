@@ -54,7 +54,7 @@ test('successful refresh prunes removed review lines, preserves retimed lines, a
   appStore.setState({ reviewList: [
     { id: 'keep', songId: song.id, lineId: retained.id, kind: 'new' },
     { id: 'remove', songId: song.id, lineId: removed.id, kind: 'due', misses: 1 },
-    { id: 'other', songId: 'other', lineId: 'other:line', kind: 'later' },
+    { id: 'other', songId: 'other', lineId: 'other:line', kind: 'later', step: 0, dueAt: Date.now() + 86400000 },
   ] });
   try {
     globalThis.fetch = async () => Response.json({ 'subsonic-response': { status: 'ok', lyricsList: { structuredLyrics: [{ synced: true, line: [{ start: 3000, value: retained.segments.map(segment => segment.text).join('') }] }] } } });

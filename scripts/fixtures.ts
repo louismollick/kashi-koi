@@ -155,8 +155,8 @@ export function makeReviewList(): ReviewList {
       const song = lyricSongs[index % lyricSongs.length]!;
       return { id: `due-${index}`, songId: song.id, lineId: `${song.id}-${index === 0 ? 2 : index === 1 ? 6 : index + 1}`, kind: 'due' as const, misses: index === 0 ? 2 : 0 };
     }),
-    { id: 'later-dawn', songId: 'dawn', lineId: 'dawn-8', kind: 'later' },
-    { id: 'later-dream', songId: 'dream', lineId: 'dream-11', kind: 'later' },
+    { id: 'later-dawn', songId: 'dawn', lineId: 'dawn-8', kind: 'later', step: 0, dueAt: Date.now() + 86400000 },
+    { id: 'later-dream', songId: 'dream', lineId: 'dream-11', kind: 'later', step: 0, dueAt: Date.now() + 86400000 },
   ];
 }
 

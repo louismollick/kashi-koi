@@ -1,63 +1,82 @@
-import { ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { getLineText, getSong, getLyrics, libraryStore, readyReviewLines } from '@/store/libraryStore';
+import { dueLines, getAlbum, getLineText, getSong, getLyrics, isDue, libraryStore, readyReviewLines } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
+import { useNow } from '@/hooks/useNow';
 import { Header } from '@/components/Header';
 import { Cover } from '@/components/Cover';
 import { Icon } from '@/components/Icon';
-import { PixelFrame } from '@/components/PixelFrame';
-import { Button, IconButton, Label, SectionHeader, Tag, styles } from '@/components/ui';
+import { Button, IconButton, Label, styles } from '@/components/ui';
 import type { ReviewList } from '@/types/domain';
 
-/** Review-list item exposes one Edit action for moving or removing its line. */
-function ReviewLineRow({ item }: { item: ReviewList[number] }) {
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+const sectionTitle = { fontSize: 20, lineHeight: 26, fontWeight: '700' } as const;
+
+/** One song row, like Library's Songs, with its review lines below. Tapping the song collapses them. */
+function SongGroup({ songId, items }: { songId: string; items: ReviewList }) {
   const router = useRouter();
-  const song = getSong(item.songId);
-  const line = getLyrics(item.songId).lines.find(line => line.id === item.lineId);
-  if (!song || !line) return null;
-  return <PixelFrame fill={colors.surface} border="#2c2f4b" contentStyle={[styles.row, { padding: 10, gap: 12 }]}>
-    <Cover song={song} size={64} />
-    <View style={{ flex: 1, gap: 3 }}>
-      {item.kind === 'new' ? <View style={{ alignSelf: 'flex-start' }}><Tag>NEW</Tag></View>
-        : item.kind === 'due' && item.misses > 0 ? <Label style={{ fontSize: 11, fontWeight: '700', color: colors.coralSoft }}>MISSED {item.misses}×</Label> : null}
-      <Label numberOfLines={2} style={{ fontSize: 16, lineHeight: 22, fontWeight: '600' }}>{getLineText(line)}</Label>
-      <Label muted numberOfLines={1} style={{ fontSize: 12 }}>{song.title} · {song.artist}</Label>
-    </View>
-    <IconButton name="edit" size={46} fill="#232641" border="#4b4f80" color={colors.lavender} label={`Edit ${getLineText(line)}`} onPress={() => router.push({ pathname: '/edit-line', params: { id: item.id } })} />
-  </PixelFrame>;
+  const [open, setOpen] = useState(true);
+  const song = getSong(songId);
+  if (!song) return null;
+  const lines = getLyrics(songId).lines;
+  return <View style={{ borderBottomWidth: 1, borderBottomColor: colors.track, paddingBottom: open ? 6 : 0 }}>
+    <Pressable accessibilityRole="button" accessibilityLabel={song.title} accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={[styles.row, { minHeight: 64, paddingVertical: 8 }]}>
+      <Cover song={getAlbum(song.albumId) ?? song} size={46} />
+      <View style={{ flex: 1 }}>
+        <Label numberOfLines={1} style={{ fontWeight: '700', fontSize: 16 }}>{song.title}</Label>
+        <Label muted numberOfLines={1} style={{ fontSize: 13 }}>{song.artist}</Label>
+      </View>
+    </Pressable>
+    {open && items.map(item => {
+      const line = lines.find(line => line.id === item.lineId);
+      if (!line) return null;
+      const text = getLineText(line);
+      return <View key={item.id} style={[styles.row, { paddingLeft: 56, minHeight: 44 }]}>
+        <Label numberOfLines={2} style={{ flex: 1, fontSize: 16, lineHeight: 22 }}>{text}</Label>
+        <IconButton plain name="edit" size={40} color={colors.lavender} label={`Edit ${text}`} onPress={() => router.push({ pathname: '/edit-line', params: { id: item.id } })} />
+      </View>;
+    })}
+  </View>;
 }
 
-/** New and due lines, with translation-dependent review actions. */
+/** Hidden when empty. Tapping the header collapses every song in it. */
+function Section({ title, items }: { title: string; items: ReviewList }) {
+  const [open, setOpen] = useState(true);
+  if (!items.length) return null;
+  const songIds = [...new Set(items.map(item => item.songId))];
+  return <View>
+    <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={[styles.row, { paddingVertical: 6 }]}>
+      <Label style={[sectionTitle, { flex: 1 }]}>{title}</Label>
+      <Label muted style={{ fontSize: 13 }}>{plural(items.length, 'line')} from {plural(songIds.length, 'song')}</Label>
+    </Pressable>
+    {open && songIds.map(songId => <SongGroup key={songId} songId={songId} items={items.filter(item => item.songId === songId)} />)}
+  </View>;
+}
+
+/** Due and new lines grouped by song, with clip review on top. */
 export default function ReviewScreen() {
   const router = useRouter();
   libraryStore(state => state.lyrics);
   const reviewList = appStore(state => state.reviewList);
-  const newLines = reviewList.filter(line => line.kind === 'new');
-  const dueLines = reviewList.filter(line => line.kind === 'due');
-  const count = newLines.length + dueLines.length;
-  const ready = readyReviewLines(reviewList);
-  const waiting = count - ready.length;
-  const songCount = new Set(ready.map(line => line.songId)).size;
+  const now = useNow();
+  const due = dueLines(reviewList, now);
+  const fresh = reviewList.filter(line => line.kind === 'new');
+  const later = reviewList.filter(line => !isDue(line, now)).length;
+  const ready = readyReviewLines(reviewList, now);
+  const waiting = due.length + fresh.length - ready.length;
   return <View style={styles.page}><Header />
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={[styles.row, { alignItems: 'stretch' }]}>
-        <Button label="Start clip review" fill={colors.coral} border="#ff9aa5" disabled={!ready.length} style={{ flex: 1 }} contentStyle={{ minHeight: 84 }} onPress={() => { appStore.getState().startClipReview(); router.push('/clip-review'); }}>
-          <View style={styles.row}><Icon name="play" size={30} color={colors.cream} /><Label style={styles.title}>Clips</Label></View>
-          <Label style={{ fontSize: 13, marginTop: 2 }}>{ready.length} lines · ~4 min</Label>
-        </Button>
-        <Button label="Start review mix" fill={colors.slate} border="#4b4f80" disabled={!ready.length} style={{ flex: 1 }} contentStyle={{ minHeight: 84 }} onPress={() => { appStore.getState().startReviewMix(); router.push('/player'); }}>
-          <View style={styles.row}><Icon name="musicFilled" size={30} color={colors.lavender} /><Label style={styles.title}>Songs</Label></View>
-          <Label style={{ fontSize: 13, marginTop: 2, color: '#d6d2ee' }}>{songCount} songs · {songCount * 4} min</Label>
-        </Button>
-      </View>
-      {waiting > 0 && <Label muted>{waiting} lines waiting for translations</Label>}
-      <SectionHeader title="New from listening" hint="Check the line" />
-      {newLines.map(item => <ReviewLineRow key={item.id} item={item} />)}
-      <SectionHeader title="Due today" count={dueLines.length} hint="Review these lines" />
-      {dueLines.map(item => <ReviewLineRow key={item.id} item={item} />)}
-      {!count && <Label muted>All caught up</Label>}
-      <PixelFrame fill={colors.surface} border="#2c2f4b" contentStyle={[styles.row, { padding: 14 }]}><Label style={{ flex: 1, fontWeight: '600' }}>Later</Label><Label muted>{reviewList.filter(line => line.kind === 'later').length}</Label><Icon name="next" size={18} /></PixelFrame>
+      <Button label="Review lyrics" fill={colors.coral} border="#ff9aa5" disabled={!ready.length} contentStyle={{ minHeight: 76 }} onPress={() => { appStore.getState().startClipReview(); router.push('/clip-review'); }}>
+        <View style={styles.row}><Icon name="play" size={28} color={colors.cream} /><Label style={styles.title}>Review Lyrics</Label></View>
+        <Label style={{ fontSize: 13, marginTop: 2 }}>~4 min</Label>
+      </Button>
+      {waiting > 0 && <Label muted>{plural(waiting, 'line')} waiting for translations</Label>}
+      <Section title="Due today" items={due} />
+      <Section title="New from listening" items={fresh} />
+      {later > 0 && <View style={[styles.row, { paddingVertical: 6 }]}><Label style={[sectionTitle, { flex: 1 }]}>Due later</Label><Label muted style={{ fontSize: 13 }}>{plural(later, 'line')}</Label></View>}
+      {!due.length && !fresh.length && !later && <Label muted>All caught up</Label>}
     </ScrollView>
   </View>;
 }

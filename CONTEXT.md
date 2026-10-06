@@ -63,27 +63,27 @@ _Avoid_: Sit mode, game mode, study session
 
 **Lost mark**:
 A tap in listen mode meaning "I just lost the thread". It immediately puts a guessed line (the one playing just before the tap) on the review list as a new line.
-_Avoid_: Flag, unknown line, "didn't understand" (that's the button's label, not the concept)
+_Avoid_: Flag, unknown line, "review later" (that's the button's label, not the concept)
 
 **New line**:
 A line added to the review list by a lost mark that hasn't been confirmed yet. Its guessed line can be moved earlier or later until it's reviewed once.
 _Avoid_: Unsorted mark, pending mark
 
 **Review list**:
-The lines the user has explicitly chosen to study, either from lost marks or from the results of a run. Each line comes back on a spaced schedule: right answers push it further out, wrong ones bring it back sooner.
+The lines the user has explicitly chosen to study, either from lost marks or from the results of a run. Each line comes back on a spaced schedule: each right answer doubles the gap, starting at one day, and a wrong answer makes it due again.
 _Avoid_: Deck, queue, quest log
 
 **Due line**:
 A line on the review list whose scheduled time has come. Answering it correctly in any run, or in a clip review, completes its review for the day.
 _Avoid_: Card, review item
 
+**Due later**:
+A line on the review list answered correctly whose next scheduled time hasn't come yet.
+_Avoid_: Learned, done
+
 **Clip review**:
 Reviewing due lines one at a time by replaying just their clip, in the same layout as quiz mode but with no timer. Answering moves on to the next clip. A tested alternative to a full run that skips the rest of each song.
 _Avoid_: Flashcards, quiet mode
-
-**Review mix**:
-A playlist of songs that contain due lines, played as normal runs. Starting one turns quiz mode on for that queue; the previous setting returns when it ends.
-_Avoid_: Review playlist, station
 
 **Meaning Match**:
 The game played in quiz mode: as each line is sung, the user picks its translation from a few choices drawn from the same song.

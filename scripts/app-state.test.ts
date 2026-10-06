@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test, type TestContext } from 'node:test';
 import { registerHooks } from 'node:module';
+import { currentOccurrence } from '../src/navidrome/lyrics';
 import { sessionStore } from '../src/navidrome/session';
 import { appStore, getRunSummary, setTransport, hydrateAppState, resetAppState } from '../src/store/appStore';
 import { albums, artists, firstSong, songs, songLyrics, fixtureLine, fixtureReviewList } from './fixtures';
-import { getAlbumSongs, getArtistAlbums, getLineText, getLyrics, libraryStore, occurrenceLine } from '../src/store/libraryStore';
-import { albumHasSyncedLyrics, artistHasSyncedLyrics, getRecentlyPlayed, getReviewMixProgress, getVisibleLibrary, getVisibleSongs } from '../src/data/libraryVisibility';
+import { getAlbumSongs, getArtistAlbums, getLineText, getLyrics, libraryStore, occurrenceLine, isDue, dueLines, readyReviewLines } from '../src/store/libraryStore';
+import { albumHasSyncedLyrics, artistHasSyncedLyrics, getRecentlyPlayed, getVisibleLibrary, getVisibleSongs } from '../src/data/libraryVisibility';
 
 
 // Existing state sequences choose a translation explicitly, independent of button order.
@@ -20,7 +21,7 @@ const clipAnswer = () => {
 function clipResult() { const clip = appStore.getState().clipReview; return clip ? clip.answers[clip.ids[clip.index]!] ?.correct ?? null : null; }
 
 const initialState = appStore.getState();
-beforeEach(() => { void resetAppState(); libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics }); appStore.setState({ ...initialState, songId: firstSong.id, playing: true, lineIndex: 3, reviewList: fixtureReviewList() }, true); });
+beforeEach(() => { void resetAppState(); libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics }); appStore.setState({ ...initialState, songId: firstSong.id, durationMs: firstSong.duration * 1000, playing: true, lineIndex: 3, reviewList: fixtureReviewList() }, true); });
 
 test('a lost mark can be undone without removing pre-existing review lines', () => {
   const before = appStore.getState().reviewList.length;
@@ -71,20 +72,6 @@ test('clip review is untimed and moves answered new lines onto the later schedul
   assert.equal(appStore.getState().reviewList.find(line => line.id === 'new-rain')?.kind, 'due');
 });
 
-test('turning off a review mix preserves unanswered lines and restores the prior setting at the end', () => {
-  const before = appStore.getState().reviewList;
-  appStore.getState().startReviewMix();
-  assert.equal(appStore.getState().quizToggle, true);
-  assert.equal(appStore.getState().reviewMix?.songIds.length, 6);
-  appStore.getState().restartRun();
-  assert.equal(appStore.getState().reviewMix?.songIds.length, 6);
-  appStore.getState().setQuizToggle(false);
-  assert.deepEqual(appStore.getState().reviewList, before);
-  for (let index = 0; index < 6; index++) appStore.getState().nextSong();
-  assert.equal(appStore.getState().reviewMix, null);
-  assert.equal(appStore.getState().quizToggle, false);
-});
-
 test('a full run finishes and only selected misses are sent to review', () => {
   appStore.getState().setQuizToggle(true);
   appStore.getState().jumpToLine(0);
@@ -104,20 +91,8 @@ test('a full run finishes and only selected misses are sent to review', () => {
 
 test('an empty review list disables review entry points', () => {
   appStore.setState({ reviewList: [] });
-  appStore.getState().startReviewMix();
-  assert.equal(appStore.getState().reviewMix, null);
   appStore.getState().startClipReview();
   assert.deepEqual(appStore.getState().clipReview?.ids, []);
-});
-
-test('choosing a recent song or restarting a mix preserves the original quiz preference', () => {
-  appStore.getState().startReviewMix();
-  appStore.getState().startReviewMix();
-  assert.equal(appStore.getState().reviewMix?.previousQuizToggle, false);
-  appStore.getState().startSong('rain');
-  assert.equal(appStore.getState().reviewMix, null);
-  assert.equal(appStore.getState().quizToggle, false);
-  assert.equal(appStore.getState().mode, 'listen');
 });
 
 test('moving a lost mark frees its line without reusing the entry id', () => {
@@ -452,44 +427,6 @@ test('album Play and Shuffle build visible queues and skip songs hidden after st
   assert.equal(appStore.getState(), before);
 });
 
-test('review mixes skip hidden songs at creation and after the setting changes', () => {
-  const hiddenSong = songs[6]!;
-  appStore.setState({ reviewList: [...appStore.getState().reviewList, { id: 'empty', songId: hiddenSong.id, lineId: 'empty-line', kind: 'due', misses: 1 }] });
-  appStore.getState().startReviewMix();
-  assert.ok(!appStore.getState().reviewMix!.songIds.includes(hiddenSong.id));
-  appStore.getState().finishReviewMix();
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  appStore.getState().startReviewMix();
-  assert.ok(!appStore.getState().reviewMix!.songIds.includes(hiddenSong.id));
-  const mix = appStore.getState().reviewMix!;
-  appStore.setState({ reviewMix: { ...mix, songIds: ['dawn', hiddenSong.id, 'rain'] } });
-  const progress = () => getReviewMixProgress(appStore.getState().reviewMix!, appStore.getState().hideSongsWithoutSyncedLyrics);
-  assert.deepEqual(progress(), { position: 1, total: 3 });
-  const reviewList = appStore.getState().reviewList;
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  assert.deepEqual(progress(), { position: 1, total: 2 });
-  appStore.getState().nextSong();
-  assert.equal(appStore.getState().songId, 'rain');
-  assert.equal(appStore.getState().reviewMix?.index, 2);
-  assert.deepEqual(progress(), { position: 2, total: 2 });
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  assert.deepEqual(progress(), { position: 3, total: 3 });
-  assert.equal(appStore.getState().reviewMix?.index, 2);
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  assert.deepEqual(progress(), { position: 2, total: 2 });
-  appStore.getState().previousSong();
-  assert.equal(appStore.getState().songId, 'dawn');
-  assert.equal(appStore.getState().reviewMix?.index, 0);
-  assert.deepEqual(progress(), { position: 1, total: 2 });
-  appStore.getState().previousSong();
-  assert.equal(appStore.getState().songId, 'dawn');
-  appStore.getState().nextSong();
-  appStore.getState().nextSong();
-  assert.equal(appStore.getState().reviewMix, null);
-  assert.equal(appStore.getState().quizToggle, false);
-  assert.deepEqual(appStore.getState().reviewList, reviewList);
-});
-
 test('injected transport loads, pauses and seeks occurrences', () => {
   const calls: string[] = [];
   setTransport({ load: song => calls.push(`load:${song.id}`), play: () => calls.push('play'), pause: () => calls.push('pause'), seek: ms => calls.push(`seek:${ms}`) });
@@ -541,7 +478,7 @@ test('learning state survives hydration while playback stays transient, and rese
   assert.equal(appStore.getState().translationPrompted, false);
 });
 
-test('a lost mark in an instrumental gap marks the preceding line', () => {
+test('a lost mark between occurrences still marks the current Japanese line', () => {
   const lyrics = getLyrics('dawn');
   libraryStore.getState().setLyricsResult('dawn', 'synced', { ...lyrics, timeline: [{ ...lyrics.timeline[0]!, startMs: 1000, endMs: 3000 }, { ...lyrics.timeline[1]!, startMs: 6000 }] });
   appStore.setState({ reviewList: [] });
@@ -605,7 +542,6 @@ test('starting clip review pauses music and autoplays the first occurrence', () 
     assert.equal(state.run, before.run);
     assert.equal(state.quizToggle, before.quizToggle);
     assert.equal(state.playbackQueue, before.playbackQueue);
-    assert.equal(state.reviewMix, before.reviewMix);
   } finally { detach(); }
 });
 
@@ -626,7 +562,6 @@ test('clips pause at their end without advancing or changing the main learning s
   const nextSong = appStore.getState().nextSong;
   let nextCalls = 0;
   try {
-    appStore.getState().startReviewMix();
     appStore.setState({ playbackQueue: ['dawn', 'glass'], nextSong: () => { nextCalls++; } });
     const before = appStore.getState();
     appStore.getState().playClip('rain', 18000, 24000);
@@ -645,7 +580,6 @@ test('clips pause at their end without advancing or changing the main learning s
     assert.equal(after.quizToggle, before.quizToggle);
     assert.equal(after.mode, before.mode);
     assert.equal(after.run, before.run);
-    assert.equal(after.reviewMix, before.reviewMix);
     assert.equal(after.playbackQueue, before.playbackQueue);
     assert.equal(nextCalls, 0);
     assert.equal(calls.at(-1), 'pause');
@@ -830,7 +764,7 @@ test('timeout resumes unanswered, counts a miss, and preserves combo', t => {
   } finally { detach(); }
 });
 
-for (const action of ['play', 'quiz off', 'restart', 'song', 'next song', 'previous song', 'mix', 'next line', 'lane', 'complete', 'clip'] as const) test(`${action} releases the wait and cancels its timer`, t => {
+for (const action of ['play', 'quiz off', 'restart', 'song', 'next song', 'previous song', 'seek', 'next line', 'lane', 'complete', 'clip'] as const) test(`${action} releases the wait and cancels its timer`, t => {
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   const { calls, detach } = pacingRun(3);
   try {
@@ -842,8 +776,8 @@ for (const action of ['play', 'quiz off', 'restart', 'song', 'next song', 'previ
     if (action === 'song') state.startSong('glass');
     if (action === 'next song') state.nextSong();
     if (action === 'previous song') state.previousSong();
-    if (action === 'mix') state.startReviewMix();
     if (action === 'next line') state.advanceLine();
+    if (action === 'seek') state.seek(19000);
     if (action === 'lane') state.jumpToLine(2);
     if (action === 'complete') state.completeRun();
     if (action === 'clip') state.playClip('dawn', 0, 12000);
@@ -922,22 +856,6 @@ test('no-limit wait stays paused until an answer, including a wrong answer', t =
     t.mock.timers.tick(1);
     assert.equal(appStore.getState().playing, true);
     assert.deepEqual(calls, ['pause', 'play']);
-  } finally { detach(); }
-});
-
-for (const direction of ['nextSong', 'previousSong'] as const) test(`review-mix ${direction} clears its wait and timer`, t => {
-  t.mock.timers.enable({ apis: ['setTimeout'] });
-  const { calls, detach } = pacingRun(3);
-  try {
-    appStore.getState().startReviewMix();
-    if (direction === 'previousSong') appStore.getState().nextSong();
-    appStore.getState().updatePlayback(8900, 238000, true);
-    assert.ok(appStore.getState().answerWait);
-    appStore.getState()[direction]();
-    assert.equal(appStore.getState().answerWait, null);
-    const before = [...calls];
-    t.mock.timers.tick(4000);
-    assert.deepEqual(calls, before);
   } finally { detach(); }
 });
 
@@ -1330,5 +1248,128 @@ test('native clip pause and resume follow lock-screen controls while seek, buffe
     assert.equal(appStore.getState().playing, true);
     assert.ok(appStore.getState().clipPlayback);
     assert.equal(appStore.getState().clipReview?.index, 0);
+  } finally { detach(); }
+});
+
+for (const mode of ['quiz', 'clip'] as const) test(`${mode} review doubles intervals and a miss resets the schedule`, t => {
+  t.mock.timers.enable({ apis: ['Date'], now: 1000000 });
+  const day = 86400000, lineId = fixtureLine('dawn-3');
+  appStore.setState({ reviewList: [{ id: 'scheduled', songId: 'dawn', lineId, kind: 'new' }] });
+  if (mode === 'quiz') appStore.getState().setQuizToggle(true);
+  const answer = (correct: boolean) => {
+    if (mode === 'quiz') {
+      appStore.getState().restartRun();
+      appStore.getState().jumpToLine(3);
+      appStore.getState().answer(correct ? correctAnswer() : 'wrong');
+    } else {
+      appStore.getState().startClipReview();
+      assert.deepEqual(appStore.getState().clipReview?.ids, ['scheduled']);
+      appStore.getState().answerClip(correct ? clipAnswer() : 'wrong');
+      appStore.getState().stopClipReview();
+    }
+  };
+  for (let step = 0; step < 4; step++) {
+    answer(true);
+    const line = appStore.getState().reviewList[0]!;
+    assert.equal(line.kind, 'later');
+    if (line.kind !== 'later') throw new Error('Expected scheduled line');
+    assert.equal(line.step, step);
+    assert.equal(line.dueAt, Date.now() + 2 ** step * day);
+    assert.equal(isDue(line, line.dueAt - 1), false);
+    assert.equal(isDue(line, line.dueAt), true);
+    t.mock.timers.setTime(line.dueAt);
+  }
+  answer(false);
+  assert.deepEqual(appStore.getState().reviewList[0], { id: 'scheduled', songId: 'dawn', lineId, kind: 'due', misses: 1 });
+  answer(false);
+  const missed = appStore.getState().reviewList[0]!;
+  assert.equal(missed.kind === 'due' && missed.misses, 2);
+  answer(true);
+  assert.deepEqual(appStore.getState().reviewList[0], { id: 'scheduled', songId: 'dawn', lineId, kind: 'later', step: 0, dueAt: Date.now() + day });
+});
+
+test('expired later lines join due today and ready review, with new lines separate', () => {
+  const now = 1000;
+  const list = [
+    { id: 'new', songId: 'dawn', lineId: fixtureLine('dawn-0'), kind: 'new' as const },
+    { id: 'due', songId: 'dawn', lineId: fixtureLine('dawn-1'), kind: 'due' as const, misses: 1 },
+    { id: 'expired', songId: 'dawn', lineId: fixtureLine('dawn-2'), kind: 'later' as const, step: 2, dueAt: now },
+    { id: 'future', songId: 'dawn', lineId: fixtureLine('dawn-3'), kind: 'later' as const, step: 0, dueAt: now + 1 },
+  ];
+  assert.deepEqual(list.map(line => isDue(line, now)), [true, true, true, false]);
+  assert.deepEqual(dueLines(list, now).map(line => line.id), ['due', 'expired']);
+  assert.deepEqual(readyReviewLines(list, now).map(line => line.id), ['new', 'due', 'expired']);
+});
+
+test('hydration makes legacy later lines due, stays stable across hydrations and drops obsolete review mix state', async t => {
+  t.mock.timers.enable({ apis: ['Date'], now: 1000000 });
+  const values = new Map([['learning-state', JSON.stringify({ version: 0, state: {
+    reviewMix: { songIds: ['dawn'], index: 0, previousQuizToggle: false },
+    reviewList: [
+      { id: 'legacy', songId: 'dawn', lineId: fixtureLine('dawn-0'), kind: 'later' },
+      { id: 'partial', songId: 'dawn', lineId: fixtureLine('dawn-1'), kind: 'later', step: 4 },
+      { id: 'scheduled', songId: 'dawn', lineId: fixtureLine('dawn-2'), kind: 'later', step: 3, dueAt: 1234 },
+      { id: 'new', songId: 'dawn', lineId: fixtureLine('dawn-3'), kind: 'new' },
+      { id: 'due', songId: 'dawn', lineId: fixtureLine('dawn-4'), kind: 'due', misses: 2 },
+    ],
+  } })]]);
+  await hydrateAppState({ getItem: key => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); }, removeItem: key => { values.delete(key); } });
+  const list = appStore.getState().reviewList;
+  assert.deepEqual(list.slice(0, 3).map(line => line.kind === 'later' ? [line.step, line.dueAt] : null), [[0, 0], [0, 0], [3, 1234]]);
+  assert.equal(list[3]!.kind, 'new');
+  assert.deepEqual(list[4], { id: 'due', songId: 'dawn', lineId: fixtureLine('dawn-4'), kind: 'due', misses: 2 });
+  assert.equal('reviewMix' in appStore.getState(), false);
+  appStore.getState().dismissToast();
+  const saved = JSON.parse(values.get('learning-state')!) as { state: Record<string, unknown> };
+  assert.equal('reviewMix' in saved.state, false);
+  t.mock.timers.setTime(2000000);
+  await appStore.persist.rehydrate();
+  assert.deepEqual(appStore.getState().reviewList, list);
+});
+
+test('a lost mark on a non-Japanese line leaves review and toast state unchanged', () => {
+  const lyrics = getLyrics('dawn');
+  libraryStore.getState().setLyricsResult('dawn', 'synced', { ...lyrics, lines: lyrics.lines.map(line => line.id === lyrics.timeline[5]!.lineId ? { ...line, segments: [{ text: 'English only' }] } : line) });
+  appStore.getState().jumpToLine(5);
+  const before = appStore.getState();
+  appStore.getState().addLostMark();
+  assert.equal(appStore.getState(), before);
+});
+
+test('main seek clamps, follows occurrences and leaves skipped quiz lines unanswered', () => {
+  const calls: number[] = [], detach = setTransport({ load() {}, play() {}, pause() {}, seek: ms => { calls.push(ms); } });
+  try {
+    appStore.getState().startSong('dawn');
+    appStore.getState().setQuizToggle(true);
+    const duration = appStore.getState().durationMs;
+    for (const position of [-100, 19000, duration + 100]) {
+      appStore.getState().seek(position);
+      const clamped = Math.max(0, Math.min(position, duration));
+      assert.equal(appStore.getState().positionMs, clamped);
+      assert.equal(calls.at(-1), clamped);
+      assert.equal(appStore.getState().lineIndex, currentOccurrence(getLyrics('dawn').timeline, clamped));
+    }
+    assert.deepEqual(appStore.getState().run.answers, {});
+    appStore.getState().jumpToLine(1);
+    assert.equal(calls.at(-1), getLyrics('dawn').timeline[1]!.startMs);
+  } finally { detach(); }
+});
+
+test('seeking during an answer stop releases it and seeking back permits another stop', t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { calls, detach } = pacingRun(3);
+  try {
+    stopFirstLine();
+    appStore.getState().seek(19000);
+    assert.equal(appStore.getState().answerWait, null);
+    assert.equal(appStore.getState().playing, true);
+    assert.deepEqual(calls.slice(-2), ['seek:19000', 'play']);
+    const before = [...calls];
+    t.mock.timers.tick(3000);
+    assert.deepEqual(calls, before);
+    appStore.getState().seek(0);
+    stopFirstLine();
+    assert.equal(appStore.getState().answerWait?.lineIndex, 0);
+    assert.deepEqual(appStore.getState().run.answers, {});
   } finally { detach(); }
 });

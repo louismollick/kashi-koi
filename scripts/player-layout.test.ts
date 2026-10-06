@@ -19,9 +19,9 @@ async function loadPlayerScreen() {
   const mocks: Record<string, string> = {
     'react-native': `${host}
       module.exports = { View: host('native-view'), Text: host('native-text'), Pressable: host('native-button'), ScrollView: host('native-scroll'), ActivityIndicator: host('native-loading'), Modal: () => null,
-        StyleSheet: { create: styles => styles, absoluteFill: {} }, PixelRatio: { get: () => 1 } };`,
+        StyleSheet: { create: styles => styles, flatten: style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean)), absoluteFill: {} }, PixelRatio: { get: () => 1 }, useWindowDimensions: () => ({ width: 390, height: 844 }) };`,
     'react-native-svg': `${host} module.exports = { __esModule: true, default: host('native-svg'), Path: host('native-path'), Defs: host('native-defs'), LinearGradient: host('native-gradient'), Rect: host('native-rect'), Stop: host('native-stop') };`,
-    'react-native-reanimated': `${host} module.exports = { __esModule: true, default: { View: host('native-animated') }, useAnimatedStyle: () => ({}), useSharedValue: value => ({ value }), Easing: { linear: value => value }, withSpring: value => value, withTiming: value => value };`,
+    'react-native-reanimated': `${host} module.exports = { __esModule: true, default: { View: host('native-animated') }, useAnimatedStyle: () => ({}), useSharedValue: value => ({ value }), Easing: { linear: value => value }, withSpring: value => value, withTiming: value => value, withDelay: (_, value) => value, withRepeat: value => value, withSequence: value => value, cancelAnimation() {}, useReducedMotion: () => true };`,
     'react-native-safe-area-context': 'exports.useSafeAreaInsets = () => ({ top: 0, bottom: 0, left: 0, right: 0 });',
     'expo-router': 'exports.useRouter = () => ({ replace() {}, push() {}, back() {}, canGoBack: () => true });',
     'expo-image': `${host} exports.Image = host('native-image');`,
@@ -62,7 +62,7 @@ test('the actual quiz screen renders its musical gap before the first line witho
   assert.ok(html.includes('♪'));
   assert.ok(html.includes('Mascot bobbing'));
   assert.ok(html.includes('COMBO'));
-  assert.ok(!html.includes('native-scroll'));
+  assert.ok(!html.includes('Play line'));
   assert.ok(!html.includes('DIDN'));
   assert.ok(!html.includes(songLyrics.dawn!.lines[0]!.translation!));
   appStore.getInitialState().loading = true;
@@ -70,5 +70,5 @@ test('the actual quiz screen renders its musical gap before the first line witho
   assert.ok(loading.includes('Loading song'));
   assert.ok(loading.includes('native-image'));
   assert.ok(!loading.includes('Mascot'));
-  assert.ok(!loading.includes('native-scroll'));
+  assert.ok(!loading.includes('Play line'));
 });

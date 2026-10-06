@@ -1,5 +1,5 @@
-import { getSong, libraryStore } from '@/store/libraryStore';
-import type { Album, Artist, ReviewMix, Song } from '@/types/domain';
+import { libraryStore } from '@/store/libraryStore';
+import type { Album, Artist, Song } from '@/types/domain';
 
 /** A hidden song lacks synced lyrics while the global hide setting is on. */
 export function isHiddenSong(song: Song, hideSongsWithoutSyncedLyrics: boolean) {
@@ -18,15 +18,6 @@ export function albumHasSyncedLyrics(albumId: string, source = libraryStore.getS
 
 export function artistHasSyncedLyrics(artistId: string, source = libraryStore.getState().songs) {
   return source.some(song => song.artistId === artistId && song.lyricsStatus === 'synced');
-}
-
-/** Display visible mix counts without changing the indices used by transport. */
-export function getReviewMixProgress(mix: ReviewMix, hideSongsWithoutSyncedLyrics: boolean) {
-  const queue = mix.songIds.map(getSong).filter((song): song is Song => !!song);
-  return {
-    position: getVisibleSongs(queue.slice(0, mix.index + 1), hideSongsWithoutSyncedLyrics).length,
-    total: getVisibleSongs(queue, hideSongsWithoutSyncedLyrics).length,
-  };
 }
 
 /** Albums need visible songs; artists need visible albums. */

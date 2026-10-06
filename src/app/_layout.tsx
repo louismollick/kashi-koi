@@ -58,7 +58,7 @@ export default function RootLayout() {
       <Stack.Protected guard={!!session}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="player" dangerouslySingular options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-      <Stack.Screen name="clip-review" />
+      <Stack.Screen name="clip-review" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
       <Stack.Screen name="edit-line" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }} />
       <Stack.Screen name="results" />
       <Stack.Screen name="settings" />

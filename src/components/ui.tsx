@@ -49,15 +49,9 @@ export function Tag({ children, fill = colors.coral }: { children: ReactNode; fi
   return <PixelFrame fill={fill} border={null} contentStyle={{ paddingHorizontal: 7, paddingVertical: 2 }}><Label style={{ fontSize: 11, lineHeight: 15, fontWeight: '800' }}>{children}</Label></PixelFrame>;
 }
 
-/** Section title with an optional muted hint line and trailing chevron, as on the banner. */
-export function SectionHeader({ title, hint, chevron = false, count }: { title: string; hint?: string; chevron?: boolean; count?: number }) {
-  return <View style={styles.row}>
-    <View style={{ flex: 1 }}>
-      <Label style={{ fontSize: 20, lineHeight: 26, fontWeight: '700' }}>{title}{count !== undefined && <Label muted style={{ fontSize: 16, fontWeight: '500' }}>  {count}</Label>}</Label>
-      {hint && <Label muted style={{ fontSize: 13 }}>{hint}</Label>}
-    </View>
-    {chevron && <Icon name="next" size={20} color={colors.muted} />}
-  </View>;
+/** Section title on Home, Settings and artist pages. */
+export function SectionHeader({ title }: { title: string }) {
+  return <Label style={{ fontSize: 20, lineHeight: 26, fontWeight: '700' }}>{title}</Label>;
 }
 
 export const styles = StyleSheet.create({

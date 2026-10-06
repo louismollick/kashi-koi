@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, Easing, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
 import type { Line } from '@/types/domain';
@@ -42,15 +42,6 @@ function AnswerTimeBar({ until }: { until: number }) {
   useEffect(() => { const ms = Math.max(0, until - Date.now()); remaining.value = 1; remaining.value = withTiming(0, { duration: ms, easing: Easing.linear }); }, [until, remaining]);
   const animatedStyle = useAnimatedStyle(() => ({ width: `${remaining.value * 100}%` }));
   return <View style={{ height: 3, marginTop: 6, backgroundColor: colors.track }}><Animated.View style={[{ height: 3, backgroundColor: colors.coral }, animatedStyle]} /></View>;
-}
-
-/** Tappable progress segments share the current outline and answer colors. */
-export function QuizLane({ segments, index, label, onJump }: { segments: { id: string; fill: string }[]; index: number; label: string; onJump: (index: number) => void }) {
-  return <View style={{ flexDirection: 'row', gap: 4, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
-    {segments.map((segment, i) => <Pressable key={`${i}:${segment.id}`} accessibilityRole="button" accessibilityLabel={`Jump to ${label} ${i + 1}`} onPress={() => onJump(i)} style={{ flex: 1, paddingVertical: 7 }}>
-      <PixelFrame fill={i === index ? colors.bg : segment.fill} border={i === index ? colors.text : null} contentStyle={{ height: 14 }} />
-    </Pressable>)}
-  </View>;
 }
 
 /** A fixed quiz column keeps the instrumental gap in quiz mode with no choices. */

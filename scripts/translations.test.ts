@@ -40,7 +40,7 @@ test('choices are distinct, shuffled and contain the translation with fewer choi
   assert.deepEqual(getAnswers(song, 2), []);
 });
 
-test('English lines skip answering and grading, and lost marks redirect backwards', () => {
+test('English lines skip answering, grading and lost markss', () => {
   const library = makeLibrary([['Intro', '日本', 'English', 'かな']]);
   library.lyrics['0']!.lines[1]!.translation = 'Japan'; library.lyrics['0']!.lines[3]!.translation = 'kana';
   libraryStore.getState().setLibrary(library);
@@ -51,7 +51,8 @@ test('English lines skip answering and grading, and lost marks redirect backward
   const choices = appStore.getState().run.choices['0:1'];
   appStore.getState().jumpToLine(2); appStore.getState().answer('English');
   assert.equal(appStore.getState().run.combo, 1); assert.equal(appStore.getState().run.answers['0:2'], undefined);
-  appStore.getState().addLostMark(); assert.equal(appStore.getState().reviewList[0]!.lineId, '0:1');
+  appStore.getState().addLostMark(); assert.equal(appStore.getState().reviewList.length, 0);
+  appStore.getState().jumpToLine(1); appStore.getState().addLostMark(); assert.equal(appStore.getState().reviewList[0]!.lineId, '0:1');
   appStore.getState().moveReviewLine(appStore.getState().reviewList[0]!.id, '0:2'); assert.equal(appStore.getState().reviewList[0]!.lineId, '0:1');
   appStore.getState().sendToReview('0:2', true); assert.equal(appStore.getState().reviewList.length, 1);
   appStore.getState().jumpToLine(1); assert.equal(appStore.getState().run.choices['0:1'], choices);
@@ -66,10 +67,8 @@ test('quiz and review gates accept translated songs despite English lines and pa
   appStore.getState().startSong('1'); appStore.getState().setQuizToggle(true); assert.equal(appStore.getState().quizToggle, false);
   appStore.setState({ reviewList: [{ id: 'ready', songId: '0', lineId: '0:0', kind: 'new' }, { id: 'wait', songId: '1', lineId: '1:0', kind: 'due', misses: 1 }] });
   assert.equal(readyReviewLines(appStore.getState().reviewList).length, 1);
-  appStore.getState().startReviewMix(); assert.deepEqual(appStore.getState().reviewMix!.songIds, ['0']); appStore.getState().finishReviewMix();
   appStore.getState().startClipReview(); assert.deepEqual(appStore.getState().clipReview!.ids, ['ready']);
   const choice = appStore.getState().clipReview!.choices['0:0']![0]!; appStore.getState().answerClip(choice); assert.equal(appStore.getState().clipReview!.answers['ready']?.correct, true);
-  appStore.getState().startReviewMix(); assert.equal(appStore.getState().reviewMix, null); // The only translated line was reviewed.
 });
 
 test('queue persists unique Japanese texts and applies them across shared lines and rescans', async () => {

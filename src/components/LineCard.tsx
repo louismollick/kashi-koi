@@ -8,10 +8,11 @@ import type { Line } from '@/types/domain';
 /** Ruby stays together; every character reserves reading space on each wrapped row. */
 export function FuriganaLine({ line, compact = false, furigana = true, color }: { line: Line; compact?: boolean; furigana?: boolean; color?: string }) {
   const segments = line.segments.flatMap(segment => furigana && segment.reading ? [segment] : Array.from(segment.text, text => ({ text, reading: undefined })));
-  return <View accessible accessibilityLabel={getLineText(line)} style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: compact ? 'flex-start' : 'center' }}>
-    {segments.map((segment, index) => <View key={index} style={{ paddingTop: furigana ? 16 : 0 }}>
-      {furigana && segment.reading && <Label style={{ position: 'absolute', top: 0, left: -12, right: -12, fontSize: 11, lineHeight: 16, textAlign: 'center', color: color ?? '#d9d6ea' }}>{segment.reading}</Label>}
-      <Label style={{ fontSize: compact ? 20 : 27, lineHeight: compact ? 30 : 36, fontWeight: '500', color: color ?? colors.text }}>{segment.text}</Label>
+  const size = compact ? 20 : 27;
+  return <View accessible accessibilityLabel={getLineText(line)} style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: furigana ? 2 : 0, justifyContent: compact ? 'flex-start' : 'center' }}>
+    {segments.map((segment, index) => <View key={index} style={{ paddingTop: furigana ? 12 : 0 }}>
+      {furigana && segment.reading && <Label style={{ position: 'absolute', top: 0, left: -12, right: -12, fontSize: 10, lineHeight: 12, textAlign: 'center', color: color ?? '#d9d6ea' }}>{segment.reading}</Label>}
+      <Label style={{ fontSize: size, lineHeight: Math.round(size * 1.3), fontWeight: '500', color: color ?? colors.text }}>{segment.text}</Label>
     </View>)}
   </View>;
 }
