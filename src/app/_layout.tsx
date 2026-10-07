@@ -1,4 +1,4 @@
-import { AppState } from 'react-native';
+import { AppState, useWindowDimensions } from 'react-native';
 import Japanese from '../../modules/kashi-japanese';
 import { setTranslator, pauseTranslations, prepareTranslation, setTranslationForeground } from '@/japanese/translate';
 import { saveTranslations } from '@/navidrome/db';
@@ -22,6 +22,7 @@ export default function RootLayout() {
   const session = sessionStore(state => state.session);
   const [transportReady, setTransportReady] = useState<typeof session>(null);
   const ready = sessionStore(state => state.ready);
+  const { height } = useWindowDimensions();
   useEffect(() => { void hydrateAppState({ getItem: key => Storage.getItemSync(key), setItem: (key, value) => Storage.setItemSync(key, value), removeItem: key => { Storage.removeItemSync(key); } }).then(loadLibrary).then(loadSession).catch(() => { sessionStore.setState({ ready: true, error: 'Could not load the library' }); }); }, []);
   useEffect(() => {
     if (!session) return;
@@ -57,7 +58,8 @@ export default function RootLayout() {
       <Stack.Protected guard={!session}><Stack.Screen name="login" /></Stack.Protected>
       <Stack.Protected guard={!!session}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="player" dangerouslySingular options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
+      {/* Swipe-to-dismiss can't start over the PlayerBar, so its scrub line gets horizontal drags. */}
+      <Stack.Screen name="player" dangerouslySingular options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical', gestureResponseDistance: { bottom: height - 150 } }} />
       <Stack.Screen name="clip-review" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
       <Stack.Screen name="edit-line" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }} />
       <Stack.Screen name="results" />
