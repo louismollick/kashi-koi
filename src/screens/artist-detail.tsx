@@ -1,8 +1,8 @@
 import { FlatList, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { getArtist, libraryStore } from '@/store/libraryStore';
-import { getVisibleLibrary, getVisibleSongs } from '@/data/libraryVisibility';
-import { appStore } from '@/store/appStore';
+import { countedFilters, getVisibleLibrary, getVisibleSongs } from '@/data/libraryVisibility';
+import { useLibraryFilters } from '@/store/appStore';
 import { AlbumTile } from '@/components/AlbumTile';
 import { HiddenSongsRow } from '@/components/HiddenSongsRow';
 import { Cover } from '@/components/Cover';
@@ -14,10 +14,11 @@ export default function ArtistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
   libraryStore(state => state.songs);
-  const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
+  libraryStore(state => state.lyrics);
+  const filters = useLibraryFilters();
   const artist = getArtist(id);
   if (!artist) return <View style={styles.page}><ScreenHeader title="Artist" /><Label muted style={{ padding: 16 }}>Artist not found</Label></View>;
-  const artistAlbums = getVisibleLibrary(hiding).albums.filter(album => album.artistId === artist.id).sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+  const artistAlbums = getVisibleLibrary(filters).albums.filter(album => album.artistId === artist.id).sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
   const artistSongs = libraryStore.getState().songs.filter(song => song.artistId === artist.id);
   const size = (width - 56) / 3;
   return <View style={styles.page}>
@@ -30,7 +31,7 @@ export default function ArtistDetailScreen() {
       </View>
       <SectionHeader title="Albums" />
     </View>} ListFooterComponent={
-      <HiddenSongsRow count={artistSongs.length - getVisibleSongs(artistSongs, true).length} />
+      <HiddenSongsRow count={artistSongs.length - getVisibleSongs(artistSongs, countedFilters(filters)).length} />
     } />
   </View>;
 }

@@ -3,8 +3,8 @@ import { FlatList, Pressable, TextInput, View, useWindowDimensions } from 'react
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
-import { artistHasSyncedLyrics, getVisibleLibrary } from '@/data/libraryVisibility';
-import { appStore } from '@/store/appStore';
+import { artistHasSyncedLyrics, countedFilters, getVisibleLibrary } from '@/data/libraryVisibility';
+import { appStore, useLibraryFilters } from '@/store/appStore';
 import { Header } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { AlbumTile } from '@/components/AlbumTile';
@@ -21,14 +21,15 @@ export default function LibraryScreen() {
   const router = useRouter(), { width } = useWindowDimensions();
   const [segment, setSegment] = useState<typeof segments[number]>('Albums'), [query, setQuery] = useState('');
   const songs = libraryStore(state => state.songs), albums = libraryStore(state => state.albums), artists = libraryStore(state => state.artists);
+  libraryStore(state => state.lyrics);
   const progress = libraryStore(state => state.progress), error = libraryStore(state => state.error);
-  const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics), size = (width - 56) / 3;
+  const filters = useLibraryFilters(), size = (width - 56) / 3;
   const source = useMemo(() => {
     const matching = songs.filter(song => `${song.title} ${song.artist} ${song.album}`.toLowerCase().includes(query.toLowerCase()));
     const albumIds = new Set(matching.map(song => song.albumId)), artistIds = new Set(matching.map(song => song.artistId));
     return { songs: matching, albums: albums.filter(album => albumIds.has(album.id)), artists: artists.filter(artist => artistIds.has(artist.id)) };
   }, [songs, albums, artists, query]);
-  const visible = getVisibleLibrary(hiding, source), hidden = getVisibleLibrary(true, source);
+  const visible = getVisibleLibrary(filters, source), hidden = getVisibleLibrary(countedFilters(filters), source);
   const kind = segment === 'Albums' ? 'albums' : segment === 'Artists' ? 'artists' : 'songs';
   const header = <View style={{ gap: 16, paddingBottom: 16 }}>
     <PixelFrame fill={colors.surface} contentStyle={[styles.row, { paddingHorizontal: 12 }]}>
@@ -47,7 +48,7 @@ export default function LibraryScreen() {
       <FlatList key="artists" data={visible.artists} numColumns={3} columnWrapperStyle={{ gap: 12 }} contentContainerStyle={{ padding: 16 }} ListHeaderComponent={header} ListEmptyComponent={empty} keyExtractor={artist => artist.id} renderItem={({ item }) => {
         const artistAlbums = visible.albums.filter(album => album.artistId === item.id);
         return <Pressable accessibilityRole="button" accessibilityLabel={`Open artist ${item.name}`} onPress={() => router.push({ pathname: '/library/artist/[id]', params: { id: item.id } })} style={{ width: size, marginBottom: 16 }}>
-          <View><Cover song={artistAlbums[0] ?? item} size={size} />{!hiding && !artistHasSyncedLyrics(item.id) && <NoLyricsBadge />}</View>
+          <View><Cover song={artistAlbums[0] ?? item} size={size} />{!filters.hideUnsynced && !artistHasSyncedLyrics(item.id) && <NoLyricsBadge />}</View>
           <Label numberOfLines={1} style={{ fontWeight: '700', marginTop: 6 }}>{item.name}</Label><Label muted>{artistAlbums.length} albums</Label>
         </Pressable>;
       }} />}

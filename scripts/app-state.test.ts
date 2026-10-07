@@ -6,7 +6,7 @@ import { sessionStore } from '../src/navidrome/session';
 import { appStore, getRunSummary, setTransport, hydrateAppState, resetAppState } from '../src/store/appStore';
 import { albums, artists, firstSong, songs, songLyrics, fixtureLine, fixtureReviewList } from './fixtures';
 import { getAlbumSongs, getArtistAlbums, getLineText, getLyrics, libraryStore, occurrenceLine, isDue, dueLines, readyReviewLines } from '../src/store/libraryStore';
-import { albumHasSyncedLyrics, artistHasSyncedLyrics, getRecentlyPlayed, getVisibleLibrary, getVisibleSongs } from '../src/data/libraryVisibility';
+import { albumHasSyncedLyrics, artistHasSyncedLyrics, getRecentlyPlayed, getVisibleLibrary, getVisibleSongs, hasJapaneseLyrics, isHiddenSong } from '../src/data/libraryVisibility';
 
 
 // Existing state sequences choose a translation explicitly, independent of button order.
@@ -267,6 +267,7 @@ test('artists group their albums and account for the entire library', () => {
 
 test('a no-lyrics song starts safely in listen and quiz modes with working transport', () => {
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  appStore.setState({ hideSongsWithoutJapanese: false });
   const song = songs.find(song => song.lyricsStatus !== 'synced')!;
   for (const quiz of [false, true]) {
     appStore.getState().setQuizToggle(quiz);
@@ -295,29 +296,29 @@ test('a no-lyrics song starts safely in listen and quiz modes with working trans
 });
 
 test('visible songs, albums and artists follow the setting and cascade from synced lyrics', () => {
-  const all = getVisibleLibrary(false);
+  const all = getVisibleLibrary({ hideUnsynced: false, hideNonJapanese: false });
   assert.deepEqual(all, { songs, albums, artists });
-  const visible = getVisibleLibrary(true);
+  const visible = getVisibleLibrary({ hideUnsynced: true, hideNonJapanese: false });
   assert.equal(visible.songs.length, 6);
   assert.ok(visible.songs.every(song => (song.lyricsStatus === 'synced') && getLyrics(song.id).lines.length));
   assert.equal(visible.albums.length, 6);
   assert.equal(visible.artists.length, 3);
-  assert.equal(getVisibleSongs(getAlbumSongs('dawn'), true).length, 1);
-  assert.equal(getVisibleSongs(getAlbumSongs('dawn'), false).length, 4);
+  assert.equal(getVisibleSongs(getAlbumSongs('dawn'), { hideUnsynced: true, hideNonJapanese: false }).length, 1);
+  assert.equal(getVisibleSongs(getAlbumSongs('dawn'), { hideUnsynced: false, hideNonJapanese: false }).length, 4);
   // The only deep-sea album loses synced lyrics, hiding its artist as well.
   const source = { songs: songs.map(song => song.id === 'rain' ? { ...song, lyricsStatus: 'none' as const } : song), albums, artists };
-  const hidden = getVisibleLibrary(true, source);
+  const hidden = getVisibleLibrary({ hideUnsynced: true, hideNonJapanese: false }, source);
   assert.ok(!hidden.albums.some(album => album.id === 'rain'));
   assert.ok(!hidden.artists.some(artist => artist.id === 'deep-sea'));
   assert.equal(hidden.artists.length, 2);
-  assert.equal(getVisibleLibrary(false, source).albums.length, albums.length);
-  assert.equal(getVisibleLibrary(false, source).artists.length, artists.length);
+  assert.equal(getVisibleLibrary({ hideUnsynced: false, hideNonJapanese: false }, source).albums.length, albums.length);
+  assert.equal(getVisibleLibrary({ hideUnsynced: false, hideNonJapanese: false }, source).artists.length, artists.length);
   // A mixed artist stays visible when one of its albums is hidden.
   source.songs = source.songs.map(song => song.id === 'dawn' ? { ...song, lyricsStatus: 'none' as const } : song);
-  const mixed = getVisibleLibrary(true, source);
+  const mixed = getVisibleLibrary({ hideUnsynced: true, hideNonJapanese: false }, source);
   assert.ok(!mixed.albums.some(album => album.id === 'dawn'));
   assert.ok(mixed.artists.some(artist => artist.id === 'minami'));
-  assert.deepEqual(getVisibleLibrary(true, { songs: [], albums: [], artists: [] }), { songs: [], albums: [], artists: [] });
+  assert.deepEqual(getVisibleLibrary({ hideUnsynced: true, hideNonJapanese: false }, { songs: [], albums: [], artists: [] }), { songs: [], albums: [], artists: [] });
 });
 
 test('album and artist badges distinguish mixed, lyric-only and no-lyrics collections', () => {
@@ -333,28 +334,29 @@ test('album and artist badges distinguish mixed, lyric-only and no-lyrics collec
   assert.equal(artistHasSyncedLyrics('minami', []), false);
   assert.equal(albumHasSyncedLyrics('missing'), false);
   assert.equal(artistHasSyncedLyrics('missing'), false);
-  assert.ok(getVisibleLibrary(false).albums.some(album => album.id === 'tide'));
-  assert.ok(getVisibleLibrary(false).artists.some(artist => artist.id === 'nagi'));
-  assert.ok(!getVisibleLibrary(true).albums.some(album => album.id === 'tide'));
-  assert.ok(!getVisibleLibrary(true).artists.some(artist => artist.id === 'nagi'));
+  assert.ok(getVisibleLibrary({ hideUnsynced: false, hideNonJapanese: false }).albums.some(album => album.id === 'tide'));
+  assert.ok(getVisibleLibrary({ hideUnsynced: false, hideNonJapanese: false }).artists.some(artist => artist.id === 'nagi'));
+  assert.ok(!getVisibleLibrary({ hideUnsynced: true, hideNonJapanese: false }).albums.some(album => album.id === 'tide'));
+  assert.ok(!getVisibleLibrary({ hideUnsynced: true, hideNonJapanese: false }).artists.some(artist => artist.id === 'nagi'));
 });
 
 test('Recently played leaves out hidden songs and preserves visible order', () => {
   const recent = [songs[6]!, firstSong, songs[7]!, songs[1]!];
-  assert.deepEqual(getRecentlyPlayed(true, 3, recent).map(song => song.id), ['dawn', 'glass']);
-  assert.deepEqual(getRecentlyPlayed(false, 3, recent).map(song => song.id), ['dawn', 'glass', songs[6]!.id]);
+  assert.deepEqual(getRecentlyPlayed({ hideUnsynced: true, hideNonJapanese: false }, 3, recent).map(song => song.id), ['dawn', 'glass']);
+  assert.deepEqual(getRecentlyPlayed({ hideUnsynced: false, hideNonJapanese: false }, 3, recent).map(song => song.id), ['dawn', 'glass', songs[6]!.id]);
 });
 
 test('search does not reveal a hidden-only match until hiding is turned off', () => {
   const song = songs.find(song => song.lyricsStatus !== 'synced')!;
   const source = { songs: [song], albums: albums.filter(album => album.id === song.albumId), artists: artists.filter(artist => artist.id === song.artistId) };
-  assert.deepEqual(getVisibleLibrary(true, source), { songs: [], albums: [], artists: [] });
-  assert.deepEqual(getVisibleLibrary(false, source), source);
+  assert.deepEqual(getVisibleLibrary({ hideUnsynced: true, hideNonJapanese: false }, source), { songs: [], albums: [], artists: [] });
+  assert.deepEqual(getVisibleLibrary({ hideUnsynced: false, hideNonJapanese: false }, source), source);
 });
 
 test('the default-on global setting toggles without interrupting the current hidden song', () => {
   assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, true);
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  appStore.setState({ hideSongsWithoutJapanese: false });
   const hiddenSong = songs[6]!;
   appStore.getState().startSong(hiddenSong.id);
   appStore.getState().setPlaying(false);
@@ -378,6 +380,7 @@ test('next and previous songs wrap while skipping hidden songs in library order'
   appStore.getState().previousSong();
   assert.equal(appStore.getState().songId, 'summer');
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  appStore.setState({ hideSongsWithoutJapanese: false });
   appStore.getState().nextSong();
   assert.equal(appStore.getState().songId, songs[6]!.id);
   appStore.getState().previousSong();
@@ -409,6 +412,7 @@ test('album Play and Shuffle build visible queues and skip songs hidden after st
     assert.equal(appStore.getState().songId, 'dawn');
   }
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  appStore.setState({ hideSongsWithoutJapanese: false });
   appStore.getState().startAlbum('dawn');
   assert.deepEqual(appStore.getState().playbackQueue, getAlbumSongs('dawn').map(song => song.id));
   appStore.getState().nextSong();
@@ -456,7 +460,7 @@ test('learning state survives hydration while playback stays transient, and rese
   appStore.getState().jumpToLine(5);
   appStore.getState().addLostMark();
   const mark = appStore.getState().reviewList.at(-1)!;
-  appStore.setState({ ranks: { dawn: 'A' }, lastSyncAt: 1234, hideSongsWithoutSyncedLyrics: false, showTranslations: true, translationPrompted: true });
+  appStore.setState({ ranks: { dawn: 'A' }, lastSyncAt: 1234, hideSongsWithoutSyncedLyrics: false, hideSongsWithoutJapanese: false, showTranslations: true, translationPrompted: true });
   const saved = values.get('learning-state')!;
   const data = JSON.parse(saved) as { state: Record<string, unknown> };
   assert.equal('songId' in data.state, false);
@@ -471,7 +475,10 @@ test('learning state survives hydration while playback stays transient, and rese
   assert.equal(appStore.getState().translationPrompted, true);
   assert.equal(appStore.getState().songId, null);
   assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, false);
+  assert.equal(appStore.getState().hideSongsWithoutJapanese, false);
   await resetAppState();
+  assert.equal(appStore.getState().hideSongsWithoutJapanese, true);
+  assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, true);
   assert.equal(values.has('learning-state'), false);
   assert.deepEqual(appStore.getState().reviewList, []);
   assert.equal(appStore.getState().showTranslations, false);
@@ -1372,4 +1379,74 @@ test('seeking during an answer stop releases it and seeking back permits another
     assert.equal(appStore.getState().answerWait?.lineIndex, 0);
     assert.deepEqual(appStore.getState().run.answers, {});
   } finally { detach(); }
+});
+
+test('Japanese visibility requires a Japanese line in scanned synced lyrics', () => {
+  const japanese = { ...firstSong, id: 'japanese' }, english = { ...firstSong, id: 'english' }, missing = { ...firstSong, id: 'missing' };
+  const unchecked = { ...firstSong, id: 'unchecked', lyricsStatus: 'unchecked' as const };
+  const unsynced = { ...firstSong, id: 'unsynced', lyricsStatus: 'none' as const };
+  const source = [english, japanese, missing, unchecked, unsynced];
+  const japaneseLyrics = { songId: japanese.id, lines: [{ id: 'ja', segments: [{ text: 'Hello ' }, { text: 'こんにちは' }] }], timeline: [] };
+  libraryStore.getState().setLibrary({ songs: source, albums, artists, lyrics: {
+    japanese: japaneseLyrics,
+    english: { songId: english.id, lines: [{ id: 'en', segments: [{ text: 'Hello' }], translation: 'こんにちは' }], timeline: [] },
+    unchecked: { ...japaneseLyrics, songId: unchecked.id },
+    unsynced: { ...japaneseLyrics, songId: unsynced.id },
+  } });
+  assert.equal(hasJapaneseLyrics(japanese.id), true);
+  for (const song of [english, missing, unchecked, unsynced]) {
+    assert.equal(hasJapaneseLyrics(song.id), false);
+    assert.equal(isHiddenSong(song, { hideUnsynced: false, hideNonJapanese: true }), true);
+  }
+  assert.deepEqual(getVisibleSongs(source, { hideUnsynced: false, hideNonJapanese: false }), source);
+  assert.deepEqual(getVisibleSongs(source, { hideUnsynced: true, hideNonJapanese: false }), [english, japanese, missing]);
+  for (const hideUnsynced of [false, true]) {
+    const filters = { hideUnsynced, hideNonJapanese: true };
+    assert.deepEqual(getVisibleSongs(source, filters), [japanese]);
+    assert.deepEqual(getVisibleLibrary(filters).songs, [japanese]);
+    assert.deepEqual(getRecentlyPlayed(filters, 6, source), [japanese]);
+  }
+  libraryStore.getState().setLyricsResult(japanese.id, 'synced', { ...japaneseLyrics, lines: [] });
+  assert.equal(hasJapaneseLyrics(japanese.id), false);
+});
+
+test('Japanese filtering skips non-Japanese songs in library and album queues', () => {
+  const first = { ...firstSong, id: 'first' }, english = { ...firstSong, id: 'english' }, last = { ...firstSong, id: 'last' };
+  const source = [first, english, last];
+  libraryStore.getState().setLibrary({ songs: source, albums, artists, lyrics: Object.fromEntries(source.map(song => [song.id, {
+    songId: song.id, lines: [{ id: song.id, segments: [{ text: song.id === 'english' ? 'Hello' : 'こんにちは' }] }], timeline: [],
+  }])) });
+  assert.equal(appStore.getState().hideSongsWithoutJapanese, true);
+  appStore.setState({ hideSongsWithoutSyncedLyrics: false });
+  for (const playbackQueue of [null, source.map(song => song.id)]) {
+    appStore.getState().startSong(first.id);
+    appStore.setState({ playbackQueue });
+    appStore.getState().nextSong();
+    assert.equal(appStore.getState().songId, last.id);
+    appStore.getState().previousSong();
+    assert.equal(appStore.getState().songId, first.id);
+  }
+  appStore.getState().startAlbum(first.albumId);
+  assert.deepEqual(appStore.getState().playbackQueue, [first.id, last.id]);
+  appStore.getState().toggleHideSongsWithoutJapanese();
+  assert.equal(appStore.getState().hideSongsWithoutJapanese, false);
+  appStore.getState().startAlbum(first.albumId);
+  assert.deepEqual(appStore.getState().playbackQueue, source.map(song => song.id));
+  appStore.getState().nextSong();
+  assert.equal(appStore.getState().songId, english.id);
+  const before = appStore.getState();
+  appStore.getState().toggleHideSongsWithoutJapanese();
+  assert.equal(appStore.getState().songId, english.id);
+  assert.equal(appStore.getState().playing, before.playing);
+  appStore.getState().nextSong();
+  assert.equal(appStore.getState().songId, last.id);
+  appStore.setState({ songId: english.id });
+  appStore.getState().previousSong();
+  assert.equal(appStore.getState().songId, first.id);
+});
+
+test('legacy saved state defaults the Japanese filter on', async () => {
+  await hydrateAppState({ getItem: () => JSON.stringify({ state: { hideSongsWithoutSyncedLyrics: false }, version: 0 }), setItem() {}, removeItem() {} });
+  assert.equal(appStore.getState().hideSongsWithoutJapanese, true);
+  assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, false);
 });

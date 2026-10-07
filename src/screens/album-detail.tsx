@@ -2,8 +2,8 @@ import { Pressable, FlatList, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { getAlbum, getAlbumSongs, libraryStore } from '@/store/libraryStore';
-import { getVisibleSongs } from '@/data/libraryVisibility';
-import { appStore } from '@/store/appStore';
+import { countedFilters, getVisibleSongs } from '@/data/libraryVisibility';
+import { appStore, useLibraryFilters } from '@/store/appStore';
 import { Cover } from '@/components/Cover';
 import { ScreenHeader } from '@/components/Header';
 import { Icon } from '@/components/Icon';
@@ -17,11 +17,12 @@ export default function AlbumDetailScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   libraryStore(state => state.songs);
-  const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
+  libraryStore(state => state.lyrics);
+  const filters = useLibraryFilters();
   const album = getAlbum(id);
   if (!album) return <View style={styles.page}><ScreenHeader title="Album" /><Label muted style={{ padding: 16 }}>Album not found</Label></View>;
   const allTracks = getAlbumSongs(album.id);
-  const tracks = getVisibleSongs(allTracks, hiding);
+  const tracks = getVisibleSongs(allTracks, filters);
   const startAlbum = (shuffle = false) => {
     router.push('/player');
     appStore.getState().startAlbum(album.id, shuffle);
@@ -44,7 +45,7 @@ export default function AlbumDetailScreen() {
         <Button label="Shuffle album" border="#4b4f80" style={{ flex: 1 }} disabled={!tracks.length} onPress={() => startAlbum(true)}><Label style={{ fontWeight: '700' }}>Shuffle</Label></Button>
       </View>
     </View>} ListFooterComponent={
-      <HiddenSongsRow count={allTracks.length - getVisibleSongs(allTracks, true).length} album />
+      <HiddenSongsRow count={allTracks.length - getVisibleSongs(allTracks, countedFilters(filters)).length} album />
     } />
   </View>;
 }

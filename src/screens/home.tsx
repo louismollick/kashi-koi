@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { getRecentlyPlayed } from '@/data/libraryVisibility';
-import { appStore } from '@/store/appStore';
+import { appStore, useLibraryFilters } from '@/store/appStore';
 import { Header } from '@/components/Header';
 import { Mascot } from '@/components/Mascot';
 import { PixelFrame } from '@/components/PixelFrame';
@@ -18,8 +18,9 @@ export default function HomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   libraryStore(state => state.songs);
+  libraryStore(state => state.lyrics);
   const ranks = appStore(state => state.ranks);
-  const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics);
+  const filters = useLibraryFilters();
   const reviewList = appStore(state => state.reviewList);
   const now = useNow();
   const count = reviewList.filter(line => isDue(line, now)).length;
@@ -49,7 +50,7 @@ export default function HomeScreen() {
         </Pressable>
         <SectionHeader title="Recently played" />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {getRecentlyPlayed(hiding, 6).map(song => <Pressable key={song.id} style={{ width: coverSize }} accessibilityRole="button" accessibilityLabel={`Play ${song.title}`} onPress={() => { router.push('/player'); appStore.getState().startSong(song.id); }}>
+          {getRecentlyPlayed(filters, 6).map(song => <Pressable key={song.id} style={{ width: coverSize }} accessibilityRole="button" accessibilityLabel={`Play ${song.title}`} onPress={() => { router.push('/player'); appStore.getState().startSong(song.id); }}>
             <Cover song={song} size={coverSize} />
             {ranks[song.id] && <View style={{ position: 'absolute', right: 6, top: 6 }}><Tag fill={colors.bg}>{ranks[song.id]}</Tag></View>}
             <Label numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', marginTop: 6 }}>{song.title}</Label>

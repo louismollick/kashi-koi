@@ -3,8 +3,9 @@ import { prioritizeTranslations } from '@/japanese/translate';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { currentOccurrence } from '@/navidrome/lyrics';
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { getAlbumSongs, getSong, getLyrics, occurrenceLine, hasTranslations, libraryStore, getAnswers, getLineText, japaneseLines, readyReviewLines } from '@/store/libraryStore';
-import { getVisibleSongs, isHiddenSong } from '@/data/libraryVisibility';
+import { getVisibleSongs, isHiddenSong, type LibraryFilters } from '@/data/libraryVisibility';
 import type { ClipReview, ListenMode, QuizMode, QuizToggle, ReviewList, Run, Song, Rank } from '@/types/domain';
 
 export type Transport = { load(song: Song, startMs?: number): void; play(): void; pause(): void; seek(ms: number): void };
@@ -63,11 +64,11 @@ function scheduleReview(line: ReviewList[number], correct: boolean): ReviewList[
 const newRun = (): Run => ({ choices: {}, answers: {}, combo: 0, bestCombo: 0, finished: false });
 
 /** Step from the original queue position, including a song hidden during playback. */
-function queueStep(ids: string[], currentId: string | null, direction: 1 | -1, hiding: boolean) {
+function queueStep(ids: string[], currentId: string | null, direction: 1 | -1, filters: LibraryFilters) {
   const current = currentId ? ids.indexOf(currentId) : -1;
   for (let offset = 1; offset <= ids.length; offset++) {
     const song = getSong(ids[(current + direction * offset + ids.length) % ids.length]!);
-    if (song && !isHiddenSong(song, hiding)) return song;
+    if (song && !isHiddenSong(song, filters)) return song;
   }
   return null;
 }
@@ -84,7 +85,7 @@ export function getRunSummary(song: Song, run: Run) {
 
 type AppState = {
   positionMs: number; durationMs: number; loading: boolean; playbackError: string | null; songId: string | null; lineIndex: number; quizToggle: QuizToggle; mode: ListenMode | QuizMode;
-  ranks: Record<string, Rank>; lastSyncAt: number | null; lastScanAt: number | null; playing: boolean; hideSongsWithoutSyncedLyrics: boolean; playbackQueue: string[] | null; reviewList: ReviewList; run: Run;
+  ranks: Record<string, Rank>; lastSyncAt: number | null; lastScanAt: number | null; playing: boolean; hideSongsWithoutSyncedLyrics: boolean; hideSongsWithoutJapanese: boolean; playbackQueue: string[] | null; reviewList: ReviewList; run: Run;
   answerTime: number | null; answerWait: { lineIndex: number; until: number | null } | null; cycleAnswerTime: () => void;
   clipPlayback: { songId: string; startMs: number; endMs: number; positionMs: number; ended: boolean } | null;
   clipReview: ClipReview | null; addedId: string | null; addedExpiresAt: number | null; nextReviewId: number;
@@ -92,7 +93,7 @@ type AppState = {
   nextSong: () => void; previousSong: () => void; skipBack: () => void;
   showTranslations: boolean; translationPrompted: boolean; toggleTranslations: () => void;
   ensureChoices: () => void; ensureClipChoices: () => void;
-  toggleHideSongsWithoutSyncedLyrics: () => void;
+  toggleHideSongsWithoutSyncedLyrics: () => void; toggleHideSongsWithoutJapanese: () => void;
   replayLine: () => void; seek: (positionMs: number) => void; jumpToLine: (index: number) => void; answer: (choice: string) => void; advanceLine: () => void;
   updatePlayback: (positionMs: number, durationMs: number, playing: boolean) => void; completeRun: () => void;
   setPlaying: (playing: boolean) => void; playClip: (songId: string, startMs: number, endMs: number) => void; stopClipReview: () => void;
@@ -102,11 +103,14 @@ type AppState = {
   sendToReview: (lineId: string, enabled: boolean) => void;
 };
 
+/** Share the same filter mapping between queue actions and component selectors. */
+const libraryFilters = (state: AppState): LibraryFilters => ({ hideUnsynced: state.hideSongsWithoutSyncedLyrics, hideNonJapanese: state.hideSongsWithoutJapanese });
+
 /** Learning state and queue actions, independent of native playback. */
 export const appStore = create<AppState>()(persist((set, get) => ({
   positionMs: 0, durationMs: 0, loading: false, playbackError: null, songId: null, lineIndex: 0, quizToggle: false, mode: 'listen', playing: false, ranks: {}, lastSyncAt: null, lastScanAt: null,
   answerTime: null, answerWait: null,
-  showTranslations: false, translationPrompted: false, hideSongsWithoutSyncedLyrics: true, playbackQueue: null, reviewList: [], run: newRun(),
+  showTranslations: false, translationPrompted: false, hideSongsWithoutSyncedLyrics: true, hideSongsWithoutJapanese: true, playbackQueue: null, reviewList: [], run: newRun(),
   clipReview: null, clipPlayback: null, addedId: null, addedExpiresAt: null, nextReviewId: 1,
   startSong: songId => {
     if (!getSong(songId) || get().loading && get().songId === songId && !get().clipPlayback) return;
@@ -115,7 +119,7 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     playSong(songId);
   },
   startAlbum: (albumId, shuffle = false) => {
-    const tracks = getVisibleSongs(getAlbumSongs(albumId), get().hideSongsWithoutSyncedLyrics);
+    const tracks = getVisibleSongs(getAlbumSongs(albumId), libraryFilters(get()));
     if (!tracks.length) return;
     // Shuffle the whole album queue, not just its starting song.
     if (shuffle) for (let index = tracks.length - 1; index > 0; index--) {
@@ -142,18 +146,19 @@ export const appStore = create<AppState>()(persist((set, get) => ({
     return { clipReview: { ...clip, choices: { ...clip.choices, [item.lineId]: getAnswers(song, index) } } };
   }),
   toggleHideSongsWithoutSyncedLyrics: () => set(state => ({ hideSongsWithoutSyncedLyrics: !state.hideSongsWithoutSyncedLyrics })),
+  toggleHideSongsWithoutJapanese: () => set(state => ({ hideSongsWithoutJapanese: !state.hideSongsWithoutJapanese })),
   restartRun: () => { clearAnswerWait(true); set({ lineIndex: 0, positionMs: 0, run: newRun() }); if (!get().clipPlayback) transport.seek(0); get().setPlaying(true); },
   setQuizToggle: enabled => { if (enabled && !hasTranslations(get().songId)) return; const waiting = !!get().answerWait; clearAnswerWait(); set({ quizToggle: enabled, mode: enabled ? 'quiz' : 'listen', run: newRun() }); if (waiting) get().setPlaying(true); },
   nextSong: () => {
-    const { songId, playbackQueue, hideSongsWithoutSyncedLyrics } = get();
-    const next = queueStep(playbackQueue ?? libraryStore.getState().songs.map(song => song.id), songId, 1, hideSongsWithoutSyncedLyrics);
+    const { songId, playbackQueue } = get();
+    const next = queueStep(playbackQueue ?? libraryStore.getState().songs.map(song => song.id), songId, 1, libraryFilters(get()));
     if (!next) { get().setPlaying(false); return; }
     set({ songId: next.id, lineIndex: 0, positionMs: 0, playbackError: null, run: newRun(), playing: true, quizToggle: get().quizToggle && hasTranslations(next.id), mode: get().quizToggle && hasTranslations(next.id) ? 'quiz' : 'listen' });
     playSong(next.id);
   },
   previousSong: () => {
-    const { songId, playbackQueue, hideSongsWithoutSyncedLyrics } = get();
-    const previous = queueStep(playbackQueue ?? libraryStore.getState().songs.map(song => song.id), songId, -1, hideSongsWithoutSyncedLyrics);
+    const { songId, playbackQueue } = get();
+    const previous = queueStep(playbackQueue ?? libraryStore.getState().songs.map(song => song.id), songId, -1, libraryFilters(get()));
     if (previous) { set({ quizToggle: get().quizToggle && hasTranslations(previous.id), mode: get().quizToggle && hasTranslations(previous.id) ? 'quiz' : 'listen', songId: previous.id, lineIndex: 0, positionMs: 0, playbackError: null, run: newRun(), playing: true }); playSong(previous.id); }
   },
   // Previous restarts the song after 3 s, like a music player; a second press goes to the previous song.
@@ -339,8 +344,11 @@ export const appStore = create<AppState>()(persist((set, get) => ({
       ? { ...line, step: 0, dueAt: 0 } : line);
     return { ...current, ...saved, reviewList };
   },
-  partialize: state => ({ answerTime: state.answerTime, reviewList: state.reviewList, ranks: state.ranks, quizToggle: state.quizToggle, showTranslations: state.showTranslations, translationPrompted: state.translationPrompted, hideSongsWithoutSyncedLyrics: state.hideSongsWithoutSyncedLyrics, lastSyncAt: state.lastSyncAt, lastScanAt: state.lastScanAt, nextReviewId: state.nextReviewId }),
+  partialize: state => ({ answerTime: state.answerTime, reviewList: state.reviewList, ranks: state.ranks, quizToggle: state.quizToggle, showTranslations: state.showTranslations, translationPrompted: state.translationPrompted, hideSongsWithoutSyncedLyrics: state.hideSongsWithoutSyncedLyrics, hideSongsWithoutJapanese: state.hideSongsWithoutJapanese, lastSyncAt: state.lastSyncAt, lastScanAt: state.lastScanAt, nextReviewId: state.nextReviewId }),
 }));
+
+/** Subscribe only to library visibility settings. */
+export function useLibraryFilters() { return appStore(useShallow(libraryFilters)); }
 
 /** Native storage is injected at boot so store imports stay safe in plain Node. */
 export async function hydrateAppState(storage: StateStorage) {

@@ -18,7 +18,7 @@ export default function SettingsScreen() {
   const [loggingOut, setLoggingOut] = useState(false), [accountError, setAccountError] = useState<string | null>(null);
   const [refreshingArt, setRefreshingArt] = useState(false), [artMessage, setArtMessage] = useState<string | null>(null);
   const answerTime = appStore(state => state.answerTime);
-  const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics), lastSync = appStore(state => state.lastSyncAt), lastScan = appStore(state => state.lastScanAt);
+  const hiding = appStore(state => state.hideSongsWithoutSyncedLyrics), hidingNonJapanese = appStore(state => state.hideSongsWithoutJapanese), lastSync = appStore(state => state.lastSyncAt), lastScan = appStore(state => state.lastScanAt);
   const songs = libraryStore(state => state.songs), progress = libraryStore(state => state.progress), error = libraryStore(state => state.error);
   const session = sessionStore(state => state.session), ready = songs.filter(song => song.lyricsStatus === 'synced').length;
   return <View style={styles.page}><ScreenHeader title="Settings" /><ScrollView contentContainerStyle={styles.content}>
@@ -30,6 +30,7 @@ export default function SettingsScreen() {
     <View style={styles.row}><Label style={{ flex: 1 }}>Answer time</Label><Button label="Answer time" onPress={() => appStore.getState().cycleAnswerTime()}><Label>{answerTime === null ? 'No limit' : `${answerTime}s`}</Label></Button></View>
     <SectionHeader title="Library" />
     <View style={styles.row}><Label style={{ flex: 1 }}>Hide songs without synced lyrics</Label><PixelToggle label="Hide songs without synced lyrics" on={hiding} onPress={() => appStore.getState().toggleHideSongsWithoutSyncedLyrics()} /></View>
+    <View style={styles.row}><Label style={{ flex: 1 }}>Hide songs without Japanese lyrics</Label><PixelToggle label="Hide songs without Japanese lyrics" on={hidingNonJapanese} onPress={() => appStore.getState().toggleHideSongsWithoutJapanese()} /></View>
     <Button label="Sync library" disabled={!!progress} onPress={() => { void syncLibrary(); }}><Label>Sync library</Label></Button>
     <Label muted>Last sync: {date(lastSync)}</Label>
     <Button label="Refresh album art" disabled={refreshingArt} onPress={async () => { setRefreshingArt(true); setArtMessage(null); try { await refreshAlbumArt(); setArtMessage('Album art cache cleared'); } catch { setArtMessage('Could not clear album art cache'); } finally { setRefreshingArt(false); } }}><Label>Refresh album art</Label></Button>
