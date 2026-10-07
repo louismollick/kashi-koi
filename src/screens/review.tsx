@@ -8,7 +8,6 @@ import { useNow } from '@/hooks/useNow';
 import { Header } from '@/components/Header';
 import { Cover } from '@/components/Cover';
 import { Icon } from '@/components/Icon';
-import { FuriganaLine } from '@/components/LineCard';
 import { Button, IconButton, Label, styles } from '@/components/ui';
 import type { ReviewList } from '@/types/domain';
 
@@ -16,7 +15,7 @@ const plural = (count: number, word: string) => `${count} ${word}${count === 1 ?
 const sectionTitle = { fontSize: 20, lineHeight: 26, fontWeight: '700' } as const;
 
 /** One song row, like Library's Songs, with its review lines below. Tapping the song collapses them. */
-function SongGroup({ songId, items, translations }: { songId: string; items: ReviewList; translations: boolean }) {
+function SongGroup({ songId, items }: { songId: string; items: ReviewList }) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
   const song = getSong(songId);
@@ -35,8 +34,7 @@ function SongGroup({ songId, items, translations }: { songId: string; items: Rev
       if (!line) return null;
       const text = getLineText(line);
       return <View key={item.id} style={[styles.row, { paddingLeft: 56, minHeight: 44 }]}>
-        {translations ? <View style={{ flex: 1, paddingVertical: 6 }}><FuriganaLine line={line} compact />{line.translation && <Label muted style={{ marginTop: 2 }}>{line.translation}</Label>}</View>
-          : <Label numberOfLines={2} style={{ flex: 1, fontSize: 16, lineHeight: 22 }}>{text}</Label>}
+        <Label numberOfLines={2} style={{ flex: 1, fontSize: 16, lineHeight: 22 }}>{text}</Label>
         <IconButton plain name="edit" size={40} color={colors.lavender} label={`Edit ${text}`} onPress={() => router.push({ pathname: '/edit-line', params: { id: item.id } })} />
       </View>;
     })}
@@ -44,7 +42,7 @@ function SongGroup({ songId, items, translations }: { songId: string; items: Rev
 }
 
 /** Hidden when empty. Tapping the header collapses every song in it. */
-function Section({ title, items, translations }: { title: string; items: ReviewList; translations: boolean }) {
+function Section({ title, items }: { title: string; items: ReviewList }) {
   const [open, setOpen] = useState(true);
   if (!items.length) return null;
   const songIds = [...new Set(items.map(item => item.songId))];
@@ -53,16 +51,15 @@ function Section({ title, items, translations }: { title: string; items: ReviewL
       <Label style={[sectionTitle, { flex: 1 }]}>{title}</Label>
       <Label muted style={{ fontSize: 13 }}>{plural(items.length, 'line')} from {plural(songIds.length, 'song')}</Label>
     </Pressable>
-    {open && songIds.map(songId => <SongGroup key={songId} songId={songId} translations={translations} items={items.filter(item => item.songId === songId)} />)}
+    {open && songIds.map(songId => <SongGroup key={songId} songId={songId} items={items.filter(item => item.songId === songId)} />)}
   </View>;
 }
 
-/** Due, new and later lines grouped by song, with clip review and the Translations toggle on top. */
+/** Due, new and later lines grouped by song, with clip review on top. */
 export default function ReviewScreen() {
   const router = useRouter();
   libraryStore(state => state.lyrics);
   const reviewList = appStore(state => state.reviewList);
-  const showTranslations = appStore(state => state.showTranslations);
   const now = useNow();
   const due = dueLines(reviewList, now);
   const fresh = reviewList.filter(line => line.kind === 'new');
@@ -71,17 +68,14 @@ export default function ReviewScreen() {
   const waiting = due.length + fresh.length - ready.length;
   return <View style={styles.page}><Header />
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.row}>
-        <Button label="Review lyrics" fill={colors.coral} border="#ff9aa5" disabled={!ready.length} style={{ flex: 1 }} contentStyle={{ minHeight: 76 }} onPress={() => { appStore.getState().startClipReview(); router.push('/clip-review'); }}>
-          <View style={styles.row}><Icon name="play" size={28} color={colors.cream} /><Label style={styles.title}>Review Lyrics</Label></View>
-          <Label style={{ fontSize: 13, marginTop: 2 }}>~4 min</Label>
-        </Button>
-        <IconButton name="translate" size={76} iconScale={0.42} label="Translations" selected={showTranslations} fill={showTranslations ? colors.lavender : colors.panel} border={showTranslations ? colors.lavender : colors.track} color={showTranslations ? colors.bg : colors.muted} onPress={() => appStore.getState().toggleTranslations()} />
-      </View>
+      <Button label="Review lyrics" fill={colors.coral} border="#ff9aa5" disabled={!ready.length} contentStyle={{ minHeight: 76 }} onPress={() => { appStore.getState().startClipReview(); router.push('/clip-review'); }}>
+        <View style={styles.row}><Icon name="play" size={28} color={colors.cream} /><Label style={styles.title}>Review Lyrics</Label></View>
+        <Label style={{ fontSize: 13, marginTop: 2 }}>~4 min</Label>
+      </Button>
       {waiting > 0 && <Label muted>{plural(waiting, 'line')} waiting for translations</Label>}
-      <Section title="Due today" items={due} translations={showTranslations} />
-      <Section title="New from listening" items={fresh} translations={showTranslations} />
-      <Section title="Due later" items={later} translations={showTranslations} />
+      <Section title="Due today" items={due} />
+      <Section title="New from listening" items={fresh} />
+      <Section title="Due later" items={later} />
       {!reviewList.length && <Label muted>All caught up</Label>}
     </ScrollView>
   </View>;
