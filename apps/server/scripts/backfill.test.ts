@@ -41,7 +41,8 @@ test('backfill queues ordered synced Japanese lyrics, skips duplicates and conti
           structuredLyrics: [
             {
               synced: id !== 'unsynced',
-              lang: 'ja',
+              lang: 'und',
+              kind: 'main',
               line:
                 id === 'english'
                   ? [{ start: 0, value: 'The rain stops' }]
@@ -51,6 +52,7 @@ test('backfill queues ordered synced Japanese lyrics, skips duplicates and conti
                       { start: 1500, value: ' ' },
                     ],
             },
+            { synced: true, lang: 'ja', kind: 'pronunciation', line: [{ start: 0, value: 'きみのこえ' }] },
           ],
         },
       },
@@ -74,7 +76,7 @@ test('backfill queues ordered synced Japanese lyrics, skips duplicates and conti
     assert.ok(
       calls
         .filter((url) => url.pathname.endsWith('/getLyricsBySongId.view'))
-        .every((url) => url.searchParams.get('enhanced') === 'true'),
+        .every((url) => !url.searchParams.has('enhanced')),
     );
   } finally {
     globalThis.fetch = originalFetch;

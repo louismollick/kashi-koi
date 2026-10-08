@@ -22,7 +22,7 @@ export async function backfill(session: Session, store: ReturnType<typeof openDa
       const response = await request<{ lyricsList?: { structuredLyrics?: StructuredLyrics[] } }>(
         session,
         'getLyricsBySongId',
-        { id: song.id, enhanced: true },
+        { id: song.id },
       );
       const entry = pickEntry(response.lyricsList?.structuredLyrics ?? []);
       const lines = entry ? lyricLines(entry) : [];

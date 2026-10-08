@@ -1,11 +1,12 @@
 import type { StructuredLyrics } from './subsonic.ts';
 export type { StructuredLyrics } from './subsonic.ts';
 
-/** Prefer Japanese synced lyrics, then any synced entry. */
+/** Prefer Japanese synced main lyrics, then any synced main entry. */
 export function pickEntry(entries: StructuredLyrics[]) {
+  const main = entries.filter((entry) => entry.kind === undefined || entry.kind === 'main');
   return (
-    entries.find((entry) => entry.synced && ['ja', 'jpn'].includes(entry.lang?.toLowerCase() ?? '')) ??
-    entries.find((entry) => entry.synced)
+    main.find((entry) => entry.synced && ['ja', 'jpn'].includes(entry.lang?.toLowerCase() ?? '')) ??
+    main.find((entry) => entry.synced)
   );
 }
 

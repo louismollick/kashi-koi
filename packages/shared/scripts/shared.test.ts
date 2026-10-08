@@ -53,6 +53,18 @@ test('pickEntry prefers Japanese synced entries and preserves fallback order', (
   assert.equal(pickEntry([english, ja]), ja);
 });
 
+test('pickEntry ignores pronunciation layers even when only main lyrics have an unknown language', () => {
+  const main: StructuredLyrics = { synced: true, lang: 'und', kind: 'main', line: [{ start: 0, value: '朝の窓' }] };
+  const pronunciation: StructuredLyrics = {
+    synced: true,
+    lang: 'ja',
+    kind: 'pronunciation',
+    line: [{ start: 0, value: 'あさのまど' }],
+  };
+  assert.equal(pickEntry([pronunciation, main]), main);
+  assert.equal(pickEntry([pronunciation]), undefined);
+});
+
 test('lyricLines sorts adjusted timestamps, trims, drops blanks and retains repetitions and ties', () => {
   const entry: StructuredLyrics = {
     synced: true,

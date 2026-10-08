@@ -2,6 +2,7 @@ export type Session = { url: string; username: string; token: string; salt: stri
 export type Params = Record<string, string | number | boolean>;
 export type StructuredLyrics = {
   lang?: string;
+  kind?: string;
   synced: boolean;
   offset?: number;
   line: { start?: number; value: string }[];
