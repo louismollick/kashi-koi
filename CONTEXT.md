@@ -11,15 +11,23 @@ A track in the user's Navidrome library, with lyrics provided by Navidrome.
 _Avoid_: Track (except when talking about playback)
 
 **Line**:
-One distinct line of a song's lyrics, and the unit of learning. Understanding is tracked per line, not per word. A line repeated in a song (a chorus) is one line that occurs several times. A line with no Japanese in it is treated like an instrumental gap: shown, but never quizzed or reviewed.
-_Avoid_: Sentence, lyric, card
+One distinct line of a song's lyrics as it is sung and timed. Lines are what the app shows and follows; they are not the unit of meaning. A line repeated in a song (a chorus) is one line that occurs several times. A line with no Japanese in it is treated like an instrumental gap: shown, but never quizzed or reviewed.
+_Avoid_: Lyric, card
+
+**Sentence**:
+One complete thought in a song, made of one or more consecutive lines, and the unit of learning. Japanese often splits a clause across lines (a modifier on one line, its noun or verb on the next), so a line alone can be half a thought. Quizzing and review work per sentence; a lost mark on any of its lines marks the whole sentence.
+_Avoid_: Phrase, group, passage, line (when meaning a complete thought)
 
 **Word**:
 A dictionary term inside a line. Looking up words helps you understand a line, but words are not tracked or scheduled for their own sake.
 _Avoid_: Vocab, card
 
+**Song analysis**:
+A reading of a whole song's lyrics, made once by an LLM and shared by every listener whose lyrics match: its sentences, a translation of the title and of each line and sentence made with the whole song in view, a summary, who is speaking to whom, and notes. A song without one falls back to line-by-line translations.
+_Avoid_: AI translation, enrichment, analysis file
+
 **Translation**:
-A machine translation of a line into English, made on the phone. It is the right answer in Meaning Match, but it can miss what the line actually means.
+A machine translation of a line or sentence into English. It comes from the song analysis when there is one, otherwise it is made on the phone one line at a time without the rest of the song. It is the right answer in Meaning Match, but it can miss what the line actually means.
 _Avoid_: Meaning, gloss
 
 **Furigana**:
@@ -62,43 +70,43 @@ _Avoid_: Sit mode, game mode, study session
 ### Progress
 
 **Lost mark**:
-A tap in listen mode meaning "I just lost the thread". It immediately puts a guessed line (the one playing just before the tap) on the review list as a new line.
+A tap in listen mode meaning "I just lost the thread". It immediately puts a guessed sentence (the one playing just before the tap) on the review list as a new sentence.
 _Avoid_: Flag, unknown line, "review later" (that's the button's label, not the concept)
 
-**New line**:
-A line added to the review list by a lost mark that hasn't been confirmed yet. Its guessed line can be moved earlier or later until it's reviewed once.
-_Avoid_: Unsorted mark, pending mark
+**New sentence**:
+A sentence added to the review list by a lost mark that hasn't been confirmed yet. Its guess can be moved to an earlier or later sentence until it's reviewed once.
+_Avoid_: Unsorted mark, pending mark, new line
 
 **Review list**:
-The lines the user has explicitly chosen to study, either from lost marks or from the results of a run. Each line comes back on a spaced schedule: each right answer doubles the gap, starting at one day, and a wrong answer makes it due again.
+The sentences the user has explicitly chosen to study, either from lost marks or from the results of a run. Each sentence comes back on a spaced schedule: each right answer doubles the gap, starting at one day, and a wrong answer makes it due again. In a song without a song analysis, each line is its own sentence.
 _Avoid_: Deck, queue, quest log
 
-**Due line**:
-A line on the review list whose scheduled time has come. Answering it correctly in any run, or in a clip review, completes its review for the day.
-_Avoid_: Card, review item
+**Due sentence**:
+A sentence on the review list whose scheduled time has come. Answering it correctly in any run, or in a clip review, completes its review for the day.
+_Avoid_: Card, review item, due line
 
 **Due later**:
-A line on the review list answered correctly whose next scheduled time hasn't come yet.
+A sentence on the review list answered correctly whose next scheduled time hasn't come yet.
 _Avoid_: Learned, done
 
 **Clip review**:
-Reviewing due lines one at a time by replaying just their clip, in the same layout as quiz mode but with no timer. Answering moves on to the next clip. A tested alternative to a full run that skips the rest of each song.
+Reviewing due sentences one at a time by replaying just their clip, in the same layout as quiz mode but with no timer. Answering moves on to the next clip. A tested alternative to a full run that skips the rest of each song.
 _Avoid_: Flashcards, quiet mode
 
 **Meaning Match**:
-The game played in quiz mode: as each line is sung, the user picks its translation from a few choices drawn from the same song.
+The game played in quiz mode: as each sentence finishes, the user picks its translation from a few choices drawn from the same song.
 _Avoid_: Quiz, rhythm mode
 
 **Answer time**:
-How long the song waits at the end of a line for an answer in quiz mode. No limit by default; 0s keeps the song playing. A line left unanswered counts as missed.
+How long the song waits at the end of a sentence for an answer in quiz mode. No limit by default; 0s keeps the song playing. A sentence left unanswered counts as missed.
 _Avoid_: Timer, time limit
 
 **Run**:
-One play-through of a song (or of review lines) in Meaning Match. A missed line goes onto the review list only if the user picks it on the results screen.
+One play-through of a song (or of review sentences) in Meaning Match. A missed sentence goes onto the review list only if the user picks it on the results screen.
 _Avoid_: Session, attempt
 
 **Combo**:
-The number of lines answered correctly in a row within a run. A miss resets it to zero.
+The number of sentences answered correctly in a row within a run. A miss resets it to zero.
 _Avoid_: Streak (reserve for daily habits, if ever)
 
 **Rank**:
