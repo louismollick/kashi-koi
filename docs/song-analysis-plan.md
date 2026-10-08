@@ -57,7 +57,7 @@ type SongAnalysis = {
 - **Backfill** (`node dist/backfill.js`): logs into Navidrome from `NAVIDROME_URL/USER/PASSWORD`, walks songs, fetches main lyrics, queues low-priority jobs for synced Japanese songs without an analysis.
 - **Eval** (`npm run eval -w @kashi-koi/server`): runs the analyzer on original test lyrics in `apps/server/eval/` and prints a readable report.
 - **Docker**: `node:24-bookworm-slim`, pinned `@openai/codex`, one `/data` volume (SQLite and `CODEX_HOME=/data/codex`). One-time login: `docker compose run --rm server codex login --device-auth`. `apps/server/compose.yaml` is the VPS example.
-- **CI**: `.github/workflows/ci.yml` runs Biome, typecheck and tests for every workspace. `.github/workflows/server-image.yml` pushes `ghcr.io/louismollick/kashi-koi-server` for amd64 and arm64: `main` from main, `pr-<number>` from a PR, and `sha-<short>` for both.
+- **CI**: `.github/workflows/ci.yml` runs Biome, typecheck and tests for every workspace. `.github/workflows/server-image.yml` builds `ghcr.io/louismollick/kashi-koi-server` for amd64 and arm64 and pushes `main` from main, `pr-<number>` from a PR with the `server-image` label, and `sha-<short>` for both.
 
 ## App (`apps/mobile`)
 
