@@ -81,6 +81,39 @@ test('force queues a replacement and GET returns pending until it completes', as
   assert.equal(store.getAnalysis(key)?.title, 'New title');
 });
 
+test('GET reports a failed forced replacement while preserving the existing analysis', async (t) => {
+  const { store } = testStore(t);
+  const app = createApi(store, token);
+  store.enqueue(input);
+  store.claimNext();
+  store.complete({ ...analysis, createdAt: '2000-01-01T00:00:00.000Z' });
+  await app.request('/v1/analyses', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ ...body, force: true }),
+  });
+  store.claimNext();
+  store.fail(key, 'Replacement failed');
+  const failed = await app.request(`/v1/analyses/${key}`);
+  assert.equal(failed.status, 202);
+  assert.deepEqual(await failed.json(), { status: 'failed', error: 'Replacement failed' });
+  assert.equal(store.getAnalysis(key)?.title, analysis.title);
+});
+
+test('GET serves an analysis newer than a failed job', async (t) => {
+  const { store } = testStore(t);
+  const app = createApi(store, token);
+  store.enqueue(input);
+  store.claimNext();
+  store.complete({ ...analysis, createdAt: '2100-01-01T00:00:00.000Z' });
+  store.enqueue(input, true);
+  store.claimNext();
+  store.fail(key, 'Older failure');
+  const ready = await app.request(`/v1/analyses/${key}`);
+  assert.equal(ready.status, 200);
+  assert.equal((await ready.json()).createdAt, '2100-01-01T00:00:00.000Z');
+});
+
 test('rejects malformed JSON and oversized actual bodies with JSON responses', async (t) => {
   const { store } = testStore(t);
   const app = createApi(store, token);

@@ -38,8 +38,9 @@ export function createApi(store: Store, adminToken: string) {
     c.header('Cache-Control', 'no-store');
     if (job?.status === 'queued' || job?.status === 'running') return c.json({ status: job.status }, 202);
     const analysis = store.getAnalysis(key);
+    if (job?.status === 'failed' && (!analysis || job.updatedAt > Date.parse(analysis.createdAt)))
+      return c.json({ status: 'failed', error: job.error }, 202);
     if (analysis) return c.json(analysis);
-    if (job?.status === 'failed') return c.json({ status: 'failed', error: job.error }, 202);
     return c.json({ error: 'Not found' }, 404);
   });
   app.post('/v1/analyses', async (c) => {

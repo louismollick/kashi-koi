@@ -48,3 +48,9 @@ Translations and furigana are cached by Japanese text and survive Rescan lyrics.
 Playback does not resume after relaunch. Playlists and offline downloads are deferred. Node tests use translated fixtures and an injected translator, without loading native modules.
 
 See `docs/translations-plan.md`, `docs/navidrome-plan.md` and `docs/implementation-report.md` for the implementation and simulator QA evidence.
+
+## Analysis API
+
+- `GET /v1/analyses/:fingerprint` is public and returns `200` with the analysis, `202 {status:"queued"|"running"}` for an active job, `202 {status:"failed", error}` for a failed job newer than the stored analysis or with no stored analysis, and `404` when neither exists. An older failed job leaves the stored analysis available. Responses disable caching.
+- `POST /v1/analyses` requires `Authorization: Bearer $KASHI_ADMIN_TOKEN` and a JSON body `{title, artist?, lines, force?}`. It returns `200` with an existing analysis unless `force` is true, otherwise `202 {fingerprint, status}` after enqueueing. Queued and running jobs are deduplicated.
+- `GET /health` returns `200 {status:"ok"}`.
