@@ -1,6 +1,6 @@
 import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync } from 'expo-audio';
 import { appStore, setTransport } from '@/store/appStore';
-import { getLyrics, libraryStore } from '@/store/libraryStore';
+import { hasTranslations, libraryStore } from '@/store/libraryStore';
 import { sessionStore } from '@/navidrome/session';
 import { mediaUrl, request } from '@/navidrome/subsonic';
 import { savePlayed } from '@/navidrome/db';
@@ -97,8 +97,7 @@ export async function setupTransport(valid = () => true) {
     }
     if (status.didJustFinish && !finished && !appStore.getState().answerWait) {
       finished = true;
-      if (appStore.getState().quizToggle && getLyrics(song.id).lines.some((line) => line.translation))
-        appStore.getState().completeRun();
+      if (appStore.getState().quizToggle && hasTranslations(song.id)) appStore.getState().completeRun();
       else appStore.getState().nextSong();
     }
   });

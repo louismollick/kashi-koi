@@ -1938,3 +1938,35 @@ test('legacy saved state defaults the Japanese filter on', async () => {
   assert.equal(appStore.getState().hideSongsWithoutJapanese, true);
   assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, false);
 });
+
+test('native EOF preserves results for an analysis-only quiz', async (t) => {
+  const lyrics = withSentences({
+    songId: 'dawn',
+    lines: [{ id: 'paper', segments: [{ text: '紙の舟を流した' }] }],
+    timeline: [{ lineId: 'paper', startMs: 0, endMs: 238000 }],
+  });
+  libraryStore.getState().setLibrary({ songs: [firstSong], albums, artists, lyrics: { dawn: lyrics } });
+  libraryStore.getState().setAnalysis({
+    schemaVersion: 1,
+    fingerprint: lyrics.fingerprint,
+    model: 'test',
+    createdAt: '2026-10-08T00:00:00Z',
+    title: 'Paper boat',
+    summary: 'A walker floats a paper boat.',
+    speaker: 'A walker',
+    addressee: 'Unclear',
+    lines: ['I floated a paper boat.'],
+    sentences: [{ start: 0, end: 0, translation: 'I floated a paper boat.' }],
+    notes: [],
+  });
+  const native = await nativePacingRun(t);
+  try {
+    assert.equal(getLyrics('dawn').lines[0]!.translation, undefined);
+    appStore.getState().answer('I floated a paper boat.');
+    native.status(238000, false, true);
+    assert.equal(appStore.getState().run.finished, true);
+    assert.equal(appStore.getState().songId, 'dawn');
+  } finally {
+    native.detach();
+  }
+});
