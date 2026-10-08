@@ -13,6 +13,7 @@ import {
   type Session,
   type StructuredLyrics,
 } from './subsonic';
+import type { Library } from '@/store/libraryStore';
 import type { LyricsStatus, Song, SongLyrics } from '@/types/domain';
 
 let running: Promise<void> | null = null;
@@ -40,7 +41,9 @@ function run(work: (session: Session, valid: () => boolean) => Promise<void>) {
   return running;
 }
 
-export function syncLibrary() {
+export function syncLibrary(
+  replace: (library: Library) => Promise<void> = async (library) => (await import('./db')).replaceLibrary(library),
+) {
   return run(async (session, valid) => {
     libraryStore.setState({ progress: { kind: 'sync', completed: 0, total: libraryStore.getState().songs.length } });
     const entries = await searchAll<ServerSong>(session, 'song');
@@ -81,10 +84,10 @@ export function syncLibrary() {
       },
       libraryStore.getState(),
     );
-    const { replaceLibrary } = await import('./db');
-    await replaceLibrary(library);
+    await replace(library);
     if (!valid()) return;
-    libraryStore.getState().setLibrary({ ...library, translations: libraryStore.getState().translations });
+    const { translations, analyses } = libraryStore.getState();
+    libraryStore.getState().setLibrary({ ...library, translations, analyses });
     const ids = new Set(songs.map((song) => song.id));
     appStore.setState((state) => ({
       reviewList: state.reviewList.filter((item) => ids.has(item.songId)),

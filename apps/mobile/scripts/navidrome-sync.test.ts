@@ -258,3 +258,58 @@ test('clearing the session refuses new syncs while cancellation waits for active
     globalThis.fetch = original;
   }
 });
+
+test('sync preserves analyses accepted while SQLite replacement is pending', async () => {
+  const original = globalThis.fetch,
+    song = songs[0]!;
+  let release!: () => void, entered!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const writing = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  try {
+    sessionStore.setState({ session });
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.includes('search3'))
+        return Response.json({
+          'subsonic-response': {
+            status: 'ok',
+            searchResult3: { song: [{ ...song }], album: [] },
+          },
+        });
+      return Response.json({ 'subsonic-response': { status: 'ok', artists: { index: [] } } });
+    };
+    const syncing = syncLibrary(async () => {
+      entered();
+      await pending;
+    });
+    await writing;
+    const lyrics = libraryStore.getState().lyrics[song.id]!;
+    const analysis = {
+      schemaVersion: 1 as const,
+      fingerprint: lyrics.fingerprint,
+      model: 'test',
+      createdAt: '2026-10-08T00:00:00Z',
+      title: 'Paper boats',
+      summary: 'A walker follows a paper boat.',
+      speaker: 'A walker',
+      addressee: 'Unclear',
+      lines: lyrics.timeline.map((_, index) => `Context ${index}`),
+      sentences: lyrics.timeline.map((_, index) => ({ start: index, end: index, translation: `Sentence ${index}` })),
+      notes: [],
+    };
+    libraryStore.getState().setAnalysis(analysis);
+    release();
+    await syncing;
+    assert.equal(libraryStore.getState().analyses[lyrics.fingerprint], analysis);
+    assert.equal(libraryStore.getState().lyrics[song.id]!.analysis?.title, analysis.title);
+    assert.equal(libraryStore.getState().lyrics[song.id]!.sentences[0]!.translation, 'Sentence 0');
+  } finally {
+    release();
+    sessionStore.setState({ session: null });
+    globalThis.fetch = original;
+  }
+});
