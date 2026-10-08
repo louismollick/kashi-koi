@@ -33,22 +33,30 @@ export function setTranslator(next: Translator, persist: typeof save) {
   translator = next;
   save = persist;
 }
-const needsTranslation = (id: string) =>
-  getLyrics(id).lines.some((line) => !line.translation && isJapanese(getLineText(line)));
 const textsFor = (id: string) => [
   ...new Set(
     getLyrics(id)
       .lines.filter((line) => !line.translation)
       .map(getLineText)
-      .filter((text) => isJapanese(text) && !libraryStore.getState().translations[text]),
+      .filter(
+        (text) =>
+          isJapanese(text) &&
+          (libraryStore.getState().translationStatus === 'installed'
+            ? !libraryStore.getState().translations[text]?.translation
+            : !libraryStore.getState().translations[text]),
+      ),
   ),
 ];
+const needsTranslation = (id: string) =>
+  libraryStore.getState().translationStatus === 'installed'
+    ? getLyrics(id).lines.some((line) => !line.translation && isJapanese(getLineText(line)))
+    : textsFor(id).length > 0;
 
 // Library replacements and lyrics scans change both maps. Batch publication changes only lyrics.
 libraryStore.subscribe((state, previous) => {
   if (state.songs !== previous.songs && state.lyrics !== previous.lyrics) {
     queueDirty = true;
-    if (active && state.translationStatus === 'installed') void work();
+    if (active) void work();
   }
 });
 
@@ -56,7 +64,7 @@ libraryStore.subscribe((state, previous) => {
 export function prioritizeTranslations(ids: string[]) {
   priority = [...new Set([...ids, ...priority])];
   queueDirty = true;
-  if (active && libraryStore.getState().translationStatus === 'installed') void work();
+  if (active) void work();
 }
 function rebuildQueue() {
   queue = [...new Set([...priority, ...libraryStore.getState().songs.map((song) => song.id)])].filter(
@@ -70,11 +78,11 @@ function rebuildQueue() {
 /** One serial worker saves and applies each song, including songs with fully cached texts. */
 function work() {
   if (running) return running;
-  if (!active || libraryStore.getState().translationStatus !== 'installed') return Promise.resolve();
+  if (!active) return Promise.resolve();
   const version = generation,
     service = translator,
     persist = save;
-  const valid = () => active && version === generation && libraryStore.getState().translationStatus === 'installed';
+  const valid = () => active && version === generation;
   queueDirty = true;
   running = (async () => {
     let completed = 0;
@@ -88,12 +96,13 @@ function work() {
         if (texts.length) {
           const tokens = await service.tokenize(texts);
           if (!valid()) break;
-          const translations = await service.translate(texts);
+          const installed = libraryStore.getState().translationStatus === 'installed';
+          const translations = installed ? await service.translate(texts) : texts.map(() => '');
           if (!valid()) break;
           if (
             translations.length !== texts.length ||
             tokens.length !== texts.length ||
-            translations.some((text) => !text.trim())
+            (installed && translations.some((text) => !text.trim()))
           )
             throw new Error('Invalid translation batch');
           const result: Translations = Object.fromEntries(
@@ -142,11 +151,9 @@ export async function resumeTranslations() {
     const status = await translator.translationStatus();
     if (!active || version !== generation) return;
     libraryStore.setState({ translationStatus: status, translationError: null });
-    if (status === 'installed') {
-      await running;
-      if (!active || version !== generation) return;
-      await work();
-    } else libraryStore.setState({ translationSongIds: new Set() });
+    await running;
+    if (!active || version !== generation) return;
+    await work();
   } catch (error) {
     if (version === generation)
       libraryStore.setState({

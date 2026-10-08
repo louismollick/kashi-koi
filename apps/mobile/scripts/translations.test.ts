@@ -4,6 +4,7 @@ import { alignReading, isJapanese } from '../src/japanese/text';
 import {
   pauseTranslations,
   resumeTranslations,
+  prioritizeTranslations,
   setTranslator,
   setTranslationForeground,
   translationHint,
@@ -591,5 +592,55 @@ test('new lyrics re-enqueue translation while the foreground worker is idle', { 
   await started;
   await resumeTranslations();
   assert.deepEqual(batches, [['月']]);
+  assert.equal(hasTranslations('0'), true);
+});
+
+test('unsupported translation still tokenizes, persists readings, and later translates cached text', async () => {
+  libraryStore.getState().setLibrary(makeLibrary([['紙の舟']]));
+  let installed = false;
+  const batches: string[][] = [],
+    saved: Translations[] = [];
+  setTranslator(
+    {
+      ...fake,
+      translationStatus: async () => (installed ? 'installed' : 'unsupported'),
+      tokenize: async (texts) => {
+        batches.push(texts);
+        return [
+          [
+            { surface: '紙', reading: 'かみ' },
+            { surface: 'の舟', reading: 'のふね' },
+          ],
+        ];
+      },
+      translate: async (texts) => {
+        assert.equal(installed, true);
+        return fake.translate(texts);
+      },
+    },
+    async (result) => {
+      saved.push(result);
+    },
+  );
+  await setTranslationForeground(true);
+  assert.deepEqual(batches, [['紙の舟']]);
+  assert.ok(getLyrics('0').lines[0]!.segments.some((segment) => segment.reading));
+  assert.equal(saved.length, 1);
+  assert.equal(hasTranslations('0'), false);
+  let songProgress = 0;
+  const unsubscribe = libraryStore.subscribe((state) => {
+    if (state.translationProgress) songProgress++;
+    assert.equal(state.translationSongIds.size, 0);
+  });
+  try {
+    prioritizeTranslations(['0']);
+    await resumeTranslations();
+    assert.equal(songProgress, 0);
+  } finally {
+    unsubscribe();
+  }
+  assert.equal(batches.length, 1);
+  installed = true;
+  await resumeTranslations();
   assert.equal(hasTranslations('0'), true);
 });
