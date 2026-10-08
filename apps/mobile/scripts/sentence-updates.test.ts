@@ -127,3 +127,58 @@ test('replacing a library with a newer cached analysis re-derives its sentences 
   assert.equal(getLyrics(song.id).analysis?.title, 'A new reading');
   assert.equal(getLyrics(song.id).sentences.length, 1);
 });
+
+function startReview() {
+  appStore.setState({
+    reviewList: getLyrics(song.id).sentences.map((sentence, index) => ({
+      id: `review-${index}`,
+      songId: song.id,
+      sentenceId: sentence.id,
+      kind: 'due' as const,
+      misses: 1,
+    })),
+  });
+  appStore.getState().startClipReview();
+}
+
+test('sentence merge removes vanished clip entries and cancels their pending feedback', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  startReview();
+  appStore.getState().jumpToClip(1);
+  appStore.getState().answerClip('Fallback 1');
+  const oldSentence = raw().sentences[1]!.id;
+  assert.ok(appStore.getState().clipReview?.answers['review-1']);
+  libraryStore.getState().setAnalysis(analysis());
+  const clip = appStore.getState().clipReview!;
+  assert.deepEqual(clip.ids, ['review-0', 'review-2']);
+  assert.equal(clip.ids[clip.index], 'review-2');
+  assert.deepEqual(clip.answers, {});
+  assert.equal(clip.choices[oldSentence], undefined);
+  t.mock.timers.tick(800);
+  assert.equal(appStore.getState().clipReview?.ids[appStore.getState().clipReview!.index], 'review-2');
+  appStore.getState().setPlaying(true);
+  assert.equal(appStore.getState().clipPlayback?.startMs, 2000);
+  assert.equal(appStore.getState().clipPlayback?.endMs, 3000);
+});
+
+test('sentence merge keeps clip review on its surviving current entry', () => {
+  startReview();
+  appStore.getState().jumpToClip(2);
+  libraryStore.getState().setAnalysis(analysis());
+  const clip = appStore.getState().clipReview!;
+  assert.deepEqual(clip.ids, ['review-0', 'review-2']);
+  assert.equal(clip.index, 1);
+  assert.equal(clip.ids[clip.index], 'review-2');
+});
+
+test('removing all lyric sentences ends clip review and cancels feedback', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  startReview();
+  appStore.getState().answerClip('Fallback 0');
+  libraryStore.getState().setLyricsResult(song.id, 'none');
+  assert.deepEqual(appStore.getState().reviewList, []);
+  assert.equal(appStore.getState().clipReview, null);
+  assert.equal(appStore.getState().playing, false);
+  t.mock.timers.tick(800);
+  assert.equal(appStore.getState().clipReview, null);
+});

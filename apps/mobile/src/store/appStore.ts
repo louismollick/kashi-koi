@@ -541,9 +541,17 @@ export const appStore = create<AppState>()(
         clearAnswerWait();
         const state = get();
         if (playing && state.clipPlayback && state.clipReview) {
-          const clip = state.clipPlayback;
-          if (clip.ended) {
-            get().playClip(clip.songId, clip.startMs, clip.endMs);
+          const clip = state.clipPlayback,
+            item = state.reviewList.find((item) => item.id === state.clipReview?.ids[state.clipReview.index]),
+            occurrence = item && reviewClip(item);
+          if (!item || !occurrence) return;
+          if (
+            clip.ended ||
+            clip.songId !== item.songId ||
+            clip.startMs !== occurrence.startMs ||
+            clip.endMs !== occurrence.endMs
+          ) {
+            get().playClip(item.songId, occurrence.startMs, occurrence.endMs);
             return;
           }
           set({ playing: true });
@@ -815,7 +823,27 @@ libraryStore.subscribe((state, previous) => {
       reviewList = remapReview(reviewList, id, previous.lyrics[id], state.lyrics[id]);
   }
   const current = appStore.getState();
-  appStore.setState({ reviewList });
+  const clip = current.clipReview;
+  if (clip) {
+    const entries = reviewList.filter((item) => clip.ids.includes(item.id)),
+      ids = clip.ids.filter((id) => entries.some((item) => item.id === id)),
+      index = ids.indexOf(clip.ids[clip.index]!);
+    if (index < 0) clearClipTimer();
+    appStore.setState({
+      reviewList,
+      clipReview: ids.length
+        ? {
+            ...clip,
+            ids,
+            index: index < 0 ? Math.min(clip.index, ids.length - 1) : index,
+            answers: Object.fromEntries(Object.entries(clip.answers).filter(([id]) => ids.includes(id))),
+            choices: Object.fromEntries(
+              Object.entries(clip.choices).filter(([id]) => entries.some((item) => item.sentenceId === id)),
+            ),
+          }
+        : null,
+    });
+  } else appStore.setState({ reviewList });
   const before = previous.lyrics[current.songId ?? ''],
     after = state.lyrics[current.songId ?? ''];
   if (after !== before && JSON.stringify(after?.sentences) !== JSON.stringify(before?.sentences)) {
