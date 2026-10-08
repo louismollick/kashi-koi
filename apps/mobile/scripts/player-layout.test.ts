@@ -12,12 +12,20 @@ const { renderToStaticMarkup } = require('react-dom/server') as {
 };
 
 /** Render the real screen with native hosts and animation APIs replaced for Node. */
-async function loadPlayerScreen() {
+async function loadPlayerScreen(presses = new Map<string, () => void>()) {
   const key = Symbol.for('kashi-koi.test.react');
-  const globals = globalThis as typeof globalThis & { [key]: typeof React | undefined };
+  const pressKey = Symbol.for('kashi-koi.test.presses');
+  const globals = globalThis as typeof globalThis & {
+    [key]: typeof React | undefined;
+    [pressKey]: Map<string, () => void> | undefined;
+  };
   globals[key] = React;
+  globals[pressKey] = presses;
   const host = `const React = globalThis[Symbol.for('kashi-koi.test.react')];
-    const host = name => props => React.createElement(name, { 'data-label': props.accessibilityLabel }, props.children);`;
+    const host = name => props => {
+      if (name === 'native-button' && props.onPress) globalThis[Symbol.for('kashi-koi.test.presses')].set(props.accessibilityLabel, props.onPress);
+      return React.createElement(name, { 'data-label': props.accessibilityLabel }, props.children);
+    };`;
   const mocks: Record<string, string> = {
     'react-native': `${host}
       module.exports = { View: host('native-view'), Text: host('native-text'), Pressable: host('native-button'), ScrollView: host('native-scroll'), ActivityIndicator: host('native-loading'), Modal: () => null,
@@ -44,6 +52,7 @@ async function loadPlayerScreen() {
   const cleanup = () => {
     hooks.deregister();
     delete globals[key];
+    delete globals[pressKey];
   };
   try {
     return { PlayerScreen: (await import('../src/screens/player')).default, cleanup };
@@ -100,4 +109,35 @@ test('the actual quiz screen renders its musical gap before the first line witho
   assert.ok(loading.includes('native-image'));
   assert.ok(!loading.includes('Mascot'));
   assert.ok(!loading.includes('Play line'));
+});
+
+test('the Retry button preserves the failed request force flag', async (t) => {
+  await resetAppState();
+  libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics });
+  const calls: { songId: string; force: boolean | undefined }[] = [];
+  appStore.setState({
+    songId: 'dawn',
+    analysisToken: 'test-token',
+    analysisServerUrl: 'https://analysis.test',
+    analysisRequests: { dawn: { status: 'failed', error: 'Analyzer unavailable', force: true } },
+    analyzeSong: async (songId, options) => {
+      calls.push({ songId, force: options?.force });
+    },
+  });
+  const appInitial = { ...appStore.getInitialState() },
+    libraryInitial = { ...libraryStore.getInitialState() };
+  Object.assign(appStore.getInitialState(), appStore.getState());
+  Object.assign(libraryStore.getInitialState(), libraryStore.getState());
+  t.after(async () => {
+    Object.assign(appStore.getInitialState(), appInitial);
+    Object.assign(libraryStore.getInitialState(), libraryInitial);
+    await resetAppState();
+  });
+  const presses = new Map<string, () => void>();
+  const { PlayerScreen, cleanup } = await loadPlayerScreen(presses);
+  t.after(cleanup);
+  renderToStaticMarkup(React.createElement(PlayerScreen));
+  assert.ok(presses.has('Retry analysis'));
+  presses.get('Retry analysis')!();
+  assert.deepEqual(calls, [{ songId: 'dawn', force: true }]);
 });

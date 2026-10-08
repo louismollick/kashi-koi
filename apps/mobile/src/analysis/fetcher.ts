@@ -1,5 +1,5 @@
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
-import { appStore } from '@/store/appStore';
+import type { appStore as AppStore } from '@/store/appStore';
 import { getLyrics, getSong, libraryStore } from '@/store/libraryStore';
 import { timelineTexts } from '@/lyrics/sentences';
 import { fetchAnalysis, requestAnalysis } from './client';
@@ -16,11 +16,18 @@ const defaults = {
   },
 };
 let runtime = defaults;
+let appStore: typeof AppStore;
 let generation = 0;
+let tokenWrites = Promise.resolve();
 let queue: string[] = [];
 let running: Promise<void> | null = null;
 const attempted = new Set<string>();
 const requests = new Map<string, Promise<void>>();
+
+/** Inject the initialized store so the fetcher has no runtime dependency on appStore. */
+export function setAnalysisStore(store: typeof AppStore) {
+  appStore = store;
+}
 
 /** Inject fetch, clock waits and persistence without native imports in Node tests. */
 export function setAnalysisRuntime(overrides: Partial<typeof defaults> = {}) {
@@ -41,7 +48,15 @@ export async function loadAnalysisToken() {
     if (version === generation) appStore.setState({ analysisToken: '' });
   }
 }
-export const saveAnalysisToken = (token: string) => runtime.saveToken(token);
+/** Serialize SecureStore writes and report whether publication still belongs to this login. */
+export async function saveAnalysisToken(token: string) {
+  const version = generation,
+    save = runtime.saveToken;
+  const work = tokenWrites.then(() => save(token));
+  tokenWrites = work.catch(() => {});
+  await work;
+  return version === generation;
+}
 
 /** Save before publication so logout can wait for every accepted SQLite write. */
 async function accept(analysis: SongAnalysis, valid: () => boolean) {
@@ -117,7 +132,7 @@ export function analyzeSong(songId: string, { force = false }: { force?: boolean
   const update = (request?: { status: 'requesting' | 'queued' | 'running' | 'failed'; error?: string }) => {
     if (!valid()) return;
     const analysisRequests = { ...appStore.getState().analysisRequests };
-    if (request) analysisRequests[songId] = request;
+    if (request) analysisRequests[songId] = { ...request, force };
     else delete analysisRequests[songId];
     appStore.setState({ analysisRequests });
   };
@@ -180,6 +195,6 @@ export function analyzeSong(songId: string, { force = false }: { force?: boolean
 export async function cancelAnalyses() {
   generation++;
   queue = [];
-  await Promise.allSettled([running, ...requests.values()]);
+  await Promise.allSettled([running, ...requests.values(), tokenWrites]);
   appStore.setState({ analysisRequests: {} });
 }

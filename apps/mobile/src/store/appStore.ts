@@ -1,5 +1,11 @@
 import { remapReview } from '@/lyrics/review';
-import { prioritizeAnalyses, analyzeSong, analysisServerUrl, saveAnalysisToken } from '@/analysis/fetcher';
+import {
+  prioritizeAnalyses,
+  analyzeSong,
+  analysisServerUrl,
+  saveAnalysisToken,
+  setAnalysisStore,
+} from '@/analysis/fetcher';
 import { prioritizeTranslations } from '@/japanese/translate';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { currentOccurrence } from '@/navidrome/lyrics';
@@ -158,7 +164,10 @@ type AppState = {
   answerWait: { occurrence: SentenceOccurrence; until: number | null } | null;
   analysisServerUrl: string;
   analysisToken: string;
-  analysisRequests: Record<string, { status: 'requesting' | 'queued' | 'running' | 'failed'; error?: string }>;
+  analysisRequests: Record<
+    string,
+    { status: 'requesting' | 'queued' | 'running' | 'failed'; error?: string; force: boolean }
+  >;
   setAnalysisServerUrl: (url: string) => void;
   setAnalysisToken: (token: string) => Promise<void>;
   analyzeSong: (songId: string, options?: { force?: boolean }) => Promise<void>;
@@ -244,8 +253,8 @@ export const appStore = create<AppState>()(
         );
       },
       setAnalysisToken: async (token) => {
-        await saveAnalysisToken(token.trim());
-        set({ analysisToken: token.trim() });
+        const value = token.trim();
+        if (await saveAnalysisToken(value)) set({ analysisToken: value });
       },
       analyzeSong,
       showTranslations: false,
@@ -754,6 +763,8 @@ export const appStore = create<AppState>()(
     },
   ),
 );
+
+setAnalysisStore(appStore);
 
 /** Subscribe only to library visibility settings. */
 export function useLibraryFilters() {

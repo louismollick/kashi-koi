@@ -118,7 +118,7 @@ export default function PlayerScreen() {
               <Button
                 label="Retry analysis"
                 contentStyle={{ minHeight: 36, paddingVertical: 6 }}
-                onPress={() => void appStore.getState().analyzeSong(song.id)}
+                onPress={() => void appStore.getState().analyzeSong(song.id, { force: request.force })}
               >
                 <Label style={{ fontSize: 13, fontWeight: '700' }}>RETRY</Label>
               </Button>

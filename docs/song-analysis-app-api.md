@@ -46,7 +46,7 @@ appStore.getState().sendToReview(sentenceId: string, enabled: boolean) // void
 
 `analysisServerUrl` persists in learning state. An empty override uses `EXPO_PUBLIC_KASHI_SERVER_URL`; both empty disable network reads. `analysisToken` is transient store state loaded from SecureStore key `analysis-token`. An empty token removes it. `canAnalyze` requires a token and effective URL; the action also requires a song with synced lines.
 
-`analysisRequests[songId]` is `{ status: 'requesting' | 'queued' | 'running' | 'failed', error?: string }`. Success removes it and publishes the cached analysis. Failed requests remain for display and can be retried. Concurrent requests for the same song share one job. Polling runs every five seconds for up to ten minutes.
+`analysisRequests[songId]` is `{ status: 'requesting' | 'queued' | 'running' | 'failed', error?: string, force: boolean }`. Success removes it and publishes the cached analysis. Failed requests remain for display and Retry preserves their force flag. Concurrent requests for the same song share one job. Polling runs every five seconds for up to ten minutes.
 
 Clip choices use sentence IDs. Clip answers retain review entry IDs to preserve the existing editing and feedback behavior. Clips use the entire first sentence occurrence. `moveReviewLine`, `removeReviewLine`, `dueLines` and `readyReviewLines` remain compatibility aliases for existing screens.
 

@@ -8,6 +8,7 @@ import {
   loadAnalysisToken,
   prioritizeAnalyses,
   setAnalysisRuntime,
+  saveAnalysisToken,
 } from '../src/analysis/fetcher';
 import { appStore, canAnalyze, hydrateAppState, resetAppState } from '../src/store/appStore';
 import { getLyrics, hasTranslations, libraryStore } from '../src/store/libraryStore';
@@ -389,4 +390,84 @@ test('a delayed public read cannot overwrite a completed admin analysis', async 
   await background;
   assert.deepEqual(saved, [updated]);
   assert.equal(getLyrics('0').analysis?.title, updated.title);
+});
+
+test('failed forced re-analysis retains its intent through Retry', async () => {
+  const old = analysisFor('0'),
+    updated = { ...old, createdAt: '2026-10-08T00:01:00Z' };
+  libraryStore.getState().setAnalysis(old);
+  const forces: boolean[] = [];
+  const requests: Record<string, boolean> = {};
+  const unsubscribe = appStore.subscribe((state) => {
+    const request = state.analysisRequests['0'];
+    if (request) requests[request.status] = request.force;
+  });
+  let posts = 0,
+    polls = 0;
+  setAnalysisRuntime({
+    fetch: async (_url, options) => {
+      if (options?.method === 'POST') {
+        forces.push(JSON.parse(String(options.body)).force);
+        return ++posts === 1
+          ? Response.json({ fingerprint: old.fingerprint, status: 'queued' }, { status: 202 })
+          : Response.json(updated);
+      }
+      polls++;
+      return Response.json({ status: 'failed', error: 'Analyzer unavailable' }, { status: 202 });
+    },
+    sleep: async () => {},
+    save: async () => {},
+  });
+  try {
+    await analyzeSong('0', { force: true });
+    assert.equal(polls, 1);
+    const failed = appStore.getState().analysisRequests['0']!;
+    assert.deepEqual(failed, { status: 'failed', error: 'Analyzer unavailable', force: true });
+    assert.equal(libraryStore.getState().analyses[old.fingerprint], old);
+    await appStore.getState().analyzeSong('0', { force: failed.force });
+    assert.deepEqual(forces, [true, true]);
+    assert.deepEqual(requests, { requesting: true, queued: true, failed: true });
+    assert.equal(appStore.getState().analysisRequests['0'], undefined);
+    assert.equal(libraryStore.getState().analyses[old.fingerprint]?.createdAt, updated.createdAt);
+  } finally {
+    unsubscribe();
+  }
+});
+
+test('logout drains a slow token save and prevents late token publication', async () => {
+  let entered!: () => void,
+    release!: () => void,
+    persisted = 'old-token';
+  const saving = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  setAnalysisRuntime({
+    saveToken: async (token) => {
+      if (token) {
+        entered();
+        await gate;
+      }
+      persisted = token;
+    },
+  });
+  const work = appStore.getState().setAnalysisToken('new-token');
+  await saving;
+  let drained = false;
+  const logout = cancelAnalyses().then(async () => {
+    drained = true;
+    await saveAnalysisToken('');
+    await resetAppState();
+  });
+  await Promise.resolve();
+  assert.equal(drained, false);
+  appStore.setState({ analysisToken: '' });
+  release();
+  await work;
+  assert.equal(appStore.getState().analysisToken, '');
+  await logout;
+  assert.equal(persisted, '');
+  assert.equal(appStore.getState().analysisToken, '');
 });
