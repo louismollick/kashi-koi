@@ -1,0 +1,21 @@
+{
+  "name": "@kashi-koi/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./analysis": "./src/analysis.ts",
+    "./fingerprint": "./src/fingerprint.ts",
+    "./lyrics": "./src/lyrics.ts",
+    "./subsonic": "./src/subsonic.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test scripts/*.test.ts"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.4.0",
+    "zod": "^4.6.5"
+  }
+}

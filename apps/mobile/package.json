@@ -10,6 +10,7 @@
     "sprites": "python3 scripts/process-sprites.py"
   },
   "dependencies": {
+    "@kashi-koi/shared": "^1.0.0",
     "expo": "57.0.26",
     "expo-audio": "~57.0.5",
     "expo-build-properties": "~57.0.22",

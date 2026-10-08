@@ -1,23 +1,12 @@
 import type { StructuredLyrics } from './subsonic';
+import { orderedLyricEntries } from '@kashi-koi/shared/lyrics';
 import type { Line, Occurrence, SongLyrics } from '@/types/domain';
 
-/** Prefer Japanese synced lyrics, then any synced entry. */
-export function pickEntry(entries: StructuredLyrics[]) {
-  return (
-    entries.find((entry) => entry.synced && ['ja', 'jpn'].includes(entry.lang?.toLowerCase() ?? '')) ??
-    entries.find((entry) => entry.synced)
-  );
-}
+export { pickEntry } from '@kashi-koi/shared/lyrics';
 
 /** Blank entries end the preceding line; repeated text shares one learning identity. */
 export function toSongLyrics(songId: string, entry: StructuredLyrics, durationMs: number): SongLyrics {
-  const entries = entry.line
-    .map((line) => {
-      if (typeof line.start !== 'number' || !Number.isFinite(line.start) || typeof line.value !== 'string')
-        throw new Error('Invalid synced lyrics');
-      return { text: line.value.trim(), startMs: line.start - (entry.offset ?? 0) };
-    })
-    .sort((a, b) => a.startMs - b.startMs);
+  const entries = orderedLyricEntries(entry);
   const lines = new Map<string, Line>();
   const timeline: Occurrence[] = [];
   entries.forEach((entry, index) => {

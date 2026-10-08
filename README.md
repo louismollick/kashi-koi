@@ -23,6 +23,8 @@ Sprite processing requires Pillow. Generated strips and metadata are included in
 
 The Expo app, local native module and app tests live in `apps/mobile/`. Run workspace checks from the repository root. SideStore builds use `scripts/build-sidestore-ipa.sh`; `assets/sidestore-icon.png` remains as a compatibility copy for installed sources.
 
+`packages/shared/` exports lyric ordering, fingerprints, analysis schemas and the Subsonic client as `@kashi-koi/shared`. Its exports point directly to TypeScript source, which Metro and `tsx` consume without a separate build. The client takes caller-created token and salt values; mobile keeps `expo-crypto`. `getLyricsBySongId` supports an optional `enhanced: true` parameter for future server callers. Mobile keeps its existing request without that parameter.
+
 ## Install builds
 
 Add this source in SideStore: `https://github.com/louismollick/kashi-koi/releases/download/ios-source/source.json`
