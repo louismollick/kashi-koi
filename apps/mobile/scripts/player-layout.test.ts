@@ -11,8 +11,8 @@ const { renderToStaticMarkup } = require('react-dom/server') as {
   renderToStaticMarkup: (element: React.ReactElement) => string;
 };
 
-/** Render the real screen with native hosts and animation APIs replaced for Node. */
-async function loadPlayerScreen(presses = new Map<string, () => void>()) {
+/** Load a real screen with native hosts and animation APIs replaced for Node. Song info always shows `dawn`. */
+async function loadScreen(screen: 'player' | 'song-info', presses = new Map<string, () => void>()) {
   const key = Symbol.for('kashi-koi.test.react');
   const pressKey = Symbol.for('kashi-koi.test.presses');
   const globals = globalThis as typeof globalThis & {
@@ -33,7 +33,8 @@ async function loadPlayerScreen(presses = new Map<string, () => void>()) {
     'react-native-svg': `${host} module.exports = { __esModule: true, default: host('native-svg'), Path: host('native-path'), Defs: host('native-defs'), LinearGradient: host('native-gradient'), Rect: host('native-rect'), Stop: host('native-stop') };`,
     'react-native-reanimated': `${host} module.exports = { __esModule: true, default: { View: host('native-animated') }, useAnimatedStyle: () => ({}), useSharedValue: value => ({ value }), Easing: { linear: value => value }, withSpring: value => value, withTiming: value => value, withDelay: (_, value) => value, withRepeat: value => value, withSequence: value => value, cancelAnimation() {}, useReducedMotion: () => true };`,
     'react-native-safe-area-context': 'exports.useSafeAreaInsets = () => ({ top: 0, bottom: 0, left: 0, right: 0 });',
-    'expo-router': 'exports.useRouter = () => ({ replace() {}, push() {}, back() {}, canGoBack: () => true });',
+    'expo-router':
+      "exports.useRouter = () => ({ replace() {}, push() {}, back() {}, canGoBack: () => true }); exports.useLocalSearchParams = () => ({ id: 'dawn' });",
     'expo-image': `${host} exports.Image = host('native-image');`,
   };
   const hooks = registerHooks({
@@ -55,7 +56,9 @@ async function loadPlayerScreen(presses = new Map<string, () => void>()) {
     delete globals[pressKey];
   };
   try {
-    return { PlayerScreen: (await import('../src/screens/player')).default, cleanup };
+    const module =
+      screen === 'player' ? await import('../src/screens/player') : await import('../src/screens/song-info');
+    return { Screen: module.default, cleanup };
   } catch (error) {
     cleanup();
     throw error;
@@ -94,7 +97,7 @@ test('the actual quiz screen renders its musical gap before the first line witho
     Object.assign(appStore.getInitialState(), appInitial);
     Object.assign(libraryStore.getInitialState(), libraryInitial);
   });
-  const { PlayerScreen, cleanup } = await loadPlayerScreen();
+  const { Screen: PlayerScreen, cleanup } = await loadScreen('player');
   t.after(cleanup);
   const html = renderToStaticMarkup(React.createElement(PlayerScreen));
   assert.ok(html.includes('♪'));
@@ -111,7 +114,7 @@ test('the actual quiz screen renders its musical gap before the first line witho
   assert.ok(!loading.includes('Play line'));
 });
 
-test('the Retry button preserves the failed request force flag', async (t) => {
+test('Song info Retry preserves the failed request force flag', async (t) => {
   await resetAppState();
   libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics });
   const calls: { songId: string; force: boolean | undefined }[] = [];
@@ -134,9 +137,9 @@ test('the Retry button preserves the failed request force flag', async (t) => {
     await resetAppState();
   });
   const presses = new Map<string, () => void>();
-  const { PlayerScreen, cleanup } = await loadPlayerScreen(presses);
+  const { Screen, cleanup } = await loadScreen('song-info', presses);
   t.after(cleanup);
-  renderToStaticMarkup(React.createElement(PlayerScreen));
+  renderToStaticMarkup(React.createElement(Screen));
   assert.ok(presses.has('Retry analysis'));
   presses.get('Retry analysis')!();
   assert.deepEqual(calls, [{ songId: 'dawn', force: true }]);

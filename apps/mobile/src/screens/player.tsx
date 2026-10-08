@@ -11,7 +11,7 @@ import {
   sentenceOccurrenceAt,
   songAnalysisInfo,
 } from '@/store/libraryStore';
-import { appStore, canAnalyze } from '@/store/appStore';
+import { appStore } from '@/store/appStore';
 import { ScreenHeader } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { CenteredList, LyricRow } from '@/components/Lyrics';
@@ -41,7 +41,6 @@ export default function PlayerScreen() {
   const loading = appStore((state) => state.loading);
   const playbackError = appStore((state) => state.playbackError);
   const request = appStore((state) => state.analysisRequests[songId ?? '']);
-  appStore((state) => state.analysisToken + state.analysisServerUrl);
   const sentences = lyrics?.sentenceTimeline ?? [];
   // While the quiz holds a sentence, it stays current even if playback has moved past its last line.
   const occurrence = answerWait?.occurrence ?? sentenceOccurrenceAt(songId, lineIndex);
@@ -109,49 +108,31 @@ export default function PlayerScreen() {
         }
       />
       {request ? (
-        <View style={[styles.row, { paddingHorizontal: 16, minHeight: 40 }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Song info"
+          onPress={() => router.push({ pathname: '/song-info', params: { id: song.id } })}
+          style={[styles.row, { paddingHorizontal: 16, minHeight: 40 }]}
+        >
           {request.status === 'failed' ? (
-            <>
-              <Label numberOfLines={2} style={{ flex: 1, color: colors.red }}>
-                {request.error ?? 'Analysis failed'}
-              </Label>
-              <Button
-                label="Retry analysis"
-                contentStyle={{ minHeight: 36, paddingVertical: 6 }}
-                onPress={() => void appStore.getState().analyzeSong(song.id, { force: request.force })}
-              >
-                <Label style={{ fontSize: 13, fontWeight: '700' }}>RETRY</Label>
-              </Button>
-            </>
+            <Label numberOfLines={1} style={{ flex: 1, color: colors.red }}>
+              Analysis failed
+            </Label>
           ) : (
             <>
               <ActivityIndicator size="small" color={colors.lavender} />
               <Label muted style={{ flex: 1 }}>
-                {request.status === 'queued' ? 'Analysis queued' : 'Analyzing song'}
+                {request.status === 'running' ? 'Analyzing song' : 'Analysis queued'}
               </Label>
             </>
           )}
-        </View>
+        </Pressable>
       ) : (
-        !info &&
         lines.length > 0 &&
-        (canAnalyze() || !hasTranslations(songId)) && (
-          <View style={[styles.row, { paddingHorizontal: 16, minHeight: 40 }]}>
-            <Label muted style={{ flex: 1 }}>
-              {hasTranslations(songId) ? 'Line by line translation' : translationHint(song.id)}
-            </Label>
-            {canAnalyze() && (
-              <Button
-                label="Analyze song"
-                fill={colors.lavender}
-                border={null}
-                contentStyle={{ minHeight: 36, paddingVertical: 6 }}
-                onPress={() => void appStore.getState().analyzeSong(song.id)}
-              >
-                <Label style={{ fontSize: 13, fontWeight: '700', color: colors.bg }}>ANALYZE</Label>
-              </Button>
-            )}
-          </View>
+        !hasTranslations(songId) && (
+          <Label muted style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
+            {translationHint(song.id)}
+          </Label>
         )
       )}
       {loading ? (
@@ -182,25 +163,7 @@ export default function PlayerScreen() {
             <CenteredList
               index={lineIndex}
               gapBefore={(index) => (sentenceAt[index] && sentenceAt[index].start < index ? 4 : 18)}
-              header={
-                showTranslations && info ? (
-                  <SongIntro
-                    info={info}
-                    action={
-                      canAnalyze() && (
-                        <Button
-                          label="Analyze song again"
-                          style={{ alignSelf: 'flex-start' }}
-                          contentStyle={{ minHeight: 36, paddingVertical: 6 }}
-                          onPress={() => void appStore.getState().analyzeSong(song.id, { force: true })}
-                        >
-                          <Label style={{ fontSize: 13, fontWeight: '700' }}>RE-ANALYZE</Label>
-                        </Button>
-                      )
-                    }
-                  />
-                ) : undefined
-              }
+              header={showTranslations && info ? <SongIntro info={info} /> : undefined}
             >
               {lines.map((line, index) => {
                 const sentence = sentenceAt[index];

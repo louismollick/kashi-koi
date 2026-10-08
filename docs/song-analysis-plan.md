@@ -67,7 +67,7 @@ type SongAnalysis = {
 - `SongLyrics` gains `fingerprint`, `sentences` (deduplicated by text, so a repeated chorus sentence is one sentence), `sentenceTimeline` (occurrence index ranges) and, when analysed, `analysis` (title, summary, speaker, addressee, notes) plus a contextual translation on each occurrence.
 - Without an analysis, every Japanese occurrence is its own sentence with the line's id, so existing review entries keep working. When an analysis arrives, review entries move to the sentence containing their line, merged if two land on the same sentence.
 - Review entries key on `sentenceId` (persisted state migrates from `lineId`).
-- An admin token in Settings (SecureStore) enables Analyse / Re-analyse for the playing song: POST, then poll every 5 s until ready or failed.
+- An admin token in Settings (SecureStore) enables Analyse / Re-analyse on a song's Song info screen (tap the song in the player bar): POST, then poll every 5 s until ready or failed. The player shows only a small status line while a request is queued, running or failed.
 
 ### Learning UX
 

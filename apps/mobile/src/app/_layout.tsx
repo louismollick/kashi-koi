@@ -116,6 +116,7 @@ export default function RootLayout() {
           />
           <Stack.Screen name="results" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="song-info" />
         </Stack.Protected>
       </Stack>
     </ThemeProvider>

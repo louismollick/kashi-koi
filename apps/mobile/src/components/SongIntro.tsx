@@ -4,7 +4,7 @@ import type { SongLyrics } from '@/types/domain';
 import { Label } from './ui';
 
 /** What the song is about and who's talking, from its song analysis. Shown before the first sentence. */
-export function SongIntro({ info, action }: { info: NonNullable<SongLyrics['analysis']>; action?: React.ReactNode }) {
+export function SongIntro({ info }: { info: NonNullable<SongLyrics['analysis']> }) {
   return (
     <View style={{ gap: 8 }}>
       <Label style={{ fontSize: 20, lineHeight: 26, fontWeight: '700' }}>{info.title}</Label>
@@ -12,7 +12,6 @@ export function SongIntro({ info, action }: { info: NonNullable<SongLyrics['anal
         {info.speaker} → {info.addressee}
       </Label>
       <Label muted>{info.summary}</Label>
-      {action}
     </View>
   );
 }

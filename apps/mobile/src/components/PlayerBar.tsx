@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, useWindowDimensions } from 'react-native';
+import { Pressable, View, useWindowDimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { libraryStore } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
@@ -83,9 +84,13 @@ export function ProgressLine({
   );
 }
 
-/** Progress, song and play controls. Clip review shows clip progress, can't scrub and keeps only play. */
+/**
+ * Progress, song and play controls. Tapping the song opens its Song info.
+ * Clip review shows clip progress, can't scrub, keeps only play and doesn't open Song info.
+ */
 export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const clip = appStore((state) => state.clipPlayback);
   const songId = appStore((state) => (clipReview ? state.clipPlayback?.songId : state.songId));
   const waiting = appStore((state) => !!state.answerWait);
@@ -110,15 +115,23 @@ export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
         />
       )}
       <View style={[styles.row, { paddingHorizontal: 16, paddingTop: 12 }]}>
-        <Cover song={song} size={50} />
-        <View style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          <Marquee key={song.id} style={{ fontWeight: '700', fontSize: 16 }}>
-            {song.title}
-          </Marquee>
-          <Label muted numberOfLines={1} style={{ fontSize: 13 }}>
-            {song.artist}
-          </Label>
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Song info for ${song.title}`}
+          disabled={clipReview}
+          onPress={() => router.push({ pathname: '/song-info', params: { id: song.id } })}
+          style={({ pressed }) => [styles.row, { flex: 1, minWidth: 0, opacity: pressed ? 0.7 : 1 }]}
+        >
+          <Cover song={song} size={50} />
+          <View style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+            <Marquee key={song.id} style={{ fontWeight: '700', fontSize: 16 }}>
+              {song.title}
+            </Marquee>
+            <Label muted numberOfLines={1} style={{ fontSize: 13 }}>
+              {song.artist}
+            </Label>
+          </View>
+        </Pressable>
         {!clipReview && (
           <IconButton
             name="skipPrevious"
