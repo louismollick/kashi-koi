@@ -44,7 +44,7 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
           <Label numberOfLines={1} style={{ color: '#4a4560', fontSize: 13 }}>{song.artist}</Label>
         </View>
         <IconButton plain name={playing ? 'pause' : 'play'} color={colors.bg} iconScale={0.7} label={playing ? 'Pause' : 'Play'} onPress={() => appStore.getState().setPlaying(!playing)} />
-        <View style={{ position: 'absolute', left: 6, right: 6, bottom: 2 }}><MiniProgress /></View>
+        <View style={{ position: 'absolute', left: 6, right: 6, top: 2 }}><MiniProgress /></View>
       </PixelFrame>
     </Pressable>}
     <View style={[styles.row, { paddingTop: 6, gap: 0 }]}>

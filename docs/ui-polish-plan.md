@@ -6,7 +6,7 @@ Cut repeated text and empty subtitles, give every playback screen one shape, and
 
 - Review card reads REVIEW / count / LYRICS, all caps at the same size. No "new from listening" line. The round button shows an arrow, since the card opens the Review tab.
 - Recently played has no chevron. Rank badges only show for ranked songs.
-- The mini player has a thin coral progress line along its bottom edge. Display only.
+- The mini player has a thin coral progress line along its top edge, like the PlayerBar. Display only.
 
 ## Player, quiz and clip review
 
