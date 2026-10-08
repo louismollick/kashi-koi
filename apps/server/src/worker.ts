@@ -41,6 +41,7 @@ export class Worker {
         });
         const errors = validateDraft(output, job.lines.length);
         if (errors.length) {
+          console.error('Analysis validation failed');
           if (attempt === 0) {
             feedback = errors;
             continue;
@@ -60,15 +61,17 @@ export class Worker {
         return true;
       }
     } catch (error) {
+      const message = errorMessage(error, job.lines);
+      console.error(message);
       // Usage limits pause the queue. Other failures keep a bounded message without Japanese script.
       if (error instanceof UsageLimitError) {
         this.store.retry(job.fingerprint, 'Usage limit reached', true);
         this.pausedUntil = this.now() + this.usageDelay;
         this.usageDelay = Math.min(this.usageDelay * 2, MAX_USAGE_DELAY);
       } else if (job.attempts >= 3) {
-        this.store.fail(job.fingerprint, exhaustedMessage(errorMessage(error)));
+        this.store.fail(job.fingerprint, exhaustedMessage(message));
       } else {
-        this.store.retry(job.fingerprint, errorMessage(error));
+        this.store.retry(job.fingerprint, message);
       }
     } finally {
       this.busy = false;
@@ -88,11 +91,12 @@ export class Worker {
   }
 }
 
-/** Preserve the last process failure across retries and boot recovery without storing Japanese text. */
-function errorMessage(error: unknown) {
-  return error instanceof Error
-    ? error.message.replace(/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]+/gu, '…').slice(0, 400)
-    : 'Unknown analyzer error';
+/** Keep bounded failure details while removing source lines and Japanese text. */
+function errorMessage(error: unknown, lines: string[]) {
+  if (!(error instanceof Error)) return 'Unknown analyzer error';
+  let message = error.message;
+  for (const line of lines) message = message.split(line).join('…');
+  return message.replace(/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]+/gu, '…').slice(0, 400);
 }
 
 function exhaustedMessage(lastError: string | null) {

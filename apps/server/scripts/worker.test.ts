@@ -75,6 +75,8 @@ test('two invalid outputs fail, clear lyrics, and persist no lyric-bearing error
 });
 
 test('process failures, including timeout errors, fail after three attempts', async (t) => {
+  const logged: string[] = [];
+  t.mock.method(console, 'error', (message: string) => logged.push(message));
   const { store } = testStore(t);
   store.enqueue(input);
   let calls = 0;
@@ -99,7 +101,27 @@ test('process failures, including timeout errors, fail after three attempts', as
   }
   assert.equal(await worker.runNext(), false);
   assert.equal(calls, 3);
+  assert.deepEqual(
+    logged,
+    [1, 2, 3].map((attempt) => `Timeout ${attempt} while processing …\n…`),
+  );
   assert.deepEqual(store.getJob(input.fingerprint)?.lines, []);
+});
+
+test('failure logs also redact source lines without Japanese script', async (t) => {
+  const logged: string[] = [];
+  t.mock.method(console, 'error', (message: string) => logged.push(message));
+  const { store } = testStore(t);
+  const source = 'I count small clouds beside my window';
+  store.enqueue({ ...input, lines: [...input.lines, source] });
+  await new Worker(store, {
+    model,
+    async analyze() {
+      throw new Error(`Failed on ${source}`);
+    },
+  }).runNext();
+  assert.deepEqual(logged, ['Failed on …']);
+  assert.equal(store.getJob(input.fingerprint)?.error, 'Failed on …');
 });
 
 test('the last sanitized Codex failure is included in the final job error', async (t) => {
