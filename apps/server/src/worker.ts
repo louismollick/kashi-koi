@@ -26,7 +26,7 @@ export class Worker {
     const job = this.store.claimNext();
     if (!job) return false;
     if (job.exhausted) {
-      this.store.fail(job.fingerprint, 'Analyzer failed after 3 attempts');
+      this.store.fail(job.fingerprint, exhaustedMessage(job.error));
       return true;
     }
     this.busy = true;
@@ -60,15 +60,15 @@ export class Worker {
         return true;
       }
     } catch (error) {
-      // Model/process messages can contain lyrics. Persist only these fixed classifications.
+      // Usage limits pause the queue. Other failures keep a bounded message without Japanese script.
       if (error instanceof UsageLimitError) {
         this.store.retry(job.fingerprint, 'Usage limit reached', true);
         this.pausedUntil = this.now() + this.usageDelay;
         this.usageDelay = Math.min(this.usageDelay * 2, MAX_USAGE_DELAY);
       } else if (job.attempts >= 3) {
-        this.store.fail(job.fingerprint, 'Analyzer failed after 3 attempts');
+        this.store.fail(job.fingerprint, exhaustedMessage(errorMessage(error)));
       } else {
-        this.store.retry(job.fingerprint, 'Analyzer failed');
+        this.store.retry(job.fingerprint, errorMessage(error));
       }
     } finally {
       this.busy = false;
@@ -86,4 +86,15 @@ export class Worker {
       }
     }
   }
+}
+
+/** Preserve the last process failure across retries and boot recovery without storing Japanese text. */
+function errorMessage(error: unknown) {
+  return error instanceof Error
+    ? error.message.replace(/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]+/gu, '…').slice(0, 400)
+    : 'Unknown analyzer error';
+}
+
+function exhaustedMessage(lastError: string | null) {
+  return `Analyzer failed after 3 attempts${lastError ? `: ${lastError}` : ''}`;
 }

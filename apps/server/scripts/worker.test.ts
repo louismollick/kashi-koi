@@ -82,7 +82,7 @@ test('process failures, including timeout errors, fail after three attempts', as
     model,
     async analyze() {
       calls++;
-      throw new Error(`Timeout while processing ${input.lines.join('\n')}`);
+      throw new Error(`Timeout ${calls} while processing ${input.lines.join('\n')}`);
     },
   };
   const worker = new Worker(store, analyzer);
@@ -92,10 +92,50 @@ test('process failures, including timeout errors, fail after three attempts', as
     assert.equal(job?.attempts, attempt);
     assert.equal(job?.status, attempt < 3 ? 'queued' : 'failed');
     assert.equal(job?.error?.includes(input.lines[0] ?? ''), false);
+    assert.equal(
+      job?.error,
+      `${attempt === 3 ? 'Analyzer failed after 3 attempts: ' : ''}Timeout ${attempt} while processing …\n…`,
+    );
   }
   assert.equal(await worker.runNext(), false);
   assert.equal(calls, 3);
   assert.deepEqual(store.getJob(input.fingerprint)?.lines, []);
+});
+
+test('the last sanitized Codex failure is included in the final job error', async (t) => {
+  const { store } = testStore(t);
+  store.enqueue(input);
+  const analyzer: Analyzer = {
+    model,
+    async analyze() {
+      throw new Error('Codex failed (exit 1): workspace routing discovery failed');
+    },
+  };
+  const worker = new Worker(store, analyzer);
+  for (let attempt = 0; attempt < 3; attempt++) await worker.runNext();
+  assert.equal(
+    store.getJob(input.fingerprint)?.error,
+    'Analyzer failed after 3 attempts: Codex failed (exit 1): workspace routing discovery failed',
+  );
+});
+
+test('unknown thrown values use a fixed message and long error messages are bounded', async (t) => {
+  for (const error of [input.lines[0], new Error('x'.repeat(1000))]) {
+    const { store } = testStore(t);
+    store.enqueue(input);
+    const analyzer: Analyzer = {
+      model,
+      async analyze() {
+        throw error;
+      },
+    };
+    const worker = new Worker(store, analyzer);
+    for (let attempt = 0; attempt < 3; attempt++) await worker.runNext();
+    assert.equal(
+      store.getJob(input.fingerprint)?.error,
+      `Analyzer failed after 3 attempts: ${error instanceof Error ? 'x'.repeat(400) : 'Unknown analyzer error'}`,
+    );
+  }
 });
 
 test('Japanese script in otherwise valid output gets validation feedback and cannot be stored', async (t) => {
@@ -133,6 +173,27 @@ test('a third interrupted attempt fails after boot recovery without a fourth ana
   await new Worker(store, analyzer).runNext();
   assert.equal(store.getJob(input.fingerprint)?.status, 'failed');
   assert.equal(store.getJob(input.fingerprint)?.attempts, 3);
+  assert.equal(store.getJob(input.fingerprint)?.error, 'Analyzer failed after 3 attempts');
+  assert.deepEqual(store.getJob(input.fingerprint)?.lines, []);
+});
+
+test('boot recovery retains the last failure when a later attempt exhausts the job', async (t) => {
+  const { store } = testStore(t);
+  store.enqueue(input);
+  store.claimNext();
+  store.retry(input.fingerprint, 'Codex timed out after 300s');
+  for (let attempt = 0; attempt < 2; attempt++) {
+    store.claimNext();
+    store.recoverRunning();
+  }
+  const analyzer: Analyzer = {
+    model,
+    async analyze() {
+      assert.fail('Recovered job exhausted its crash attempts');
+    },
+  };
+  await new Worker(store, analyzer).runNext();
+  assert.equal(store.getJob(input.fingerprint)?.error, 'Analyzer failed after 3 attempts: Codex timed out after 300s');
   assert.deepEqual(store.getJob(input.fingerprint)?.lines, []);
 });
 
