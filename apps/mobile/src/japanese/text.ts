@@ -2,8 +2,10 @@ import type { Line } from '@/types/domain';
 
 const kanji = /[\p{Script=Han}々〆]/u;
 /** Repeat marks alone are not Japanese lyrics, even when Unicode assigns them Han script. */
-export const isJapanese = (text: string) => /(?![ー々〆])[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text);
-const hiragana = (text: string) => text.replace(/[ァ-ヶ]/g, character => String.fromCharCode(character.charCodeAt(0) - 0x60));
+export const isJapanese = (text: string) =>
+  /(?![ー々〆])[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text);
+const hiragana = (text: string) =>
+  text.replace(/[ァ-ヶ]/g, (character) => String.fromCharCode(character.charCodeAt(0) - 0x60));
 
 /** Attach readings to kanji runs, keeping matching kana outside the furigana. */
 export function alignReading(surface: string, reading?: string): Line['segments'] {

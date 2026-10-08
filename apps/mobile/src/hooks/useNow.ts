@@ -5,7 +5,9 @@ import { AppState } from 'react-native';
 export function useNow() {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', state => { if (state === 'active') setNow(Date.now()); });
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setNow(Date.now());
+    });
     return () => subscription.remove();
   }, []);
   return now;

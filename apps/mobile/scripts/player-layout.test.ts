@@ -7,7 +7,9 @@ import { libraryStore } from '../src/store/libraryStore';
 import { albums, artists, songs, songLyrics } from './fixtures';
 
 const require = createRequire(import.meta.url);
-const { renderToStaticMarkup } = require('react-dom/server') as { renderToStaticMarkup: (element: React.ReactElement) => string };
+const { renderToStaticMarkup } = require('react-dom/server') as {
+  renderToStaticMarkup: (element: React.ReactElement) => string;
+};
 
 /** Render the real screen with native hosts and animation APIs replaced for Node. */
 async function loadPlayerScreen() {
@@ -34,28 +36,55 @@ async function loadPlayerScreen() {
     },
     load(url, context, nextLoad) {
       if (url === 'test:ui:asset') return { format: 'commonjs', source: 'module.exports = 1;', shortCircuit: true };
-      if (url.startsWith('test:ui:')) return { format: 'commonjs', source: mocks[url.slice('test:ui:'.length)]!, shortCircuit: true };
+      if (url.startsWith('test:ui:'))
+        return { format: 'commonjs', source: mocks[url.slice('test:ui:'.length)]!, shortCircuit: true };
       return nextLoad(url, context);
     },
   });
-  const cleanup = () => { hooks.deregister(); delete globals[key]; };
-  try { return { PlayerScreen: (await import('../src/screens/player')).default, cleanup }; }
-  catch (error) { cleanup(); throw error; }
+  const cleanup = () => {
+    hooks.deregister();
+    delete globals[key];
+  };
+  try {
+    return { PlayerScreen: (await import('../src/screens/player')).default, cleanup };
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
 }
 
-test('the actual quiz screen renders its musical gap before the first line without scrolling or listen controls', async t => {
+test('the actual quiz screen renders its musical gap before the first line without scrolling or listen controls', async (t) => {
   await resetAppState();
-  libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: { ...songLyrics, dawn: { ...songLyrics.dawn!, timeline: songLyrics.dawn!.timeline.map(line => ({ ...line, startMs: line.startMs + 1000, endMs: line.endMs + 1000 })) } } });
+  libraryStore.getState().setLibrary({
+    songs,
+    albums,
+    artists,
+    lyrics: {
+      ...songLyrics,
+      dawn: {
+        ...songLyrics.dawn!,
+        timeline: songLyrics.dawn!.timeline.map((line) => ({
+          ...line,
+          startMs: line.startMs + 1000,
+          endMs: line.endMs + 1000,
+        })),
+      },
+    },
+  });
   appStore.getState().startSong('dawn');
   appStore.getState().setQuizToggle(true);
   appStore.setState({ loading: false });
   appStore.getState().updatePlayback(0, 238000, false);
   assert.equal(appStore.getState().lineIndex, -1);
   // Zustand's server snapshot uses its initial state; supply the current fixture.
-  const appInitial = { ...appStore.getInitialState() }, libraryInitial = { ...libraryStore.getInitialState() };
+  const appInitial = { ...appStore.getInitialState() },
+    libraryInitial = { ...libraryStore.getInitialState() };
   Object.assign(appStore.getInitialState(), appStore.getState());
   Object.assign(libraryStore.getInitialState(), libraryStore.getState());
-  t.after(() => { Object.assign(appStore.getInitialState(), appInitial); Object.assign(libraryStore.getInitialState(), libraryInitial); });
+  t.after(() => {
+    Object.assign(appStore.getInitialState(), appInitial);
+    Object.assign(libraryStore.getInitialState(), libraryInitial);
+  });
   const { PlayerScreen, cleanup } = await loadPlayerScreen();
   t.after(cleanup);
   const html = renderToStaticMarkup(React.createElement(PlayerScreen));

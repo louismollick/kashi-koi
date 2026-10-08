@@ -11,9 +11,13 @@
     "ios": "npm run ios -w @kashi-koi/mobile --",
     "sprites": "npm run sprites -w @kashi-koi/mobile",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check ."
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.15",
     "@types/node": "26.6.4",
     "tsx": "4.23.15",
     "typescript": "7.0.2"

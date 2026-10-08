@@ -689,9 +689,7 @@
       "partial": true,
       "visibleNodeCount": 34,
       "totalNodeCount": 34,
-      "reasons": [
-        "scroll-hidden-below"
-      ]
+      "reasons": ["scroll-hidden-below"]
     },
     "snapshotDiagnostics": {
       "stats": {

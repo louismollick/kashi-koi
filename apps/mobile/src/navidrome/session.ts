@@ -5,25 +5,42 @@ import { create } from 'zustand';
 import { normalizeServerUrl, request, type Session } from './subsonic';
 
 const key = 'navidrome-session';
-export const sessionStore = create<{ session: Session | null; ready: boolean; error: string | null }>(() => ({ session: null, ready: false, error: null }));
+export const sessionStore = create<{ session: Session | null; ready: boolean; error: string | null }>(() => ({
+  session: null,
+  ready: false,
+  error: null,
+}));
 
 /** Validate credentials and the songLyrics extension before storing token auth. */
 export async function login(url: string, username: string, password: string) {
-  const Crypto = await import('expo-crypto'), SecureStore = await import('expo-secure-store');
-  const salt = Array.from(Crypto.getRandomBytes(16), byte => byte.toString(16).padStart(2, '0')).join('');
+  const Crypto = await import('expo-crypto'),
+    SecureStore = await import('expo-secure-store');
+  const salt = Array.from(Crypto.getRandomBytes(16), (byte) => byte.toString(16).padStart(2, '0')).join('');
   const token = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.MD5, password + salt);
   const session = { url: normalizeServerUrl(url), username: username.trim(), token, salt };
   await request(session, 'ping');
-  const response = await request<{ openSubsonicExtensions?: { name: string; versions: number[] }[] }>(session, 'getOpenSubsonicExtensions');
-  if (!response.openSubsonicExtensions?.some(extension => extension.name === 'songLyrics' && extension.versions.some(version => version >= 1))) throw new Error('This server needs the songLyrics extension');
+  const response = await request<{ openSubsonicExtensions?: { name: string; versions: number[] }[] }>(
+    session,
+    'getOpenSubsonicExtensions',
+  );
+  if (
+    !response.openSubsonicExtensions?.some(
+      (extension) => extension.name === 'songLyrics' && extension.versions.some((version) => version >= 1),
+    )
+  )
+    throw new Error('This server needs the songLyrics extension');
   await SecureStore.setItemAsync(key, JSON.stringify(session));
   sessionStore.setState({ session, ready: true, error: null });
 }
 
 export async function loadSession() {
   const SecureStore = await import('expo-secure-store');
-  try { const value = await SecureStore.getItemAsync(key); sessionStore.setState({ session: value ? JSON.parse(value) as Session : null, ready: true }); }
-  catch { sessionStore.setState({ ready: true, error: 'Could not load the saved account' }); }
+  try {
+    const value = await SecureStore.getItemAsync(key);
+    sessionStore.setState({ session: value ? (JSON.parse(value) as Session) : null, ready: true });
+  } catch {
+    sessionStore.setState({ ready: true, error: 'Could not load the saved account' });
+  }
 }
 
 export async function logout() {
