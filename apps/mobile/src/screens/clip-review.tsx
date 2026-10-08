@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { appStore } from '@/store/appStore';
-import { getSong, getLyrics, occurrenceLine, libraryStore } from '@/store/libraryStore';
+import { currentSentence, getSong, libraryStore, sentenceForReview } from '@/store/libraryStore';
 import { ScreenHeader } from '@/components/Header';
 import { QuizColumn } from '@/components/QuizLayout';
 import { PlayerBar } from '@/components/PlayerBar';
@@ -33,15 +33,16 @@ export default function ClipReviewScreen() {
     );
   const song = getSong(item.songId);
   if (!song) return null;
-  const lyrics = getLyrics(song.id),
-    lineIndex = lyrics.timeline.findIndex((occurrence) => occurrence.lineId === item.sentenceId);
-  const line = occurrenceLine(song.id, lineIndex),
+  const current = sentenceForReview(item),
+    previous = current?.previous ? currentSentence(song.id, current.previous.start) : undefined,
     answer = clip.answers[item.id];
   return (
     <View style={styles.page}>
-      <ScreenHeader sheet title={`Reviewing lyric ${clip.index + 1} of ${clip.ids.length}`} />
+      <ScreenHeader sheet title={`Sentence ${clip.index + 1} of ${clip.ids.length}`} />
       <QuizColumn
-        line={line}
+        lines={current?.lines}
+        previous={previous?.lines}
+        translation={current?.sentence.translation}
         isNew={item.kind === 'new'}
         choices={clip.choices[item.sentenceId] ?? []}
         selected={answer?.choice ?? null}

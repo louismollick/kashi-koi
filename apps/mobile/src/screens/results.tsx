@@ -62,8 +62,8 @@ export default function ResultsScreen() {
             </View>
           ))}
         </PixelFrame>
-        <Label style={{ fontSize: 18, fontWeight: '600' }}>Missed lines</Label>
-        {!missed.length && <Label muted>No missed lines</Label>}
+        <Label style={{ fontSize: 18, fontWeight: '600' }}>Missed sentences</Label>
+        {!missed.length && <Label muted>No missed sentences</Label>}
         {missed.map((line) => (
           <PixelFrame key={line.id} fill={colors.surface} contentStyle={[styles.row, { padding: 14 }]}>
             <View style={{ flex: 1 }}>

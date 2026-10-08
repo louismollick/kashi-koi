@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, Easing, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
-import type { Line } from '@/types/domain';
+import type { Line, SongLyrics } from '@/types/domain';
 import { PixelFrame } from './PixelFrame';
-import { LineCard } from './LineCard';
+import { SentenceCard } from './LineCard';
+import { SongIntro } from './SongIntro';
 import { Mascot } from './Mascot';
 import { Answers } from './Answers';
 import { Label, styles } from './ui';
@@ -118,9 +119,16 @@ function AnswerTimeBar({ until }: { until: number }) {
   );
 }
 
-/** A fixed quiz column keeps the instrumental gap in quiz mode with no choices. */
+/**
+ * A fixed quiz column. `lines` is the current sentence (or a gap line with no choices); before the first sentence
+ * an analysed song shows its intro instead.
+ */
 export function QuizColumn({
-  line,
+  lines,
+  current,
+  previous,
+  translation,
+  intro,
   choices,
   selected,
   combo,
@@ -129,7 +137,11 @@ export function QuizColumn({
   isNew = false,
   onAnswer,
 }: {
-  line?: Line;
+  lines?: Line[];
+  current?: number;
+  previous?: Line[];
+  translation?: string;
+  intro?: SongLyrics['analysis'];
   choices: string[];
   selected: string | null;
   combo: number;
@@ -140,10 +152,19 @@ export function QuizColumn({
 }) {
   return (
     <View style={{ flex: 1, minHeight: 0, paddingHorizontal: 16, paddingBottom: 16 }}>
-      <LineCard line={line ?? { id: 'gap', segments: [{ text: '♪' }] }} isNew={isNew} />
+      {!lines?.length && intro ? (
+        <SongIntro info={intro} />
+      ) : (
+        <SentenceCard
+          lines={lines?.length ? lines : [{ id: 'gap', segments: [{ text: '♪' }] }]}
+          current={current}
+          previous={previous}
+          isNew={isNew}
+        />
+      )}
       {until != null && <AnswerTimeBar until={until} />}
       <ComboRow combo={combo} nice={nice} />
-      <Answers compact choices={choices} translation={line?.translation} selected={selected} onAnswer={onAnswer} />
+      <Answers compact choices={choices} translation={translation} selected={selected} onAnswer={onAnswer} />
     </View>
   );
 }

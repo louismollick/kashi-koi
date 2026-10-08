@@ -66,37 +66,54 @@ export function FuriganaLine({
   );
 }
 
-/** Current lines keep the shared frame; listen mode can show the translation below. */
-export function LineCard({
-  line,
+/**
+ * The quiz card: every line of the current sentence, so a clause split across lines reads as one thought.
+ * `current` brightens the line being sung (-1 brightens all). The previous sentence sits dimmed above for context.
+ */
+export function SentenceCard({
+  lines,
+  current = -1,
+  previous,
   isNew = false,
-  furigana = true,
-  translation = false,
 }: {
-  line: Line;
+  lines: Line[];
+  current?: number;
+  previous?: Line[];
   isNew?: boolean;
-  furigana?: boolean;
-  translation?: boolean;
 }) {
   return (
     <View>
-      <PixelFrame
-        fill={colors.surface}
-        border="#363a5e"
-        contentStyle={{ paddingHorizontal: 16, paddingVertical: 18, minHeight: 136, justifyContent: 'center' }}
-      >
-        <FuriganaLine line={line} furigana={furigana} />
-        {translation && line.translation && (
-          <Label muted style={{ marginTop: 8, textAlign: 'center' }}>
-            {line.translation}
-          </Label>
-        )}
-      </PixelFrame>
-      {isNew && (
-        <View style={{ position: 'absolute', top: -9, left: 12 }}>
-          <Tag>NEW</Tag>
-        </View>
+      {previous && (
+        <Label muted numberOfLines={2} style={{ fontSize: 14, lineHeight: 19, marginBottom: 8, textAlign: 'center' }}>
+          {previous.map(getLineText).join(' ')}
+        </Label>
       )}
+      <View>
+        <PixelFrame
+          fill={colors.surface}
+          border="#363a5e"
+          contentStyle={{
+            paddingHorizontal: 16,
+            paddingVertical: 18,
+            minHeight: 136,
+            justifyContent: 'center',
+            gap: 6,
+          }}
+        >
+          {lines.map((line, index) => (
+            <FuriganaLine
+              key={index}
+              line={line}
+              color={current < 0 || index === current ? colors.text : colors.muted}
+            />
+          ))}
+        </PixelFrame>
+        {isNew && (
+          <View style={{ position: 'absolute', top: -9, left: 12 }}>
+            <Tag>NEW</Tag>
+          </View>
+        )}
+      </View>
     </View>
   );
 }

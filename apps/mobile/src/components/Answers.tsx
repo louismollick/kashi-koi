@@ -38,7 +38,7 @@ export function Answers({
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch' }}>
               <Label
-                numberOfLines={compact ? 2 : undefined}
+                numberOfLines={compact ? 3 : undefined}
                 style={{
                   textAlign: 'center',
                   fontSize: 17,

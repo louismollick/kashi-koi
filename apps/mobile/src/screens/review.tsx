@@ -3,14 +3,14 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import {
-  dueLines,
+  dueSentences,
   getAlbum,
-  getLineText,
+  getSentenceText,
   getSong,
   getLyrics,
   isDue,
   libraryStore,
-  readyReviewLines,
+  readyReviewSentences,
 } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
 import { useNow } from '@/hooks/useNow';
@@ -23,13 +23,13 @@ import type { ReviewList } from '@/types/domain';
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 const sectionTitle = { fontSize: 20, lineHeight: 26, fontWeight: '700' } as const;
 
-/** One song row, like Library's Songs, with its review lines below. Tapping the song collapses them. */
+/** One song row, like Library's Songs, with its review sentences below. Tapping the song collapses them. */
 function SongGroup({ songId, items }: { songId: string; items: ReviewList }) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
   const song = getSong(songId);
   if (!song) return null;
-  const lines = getLyrics(songId).lines;
+  const sentences = getLyrics(songId).sentences;
   return (
     <View style={{ borderBottomWidth: 1, borderBottomColor: colors.track, paddingBottom: open ? 6 : 0 }}>
       <Pressable
@@ -51,12 +51,12 @@ function SongGroup({ songId, items }: { songId: string; items: ReviewList }) {
       </Pressable>
       {open &&
         items.map((item) => {
-          const line = lines.find((line) => line.id === item.sentenceId);
-          if (!line) return null;
-          const text = getLineText(line);
+          const sentence = sentences.find((sentence) => sentence.id === item.sentenceId);
+          if (!sentence) return null;
+          const text = getSentenceText(songId, sentence).split('\n').join(' ');
           return (
             <View key={item.id} style={[styles.row, { paddingLeft: 56, minHeight: 44 }]}>
-              <Label numberOfLines={2} style={{ flex: 1, fontSize: 16, lineHeight: 22 }}>
+              <Label numberOfLines={3} style={{ flex: 1, fontSize: 16, lineHeight: 22 }}>
                 {text}
               </Label>
               <IconButton
@@ -90,7 +90,7 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
       >
         <Label style={[sectionTitle, { flex: 1 }]}>{title}</Label>
         <Label muted style={{ fontSize: 13 }}>
-          {plural(items.length, 'line')} from {plural(songIds.length, 'song')}
+          {plural(items.length, 'sentence')} from {plural(songIds.length, 'song')}
         </Label>
       </Pressable>
       {open &&
@@ -101,16 +101,16 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
   );
 }
 
-/** Due, new and later lines grouped by song, with clip review on top. */
+/** Due, new and later sentences grouped by song, with clip review on top. */
 export default function ReviewScreen() {
   const router = useRouter();
   libraryStore((state) => state.lyrics);
   const reviewList = appStore((state) => state.reviewList);
   const now = useNow();
-  const due = dueLines(reviewList, now);
+  const due = dueSentences(reviewList, now);
   const fresh = reviewList.filter((line) => line.kind === 'new');
   const later = reviewList.filter((line) => !isDue(line, now));
-  const ready = readyReviewLines(reviewList, now);
+  const ready = readyReviewSentences(reviewList, now);
   const waiting = due.length + fresh.length - ready.length;
   return (
     <View style={styles.page}>
@@ -133,7 +133,7 @@ export default function ReviewScreen() {
           </View>
           <Label style={{ fontSize: 13, marginTop: 2 }}>~4 min</Label>
         </Button>
-        {waiting > 0 && <Label muted>{plural(waiting, 'line')} waiting for translations</Label>}
+        {waiting > 0 && <Label muted>{plural(waiting, 'sentence')} waiting for translations</Label>}
         <Section title="Due today" items={due} />
         <Section title="New from listening" items={fresh} />
         <Section title="Due later" items={later} />

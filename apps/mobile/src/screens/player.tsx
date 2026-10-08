@@ -1,17 +1,23 @@
-import { isJapanese } from '@/japanese/text';
 import { translationHint } from '@/japanese/translate';
 import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { getLineText, libraryStore, hasTranslations } from '@/store/libraryStore';
-import { appStore } from '@/store/appStore';
+import {
+  currentSentence,
+  hasTranslations,
+  libraryStore,
+  sentenceOccurrenceAt,
+  songAnalysisInfo,
+} from '@/store/libraryStore';
+import { appStore, canAnalyze } from '@/store/appStore';
 import { ScreenHeader } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { CenteredList, LyricRow } from '@/components/Lyrics';
 import { QuizColumn } from '@/components/QuizLayout';
 import { PlayerBar } from '@/components/PlayerBar';
+import { SongIntro } from '@/components/SongIntro';
 import { Button, IconButton, Label, PixelToggle, styles } from '@/components/ui';
 
 /** ListenMode and QuizMode share one sheet: header toggles, lyrics or quiz column, and the PlayerBar. */
@@ -32,13 +38,25 @@ export default function PlayerScreen() {
   const lyrics = libraryStore((state) => state.lyrics[songId ?? '']);
   const timeline = lyrics?.timeline ?? [];
   const lines = timeline.map((occurrence) => lyrics!.lines.find((line) => line.id === occurrence.lineId)!);
-  const currentLine = lines[lineIndex];
   const loading = appStore((state) => state.loading);
   const playbackError = appStore((state) => state.playbackError);
-  const selectedAnswer = currentLine ? (run.answers[currentLine.id]?.choice ?? null) : null;
+  const request = appStore((state) => state.analysisRequests[songId ?? '']);
+  appStore((state) => state.analysisToken + state.analysisServerUrl);
+  const sentences = lyrics?.sentenceTimeline ?? [];
+  // While the quiz holds a sentence, it stays current even if playback has moved past its last line.
+  const occurrence = answerWait?.occurrence ?? sentenceOccurrenceAt(songId, lineIndex);
+  const current = occurrence ? currentSentence(songId, occurrence.start) : undefined;
+  const previous = current?.previous ? currentSentence(songId, current.previous.start) : undefined;
+  const sentenceId = current?.sentence.id;
+  const info = songAnalysisInfo(songId);
+  const beforeLyrics = lineIndex < (sentences[0]?.start ?? 0);
+  const selectedAnswer = sentenceId ? (run.answers[sentenceId]?.choice ?? null) : null;
   const showToast = addedId !== null && addedExpiresAt !== null && Date.now() < addedExpiresAt;
-  const inReview = !!currentLine && reviewList.some((line) => line.sentenceId === currentLine.id);
-  const canAdd = !!currentLine && isJapanese(getLineText(currentLine)) && !inReview;
+  const inReview = !!sentenceId && reviewList.some((item) => item.sentenceId === sentenceId);
+  const canAdd = !!sentenceId && !inReview;
+  const reviewed = new Set(reviewList.filter((item) => item.songId === songId).map((item) => item.sentenceId));
+  const sentenceAt = timeline.map((_, index) => sentences.find((item) => item.start <= index && item.end >= index));
+  const notes = Object.fromEntries((info?.notes ?? []).map((note) => [note.occurrence, note.text]));
 
   useEffect(() => {
     if (!addedId || addedExpiresAt === null) return;
@@ -62,7 +80,9 @@ export default function PlayerScreen() {
     <View style={styles.page}>
       <ScreenHeader
         sheet
-        title={quizToggle && currentLine ? `Line ${lineIndex + 1} of ${lines.length}` : undefined}
+        title={
+          quizToggle && occurrence ? `Sentence ${sentences.indexOf(occurrence) + 1} of ${sentences.length}` : undefined
+        }
         right={
           <View style={[styles.row, { gap: 12 }]}>
             {!quizToggle && (
@@ -88,10 +108,51 @@ export default function PlayerScreen() {
           </View>
         }
       />
-      {!hasTranslations(songId) && lines.length > 0 && (
-        <Label muted style={{ paddingHorizontal: 16 }}>
-          {translationHint(song.id)}
-        </Label>
+      {request ? (
+        <View style={[styles.row, { paddingHorizontal: 16, minHeight: 40 }]}>
+          {request.status === 'failed' ? (
+            <>
+              <Label numberOfLines={2} style={{ flex: 1, color: colors.red }}>
+                {request.error ?? 'Analysis failed'}
+              </Label>
+              <Button
+                label="Retry analysis"
+                contentStyle={{ minHeight: 36, paddingVertical: 6 }}
+                onPress={() => void appStore.getState().analyzeSong(song.id)}
+              >
+                <Label style={{ fontSize: 13, fontWeight: '700' }}>RETRY</Label>
+              </Button>
+            </>
+          ) : (
+            <>
+              <ActivityIndicator size="small" color={colors.lavender} />
+              <Label muted style={{ flex: 1 }}>
+                {request.status === 'queued' ? 'Analysis queued' : 'Analyzing song'}
+              </Label>
+            </>
+          )}
+        </View>
+      ) : (
+        !info &&
+        lines.length > 0 &&
+        (canAnalyze() || !hasTranslations(songId)) && (
+          <View style={[styles.row, { paddingHorizontal: 16, minHeight: 40 }]}>
+            <Label muted style={{ flex: 1 }}>
+              {hasTranslations(songId) ? 'Line by line translation' : translationHint(song.id)}
+            </Label>
+            {canAnalyze() && (
+              <Button
+                label="Analyze song"
+                fill={colors.lavender}
+                border={null}
+                contentStyle={{ minHeight: 36, paddingVertical: 6 }}
+                onPress={() => void appStore.getState().analyzeSong(song.id)}
+              >
+                <Label style={{ fontSize: 13, fontWeight: '700', color: colors.bg }}>ANALYZE</Label>
+              </Button>
+            )}
+          </View>
+        )
       )}
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -99,11 +160,15 @@ export default function PlayerScreen() {
         </View>
       ) : quizToggle ? (
         <QuizColumn
-          line={currentLine}
+          lines={current?.lines ?? (beforeLyrics || !lines[lineIndex] ? undefined : [lines[lineIndex]])}
+          current={answerWait || !occurrence ? -1 : lineIndex - occurrence.start}
+          previous={previous?.lines}
+          translation={current?.sentence.translation}
+          intro={beforeLyrics ? info : undefined}
           until={answerWait?.until}
           combo={run.combo}
-          nice={!!currentLine && run.answers[currentLine.id]?.correct === true}
-          choices={currentLine ? (run.choices[currentLine.id] ?? []) : []}
+          nice={!!sentenceId && run.answers[sentenceId]?.correct === true}
+          choices={sentenceId ? (run.choices[sentenceId] ?? []) : []}
           selected={selectedAnswer}
           onAnswer={(choice) => appStore.getState().answer(choice)}
         />
@@ -114,22 +179,57 @@ export default function PlayerScreen() {
       ) : (
         <>
           <View style={{ flex: 1 }}>
-            <CenteredList index={lineIndex}>
-              {lines.map((line, index) => (
-                <Pressable
-                  key={`${index}:${line.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Play line ${index + 1}`}
-                  onPress={() => appStore.getState().jumpToLine(index)}
-                >
-                  <LyricRow
-                    line={line}
-                    current={index === lineIndex}
-                    translations={showTranslations}
-                    marked={reviewList.some((item) => item.sentenceId === line.id)}
+            <CenteredList
+              index={lineIndex}
+              gapBefore={(index) => (sentenceAt[index] && sentenceAt[index].start < index ? 4 : 18)}
+              header={
+                showTranslations && info ? (
+                  <SongIntro
+                    info={info}
+                    action={
+                      canAnalyze() && (
+                        <Button
+                          label="Analyze song again"
+                          style={{ alignSelf: 'flex-start' }}
+                          contentStyle={{ minHeight: 36, paddingVertical: 6 }}
+                          onPress={() => void appStore.getState().analyzeSong(song.id, { force: true })}
+                        >
+                          <Label style={{ fontSize: 13, fontWeight: '700' }}>RE-ANALYZE</Label>
+                        </Button>
+                      )
+                    }
                   />
-                </Pressable>
-              ))}
+                ) : undefined
+              }
+            >
+              {lines.map((line, index) => {
+                const sentence = sentenceAt[index];
+                // Analysed sentences carry one translation after their last line; other lines keep their own.
+                const translation = !showTranslations
+                  ? undefined
+                  : sentence
+                    ? sentence.end === index
+                      ? lyrics?.sentences.find((item) => item.id === sentence.sentenceId)?.translation
+                      : undefined
+                    : (timeline[index]?.translation ?? line.translation);
+                return (
+                  <Pressable
+                    key={`${index}:${line.id}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Play line ${index + 1}`}
+                    onPress={() => appStore.getState().jumpToLine(index)}
+                  >
+                    <LyricRow
+                      line={line}
+                      current={sentence && occurrence ? sentence === occurrence : index === lineIndex}
+                      furigana={showTranslations}
+                      translation={translation}
+                      note={showTranslations ? notes[index] : undefined}
+                      marked={!!sentence && reviewed.has(sentence.sentenceId)}
+                    />
+                  </Pressable>
+                );
+              })}
             </CenteredList>
             <Svg pointerEvents="none" width="100%" height="100%" style={{ position: 'absolute' }}>
               <Defs>
@@ -152,7 +252,7 @@ export default function PlayerScreen() {
               >
                 <Label style={{ flex: 1, fontSize: 13, color: colors.green }}>✓ Added</Label>
                 <Button
-                  label="Undo added line"
+                  label="Undo added sentence"
                   contentStyle={{ minHeight: 40, paddingHorizontal: 12, paddingVertical: 8 }}
                   onPress={() => appStore.getState().undoLostMark()}
                 >
@@ -162,7 +262,7 @@ export default function PlayerScreen() {
             )}
             <Button
               disabled={!canAdd}
-              label={inReview ? 'In review' : 'Review this line later'}
+              label={inReview ? 'In review' : 'Review this sentence later'}
               fill={colors.coral}
               border="#ff9aa5"
               contentStyle={{ paddingVertical: 14 }}

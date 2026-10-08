@@ -1,6 +1,6 @@
 import { prepareTranslation } from '@/japanese/translate';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, TextInput, View } from 'react-native';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
@@ -8,9 +8,49 @@ import { refreshAlbumArt } from '@/store/artStore';
 import { sessionStore, logout } from '@/navidrome/session';
 import { syncLibrary, scanLyrics } from '@/navidrome/sync';
 import { ScreenHeader } from '@/components/Header';
+import { PixelFrame } from '@/components/PixelFrame';
 import { Button, Label, PixelToggle, SectionHeader, styles } from '@/components/ui';
 
 const date = (at: number | null) => (at ? new Date(at).toLocaleString() : 'never');
+
+/** Framed single-line field that commits when editing ends, like Library search. */
+function Field({
+  label,
+  value,
+  placeholder,
+  secure = false,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  secure?: boolean;
+  onCommit: (value: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  return (
+    <View style={{ gap: 6 }}>
+      <Label muted style={{ fontSize: 13 }}>
+        {label}
+      </Label>
+      <PixelFrame fill={colors.panel} border={colors.track} contentStyle={{ paddingHorizontal: 12 }}>
+        <TextInput
+          accessibilityLabel={label}
+          value={draft}
+          placeholder={placeholder}
+          placeholderTextColor={colors.muted}
+          onChangeText={setDraft}
+          onEndEditing={() => onCommit(draft)}
+          secureTextEntry={secure}
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={{ color: colors.text, height: 46, fontSize: 15 }}
+        />
+      </PixelFrame>
+    </View>
+  );
+}
+
 /** Account, library sync, artwork refresh and lyrics scan controls. */
 export default function SettingsScreen() {
   const status = libraryStore((state) => state.translationStatus),
@@ -29,6 +69,9 @@ export default function SettingsScreen() {
   const songs = libraryStore((state) => state.songs),
     progress = libraryStore((state) => state.progress),
     error = libraryStore((state) => state.error);
+  const analysisServerUrl = appStore((state) => state.analysisServerUrl),
+    analysisToken = appStore((state) => state.analysisToken),
+    analyzed = libraryStore((state) => Object.values(state.lyrics).filter((lyrics) => lyrics.analysis).length);
   const session = sessionStore((state) => state.session),
     ready = songs.filter((song) => song.lyricsStatus === 'synced').length;
   return (
@@ -63,6 +106,22 @@ export default function SettingsScreen() {
             <Label>{answerTime === null ? 'No limit' : `${answerTime}s`}</Label>
           </Button>
         </View>
+        <SectionHeader title="Song analyses" />
+        <Field
+          label="Server"
+          value={analysisServerUrl}
+          placeholder={process.env.EXPO_PUBLIC_KASHI_SERVER_URL || 'https://'}
+          onCommit={(url) => appStore.getState().setAnalysisServerUrl(url)}
+        />
+        <Field
+          key={analysisToken ? 'token' : 'empty'}
+          label="Admin token"
+          value={analysisToken}
+          placeholder="Only needed to analyze songs"
+          secure
+          onCommit={(token) => void appStore.getState().setAnalysisToken(token)}
+        />
+        <Label muted>{analyzed} songs analyzed</Label>
         <SectionHeader title="Library" />
         <View style={styles.row}>
           <Label style={{ flex: 1 }}>Hide songs without synced lyrics</Label>

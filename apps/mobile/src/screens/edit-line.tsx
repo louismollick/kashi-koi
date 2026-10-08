@@ -1,14 +1,13 @@
-import { isJapanese } from '@/japanese/text';
 import { Pressable, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
 import { appStore } from '@/store/appStore';
-import { getLineText, getLyrics, libraryStore } from '@/store/libraryStore';
+import { currentSentence, getLineText, getLyrics, libraryStore } from '@/store/libraryStore';
 import { CenteredList, LyricRow } from '@/components/Lyrics';
 import { IconButton, Label, styles } from '@/components/ui';
 
-/** Drawer that moves a ReviewList entry to another Japanese line of its song, or removes it. */
+/** Drawer that moves a ReviewList entry to another sentence of its song, or removes it. */
 export default function EditLineScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   libraryStore((state) => state.lyrics);
@@ -18,7 +17,14 @@ export default function EditLineScreen() {
   const router = useRouter();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const lines = item ? getLyrics(item.songId).lines.filter((line) => isJapanese(getLineText(line))) : [];
+  // Each sentence once, in song order, with the lines of its first occurrence.
+  const sentences = item
+    ? getLyrics(item.songId)
+        .sentenceTimeline.filter(
+          (occurrence, index, all) => all.findIndex((other) => other.sentenceId === occurrence.sentenceId) === index,
+        )
+        .flatMap((occurrence) => currentSentence(item.songId, occurrence.start) ?? [])
+    : [];
   return (
     <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#090a1699' }}>
       <Pressable
@@ -37,7 +43,7 @@ export default function EditLineScreen() {
         <View style={[styles.row, { padding: 14 }]}>
           <IconButton name="close" label="Close" onPress={() => router.back()} />
           <Label numberOfLines={1} style={[styles.title, { flex: 1, fontSize: 19, lineHeight: 24 }]}>
-            Study a different lyric
+            Study a different sentence
           </Label>
           {item && (
             <IconButton
@@ -46,31 +52,37 @@ export default function EditLineScreen() {
               border="#ff9aa5"
               label="Remove from review"
               onPress={() => {
-                appStore.getState().removeReviewLine(item.id);
+                appStore.getState().removeReviewSentence(item.id);
                 router.back();
               }}
             />
           )}
         </View>
         {item && (
-          <CenteredList index={lines.findIndex((line) => line.id === item.sentenceId)}>
-            {lines.map((line) => {
-              const taken = reviewList.some((entry) => entry.id !== item.id && entry.sentenceId === line.id);
+          <CenteredList index={sentences.findIndex(({ sentence }) => sentence.id === item.sentenceId)}>
+            {sentences.map(({ sentence, lines }) => {
+              const taken = reviewList.some((entry) => entry.id !== item.id && entry.sentenceId === sentence.id);
+              const text = lines.map(getLineText).join(' ');
               return (
                 <Pressable
-                  key={line.id}
+                  key={sentence.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`Study ${getLineText(line)}`}
+                  accessibilityLabel={`Study ${text}`}
                   disabled={taken}
                   accessibilityState={{ disabled: taken }}
-                  onPress={() => appStore.getState().moveReviewLine(item.id, line.id)}
+                  onPress={() => appStore.getState().moveReviewSentence(item.id, sentence.id)}
+                  style={{ gap: 4 }}
                 >
-                  <LyricRow
-                    line={line}
-                    current={line.id === item.sentenceId}
-                    translations={showTranslations}
-                    marked={taken}
-                  />
+                  {lines.map((line, index) => (
+                    <LyricRow
+                      key={index}
+                      line={line}
+                      current={sentence.id === item.sentenceId}
+                      furigana={showTranslations}
+                      translation={showTranslations && index === lines.length - 1 ? sentence.translation : undefined}
+                      marked={taken && index === 0}
+                    />
+                  ))}
                 </Pressable>
               );
             })}
