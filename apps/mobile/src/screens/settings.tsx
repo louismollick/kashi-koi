@@ -121,7 +121,9 @@ export default function SettingsScreen() {
           secure
           onCommit={(token) => void appStore.getState().setAnalysisToken(token)}
         />
-        <Label muted>{analyzed} songs analyzed</Label>
+        <Label muted>
+          {analyzed} {analyzed === 1 ? 'song' : 'songs'} analyzed
+        </Label>
         <SectionHeader title="Library" />
         <View style={styles.row}>
           <Label style={{ flex: 1 }}>Hide songs without synced lyrics</Label>

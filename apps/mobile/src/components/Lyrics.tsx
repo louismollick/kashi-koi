@@ -47,8 +47,8 @@ export function LyricRow({
       ) : (
         <Label style={{ fontSize: 20, lineHeight: 26, color }}>{getLineText(line)}</Label>
       )}
-      {note && <Label style={{ marginTop: 4, fontSize: 13, lineHeight: 18, color: colors.lavender }}>{note}</Label>}
       {translation && <Label style={{ marginTop: 4, color }}>{translation}</Label>}
+      {note && <Label style={{ marginTop: 4, fontSize: 13, lineHeight: 18, color: colors.lavender }}>{note}</Label>}
     </View>
   );
 }
