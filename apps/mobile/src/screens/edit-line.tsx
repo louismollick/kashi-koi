@@ -53,9 +53,9 @@ export default function EditLineScreen() {
           )}
         </View>
         {item && (
-          <CenteredList index={lines.findIndex((line) => line.id === item.lineId)}>
+          <CenteredList index={lines.findIndex((line) => line.id === item.sentenceId)}>
             {lines.map((line) => {
-              const taken = reviewList.some((entry) => entry.id !== item.id && entry.lineId === line.id);
+              const taken = reviewList.some((entry) => entry.id !== item.id && entry.sentenceId === line.id);
               return (
                 <Pressable
                   key={line.id}
@@ -67,7 +67,7 @@ export default function EditLineScreen() {
                 >
                   <LyricRow
                     line={line}
-                    current={line.id === item.lineId}
+                    current={line.id === item.sentenceId}
                     translations={showTranslations}
                     marked={taken}
                   />

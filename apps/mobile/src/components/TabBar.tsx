@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { appStore } from '@/store/appStore';
-import { getSong, getLyrics, isDue, libraryStore } from '@/store/libraryStore';
+import { isDue, libraryStore } from '@/store/libraryStore';
 import { useNow } from '@/hooks/useNow';
 import { colors } from '@/constants/theme';
 import { PixelFrame } from './PixelFrame';

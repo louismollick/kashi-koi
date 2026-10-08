@@ -4,8 +4,24 @@ export type QuizToggle = boolean;
 export type ListenMode = 'listen';
 export type QuizMode = 'quiz';
 export type Line = { id: string; segments: { text: string; reading?: string }[]; translation?: string };
-export type Occurrence = { lineId: string; startMs: number; endMs: number };
-export type SongLyrics = { songId: string; lines: Line[]; timeline: Occurrence[] };
+export type Occurrence = { lineId: string; startMs: number; endMs: number; translation?: string };
+export type Sentence = { id: string; lineIds: string[]; translation?: string };
+export type SentenceOccurrence = { sentenceId: string; start: number; end: number };
+export type SongLyrics = {
+  songId: string;
+  fingerprint: string;
+  lines: Line[];
+  timeline: Occurrence[];
+  sentences: Sentence[];
+  sentenceTimeline: SentenceOccurrence[];
+  analysis?: {
+    title: string;
+    summary: string;
+    speaker: string;
+    addressee: string;
+    notes: { occurrence: number; text: string }[];
+  };
+};
 export type LyricsStatus = 'unchecked' | 'synced' | 'none' | 'error';
 export type Song = {
   id: string;
@@ -32,11 +48,15 @@ export type Album = {
   songCount: number;
 };
 export type Artist = { id: string; name: string; coverArt?: string };
-type ReviewLine = { id: string; songId: string; lineId: string };
-export type NewLine = ReviewLine & { kind: 'new' };
-export type DueLine = ReviewLine & { kind: 'due'; misses: number };
-export type LaterLine = ReviewLine & { kind: 'later'; step: number; dueAt: number };
-export type ReviewList = (NewLine | DueLine | LaterLine)[];
+type ReviewSentence = { id: string; songId: string; sentenceId: string };
+export type NewSentence = ReviewSentence & { kind: 'new' };
+export type DueSentence = ReviewSentence & { kind: 'due'; misses: number };
+export type LaterSentence = ReviewSentence & { kind: 'later'; step: number; dueAt: number };
+export type ReviewList = (NewSentence | DueSentence | LaterSentence)[];
+// Compatibility names for the existing screens until their sentence UI lands.
+export type NewLine = NewSentence;
+export type DueLine = DueSentence;
+export type LaterLine = LaterSentence;
 export type ClipReview = {
   ids: string[];
   index: number;
@@ -44,7 +64,7 @@ export type ClipReview = {
   choices: Record<string, string[]>;
   combo: Combo;
 };
-/** Each line keeps its first answer until the next run. */
+/** Each sentence keeps its first answer until the next run. */
 export type Run = {
   choices: Record<string, string[]>;
   answers: Record<string, { choice: string; correct: boolean }>;

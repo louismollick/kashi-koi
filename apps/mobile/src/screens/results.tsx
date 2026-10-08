@@ -3,7 +3,7 @@ import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { appStore, getRunSummary } from '@/store/appStore';
-import { getLineText, getSong, libraryStore } from '@/store/libraryStore';
+import { getSentenceText, libraryStore } from '@/store/libraryStore';
 import { colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/Header';
 import { Cover } from '@/components/Cover';
@@ -67,7 +67,7 @@ export default function ResultsScreen() {
         {missed.map((line) => (
           <PixelFrame key={line.id} fill={colors.surface} contentStyle={[styles.row, { padding: 14 }]}>
             <View style={{ flex: 1 }}>
-              <Label>{getLineText(line)}</Label>
+              <Label>{getSentenceText(song.id, line)}</Label>
               <Label muted style={{ marginTop: 4 }}>
                 {line.translation}
               </Label>
@@ -76,7 +76,7 @@ export default function ResultsScreen() {
               </Label>
             </View>
             <PixelToggle
-              label={`Send ${getLineText(line)} to review`}
+              label={`Send ${getSentenceText(song.id, line)} to review`}
               on={send[line.id] ?? false}
               onPress={() => {
                 const enabled = !send[line.id];

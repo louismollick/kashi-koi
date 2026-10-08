@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
 import { artistHasSyncedLyrics, countedFilters, getVisibleLibrary } from '@/data/libraryVisibility';
-import { appStore, useLibraryFilters } from '@/store/appStore';
+import { useLibraryFilters } from '@/store/appStore';
 import { Header } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { AlbumTile } from '@/components/AlbumTile';

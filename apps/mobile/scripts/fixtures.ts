@@ -1,3 +1,4 @@
+import { withSentences } from '../src/lyrics/sentences';
 import type { Line, ReviewList, Song as LibrarySong, SongLyrics } from '@/types/domain';
 
 type Song = Omit<LibrarySong, 'lyricsStatus'> & {
@@ -1097,27 +1098,34 @@ legacyArtists.push({
 export function makeReviewList(): ReviewList {
   const lyricSongs = legacySongs.filter((song) => song.hasLyrics);
   return [
-    { id: 'new-dawn', songId: 'dawn', lineId: 'dawn-3', kind: 'new' },
-    { id: 'new-rain', songId: 'rain', lineId: 'rain-7', kind: 'new' },
+    { id: 'new-dawn', songId: 'dawn', sentenceId: 'dawn-3', kind: 'new' },
+    { id: 'new-rain', songId: 'rain', sentenceId: 'rain-7', kind: 'new' },
     ...Array.from({ length: 10 }, (_, index) => {
       const song = lyricSongs[index % lyricSongs.length]!;
       return {
         id: `due-${index}`,
         songId: song.id,
-        lineId: `${song.id}-${index === 0 ? 2 : index === 1 ? 6 : index + 1}`,
+        sentenceId: `${song.id}-${index === 0 ? 2 : index === 1 ? 6 : index + 1}`,
         kind: 'due' as const,
         misses: index === 0 ? 2 : 0,
       };
     }),
-    { id: 'later-dawn', songId: 'dawn', lineId: 'dawn-8', kind: 'later', step: 0, dueAt: Date.now() + 86400000 },
-    { id: 'later-dream', songId: 'dream', lineId: 'dream-11', kind: 'later', step: 0, dueAt: Date.now() + 86400000 },
+    { id: 'later-dawn', songId: 'dawn', sentenceId: 'dawn-8', kind: 'later', step: 0, dueAt: Date.now() + 86400000 },
+    {
+      id: 'later-dream',
+      songId: 'dream',
+      sentenceId: 'dream-11',
+      kind: 'later',
+      step: 0,
+      dueAt: Date.now() + 86400000,
+    },
   ];
 }
 
 export const songLyrics: Record<string, SongLyrics> = Object.fromEntries(
   legacySongs.map((song) => [
     song.id,
-    {
+    withSentences({
       songId: song.id,
       lines: song.lines.map((line) => ({ ...line, id: `${song.id}:${getLineText(line).trim()}` })),
       timeline: song.lines.map((line, index) => ({
@@ -1125,7 +1133,7 @@ export const songLyrics: Record<string, SongLyrics> = Object.fromEntries(
         startMs: index * 9000,
         endMs: (index + 1) * 9000,
       })),
-    },
+    }),
   ]),
 );
 export const songs: LibrarySong[] = legacySongs.map(({ color, accent, rank, lines, hasLyrics, ...song }, index) => ({
@@ -1145,5 +1153,5 @@ export function fixtureLine(id: string) {
   return `${song.id}:${getLineText(song.lines.find((line) => line.id === id)!).trim()}`;
 }
 export function fixtureReviewList() {
-  return makeReviewList().map((item) => ({ ...item, lineId: fixtureLine(item.lineId) }));
+  return makeReviewList().map((item) => ({ ...item, sentenceId: fixtureLine(item.sentenceId) }));
 }

@@ -1,3 +1,4 @@
+import { withSentences } from '@/lyrics/sentences';
 import type { StructuredLyrics } from './subsonic';
 import { orderedLyricEntries } from '@kashi-koi/shared/lyrics';
 import type { Line, Occurrence, SongLyrics } from '@/types/domain';
@@ -19,7 +20,7 @@ export function toSongLyrics(songId: string, entry: StructuredLyrics, durationMs
       endMs: Math.max(entry.startMs, entries[index + 1]?.startMs ?? durationMs),
     });
   });
-  return { songId, lines: [...lines.values()], timeline };
+  return withSentences({ songId, lines: [...lines.values()], timeline });
 }
 
 /** Keep the preceding line through gaps; -1 only before the first occurrence. */

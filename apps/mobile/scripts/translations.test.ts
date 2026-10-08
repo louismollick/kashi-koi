@@ -21,6 +21,7 @@ import {
   type Translations,
 } from '../src/store/libraryStore';
 import { songs } from './fixtures';
+import { withSentences } from '../src/lyrics/sentences';
 import type { Line } from '../src/types/domain';
 
 const line = (id: string, text: string, translation?: string): Line => ({ id, segments: [{ text }], translation });
@@ -31,11 +32,11 @@ const makeLibrary = (texts: string[][], prefix = ''): Library => ({
   lyrics: Object.fromEntries(
     texts.map((texts, index) => [
       `${prefix}${index}`,
-      {
+      withSentences({
         songId: `${prefix}${index}`,
         lines: texts.map((text, i) => line(`${index}:${i}`, text)),
         timeline: texts.map((_, i) => ({ lineId: `${index}:${i}`, startMs: i * 1000, endMs: (i + 1) * 1000 })),
-      },
+      }),
     ]),
   ),
 });
@@ -114,10 +115,13 @@ test('choices are distinct, shuffled and contain the translation with fewer choi
   assert.deepEqual(getAnswers(song, 2), []);
 });
 
-test('English lines skip answering, grading and lost markss', () => {
+test('English lines skip answering, grading and lost marks', () => {
   const library = makeLibrary([['Intro', '日本', 'English', 'かな']]);
   library.lyrics['0']!.lines[1]!.translation = 'Japan';
   library.lyrics['0']!.lines[3]!.translation = 'kana';
+  library.lyrics = Object.fromEntries(
+    Object.entries(library.lyrics).map(([id, lyrics]) => [id, withSentences(lyrics)]),
+  );
   libraryStore.getState().setLibrary(library);
   appStore.getState().startSong('0');
   appStore.getState().setQuizToggle(true);
@@ -137,9 +141,9 @@ test('English lines skip answering, grading and lost markss', () => {
   assert.equal(appStore.getState().reviewList.length, 0);
   appStore.getState().jumpToLine(1);
   appStore.getState().addLostMark();
-  assert.equal(appStore.getState().reviewList[0]!.lineId, '0:1');
+  assert.equal(appStore.getState().reviewList[0]!.sentenceId, '0:1');
   appStore.getState().moveReviewLine(appStore.getState().reviewList[0]!.id, '0:2');
-  assert.equal(appStore.getState().reviewList[0]!.lineId, '0:1');
+  assert.equal(appStore.getState().reviewList[0]!.sentenceId, '0:1');
   appStore.getState().sendToReview('0:2', true);
   assert.equal(appStore.getState().reviewList.length, 1);
   appStore.getState().jumpToLine(1);
@@ -154,6 +158,9 @@ test('English lines skip answering, grading and lost markss', () => {
 test('quiz and review gates accept translated songs despite English lines and partial library readiness', () => {
   const library = makeLibrary([['日', 'English'], ['月'], ['English']]);
   library.lyrics['0']!.lines[0]!.translation = 'sun';
+  library.lyrics = Object.fromEntries(
+    Object.entries(library.lyrics).map(([id, lyrics]) => [id, withSentences(lyrics)]),
+  );
   libraryStore.getState().setLibrary(library);
   assert.equal(hasTranslations('0'), true);
   assert.equal(hasTranslations('1'), false);
@@ -163,8 +170,8 @@ test('quiz and review gates accept translated songs despite English lines and pa
   assert.equal(appStore.getState().quizToggle, false);
   appStore.setState({
     reviewList: [
-      { id: 'ready', songId: '0', lineId: '0:0', kind: 'new' },
-      { id: 'wait', songId: '1', lineId: '1:0', kind: 'due', misses: 1 },
+      { id: 'ready', songId: '0', sentenceId: '0:0', kind: 'new' },
+      { id: 'wait', songId: '1', sentenceId: '1:0', kind: 'due', misses: 1 },
     ],
   });
   assert.equal(readyReviewLines(appStore.getState().reviewList).length, 1);
@@ -234,6 +241,9 @@ test('playing song and album queue have priority over the library backlog', asyn
   await pauseTranslations(true);
   const library = makeLibrary([['日'], ['月'], ['星']]);
   library.songs[0]!.albumId = 'other';
+  library.lyrics = Object.fromEntries(
+    Object.entries(library.lyrics).map(([id, lyrics]) => [id, withSentences(lyrics)]),
+  );
   libraryStore.getState().setLibrary(library);
   batches.length = 0;
   appStore.getState().startAlbum('album');

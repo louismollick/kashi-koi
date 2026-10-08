@@ -1,4 +1,5 @@
-import { isJapanese } from '@/japanese/text';
+import { remapReview } from '@/lyrics/review';
+import { prioritizeAnalyses, analyzeSong, analysisServerUrl, saveAnalysisToken } from '@/analysis/fetcher';
 import { prioritizeTranslations } from '@/japanese/translate';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { currentOccurrence } from '@/navidrome/lyrics';
@@ -8,16 +9,26 @@ import {
   getAlbumSongs,
   getSong,
   getLyrics,
-  occurrenceLine,
+  currentSentence,
+  sentenceForReview,
+  reviewClip,
   hasTranslations,
   libraryStore,
   getAnswers,
-  getLineText,
-  japaneseLines,
   readyReviewLines,
 } from '@/store/libraryStore';
 import { getVisibleSongs, isHiddenSong, type LibraryFilters } from '@/data/libraryVisibility';
-import type { ClipReview, ListenMode, QuizMode, QuizToggle, ReviewList, Run, Song, Rank } from '@/types/domain';
+import type {
+  ClipReview,
+  ListenMode,
+  QuizMode,
+  QuizToggle,
+  ReviewList,
+  Run,
+  Song,
+  Rank,
+  SentenceOccurrence,
+} from '@/types/domain';
 
 export type Transport = {
   load(song: Song, startMs?: number): void;
@@ -38,11 +49,11 @@ function clearAnswerWait(reset = false) {
   answerTimer = null;
   const wait = appStore.getState().answerWait;
   if (reset) releasedIndex = null;
-  else if (wait) releasedIndex = wait.lineIndex;
+  else if (wait) releasedIndex = wait.occurrence.end;
   if (wait) appStore.setState({ answerWait: null });
 }
 
-/** Release the held line after its deadline or answer feedback. */
+/** Release the held sentence after its deadline or answer feedback. */
 function releaseAnswerWait() {
   if (appStore.getState().answerWait) appStore.getState().setPlaying(true);
 }
@@ -75,6 +86,7 @@ function playSong(id: string) {
   clearClipTimer();
   appStore.setState({ clipPlayback: null, clipReview: null, loading: true });
   prioritizeTranslations([id, ...(appStore.getState().playbackQueue ?? [])]);
+  void prioritizeAnalyses([id, ...(appStore.getState().playbackQueue ?? [])]);
   const song = getSong(id);
   if (song) {
     loadedSongId = id;
@@ -83,12 +95,12 @@ function playSong(id: string) {
   }
 }
 
-/** Play the first occurrence of the current review line. */
+/** Play the first occurrence of the current review sentence. */
 function playReviewClip() {
   const state = appStore.getState(),
     clip = state.clipReview;
   const item = state.reviewList.find((item) => item.id === clip?.ids[clip.index]);
-  const occurrence = item && getLyrics(item.songId).timeline.find((occurrence) => occurrence.lineId === item.lineId);
+  const occurrence = item && reviewClip(item);
   if (item && occurrence) state.playClip(item.songId, occurrence.startMs, occurrence.endMs);
 }
 
@@ -96,10 +108,10 @@ const dayMs = 24 * 60 * 60 * 1000;
 
 /** Correct answers double the interval; a miss resets the schedule. */
 function scheduleReview(line: ReviewList[number], correct: boolean): ReviewList[number] {
-  const { id, songId, lineId } = line;
-  if (!correct) return { id, songId, lineId, kind: 'due', misses: line.kind === 'due' ? line.misses + 1 : 1 };
+  const { id, songId, sentenceId } = line;
+  if (!correct) return { id, songId, sentenceId, kind: 'due', misses: line.kind === 'due' ? line.misses + 1 : 1 };
   const step = line.kind === 'later' ? line.step + 1 : 0;
-  return { id, songId, lineId, kind: 'later', step, dueAt: Date.now() + 2 ** step * dayMs };
+  return { id, songId, sentenceId, kind: 'later', step, dueAt: Date.now() + 2 ** step * dayMs };
 }
 
 const newRun = (): Run => ({ choices: {}, answers: {}, combo: 0, bestCombo: 0, finished: false });
@@ -114,11 +126,11 @@ function queueStep(ids: string[], currentId: string | null, direction: 1 | -1, f
   return null;
 }
 
-/** Grade the entire song; skipped lines are misses in the Results screen. */
+/** Grade distinct sentences across the entire song; unanswered sentences are misses. */
 export function getRunSummary(song: Song, run: Run) {
-  const hits = japaneseLines(song.id).filter((line) => run.answers[line.id]?.correct).length;
-  const total = japaneseLines(song.id).length;
-  const missed = japaneseLines(song.id).filter((line) => !run.answers[line.id]?.correct);
+  const hits = getLyrics(song.id).sentences.filter((line) => run.answers[line.id]?.correct).length;
+  const total = getLyrics(song.id).sentences.length;
+  const missed = getLyrics(song.id).sentences.filter((line) => !run.answers[line.id]?.correct);
   const fraction = total ? hits / total : 0;
   const rank: Rank = fraction === 1 ? 'S' : fraction >= 0.8 ? 'A' : fraction >= 0.6 ? 'B' : 'C';
   return { hits, total, missed, rank };
@@ -143,7 +155,13 @@ type AppState = {
   reviewList: ReviewList;
   run: Run;
   answerTime: number | null;
-  answerWait: { lineIndex: number; until: number | null } | null;
+  answerWait: { occurrence: SentenceOccurrence; until: number | null } | null;
+  analysisServerUrl: string;
+  analysisToken: string;
+  analysisRequests: Record<string, { status: 'requesting' | 'queued' | 'running' | 'failed'; error?: string }>;
+  setAnalysisServerUrl: (url: string) => void;
+  setAnalysisToken: (token: string) => Promise<void>;
+  analyzeSong: (songId: string, options?: { force?: boolean }) => Promise<void>;
   cycleAnswerTime: () => void;
   clipPlayback: { songId: string; startMs: number; endMs: number; positionMs: number; ended: boolean } | null;
   clipReview: ClipReview | null;
@@ -177,13 +195,15 @@ type AppState = {
   addLostMark: () => void;
   undoLostMark: () => void;
   dismissToast: () => void;
-  moveReviewLine: (id: string, lineId: string) => void;
+  moveReviewSentence: (id: string, sentenceId: string) => void;
+  moveReviewLine: (id: string, sentenceId: string) => void;
+  removeReviewSentence: (id: string) => void;
   removeReviewLine: (id: string) => void;
   startClipReview: () => void;
   answerClip: (choice: string) => void;
   nextClip: () => void;
   jumpToClip: (index: number) => void;
-  sendToReview: (lineId: string, enabled: boolean) => void;
+  sendToReview: (sentenceId: string, enabled: boolean) => void;
 };
 
 /** Share the same filter mapping between queue actions and component selectors. */
@@ -210,6 +230,24 @@ export const appStore = create<AppState>()(
       lastScanAt: null,
       answerTime: null,
       answerWait: null,
+      analysisServerUrl: '',
+      analysisToken: '',
+      analysisRequests: {},
+      setAnalysisServerUrl: (url) => {
+        set({ analysisServerUrl: url.trim().replace(/\/+$/, '') });
+        void prioritizeAnalyses(
+          [
+            get().songId,
+            ...(get().playbackQueue ?? []),
+            ...libraryStore.getState().songs.map((song) => song.id),
+          ].filter((id): id is string => !!id),
+        );
+      },
+      setAnalysisToken: async (token) => {
+        await saveAnalysisToken(token.trim());
+        set({ analysisToken: token.trim() });
+      },
+      analyzeSong,
       showTranslations: false,
       translationPrompted: false,
       hideSongsWithoutSyncedLyrics: true,
@@ -252,6 +290,7 @@ export const appStore = create<AppState>()(
         get().startSong(tracks[0]!.id);
         set({ playbackQueue: tracks.map((song) => song.id) });
         prioritizeTranslations(tracks.map((song) => song.id));
+        void prioritizeAnalyses(tracks.map((song) => song.id));
       },
       // Cycle the fixed answer-time presets for future stops.
       cycleAnswerTime: () => {
@@ -261,9 +300,9 @@ export const appStore = create<AppState>()(
       toggleTranslations: () => set((state) => ({ showTranslations: !state.showTranslations })),
       ensureChoices: () =>
         set((state) => {
-          const line = occurrenceLine(state.songId, state.lineIndex),
+          const line = currentSentence(state.songId, state.lineIndex)?.sentence,
             song = getSong(state.songId);
-          if (!song || !line?.translation || !isJapanese(getLineText(line)) || state.run.choices[line.id]) return state;
+          if (!song || !line?.translation || state.run.choices[line.id]) return state;
           return {
             run: { ...state.run, choices: { ...state.run.choices, [line.id]: getAnswers(song, state.lineIndex) } },
           };
@@ -273,9 +312,11 @@ export const appStore = create<AppState>()(
           const clip = state.clipReview,
             item = state.reviewList.find((item) => item.id === clip?.ids[clip.index]);
           const song = item && getSong(item.songId);
-          if (!clip || !item || !song || clip.choices[item.lineId]) return state;
-          const index = getLyrics(song.id).timeline.findIndex((occurrence) => occurrence.lineId === item.lineId);
-          return { clipReview: { ...clip, choices: { ...clip.choices, [item.lineId]: getAnswers(song, index) } } };
+          if (!clip || !item || !song || clip.choices[item.sentenceId]) return state;
+          const index =
+            getLyrics(song.id).sentenceTimeline.find((occurrence) => occurrence.sentenceId === item.sentenceId)
+              ?.start ?? -1;
+          return { clipReview: { ...clip, choices: { ...clip.choices, [item.sentenceId]: getAnswers(song, index) } } };
         }),
       toggleHideSongsWithoutSyncedLyrics: () =>
         set((state) => ({ hideSongsWithoutSyncedLyrics: !state.hideSongsWithoutSyncedLyrics })),
@@ -367,7 +408,10 @@ export const appStore = create<AppState>()(
       },
       // Replay clears the deadline and occurrence guard, so the line can stop again.
       replayLine: () => {
-        const index = get().answerWait?.lineIndex ?? get().lineIndex;
+        const index =
+          get().answerWait?.occurrence.start ??
+          currentSentence(get().songId, get().lineIndex)?.occurrence.start ??
+          get().lineIndex;
         clearAnswerWait(true);
         get().jumpToLine(index);
         get().setPlaying(true);
@@ -412,22 +456,22 @@ export const appStore = create<AppState>()(
           return;
         }
         const timeline = getLyrics(state.songId).timeline,
-          occurrence = timeline[state.lineIndex],
-          line = occurrenceLine(state.songId, state.lineIndex);
+          current = currentSentence(state.songId, state.lineIndex),
+          occurrence = current?.occurrence,
+          line = current?.sentence;
         if (
           state.mode === 'quiz' &&
           state.answerTime !== 0 &&
           !state.run.finished &&
           occurrence &&
           line &&
-          isJapanese(getLineText(line)) &&
           state.run.choices[line.id]?.length &&
           !state.run.answers[line.id] &&
-          releasedIndex !== state.lineIndex &&
-          positionMs >= occurrence.endMs - 100
+          releasedIndex !== occurrence.end &&
+          positionMs >= timeline[occurrence.end]!.endMs
         ) {
           const until = state.answerTime === null ? null : Date.now() + state.answerTime * 1000;
-          set({ positionMs, durationMs, playing: false, answerWait: { lineIndex: state.lineIndex, until } });
+          set({ positionMs, durationMs, lineIndex: occurrence.end, playing: false, answerWait: { occurrence, until } });
           transport.pause();
           if (state.answerTime !== null) scheduleAnswerRelease(state.answerTime * 1000);
           return;
@@ -455,10 +499,10 @@ export const appStore = create<AppState>()(
       answer: (choice) => {
         const before = get().run;
         set((state) => {
-          const line = occurrenceLine(state.songId, state.lineIndex);
-          if (!line || !isJapanese(getLineText(line))) return state;
-          const lineId = line.id;
-          if (state.run.answers[lineId] || state.run.finished) return state;
+          const line = currentSentence(state.songId, state.lineIndex)?.sentence;
+          if (!line) return state;
+          const sentenceId = line.id;
+          if (state.run.answers[sentenceId] || state.run.finished) return state;
           if (!line.translation) return state;
           const correct = choice === line.translation;
           const combo = correct ? state.run.combo + 1 : 0;
@@ -467,10 +511,10 @@ export const appStore = create<AppState>()(
               ...state.run,
               combo,
               bestCombo: Math.max(combo, state.run.bestCombo),
-              answers: { ...state.run.answers, [lineId]: { choice, correct } },
+              answers: { ...state.run.answers, [sentenceId]: { choice, correct } },
             },
             reviewList: state.reviewList.map((item) =>
-              item.songId === state.songId && item.lineId === lineId ? scheduleReview(item, correct) : item,
+              item.songId === state.songId && item.sentenceId === sentenceId ? scheduleReview(item, correct) : item,
             ),
           };
         });
@@ -490,7 +534,7 @@ export const appStore = create<AppState>()(
       },
       setPlaying: (playing) => {
         const wait = get().answerWait;
-        if (playing && wait && wait.lineIndex === getLyrics(get().songId).timeline.length - 1) {
+        if (playing && wait && wait.occurrence.end === getLyrics(get().songId).timeline.length - 1) {
           get().completeRun();
           return;
         }
@@ -521,13 +565,13 @@ export const appStore = create<AppState>()(
       },
       addLostMark: () =>
         set((state) => {
-          const line = occurrenceLine(state.songId, state.lineIndex);
-          if (!line || !isJapanese(getLineText(line))) return state;
-          const lineId = line.id;
-          if (state.reviewList.some((line) => line.lineId === lineId)) return state;
+          const line = currentSentence(state.songId, state.lineIndex)?.sentence;
+          if (!line) return state;
+          const sentenceId = line.id;
+          if (state.reviewList.some((line) => line.sentenceId === sentenceId)) return state;
           const id = `lost-${state.nextReviewId}`;
           return {
-            reviewList: [...state.reviewList, { id, songId: state.songId!, lineId, kind: 'new' as const }],
+            reviewList: [...state.reviewList, { id, songId: state.songId!, sentenceId, kind: 'new' as const }],
             addedId: id,
             addedExpiresAt: Date.now() + 3000,
             nextReviewId: state.nextReviewId + 1,
@@ -543,28 +587,30 @@ export const appStore = create<AppState>()(
           addedExpiresAt: null,
         })),
       dismissToast: () => set({ addedId: null, addedExpiresAt: null }),
-      moveReviewLine: (id, lineId) =>
+      moveReviewSentence: (id, sentenceId) =>
         set((state) => {
           const item = state.reviewList.find((line) => line.id === id);
           if (
             !item ||
-            item.lineId === lineId ||
-            !getLyrics(item.songId).lines.some((line) => line.id === lineId && isJapanese(getLineText(line))) ||
-            state.reviewList.some((line) => line.id !== id && line.lineId === lineId)
+            item.sentenceId === sentenceId ||
+            !getLyrics(item.songId).sentences.some((sentence) => sentence.id === sentenceId) ||
+            state.reviewList.some((line) => line.id !== id && line.sentenceId === sentenceId)
           )
             return state;
           const clip = state.clipReview;
           if (clip?.ids[clip.index] === id) clearClipTimer();
           return {
             reviewList: state.reviewList.map((line) =>
-              line.id === id ? { id: line.id, songId: line.songId, lineId, kind: 'new' as const } : line,
+              line.id === id ? { id: line.id, songId: line.songId, sentenceId, kind: 'new' as const } : line,
             ),
             clipReview: clip
               ? { ...clip, answers: Object.fromEntries(Object.entries(clip.answers).filter(([key]) => key !== id)) }
               : clip,
           };
         }),
-      removeReviewLine: (id) =>
+      moveReviewLine: (id, sentenceId) => get().moveReviewSentence(id, sentenceId),
+      removeReviewLine: (id) => get().removeReviewSentence(id),
+      removeReviewSentence: (id) =>
         set((state) => {
           const clip = state.clipReview;
           if (clip?.ids[clip.index] === id) clearClipTimer();
@@ -601,8 +647,8 @@ export const appStore = create<AppState>()(
             id = clip?.ids[clip.index];
           if (!clip || !id || clip.answers[id]) return state;
           const item = state.reviewList.find((item) => item.id === id),
-            line = item && getLyrics(item.songId).lines.find((line) => line.id === item.lineId);
-          if (!line?.translation || !isJapanese(getLineText(line))) return state;
+            line = item && sentenceForReview(item)?.sentence;
+          if (!line?.translation) return state;
           const correct = choice === line.translation;
           return {
             clipReview: {
@@ -640,22 +686,29 @@ export const appStore = create<AppState>()(
           set({ clipReview: null });
         }
       },
-      sendToReview: (lineId, enabled) =>
+      sendToReview: (sentenceId, enabled) =>
         set((state) => {
-          if (!getLyrics(state.songId).lines.some((line) => line.id === lineId && isJapanese(getLineText(line))))
-            return state;
-          const exists = state.reviewList.some((line) => line.lineId === lineId);
+          if (!getLyrics(state.songId).sentences.some((sentence) => sentence.id === sentenceId)) return state;
+          const exists = state.reviewList.some((line) => line.sentenceId === sentenceId);
           if (enabled && !exists && state.songId)
             return {
               reviewList: [
                 ...state.reviewList,
-                { id: `result-${state.nextReviewId}`, lineId, songId: state.songId!, kind: 'due' as const, misses: 1 },
+                {
+                  id: `result-${state.nextReviewId}`,
+                  sentenceId,
+                  songId: state.songId!,
+                  kind: 'due' as const,
+                  misses: 1,
+                },
               ],
               nextReviewId: state.nextReviewId + 1,
             };
           if (!enabled)
             return {
-              reviewList: state.reviewList.filter((line) => !(line.lineId === lineId && line.id.startsWith('result-'))),
+              reviewList: state.reviewList.filter(
+                (line) => !(line.sentenceId === sentenceId && line.id.startsWith('result-')),
+              ),
             };
           return state;
         }),
@@ -667,14 +720,17 @@ export const appStore = create<AppState>()(
       // Drop obsolete mix state. Legacy later lines have no schedule, so they're due now; a fixed value keeps repeat hydrations stable.
       merge: (persisted, current) => {
         const { reviewMix: _reviewMix, ...saved } = (persisted ?? {}) as Partial<AppState> & { reviewMix?: unknown };
-        const reviewList = (saved.reviewList ?? current.reviewList).map((line) =>
-          line.kind === 'later' && (typeof line.step !== 'number' || typeof line.dueAt !== 'number')
-            ? { ...line, step: 0, dueAt: 0 }
-            : line,
-        );
+        const reviewList = (saved.reviewList ?? current.reviewList).map((entry) => {
+          const { lineId, ...line } = entry as ReviewList[number] & { lineId?: string };
+          const migrated = { ...line, sentenceId: line.sentenceId ?? lineId ?? '' };
+          return migrated.kind === 'later' && (typeof migrated.step !== 'number' || typeof migrated.dueAt !== 'number')
+            ? { ...migrated, step: 0, dueAt: 0 }
+            : migrated;
+        });
         return { ...current, ...saved, reviewList };
       },
       partialize: (state) => ({
+        analysisServerUrl: state.analysisServerUrl,
         answerTime: state.answerTime,
         reviewList: state.reviewList,
         ranks: state.ranks,
@@ -724,7 +780,7 @@ export function resetAppState() {
   return appStore.persist.clearStorage();
 }
 
-/** Cache choices as the current line changes, including repeated occurrences and edited clips. */
+/** Cache choices as the current sentence changes, including repeated occurrences and edited clips. */
 appStore.subscribe((state, previous) => {
   if (state.quizToggle && !state.clipPlayback) state.ensureChoices();
   if (state.clipReview) state.ensureClipChoices();
@@ -736,7 +792,7 @@ appStore.subscribe((state, previous) => {
   ) {
     const clip = state.clipReview,
       item = state.reviewList.find((item) => item.id === clip?.ids[clip.index]);
-    const occurrence = item && getLyrics(item.songId).timeline.find((occurrence) => occurrence.lineId === item.lineId);
+    const occurrence = item && reviewClip(item);
     if (
       !item ||
       item.songId !== state.clipPlayback.songId ||
@@ -744,5 +800,28 @@ appStore.subscribe((state, previous) => {
       occurrence.endMs !== state.clipPlayback.endMs
     )
       state.setPlaying(false);
+  }
+});
+
+/** Admin requests are available only with both a URL and a SecureStore token. */
+export const canAnalyze = () => !!analysisServerUrl() && !!appStore.getState().analysisToken;
+
+// Every lyric change uses the old sentence membership to remap review schedules.
+libraryStore.subscribe((state, previous) => {
+  if (state.lyrics === previous.lyrics) return;
+  let reviewList = appStore.getState().reviewList;
+  for (const id of new Set([...Object.keys(previous.lyrics), ...Object.keys(state.lyrics)])) {
+    if (state.lyrics[id] !== previous.lyrics[id])
+      reviewList = remapReview(reviewList, id, previous.lyrics[id], state.lyrics[id]);
+  }
+  const current = appStore.getState();
+  appStore.setState({ reviewList });
+  const before = previous.lyrics[current.songId ?? ''],
+    after = state.lyrics[current.songId ?? ''];
+  if (after !== before && JSON.stringify(after?.sentences) !== JSON.stringify(before?.sentences)) {
+    const waiting = !!current.answerWait;
+    clearAnswerWait(true);
+    appStore.setState({ run: newRun() });
+    if (waiting) appStore.getState().setPlaying(true);
   }
 });

@@ -1,6 +1,6 @@
-import { isJapanese } from '@/japanese/text';
+import { fetchLibraryAnalyses, loadAnalysisToken } from '@/analysis/fetcher';
 import { resumeTranslations } from '@/japanese/translate';
-import { carryLyrics, libraryStore, getLineText } from '@/store/libraryStore';
+import { carryLyrics, libraryStore } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
 import { sessionStore } from './session';
 import { pickEntry, toSongLyrics } from './lyrics';
@@ -138,12 +138,6 @@ export async function scan(
             await save(song.id, status, lyrics);
             if (!valid() || stopped) break;
             libraryStore.getState().setLyricsResult(song.id, status, lyrics);
-            if (status !== 'error') {
-              const ids = new Set(lyrics?.lines.filter((line) => isJapanese(getLineText(line))).map((line) => line.id));
-              appStore.setState((state) => ({
-                reviewList: state.reviewList.filter((item) => item.songId !== song.id || ids.has(item.lineId)),
-              }));
-            }
           }
           completed++;
           if (Date.now() - lastUpdate >= 250 || completed === targets.length) {
@@ -163,6 +157,7 @@ export async function scan(
   if (valid()) {
     appStore.setState({ lastScanAt: Date.now() });
     void resumeTranslations();
+    void fetchLibraryAnalyses();
     if (errors) libraryStore.setState({ error: `${errors} songs could not be checked. Rescan lyrics to retry.` });
   }
 }
@@ -172,4 +167,6 @@ export const scanLyrics = ({ all = false }: { all?: boolean } = {}) =>
 export async function loadLibrary() {
   const { loadAll } = await import('./db');
   libraryStore.getState().setLibrary(await loadAll());
+  await loadAnalysisToken();
+  void fetchLibraryAnalyses();
 }

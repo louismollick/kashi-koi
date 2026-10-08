@@ -34,7 +34,7 @@ export default function ClipReviewScreen() {
   const song = getSong(item.songId);
   if (!song) return null;
   const lyrics = getLyrics(song.id),
-    lineIndex = lyrics.timeline.findIndex((occurrence) => occurrence.lineId === item.lineId);
+    lineIndex = lyrics.timeline.findIndex((occurrence) => occurrence.lineId === item.sentenceId);
   const line = occurrenceLine(song.id, lineIndex),
     answer = clip.answers[item.id];
   return (
@@ -43,7 +43,7 @@ export default function ClipReviewScreen() {
       <QuizColumn
         line={line}
         isNew={item.kind === 'new'}
-        choices={clip.choices[item.lineId] ?? []}
+        choices={clip.choices[item.sentenceId] ?? []}
         selected={answer?.choice ?? null}
         nice={answer?.correct === true}
         combo={clip.combo}

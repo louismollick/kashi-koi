@@ -41,6 +41,8 @@ It lists the latest `main` build plus one app per PR labeled `ios-build`. PR app
 - Results shows missed Lines and their translations. Review groups due, new and due-later Lines by song; edit one to study a different Line of its song or remove it. A right answer schedules a Line one day out and doubles the gap each time; a wrong answer makes it due again. Review Lyrics plays each translated due Line's clip in the quiz layout, keeps each first answer, and moves on 0.8 seconds after you answer. Its play button resumes a paused clip or replays a finished one.
 - Settings offers Sync library, Rescan lyrics and Log out. Sync library retries unchecked and failed songs. Rescan lyrics checks every song. Log out clears local account, library and learning state.
 
+Song analyses are fetched and cached when `EXPO_PUBLIC_KASHI_SERVER_URL` is set. They group lines into sentences and supply contextual translations for learning. Without an analysis, each Japanese line is its own sentence and Apple translations remain the fallback. The store supports a saved server URL override and an admin token in SecureStore; their Settings controls and the Analyse button are part of the next UI step.
+
 Translations and furigana are cached by Japanese text and survive Rescan lyrics. Apple translates each Line without the rest of the song; translations and dictionary readings can miss what is sung. The Simulator uses `EN: <Japanese text>` translations with the native furigana tokenizer. Real translations and language downloads require a phone.
 
 Playback does not resume after relaunch. Playlists and offline downloads are deferred. Node tests use translated fixtures and an injected translator, without loading native modules.

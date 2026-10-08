@@ -51,7 +51,7 @@ function SongGroup({ songId, items }: { songId: string; items: ReviewList }) {
       </Pressable>
       {open &&
         items.map((item) => {
-          const line = lines.find((line) => line.id === item.lineId);
+          const line = lines.find((line) => line.id === item.sentenceId);
           if (!line) return null;
           const text = getLineText(line);
           return (

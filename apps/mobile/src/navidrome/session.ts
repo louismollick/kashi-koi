@@ -1,3 +1,4 @@
+import { cancelAnalyses, saveAnalysisToken } from '@/analysis/fetcher';
 import { pauseTranslations } from '@/japanese/translate';
 import { resetAppState } from '@/store/appStore';
 import { libraryStore } from '@/store/libraryStore';
@@ -46,9 +47,10 @@ export async function loadSession() {
 export async function logout() {
   sessionStore.setState({ session: null, ready: true, error: null });
   const { cancelSync } = await import('./sync');
-  await Promise.all([cancelSync(), pauseTranslations(true)]);
+  await Promise.all([cancelSync(), pauseTranslations(true), cancelAnalyses()]);
   const { clearLibrary } = await import('./db');
   await clearLibrary();
+  await saveAnalysisToken('');
   await resetAppState();
   libraryStore.getState().setLibrary({ songs: [], albums: [], artists: [], lyrics: {} });
   libraryStore.setState({ progress: null, error: null });

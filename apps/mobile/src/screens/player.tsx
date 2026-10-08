@@ -37,7 +37,7 @@ export default function PlayerScreen() {
   const playbackError = appStore((state) => state.playbackError);
   const selectedAnswer = currentLine ? (run.answers[currentLine.id]?.choice ?? null) : null;
   const showToast = addedId !== null && addedExpiresAt !== null && Date.now() < addedExpiresAt;
-  const inReview = !!currentLine && reviewList.some((line) => line.lineId === currentLine.id);
+  const inReview = !!currentLine && reviewList.some((line) => line.sentenceId === currentLine.id);
   const canAdd = !!currentLine && isJapanese(getLineText(currentLine)) && !inReview;
 
   useEffect(() => {
@@ -126,7 +126,7 @@ export default function PlayerScreen() {
                     line={line}
                     current={index === lineIndex}
                     translations={showTranslations}
-                    marked={reviewList.some((item) => item.lineId === line.id)}
+                    marked={reviewList.some((item) => item.sentenceId === line.id)}
                   />
                 </Pressable>
               ))}

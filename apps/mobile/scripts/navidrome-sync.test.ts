@@ -18,7 +18,7 @@ test('failed rescans preserve synced lyrics and review entries but count errors'
   const original = globalThis.fetch,
     song = songs[0]!,
     cached = songLyrics[song.id]!;
-  const mark = { id: 'mark', songId: song.id, lineId: cached.lines[0]!.id, kind: 'new' as const };
+  const mark = { id: 'mark', songId: song.id, sentenceId: cached.lines[0]!.id, kind: 'new' as const };
   appStore.setState({ reviewList: [mark] });
   try {
     for (const response of ['request', 'parse']) {
@@ -82,9 +82,9 @@ test('successful refresh prunes removed review lines, preserves retimed lines, a
     removed = cached.lines[1]!;
   appStore.setState({
     reviewList: [
-      { id: 'keep', songId: song.id, lineId: retained.id, kind: 'new' },
-      { id: 'remove', songId: song.id, lineId: removed.id, kind: 'due', misses: 1 },
-      { id: 'other', songId: 'other', lineId: 'other:line', kind: 'later', step: 0, dueAt: Date.now() + 86400000 },
+      { id: 'keep', songId: song.id, sentenceId: retained.id, kind: 'new' },
+      { id: 'remove', songId: song.id, sentenceId: removed.id, kind: 'due', misses: 1 },
+      { id: 'other', songId: 'other', sentenceId: 'other:line', kind: 'later', step: 0, dueAt: Date.now() + 86400000 },
     ],
   });
   try {
@@ -200,7 +200,7 @@ test('cancellation during a saved result prevents publishing or pruning', async 
     song = songs[0]!,
     cached = songLyrics[song.id]!;
   let valid = true;
-  appStore.setState({ reviewList: [{ id: 'mark', songId: song.id, lineId: cached.lines[0]!.id, kind: 'new' }] });
+  appStore.setState({ reviewList: [{ id: 'mark', songId: song.id, sentenceId: cached.lines[0]!.id, kind: 'new' }] });
   try {
     globalThis.fetch = async () => Response.json({ 'subsonic-response': { status: 'ok', lyricsList: {} } });
     await scan(
