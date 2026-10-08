@@ -114,11 +114,12 @@ jobs:
             gh release download "$TAG" --pattern app.json --output - >> apps.jsonl ||
               echo "::warning::Skipped $TAG"
           done
+          # The root compatibility icon exists on main before and after the app move.
           jq -s --arg repo "$GH_REPO" '{
             name: "Kashi-Koi!",
             identifier: "com.kashikoi.sidestore",
             subtitle: "main and PR builds",
-            iconURL: "https://raw.githubusercontent.com/\($repo)/main/apps/mobile/assets/sidestore-icon.png",
+            iconURL: "https://raw.githubusercontent.com/\($repo)/main/assets/sidestore-icon.png",
             website: "https://github.com/\($repo)",
             tintColor: "#000000",
             apps: .,

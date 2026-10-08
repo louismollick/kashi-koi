@@ -53,12 +53,13 @@ cp -R "$APP" build/Payload/
 (cd build && zip -qry "sidestore/$ASSET" Payload)
 
 # One entry of the source's `apps` array (AltStore/SideStore source format).
+# Use the root compatibility icon so PR builds work before the app move reaches main.
 plutil -convert json -o - "$APP/Info.plist" | jq \
   --arg name "$NAME" --arg bundle "$BUNDLE_ID" --arg subtitle "$SUBTITLE" --arg description "$DESCRIPTION" \
   --arg version "$VERSION" --arg build "$BUILD_NUMBER" --arg sha "${COMMIT_SHA:0:7}" \
   --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --argjson size "$(stat -f %z "$OUT/$ASSET")" \
   --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/$ASSET" \
-  --arg icon "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/apps/mobile/assets/sidestore-icon.png" \
+  --arg icon "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/assets/sidestore-icon.png" \
   '{
     name: $name, bundleIdentifier: $bundle, developerName: "louismollick",
     subtitle: $subtitle, localizedDescription: $description, iconURL: $icon, tintColor: "#000000",
