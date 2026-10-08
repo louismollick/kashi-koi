@@ -9,7 +9,7 @@
     "userInterfaceStyle": "dark",
     "platforms": ["ios"],
     "ios": { "supportsTablet": false, "bundleIdentifier": "com.kashikoi" },
-    "plugins": ["expo-router", ["expo-audio", { "enableBackgroundPlayback": true }], "expo-sqlite", "expo-secure-store"],
+    "plugins": ["expo-router", ["expo-audio", { "enableBackgroundPlayback": true }], "expo-sqlite", "expo-secure-store", ["expo-build-properties", { "ios": { "deploymentTarget": "26.0" } }]],
     "experiments": { "typedRoutes": true }
   }
 }

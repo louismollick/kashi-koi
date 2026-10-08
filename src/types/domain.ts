@@ -3,7 +3,7 @@ export type Combo = number;
 export type QuizToggle = boolean;
 export type ListenMode = 'listen';
 export type QuizMode = 'quiz';
-export type Line = { id: string; segments: { text: string; reading?: string }[]; meaning?: string };
+export type Line = { id: string; segments: { text: string; reading?: string }[]; translation?: string };
 export type Occurrence = { lineId: string; startMs: number; endMs: number };
 export type SongLyrics = { songId: string; lines: Line[]; timeline: Occurrence[] };
 export type LyricsStatus = 'unchecked' | 'synced' | 'none' | 'error';
@@ -16,12 +16,11 @@ export type Artist = { id: string; name: string; coverArt?: string };
 type ReviewLine = { id: string; songId: string; lineId: string };
 export type NewLine = ReviewLine & { kind: 'new' };
 export type DueLine = ReviewLine & { kind: 'due'; misses: number };
-export type LaterLine = ReviewLine & { kind: 'later' };
+export type LaterLine = ReviewLine & { kind: 'later'; step: number; dueAt: number };
 export type ReviewList = (NewLine | DueLine | LaterLine)[];
-export type ClipReview = { ids: string[]; index: number; answered: boolean | null };
-export type ReviewMix = { songIds: string[]; index: number; previousQuizToggle: QuizToggle };
+export type ClipReview = { ids: string[]; index: number; answers: Record<string, { choice: string; correct: boolean }>; choices: Record<string, string[]>; combo: Combo };
 /** Each line keeps its first answer until the next run. */
 export type Run = {
-  answers: Record<string, { choice: number; correct: boolean }>; combo: Combo; bestCombo: Combo;
+  choices: Record<string, string[]>; answers: Record<string, { choice: string; correct: boolean }>; combo: Combo; bestCombo: Combo;
   finished: boolean;
 };

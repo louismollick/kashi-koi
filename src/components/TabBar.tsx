@@ -2,12 +2,14 @@ import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { appStore } from '@/store/appStore';
-import { getSong, getLyrics, libraryStore } from '@/store/libraryStore';
+import { getSong, getLyrics, isDue, libraryStore } from '@/store/libraryStore';
+import { useNow } from '@/hooks/useNow';
 import { colors } from '@/constants/theme';
 import { PixelFrame } from './PixelFrame';
 import { Cover } from './Cover';
 import { Icon } from './Icon';
 import { Marquee } from './Marquee';
+import { ProgressLine } from './PlayerBar';
 import { IconButton, Label, styles } from './ui';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 
@@ -17,6 +19,12 @@ const tabs = [
   { name: 'review', title: 'Review', icon: 'book', activeIcon: 'book' },
 ] as const;
 
+/** Display-only song progress; subscribes on its own so the tabs don't re-render every tick. */
+function MiniProgress() {
+  const position = appStore(state => state.positionMs), duration = appStore(state => state.durationMs);
+  return <ProgressLine progress={duration ? position / duration : 0} height={3} track="#e2d9e8" />;
+}
+
 /** Mini player and tabs remain mounted while browsing the three main screens. */
 export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
   const router = useRouter();
@@ -25,7 +33,8 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
   const song = libraryStore(state => songId ? state.bySong[songId] : undefined);
   const playing = appStore(state => state.playing);
   const reviewList = appStore(state => state.reviewList);
-  const count = reviewList.filter(line => line.kind !== 'later').length;
+  const now = useNow();
+  const count = reviewList.filter(line => isDue(line, now)).length;
   return <View style={{ backgroundColor: colors.bg, paddingBottom: Math.max(insets.bottom - 6, 10) }}>
     {song && <Pressable accessibilityRole="button" accessibilityLabel="Open player" onPress={() => router.push('/player')} style={{ marginHorizontal: 14, marginBottom: 6 }}>
       <PixelFrame fill={colors.mini} border="#d8cfe2" contentStyle={[styles.row, { height: 64, padding: 8, paddingRight: 6 }]}>
@@ -35,6 +44,7 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
           <Label numberOfLines={1} style={{ color: '#4a4560', fontSize: 13 }}>{song.artist}</Label>
         </View>
         <IconButton plain name={playing ? 'pause' : 'play'} color={colors.bg} iconScale={0.7} label={playing ? 'Pause' : 'Play'} onPress={() => appStore.getState().setPlaying(!playing)} />
+        <View style={{ position: 'absolute', left: 6, right: 6, bottom: 2 }}><MiniProgress /></View>
       </PixelFrame>
     </Pressable>}
     <View style={[styles.row, { paddingTop: 6, gap: 0 }]}>

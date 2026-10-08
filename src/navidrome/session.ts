@@ -1,3 +1,4 @@
+import { pauseTranslations } from '@/japanese/translate';
 import { resetAppState } from '@/store/appStore';
 import { libraryStore } from '@/store/libraryStore';
 import { create } from 'zustand';
@@ -28,7 +29,7 @@ export async function loadSession() {
 export async function logout() {
   sessionStore.setState({ session: null, ready: true, error: null });
   const { cancelSync } = await import('./sync');
-  await cancelSync();
+  await Promise.all([cancelSync(), pauseTranslations(true)]);
   const { clearLibrary } = await import('./db');
   await clearLibrary();
   await resetAppState();

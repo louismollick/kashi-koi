@@ -24,13 +24,13 @@ export function Button({ children, onPress, fill = colors.slate, border, style, 
  * Square icon control. Framed by default (transport, back, close); `plain` drops the
  * frame for icons that sit directly on a card, like the mini player's pause.
  */
-export function IconButton({ name, onPress, label, fill = colors.panel, border, color = colors.text, size = 44, iconScale = 0.55, plain = false }: {
+export function IconButton({ name, onPress, label, fill = colors.panel, border, color = colors.text, size = 44, iconScale = 0.55, plain = false, selected, disabled = false }: {
   name: ComponentProps<typeof Icon>['name']; onPress: () => void; label: string; fill?: string; border?: string | null;
-  color?: string; size?: number; iconScale?: number; plain?: boolean;
+  color?: string; size?: number; iconScale?: number; plain?: boolean; selected?: boolean; disabled?: boolean;
 }) {
   const icon = <Icon name={name} color={color} size={size * iconScale} />;
   const box = { width: size, height: size, alignItems: 'center', justifyContent: 'center' } as const;
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={4} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} accessibilityState={{ disabled, ...(selected === undefined ? {} : { selected }) }} onPress={onPress} hitSlop={4} style={({ pressed }) => ({ opacity: disabled ? 0.45 : pressed ? 0.7 : 1 })}>
     {plain ? <View style={box}>{icon}</View> : <PixelFrame fill={fill} border={border ?? '#4b4d6a'} contentStyle={box}>{icon}</PixelFrame>}
   </Pressable>;
 }
@@ -49,15 +49,9 @@ export function Tag({ children, fill = colors.coral }: { children: ReactNode; fi
   return <PixelFrame fill={fill} border={null} contentStyle={{ paddingHorizontal: 7, paddingVertical: 2 }}><Label style={{ fontSize: 11, lineHeight: 15, fontWeight: '800' }}>{children}</Label></PixelFrame>;
 }
 
-/** Section title with an optional muted hint line and trailing chevron, as on the banner. */
-export function SectionHeader({ title, hint, chevron = false, count }: { title: string; hint?: string; chevron?: boolean; count?: number }) {
-  return <View style={styles.row}>
-    <View style={{ flex: 1 }}>
-      <Label style={{ fontSize: 20, lineHeight: 26, fontWeight: '700' }}>{title}{count !== undefined && <Label muted style={{ fontSize: 16, fontWeight: '500' }}>  {count}</Label>}</Label>
-      {hint && <Label muted style={{ fontSize: 13 }}>{hint}</Label>}
-    </View>
-    {chevron && <Icon name="next" size={20} color={colors.muted} />}
-  </View>;
+/** Section title on Home, Settings and artist pages. */
+export function SectionHeader({ title }: { title: string }) {
+  return <Label style={{ fontSize: 20, lineHeight: 26, fontWeight: '700' }}>{title}</Label>;
 }
 
 export const styles = StyleSheet.create({
