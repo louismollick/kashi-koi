@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Builds an unsigned IPA for SideStore, plus the SideStore source entry describing it.
-# Called by .github/workflows/sidestore.yml. Writes build/sidestore/<asset>.ipa and build/sidestore/app.json.
+# Called by .github/workflows/sidestore.yml. Writes apps/mobile/build/sidestore/<asset>.ipa and apps/mobile/build/sidestore/app.json.
 #
 # Env: CHANNEL (main|pr), RELEASE_TAG, COMMIT_SHA, GITHUB_REPOSITORY, GITHUB_RUN_NUMBER,
 #      and for PRs: PR_NUMBER, PR_TITLE, PR_URL.
 set -euo pipefail
 : "${CHANNEL:?}" "${RELEASE_TAG:?}" "${COMMIT_SHA:?}" "${GITHUB_REPOSITORY:?}" "${GITHUB_RUN_NUMBER:?}"
+
+# Resolve the app from the script path, independent of the caller's working directory.
+cd "$(dirname "$0")/../apps/mobile"
 
 BASE_BUNDLE_ID=$(jq -r .expo.ios.bundleIdentifier app.json)
 BASE_NAME=$(jq -r .expo.name app.json)
@@ -55,7 +58,7 @@ plutil -convert json -o - "$APP/Info.plist" | jq \
   --arg version "$VERSION" --arg build "$BUILD_NUMBER" --arg sha "${COMMIT_SHA:0:7}" \
   --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --argjson size "$(stat -f %z "$OUT/$ASSET")" \
   --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/$ASSET" \
-  --arg icon "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/assets/sidestore-icon.png" \
+  --arg icon "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/apps/mobile/assets/sidestore-icon.png" \
   '{
     name: $name, bundleIdentifier: $bundle, developerName: "louismollick",
     subtitle: $subtitle, localizedDescription: $description, iconURL: $icon, tintColor: "#000000",

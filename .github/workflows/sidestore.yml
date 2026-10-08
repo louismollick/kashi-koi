@@ -58,7 +58,8 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: scripts/build-sidestore-ipa.sh
+        working-directory: apps/mobile
+        run: ../../scripts/build-sidestore-ipa.sh
       - name: Upload to release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -66,8 +67,8 @@ jobs:
           gh release view "$RELEASE_TAG" >/dev/null 2>&1 ||
             gh release create "$RELEASE_TAG" --prerelease --title "$RELEASE_TAG" --notes 'Unsigned SideStore build.'
           # IPA before app.json, so the entry never points at a missing file.
-          gh release upload "$RELEASE_TAG" build/sidestore/*.ipa --clobber
-          gh release upload "$RELEASE_TAG" build/sidestore/app.json --clobber
+          gh release upload "$RELEASE_TAG" apps/mobile/build/sidestore/*.ipa --clobber
+          gh release upload "$RELEASE_TAG" apps/mobile/build/sidestore/app.json --clobber
           # Keep the previous IPA too, for anyone still holding the old source.json.
           for OLD in $(gh release view "$RELEASE_TAG" --json assets --jq '
             .assets | map(select(.name | endswith(".ipa"))) | sort_by(.createdAt) | reverse | .[2:][].name'); do
@@ -117,7 +118,7 @@ jobs:
             name: "Kashi-Koi!",
             identifier: "com.kashikoi.sidestore",
             subtitle: "main and PR builds",
-            iconURL: "https://raw.githubusercontent.com/\($repo)/main/assets/sidestore-icon.png",
+            iconURL: "https://raw.githubusercontent.com/\($repo)/main/apps/mobile/assets/sidestore-icon.png",
             website: "https://github.com/\($repo)",
             tintColor: "#000000",
             apps: .,

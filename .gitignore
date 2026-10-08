@@ -1,7 +1,9 @@
 node_modules/
 .expo/
 /ios/
+/apps/mobile/ios/
 /android/
+/apps/mobile/android/
 dist/
 build/
 .DS_Store

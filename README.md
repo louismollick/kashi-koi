@@ -4,22 +4,24 @@ An iOS music player for learning Japanese song lines from your Navidrome library
 
 ## Run
 
-Requires iOS 26 or later, Node, Xcode with an iOS 26+ SDK and Simulator runtime, CocoaPods and Navidrome 0.56+ with the OpenSubsonic `songLyrics` extension. Use HTTPS with a system-trusted certificate. An explicit `http://localhost:4533` URL works for local simulator development.
+Requires iOS 26 or later, Node 24, Xcode with an iOS 26+ SDK and Simulator runtime, CocoaPods and Navidrome 0.56+ with the OpenSubsonic `songLyrics` extension. Use HTTPS with a system-trusted certificate. An explicit `http://localhost:4533` URL works for local simulator development.
 
 ```sh
 npm ci
 npm run ios
 ```
 
-After the first native build, `npm start` starts Metro for the installed app. If port 8081 is occupied, use `npm run ios -- --port 8083`. Native dependency or plugin changes require `npx expo prebuild --platform ios` followed by another native build.
+After the first native build, `npm start` starts Metro for the installed app. If port 8081 is occupied, use `npm run ios -- --port 8083`. Native dependency or plugin changes require `cd apps/mobile && npx expo prebuild --platform ios` followed by another native build.
 
 ```sh
 npm run typecheck
 npm test
-python3 scripts/process-sprites.py
+npm run sprites
 ```
 
-Sprite processing requires Pillow. Generated strips and metadata are included in `assets/sprites/`.
+Sprite processing requires Pillow. Generated strips and metadata are included in `apps/mobile/assets/sprites/`.
+
+The Expo app, local native module and app tests live in `apps/mobile/`. Run workspace checks from the repository root. SideStore builds use `scripts/build-sidestore-ipa.sh`; `assets/sidestore-icon.png` remains as a compatibility copy for installed sources.
 
 ## Install builds
 
