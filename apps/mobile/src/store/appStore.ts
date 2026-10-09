@@ -185,6 +185,9 @@ type AppState = {
   previousSong: () => void;
   skipBack: () => void;
   showTranslations: boolean;
+  /** Per-song translation display in listen mode. Quiz and review always use analyzed sentences when available. */
+  lineByLineSongIds: string[];
+  setListenAnalysisEnabled: (songId: string, enabled: boolean) => void;
   translationPrompted: boolean;
   toggleTranslations: () => void;
   ensureChoices: () => void;
@@ -258,6 +261,15 @@ export const appStore = create<AppState>()(
       },
       analyzeSong,
       showTranslations: false,
+      lineByLineSongIds: [],
+      setListenAnalysisEnabled: (songId, enabled) => {
+        set((state) => ({
+          lineByLineSongIds: enabled
+            ? state.lineByLineSongIds.filter((id) => id !== songId)
+            : [...new Set([...state.lineByLineSongIds, songId])],
+        }));
+        if (!enabled) prioritizeTranslations([songId]);
+      },
       translationPrompted: false,
       hideSongsWithoutSyncedLyrics: true,
       hideSongsWithoutJapanese: true,
@@ -753,6 +765,7 @@ export const appStore = create<AppState>()(
         ranks: state.ranks,
         quizToggle: state.quizToggle,
         showTranslations: state.showTranslations,
+        lineByLineSongIds: state.lineByLineSongIds,
         translationPrompted: state.translationPrompted,
         hideSongsWithoutSyncedLyrics: state.hideSongsWithoutSyncedLyrics,
         hideSongsWithoutJapanese: state.hideSongsWithoutJapanese,

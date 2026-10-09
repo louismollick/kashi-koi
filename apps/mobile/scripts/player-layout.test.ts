@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createRequire, registerHooks } from 'node:module';
 import * as React from 'react';
+import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { appStore, resetAppState } from '../src/store/appStore';
 import { libraryStore } from '../src/store/libraryStore';
 import { albums, artists, songs, songLyrics } from './fixtures';
@@ -24,7 +25,7 @@ async function loadScreen(screen: 'player' | 'song-info', presses = new Map<stri
   const host = `const React = globalThis[Symbol.for('kashi-koi.test.react')];
     const host = name => props => {
       if (name === 'native-button' && props.onPress) globalThis[Symbol.for('kashi-koi.test.presses')].set(props.accessibilityLabel, props.onPress);
-      return React.createElement(name, { 'data-label': props.accessibilityLabel }, props.children);
+      return React.createElement(name, { 'data-label': props.accessibilityLabel, 'data-role': props.accessibilityRole, 'data-checked': props.accessibilityState?.checked === undefined ? undefined : String(props.accessibilityState.checked) }, props.children);
     };`;
   const mocks: Record<string, string> = {
     'react-native': `${host}
@@ -143,4 +144,79 @@ test('Song info Retry preserves the failed request force flag', async (t) => {
   assert.ok(presses.has('Retry analysis'));
   presses.get('Retry analysis')!();
   assert.deepEqual(calls, [{ songId: 'dawn', force: true }]);
+});
+
+test('Song info only offers source choices for analyzed songs and switches the player translations', async (t) => {
+  await resetAppState();
+  libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics });
+  appStore.setState({ songId: 'dawn', showTranslations: true, loading: false });
+  const appInitial = { ...appStore.getInitialState() },
+    libraryInitial = { ...libraryStore.getInitialState() };
+  const snapshot = () => {
+    Object.assign(appStore.getInitialState(), appStore.getState());
+    Object.assign(libraryStore.getInitialState(), libraryStore.getState());
+  };
+  t.after(async () => {
+    Object.assign(appStore.getInitialState(), appInitial);
+    Object.assign(libraryStore.getInitialState(), libraryInitial);
+    await resetAppState();
+  });
+  const presses = new Map<string, () => void>();
+  const { Screen: SongInfo, cleanup } = await loadScreen('song-info', presses);
+  t.after(cleanup);
+  snapshot();
+  const withoutAnalysis = renderToStaticMarkup(React.createElement(SongInfo));
+  assert.ok(!withoutAnalysis.includes('data-role="radio"'));
+  assert.ok(!presses.has('iOS (line by line)'));
+
+  const lyrics = songLyrics.dawn!;
+  const analysis: SongAnalysis = {
+    schemaVersion: 1,
+    fingerprint: lyrics.fingerprint,
+    model: 'test',
+    createdAt: '2026-10-08T00:00:00Z',
+    title: 'Dawn bus',
+    summary: 'A bus ride at dawn.',
+    speaker: 'A passenger',
+    addressee: 'A remembered friend',
+    lines: lyrics.timeline.map((_, index) => `Analyzed line ${index}`),
+    sentences: lyrics.timeline.map((_, index) => ({
+      start: index,
+      end: index,
+      translation: `Analyzed sentence ${index}`,
+    })),
+    notes: [],
+  };
+  libraryStore.getState().setAnalysis(analysis);
+  snapshot();
+  const analyzedInfo = renderToStaticMarkup(React.createElement(SongInfo));
+  assert.ok(analyzedInfo.includes('data-label="Song analysis" data-role="radio" data-checked="true"'));
+  assert.ok(presses.has('iOS (line by line)'));
+  const { Screen: Player, cleanup: cleanupPlayer } = await loadScreen('player', presses);
+  t.after(cleanupPlayer);
+  const analyzedPlayer = renderToStaticMarkup(React.createElement(Player));
+  assert.ok(analyzedPlayer.includes('Analyzed sentence 0'));
+  assert.ok(!analyzedPlayer.includes(lyrics.lines[0]!.translation!));
+
+  const before = appStore.getState();
+  presses.get('iOS (line by line)')!();
+  assert.equal(appStore.getState().run, before.run);
+  assert.equal(appStore.getState().reviewList, before.reviewList);
+  assert.equal(libraryStore.getState().lyrics.dawn!.analysis?.title, analysis.title);
+  snapshot();
+  const iosInfo = renderToStaticMarkup(React.createElement(SongInfo));
+  assert.ok(iosInfo.includes('data-label="iOS (line by line)" data-role="radio" data-checked="true"'));
+  assert.ok(presses.has('Song analysis'));
+  const iosPlayer = renderToStaticMarkup(React.createElement(Player));
+  assert.ok(iosPlayer.includes(lyrics.lines[0]!.translation!));
+  assert.ok(!iosPlayer.includes('Analyzed sentence 0'));
+
+  appStore.getState().setQuizToggle(true);
+  snapshot();
+  assert.ok(renderToStaticMarkup(React.createElement(Player)).includes('Analyzed sentence 0'));
+  appStore.getState().setQuizToggle(false);
+
+  presses.get('Song analysis')!();
+  snapshot();
+  assert.ok(renderToStaticMarkup(React.createElement(Player)).includes('Analyzed sentence 0'));
 });

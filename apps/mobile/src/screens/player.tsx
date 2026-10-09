@@ -1,4 +1,5 @@
 import { translationHint } from '@/japanese/translate';
+import { isJapanese } from '@/japanese/text';
 import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -6,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import {
   currentSentence,
+  getLineText,
   hasTranslations,
   libraryStore,
   sentenceOccurrenceAt,
@@ -29,6 +31,7 @@ export default function PlayerScreen() {
   libraryStore((state) => state.translationSongIds.has(songId ?? ''));
   libraryStore((state) => state.translationStatus);
   const showTranslations = appStore((state) => state.showTranslations);
+  const useAnalysis = appStore((state) => !state.lineByLineSongIds.includes(songId ?? ''));
   const quizToggle = appStore((state) => state.quizToggle);
   const answerWait = appStore((state) => state.answerWait);
   const run = appStore((state) => state.run);
@@ -38,6 +41,9 @@ export default function PlayerScreen() {
   const lyrics = libraryStore((state) => state.lyrics[songId ?? '']);
   const timeline = lyrics?.timeline ?? [];
   const lines = timeline.map((occurrence) => lyrics!.lines.find((line) => line.id === occurrence.lineId)!);
+  const translationsReady =
+    hasTranslations(songId) &&
+    (quizToggle || useAnalysis || lines.every((line) => !isJapanese(getLineText(line)) || !!line.translation));
   const loading = appStore((state) => state.loading);
   const playbackError = appStore((state) => state.playbackError);
   const request = appStore((state) => state.analysisRequests[songId ?? '']);
@@ -129,7 +135,7 @@ export default function PlayerScreen() {
         </Pressable>
       ) : (
         lines.length > 0 &&
-        !hasTranslations(songId) && (
+        !translationsReady && (
           <Label muted style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
             {translationHint(song.id)}
           </Label>
@@ -162,19 +168,21 @@ export default function PlayerScreen() {
           <View style={{ flex: 1 }}>
             <CenteredList
               index={lineIndex}
-              gapBefore={(index) => (sentenceAt[index] && sentenceAt[index].start < index ? 4 : 18)}
-              header={showTranslations && info ? <SongIntro info={info} /> : undefined}
+              gapBefore={(index) => (useAnalysis && sentenceAt[index] && sentenceAt[index].start < index ? 4 : 18)}
+              header={showTranslations && useAnalysis && info ? <SongIntro info={info} /> : undefined}
             >
               {lines.map((line, index) => {
                 const sentence = sentenceAt[index];
-                // Analysed sentences carry one translation after their last line; other lines keep their own.
+                // iOS translations stay on each line; analyzed translations follow the whole sentence.
                 const translation = !showTranslations
                   ? undefined
-                  : sentence
-                    ? sentence.end === index
-                      ? lyrics?.sentences.find((item) => item.id === sentence.sentenceId)?.translation
-                      : undefined
-                    : (timeline[index]?.translation ?? line.translation);
+                  : !useAnalysis
+                    ? line.translation
+                    : sentence
+                      ? sentence.end === index
+                        ? lyrics?.sentences.find((item) => item.id === sentence.sentenceId)?.translation
+                        : undefined
+                      : (timeline[index]?.translation ?? line.translation);
                 return (
                   <Pressable
                     key={`${index}:${line.id}`}
@@ -184,10 +192,10 @@ export default function PlayerScreen() {
                   >
                     <LyricRow
                       line={line}
-                      current={sentence && occurrence ? sentence === occurrence : index === lineIndex}
+                      current={useAnalysis && sentence && occurrence ? sentence === occurrence : index === lineIndex}
                       furigana={showTranslations}
                       translation={translation}
-                      note={showTranslations ? notes[index] : undefined}
+                      note={showTranslations && useAnalysis ? notes[index] : undefined}
                       marked={!!sentence && reviewed.has(sentence.sentenceId)}
                     />
                   </Pressable>
