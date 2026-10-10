@@ -98,7 +98,7 @@ function ChunkSentence({
 }
 
 /**
- * One chunk: its reading once in the heading, then its build-up on a rail, then its note. A chunk with one step
+ * One chunk: its reading and its role in the sentence once in the heading, then its build-up on a rail, then its note. A chunk with one step
  * (a plain word) keeps its meaning beside the heading instead of a one-row rail.
  */
 function Ladder({ chunk, on }: { chunk: Chunk; on: boolean }) {
@@ -106,12 +106,17 @@ function Ladder({ chunk, on }: { chunk: Chunk; on: boolean }) {
   return (
     <View style={{ gap: 6 }}>
       <View style={[styles.row, { justifyContent: 'space-between', alignItems: 'flex-end' }]}>
-        <FuriganaLine
-          compact
-          size={19}
-          color={on ? tapped : undefined}
-          line={{ id: chunk.text, segments: alignReading(chunk.text, chunk.reading || undefined) }}
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', columnGap: 10, flexShrink: 1 }}>
+          <FuriganaLine
+            compact
+            size={19}
+            color={on ? tapped : undefined}
+            line={{ id: chunk.text, segments: alignReading(chunk.text, chunk.reading || undefined) }}
+          />
+          <Label muted style={{ fontSize: 13, lineHeight: 18, paddingBottom: 3 }}>
+            {chunk.role}
+          </Label>
+        </View>
         {single && (
           <Label style={{ flexShrink: 1, textAlign: 'right', fontSize: 14, lineHeight: 19, paddingBottom: 2 }}>
             {chunk.steps[0]?.english}

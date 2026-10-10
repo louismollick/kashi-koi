@@ -30,6 +30,7 @@ const response = () => {
       {
         text: target.text,
         reading: 'かみのふねをかわにうかべた',
+        role: 'topic',
         english: [],
         steps: [{ japanese: '紙', reading: 'かみ', english: 'paper' }],
         note: '',
@@ -305,7 +306,7 @@ test('replacement invalidates pending responses and reloads the same target once
 });
 
 test('English spans assign repeated words to chunks in order and keep pieces apart', () => {
-  const chunk = (english: string[]) => ({ text: 'あ', reading: '', english, steps: [], note: '' });
+  const chunk = (english: string[]) => ({ text: 'あ', reading: '', role: 'topic', english, steps: [], note: '' });
   assert.deepEqual(englishSpans('I love you and you love me', [chunk(['you']), chunk(['you'])]), [
     { start: 7, end: 10, chunk: 0 },
     { start: 15, end: 18, chunk: 1 },

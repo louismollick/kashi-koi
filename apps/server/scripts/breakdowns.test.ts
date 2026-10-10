@@ -12,6 +12,7 @@ const outputFor = (input: BreakdownInput) => ({
     {
       text: input.lines.slice(input.start, input.end + 1).join(''),
       reading: 'あける',
+      role: 'topic',
       english: [],
       steps: [{ japanese: '開ける', reading: 'あける', english: 'to open' }],
       note: '',

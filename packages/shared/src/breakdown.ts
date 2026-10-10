@@ -5,7 +5,14 @@ const step = z.strictObject({ japanese: text, reading: z.string(), english: text
 
 export const breakdownDraftSchema = z.strictObject({
   chunks: z.array(
-    z.strictObject({ text, reading: z.string(), english: z.array(text), steps: z.array(step), note: z.string() }),
+    z.strictObject({
+      text,
+      reading: z.string(),
+      role: text,
+      english: z.array(text),
+      steps: z.array(step),
+      note: z.string(),
+    }),
   ),
 });
 export const breakdownSchema = breakdownDraftSchema.extend({
@@ -34,10 +41,11 @@ export function validateBreakdown(draft: unknown, sentenceText: string, translat
   if (normalize(chunks.map((chunk) => chunk.text).join('')) !== normalize(sentenceText))
     errors.push('Chunk texts must cover the sentence in order');
   chunks.forEach((chunk, index) => {
+    if (chunk.role.length > 24) errors.push(`Chunk ${index} role must be at most 24 characters`);
     if (chunk.steps.length < 1 || chunk.steps.length > 4) errors.push(`Chunk ${index} must have 1 to 4 steps`);
     if (/[\p{Script=Han}々]/u.test(chunk.text) && !chunk.reading)
       errors.push(`Chunk ${index} needs a reading for kanji`);
-    if (!/^[\p{Script=Hiragana}]*$/u.test(chunk.reading))
+    if (!/^[\p{Script=Hiragana}ー]*$/u.test(chunk.reading))
       errors.push(`Chunk ${index} reading must be hiragana or empty`);
     for (const piece of chunk.english)
       if (!translation.includes(piece))
@@ -45,7 +53,7 @@ export function validateBreakdown(draft: unknown, sentenceText: string, translat
     chunk.steps.forEach((step, stepIndex) => {
       if (/[\p{Script=Han}々]/u.test(step.japanese) && !step.reading)
         errors.push(`Chunk ${index} step ${stepIndex} needs a reading for kanji`);
-      if (!/^[\p{Script=Hiragana}]*$/u.test(step.reading))
+      if (!/^[\p{Script=Hiragana}ー]*$/u.test(step.reading))
         errors.push(`Chunk ${index} step ${stepIndex} reading must be hiragana or empty`);
     });
   });

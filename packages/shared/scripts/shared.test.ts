@@ -106,6 +106,7 @@ const breakdown = {
     {
       text: '窓を',
       reading: 'まどを',
+      role: 'topic',
       english: ['the window'],
       steps: [{ japanese: '窓', reading: 'まど', english: 'window' }],
       note: 'The object.',
@@ -113,6 +114,7 @@ const breakdown = {
     {
       text: '開けた',
       reading: 'あけた',
+      role: 'topic',
       english: ['opened'],
       steps: [
         { japanese: '開ける', reading: 'あける', english: 'to open' },
@@ -137,7 +139,7 @@ test('breakdown schema is strict and coverage compares only Japanese characters'
   assert.equal(breakdownDraftSchema.safeParse({ ...breakdown, extra: true }).success, false);
   assert.notDeepEqual(
     validateBreakdown(
-      { chunks: [{ ...breakdown.chunks[0], text: '窓', reading: 'まど', english: [] }] },
+      { chunks: [{ ...breakdown.chunks[0], text: '窓', reading: 'まど', role: 'topic', english: [] }] },
       '窓ー々',
       translation,
     ),
@@ -155,9 +157,11 @@ test('breakdown validation checks coverage, step counts, chunk readings and Engl
     [{ ...breakdown.chunks[0], english: ['a window'] }, breakdown.chunks[1]],
     [{ ...breakdown.chunks[0], english: ['Opened'] }, breakdown.chunks[1]],
     [{ ...breakdown.chunks[0], reading: '' }, breakdown.chunks[1]],
+    [{ ...breakdown.chunks[0], role: 'modifies a very long relative clause' }, breakdown.chunks[1]],
+    [{ ...breakdown.chunks[0], role: ' ' }, breakdown.chunks[1]],
   ])
     assert.notDeepEqual(validateBreakdown({ chunks }, '窓を開けた', translation), []);
-  for (const reading of ['mado', 'マド', '窓', 'ま ど', 'まどー']) {
+  for (const reading of ['mado', 'マド', '窓', 'ま ど']) {
     assert.notDeepEqual(
       validateBreakdown(
         {
@@ -165,6 +169,7 @@ test('breakdown validation checks coverage, step counts, chunk readings and Engl
             {
               text: '窓',
               reading,
+              role: 'topic',
               english: [],
               steps: [{ japanese: '窓', english: 'window', reading: 'まど' }],
               note: '',
@@ -183,6 +188,7 @@ test('breakdown validation checks coverage, step counts, chunk readings and Engl
             {
               text: '窓',
               reading: 'まど',
+              role: 'topic',
               english: [],
               steps: [{ japanese: '窓', english: 'window', reading }],
               note: '',
@@ -199,7 +205,14 @@ test('breakdown validation checks coverage, step counts, chunk readings and Engl
     validateBreakdown(
       {
         chunks: [
-          { text: 'あ', reading: '', english: [], steps: [{ japanese: 'あ', reading: '', english: 'ah' }], note: '' },
+          {
+            text: 'あ',
+            reading: '',
+            role: 'topic',
+            english: [],
+            steps: [{ japanese: 'あ', reading: '', english: 'ah' }],
+            note: '',
+          },
         ],
       },
       'あ',
@@ -400,7 +413,14 @@ test('breakdown chunks and steps with kanji or the repetition mark require readi
       validateBreakdown(
         {
           chunks: [
-            { text: japanese, reading: '', english: [], steps: [{ japanese, reading: '', english: 'test' }], note: '' },
+            {
+              text: japanese,
+              reading: '',
+              role: 'topic',
+              english: [],
+              steps: [{ japanese, reading: '', english: 'test' }],
+              note: '',
+            },
           ],
         },
         japanese,
@@ -413,7 +433,14 @@ test('breakdown chunks and steps with kanji or the repetition mark require readi
 test('Japanese coverage keeps dakuten while accepting NFC-equivalent source and chunk text', () => {
   const chunk = (text: string) => ({
     chunks: [
-      { text, reading: '', english: [], steps: [{ japanese: 'が', reading: '', english: 'subject' }], note: '' },
+      {
+        text,
+        reading: '',
+        role: 'topic',
+        english: [],
+        steps: [{ japanese: 'が', reading: '', english: 'subject' }],
+        note: '',
+      },
     ],
   });
   assert.deepEqual(validateBreakdown(chunk('が'), 'か\u3099', 'subject'), []);
@@ -458,7 +485,16 @@ test('English lyric checks match whole phrases rather than substrings', () => {
 
 test('Japanese coverage retains half-width dakuten and handakuten through NFKC', () => {
   const chunk = (text: string) => ({
-    chunks: [{ text, reading: '', english: [], steps: [{ japanese: text, reading: '', english: 'test' }], note: '' }],
+    chunks: [
+      {
+        text,
+        reading: '',
+        role: 'topic',
+        english: [],
+        steps: [{ japanese: text, reading: '', english: 'test' }],
+        note: '',
+      },
+    ],
   });
   for (const [source, fullWidth, unvoiced] of [
     ['ｶﾞ', 'ガ', 'ｶ'],
@@ -470,4 +506,17 @@ test('Japanese coverage retains half-width dakuten and handakuten through NFKC',
     assert.deepEqual(validateBreakdown(chunk(source), fullWidth, 'test'), []);
     assert.match(validateBreakdown(chunk(unvoiced), source, 'test').join('\n'), /cover the sentence/);
   }
+});
+
+test('readings may spell a long vowel with ー', () => {
+  const text = '冷めたコーヒー';
+  const chunk = {
+    text,
+    reading: 'さめたこーひー',
+    role: 'object',
+    english: [],
+    steps: [{ japanese: text, reading: 'さめたこーひー', english: 'cold coffee' }],
+    note: '',
+  };
+  assert.deepEqual(validateBreakdown({ chunks: [chunk] }, text, 'cold coffee'), []);
 });
