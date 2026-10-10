@@ -8,10 +8,11 @@ test('migrations apply on open and analyses survive reopening', (t) => {
   const { store, dataDir } = testStore(t);
   store.enqueue(input);
   store.claimNext();
-  store.complete(analysis);
+  store.complete(analysis, input.lines);
   const reopened = openDatabase(dataDir);
   try {
     assert.deepEqual(reopened.getAnalysis(input.fingerprint), analysis);
+    assert.deepEqual(reopened.getAnalysisSource(input.fingerprint)?.lines, input.lines);
     assert.deepEqual(reopened.getJob(input.fingerprint)?.lines, []);
     assert.equal(reopened.getJob(input.fingerprint)?.status, 'done');
   } finally {

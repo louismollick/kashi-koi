@@ -9,22 +9,20 @@ import type { Line } from '@/types/domain';
 
 /**
  * Plain lyric for listen mode and the edit drawer: white when current, gray otherwise. `marked` adds the
- * in-review dot in the left gutter. `translation` and `note` render below the line when given, so callers
- * decide whether a translation belongs to this line or to the sentence it ends.
+ * in-review dot in the left gutter. `translation` renders below the line when given, so callers decide whether
+ * a translation belongs to this line or to the sentence it ends.
  */
 export function LyricRow({
   line,
   current,
   furigana,
   translation,
-  note,
   marked = false,
 }: {
   line: Line;
   current: boolean;
   furigana: boolean;
   translation?: string;
-  note?: string;
   marked?: boolean;
 }) {
   const color = current ? colors.text : colors.muted;
@@ -48,7 +46,6 @@ export function LyricRow({
         <Label style={{ fontSize: 20, lineHeight: 26, color }}>{getLineText(line)}</Label>
       )}
       {translation && <Label style={{ marginTop: 4, color }}>{translation}</Label>}
-      {note && <Label style={{ marginTop: 4, fontSize: 13, lineHeight: 18, color: colors.lavender }}>{note}</Label>}
     </View>
   );
 }

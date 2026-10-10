@@ -2,7 +2,10 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { fingerprint } from '@kashi-koi/shared';
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { type BreakdownAnalyzer, CodexAnalyzer, UsageLimitError } from './analyzer/index.ts';
+import { BreakdownBusyError, createBreakdownGenerator } from './breakdowns.ts';
 import type { Store } from './db/index.ts';
+import { errorMessage } from './worker.ts';
 
 export const MAX_BODY_BYTES = 512 * 1024;
 const japanese = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
@@ -18,10 +21,15 @@ const requestSchema = z.strictObject({
 });
 const digest = (value: string) => createHash('sha256').update(value).digest();
 
-/** Public lookups; only the owner can enqueue subscription-backed analyses. */
-export function createApi(store: Store, adminToken: string) {
+/** Public cached reads; generation requires the owner's bearer token. */
+export function createApi(store: Store, adminToken: string, analyzer: BreakdownAnalyzer = new CodexAnalyzer()) {
   if (!adminToken.trim()) throw new Error('KASHI_ADMIN_TOKEN is required');
   const expectedToken = digest(adminToken);
+  const authorized = (authorization = '') => {
+    const match = /^Bearer (.+)$/.exec(authorization);
+    return timingSafeEqual(digest(match?.[1] ?? ''), expectedToken) && !!match;
+  };
+  const generateBreakdown = createBreakdownGenerator(store, analyzer);
   const app = new Hono();
   app.onError(
     () =>
@@ -32,6 +40,38 @@ export function createApi(store: Store, adminToken: string) {
   );
   app.notFound((c) => c.json({ error: 'Not found' }, 404));
   app.get('/health', (c) => c.json({ status: 'ok' }));
+  app.get('/v1/analyses/:fingerprint/breakdowns/:start', (c) => {
+    c.header('Cache-Control', 'no-store');
+    const raw = c.req.param('start');
+    const start = Number(raw);
+    const breakdown =
+      /^\d+$/.test(raw) && Number.isSafeInteger(start)
+        ? store.getBreakdown(c.req.param('fingerprint'), start)
+        : undefined;
+    return breakdown ? c.json(breakdown) : c.json({ error: 'Not found' }, 404);
+  });
+  app.post('/v1/analyses/:fingerprint/breakdowns/:start', async (c) => {
+    c.header('Cache-Control', 'no-store');
+    if (!authorized(c.req.header('Authorization'))) return c.json({ error: 'Unauthorized' }, 401);
+    const fingerprint = c.req.param('fingerprint');
+    const raw = c.req.param('start');
+    const start = Number(raw);
+    const analysis = store.getAnalysis(fingerprint);
+    if (!/^\d+$/.test(raw) || !Number.isSafeInteger(start) || !analysis?.sentences.some((s) => s.start === start))
+      return c.json({ error: 'Not found' }, 404);
+    const cached = store.getBreakdown(fingerprint, start);
+    if (cached) return c.json(cached);
+    try {
+      const breakdown = await generateBreakdown(fingerprint, start);
+      return breakdown ? c.json(breakdown) : c.json({ error: 'Not found' }, 404);
+    } catch (error) {
+      if (error instanceof BreakdownBusyError) return c.json({ error: 'Server busy' }, 503);
+      console.error(errorMessage(error, store.getAnalysisSource(fingerprint)?.lines ?? []));
+      return error instanceof UsageLimitError
+        ? c.json({ error: 'Usage limit reached' }, 429)
+        : c.json({ error: 'Breakdown generation failed' }, 502);
+    }
+  });
   app.get('/v1/analyses/:fingerprint', (c) => {
     const key = c.req.param('fingerprint');
     const job = store.getJob(key);
@@ -44,10 +84,7 @@ export function createApi(store: Store, adminToken: string) {
     return c.json({ error: 'Not found' }, 404);
   });
   app.post('/v1/analyses', async (c) => {
-    const authorization = c.req.header('Authorization') ?? '';
-    const match = /^Bearer (.+)$/.exec(authorization);
-    const authorized = timingSafeEqual(digest(match?.[1] ?? ''), expectedToken);
-    if (!match || !authorized) return c.json({ error: 'Unauthorized' }, 401);
+    if (!authorized(c.req.header('Authorization'))) return c.json({ error: 'Unauthorized' }, 401);
     if (!/^application\/json(?:\s*;|$)/i.test(c.req.header('Content-Type') ?? ''))
       return c.json({ error: 'Expected application/json' }, 415);
 

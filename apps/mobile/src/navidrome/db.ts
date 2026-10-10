@@ -33,8 +33,8 @@ function rawLyrics(lyrics: LyricsInput) {
 function validAnalysis(value: unknown, fp: string): SongAnalysis | undefined {
   const result = songAnalysisSchema.safeParse(value);
   if (!result.success || result.data.fingerprint !== fp) return undefined;
-  const { title, summary, speaker, addressee, lines, sentences, notes } = result.data;
-  return validateAnalysis({ title, summary, speaker, addressee, lines, sentences, notes }, lines.length).length
+  const { title, summary, speaker, addressee, lines, sentences } = result.data;
+  return validateAnalysis({ title, summary, speaker, addressee, lines, sentences }, lines.length).length
     ? undefined
     : result.data;
 }

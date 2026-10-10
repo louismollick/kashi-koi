@@ -1,8 +1,9 @@
+import { decoyChoices } from '@/lyrics/choices';
 import { withSentences, type LyricsInput } from '@/lyrics/sentences';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { isJapanese } from '@/japanese/text';
 import { create } from 'zustand';
-import type { Album, Artist, Line, LyricsStatus, Song, SongLyrics, ReviewList } from '@/types/domain';
+import type { Album, Artist, Choice, Line, LyricsStatus, Song, SongLyrics, ReviewList } from '@/types/domain';
 
 export type Translations = Record<string, { translation: string; segments: Line['segments'] }>;
 export type Library = {
@@ -145,10 +146,11 @@ export const occurrenceLine = (id: string | null, index: number) => {
   return lyrics.lines.find((line) => line.id === lyrics.timeline[index]?.lineId);
 };
 
-/** Pick distinct same-song translations, then shuffle once when a sentence becomes current. */
-export function getAnswers(song: Song, index: number, random = Math.random) {
+/** Shuffle analyzed decoys or distinct same-song translations once when a sentence becomes current. */
+export function getAnswers(song: Song, index: number, random = Math.random): Choice[] {
   const line = currentSentence(song.id, index)?.sentence;
   if (!line?.translation) return [];
+  const decoys = line.decoys?.length ? decoyChoices(line.translation, line.decoys) : undefined;
   const others = [
     ...new Set(
       getLyrics(song.id)
@@ -156,14 +158,21 @@ export function getAnswers(song: Song, index: number, random = Math.random) {
         .filter((text): text is string => !!text && text !== line.translation),
     ),
   ];
-  const shuffle = (texts: string[]) => {
+  const shuffle = <T>(texts: T[]) => {
     for (let i = texts.length - 1; i > 0; i--) {
       const j = Math.floor(random() * (i + 1));
       [texts[i], texts[j]] = [texts[j]!, texts[i]!];
     }
     return texts;
   };
-  return shuffle([line.translation, ...shuffle(others).slice(0, 2)]);
+  return shuffle(
+    decoys ??
+      [line.translation, ...shuffle(others).slice(0, 2)].map((text) => ({
+        text,
+        parts: [{ text, marked: false }],
+        correct: text === line.translation,
+      })),
+  );
 }
 
 /** Reuse translations by Japanese text after loading or rescanning lyrics. */
@@ -250,7 +259,7 @@ export function sentenceForReview(item: ReviewList[number]) {
   return occurrence ? currentSentence(item.songId, occurrence.start) : undefined;
 }
 
-/** Metadata and notes use timeline occurrence indexes, not distinct line indexes. */
+/** Song metadata belongs to the accepted whole-song analysis. */
 export const songAnalysisInfo = (songId: string | null) => getLyrics(songId).analysis;
 export const isAnalyzed = (songId: string | null) => !!songAnalysisInfo(songId);
 export const dueSentences = dueLines;

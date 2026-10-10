@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import test, { type TestContext } from 'node:test';
 import { CodexAnalyzer, codexFailure, UsageLimitError } from '../src/analyzer/index.ts';
 import { buildPrompt } from '../src/analyzer/prompt.ts';
+import { buildBreakdownPrompt, type BreakdownInput } from '../src/analyzer/breakdown-prompt.ts';
+import { validateDraft } from '../src/analyzer/validate.ts';
 import { draft, lines } from './test-utils.ts';
 
 const input = { title: '朝の窓', artist: 'Test', lines };
@@ -96,7 +98,7 @@ fs.writeFileSync(args[args.indexOf('-o') + 1], JSON.stringify({ ...${JSON.string
   const output = await analyzer.analyze(input);
   assert.deepEqual(output, {
     ...draft,
-    schemaKeys: ['title', 'summary', 'speaker', 'addressee', 'lines', 'sentences', 'notes'],
+    schemaKeys: ['title', 'summary', 'speaker', 'addressee', 'lines', 'sentences'],
   });
 
   const { args, stdin, cwd, cwdEntries } = called();
@@ -143,6 +145,40 @@ process.exit(1);`,
   await assert.rejects(new CodexAnalyzer({ command }).analyze(input), UsageLimitError);
 });
 
+test('the same Codex runner uses the breakdown prompt, schema and separate low reasoning default', async (t) => {
+  const { command, called } = fakeCodex(
+    t,
+    `const schema = JSON.parse(fs.readFileSync(args[args.indexOf('--output-schema') + 1], 'utf8'));
+fs.writeFileSync(args[args.indexOf('-o') + 1], JSON.stringify({ schemaKeys: Object.keys(schema.properties) }));`,
+  );
+  const sentence = draft.sentences[0];
+  assert.ok(sentence);
+  const input: BreakdownInput = {
+    title: '朝の窓',
+    lines,
+    translations: draft.lines,
+    summary: draft.summary,
+    start: 0,
+    end: 1,
+    translation: sentence.translation,
+  };
+  const previous = process.env.KASHI_BREAKDOWN_REASONING;
+  try {
+    delete process.env.KASHI_BREAKDOWN_REASONING;
+    const analyzer = new CodexAnalyzer({ command, reasoning: 'medium' });
+    assert.deepEqual(await analyzer.breakdown(input), { schemaKeys: ['chunks'] });
+    assert.equal(called().stdin, buildBreakdownPrompt(input));
+    assert.ok(called().args.includes('model_reasoning_effort="low"'));
+    assert.ok(!existsSync(called().cwd));
+    process.env.KASHI_BREAKDOWN_REASONING = 'minimal';
+    await new CodexAnalyzer({ command }).breakdown(input);
+    assert.ok(called().args.includes('model_reasoning_effort="minimal"'));
+  } finally {
+    if (previous === undefined) delete process.env.KASHI_BREAKDOWN_REASONING;
+    else process.env.KASHI_BREAKDOWN_REASONING = previous;
+  }
+});
+
 test('CodexAnalyzer rejects a missing or non-JSON answer', async (t) => {
   const empty = fakeCodex(t, '');
   await assert.rejects(new CodexAnalyzer({ command: empty.command }).analyze(input), /Codex failed \(no answer\)/);
@@ -155,4 +191,30 @@ test('CodexAnalyzer rejects a missing or non-JSON answer', async (t) => {
 test('CodexAnalyzer kills codex at the timeout', async (t) => {
   const { command } = fakeCodex(t, 'setTimeout(() => {}, 10_000);');
   await assert.rejects(new CodexAnalyzer({ command, timeoutMs: 300 }).analyze(input), /Codex timed out after 0.3s/);
+});
+
+test('breakdown execution has a separate timeout from song analysis', async (t) => {
+  const { command } = fakeCodex(t, 'setTimeout(() => {}, 10_000);');
+  const analyzer = new CodexAnalyzer({ command, timeoutMs: 10_000, breakdownTimeoutMs: 300 });
+  const sentence = draft.sentences[0];
+  assert.ok(sentence);
+  await assert.rejects(
+    analyzer.breakdown({
+      title: input.title,
+      lines,
+      translations: draft.lines,
+      summary: draft.summary,
+      start: 0,
+      end: 1,
+      translation: sentence.translation,
+    }),
+    /Codex timed out after 0.3s/,
+  );
+});
+
+test('draft validation lets decoy reasons quote Japanese but rejects it elsewhere', () => {
+  const sentence = draft.sentences[0]!;
+  const quoted = sentence.decoys.map((decoy) => ({ ...decoy, reason: 'ない makes it negative.' }));
+  assert.deepEqual(validateDraft({ ...draft, sentences: [{ ...sentence, decoys: quoted }] }, lines.length), []);
+  assert.notDeepEqual(validateDraft({ ...draft, summary: '朝 is morning.' }, lines.length), []);
 });

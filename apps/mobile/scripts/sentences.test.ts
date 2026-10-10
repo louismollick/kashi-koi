@@ -1,3 +1,5 @@
+import { decoyText } from '@kashi-koi/shared/analysis';
+import { testDecoys } from './fixtures';
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
@@ -42,7 +44,7 @@ const rawLyrics = {
 };
 const song = { ...firstSong, id: rawLyrics.songId, duration: 15 };
 const analysis: SongAnalysis = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   fingerprint: fingerprint(timelineTexts(rawLyrics)),
   model: 'test',
   createdAt: '2026-10-01T00:00:00Z',
@@ -60,13 +62,32 @@ const analysis: SongAnalysis = {
     'Let us open the window to tomorrow',
   ],
   sentences: [
-    { start: 0, end: 1, translation: 'I tucked the white envelope away inside the desk' },
-    { start: 2, end: 2, translation: 'The station clock stood still' },
-    { start: 3, end: 3, translation: 'Interlude' },
-    { start: 4, end: 5, translation: 'I tucked the white envelope away inside the desk' },
-    { start: 6, end: 6, translation: 'Let us open the window to tomorrow' },
+    {
+      start: 0,
+      end: 1,
+      translation: 'I tucked the white envelope away inside the desk',
+      decoys: testDecoys('I tucked the white envelope away inside the desk'),
+    },
+    {
+      start: 2,
+      end: 2,
+      translation: 'The station clock stood still',
+      decoys: testDecoys('The station clock stood still'),
+    },
+    { start: 3, end: 3, translation: 'Interlude', decoys: testDecoys('Interlude') },
+    {
+      start: 4,
+      end: 5,
+      translation: 'I tucked the white envelope away inside the desk',
+      decoys: testDecoys('I tucked the white envelope away inside the desk'),
+    },
+    {
+      start: 6,
+      end: 6,
+      translation: 'Let us open the window to tomorrow',
+      decoys: testDecoys('Let us open the window to tomorrow'),
+    },
   ],
-  notes: [{ line: 5, text: 'The repeated action returns to the letter from the opening.' }],
 };
 const fallback = () => withSentences(rawLyrics);
 const analysed = () => withSentences(rawLyrics, analysis);
@@ -139,6 +160,7 @@ test('analysis deduplicates complete repeated sentences and keeps contextual occ
     id: chorusId,
     lineIds: [rawLyrics.lines[0]!.id, rawLyrics.lines[1]!.id],
     translation: chorusTranslation,
+    decoys: analysis.sentences[0]!.decoys,
   });
   assert.deepEqual(lyrics.sentenceTimeline, [
     { sentenceId: chorusId, start: 0, end: 1 },
@@ -156,7 +178,6 @@ test('analysis deduplicates complete repeated sentences and keeps contextual occ
     summary: analysis.summary,
     speaker: analysis.speaker,
     addressee: analysis.addressee,
-    notes: [{ occurrence: 5, text: analysis.notes[0]!.text }],
   });
   libraryStore.getState().setAnalysis(analysis);
   const current = currentSentence(song.id, 5)!;
@@ -176,12 +197,17 @@ test('mismatched and invalid analyses fall back and clear stale contextual trans
   for (const invalid of [
     { ...analysis, fingerprint: fingerprint(['別の歌']) },
     { ...analysis, lines: analysis.lines.slice(1) },
-    { ...analysis, sentences: [{ start: 0, end: 2, translation: 'incomplete' }] },
+    { ...analysis, sentences: [{ start: 0, end: 2, translation: 'incomplete', decoys: testDecoys('incomplete') }] },
   ]) {
     const lyrics = withSentences(analysed(), invalid);
     assert.deepEqual(lyrics, fallback());
     assert.ok(lyrics.timeline.every((occurrence) => !('translation' in occurrence)));
   }
+});
+
+test('cached v1 analyses are ignored even when their fingerprint and ranges still match', () => {
+  const old = { ...analysis, schemaVersion: 1 } as unknown as SongAnalysis;
+  assert.deepEqual(withSentences(rawLyrics, old), fallback());
 });
 
 test('old cached lyrics acquire a fingerprint and fallback sentences while preserving timing and furigana', () => {
@@ -223,8 +249,11 @@ test('choices and answers use sentence translations, score repeats once and sche
   appStore.setState({ reviewList: [mark()] });
   appStore.getState().jumpToLine(0);
   const choices = getAnswers(song, 1, () => 0.99);
-  assert.deepEqual(new Set(choices), new Set(analysed().sentences.map((sentence) => sentence.translation)));
-  assert.ok(!choices.includes(rawLyrics.lines[0]!.translation!));
+  assert.deepEqual(
+    new Set(choices.map((choice) => choice.text)),
+    new Set([chorusTranslation, ...testDecoys(chorusTranslation).map((decoy) => decoyText(chorusTranslation, decoy))]),
+  );
+  assert.ok(!choices.map((choice) => choice.text).includes(rawLyrics.lines[0]!.translation!));
   const firstChoices = appStore.getState().run.choices[chorusId];
   appStore.getState().answer(chorusTranslation);
   const scheduled = appStore.getState().reviewList[0];
@@ -392,7 +421,12 @@ test('reanalysis merges changed boundaries and drops marks when no Japanese sent
   const combined = withSentences(rawLyrics, {
     ...analysis,
     sentences: [
-      { start: 0, end: 2, translation: 'I put away the envelope while the station clock stood still' },
+      {
+        start: 0,
+        end: 2,
+        translation: 'I put away the envelope while the station clock stood still',
+        decoys: testDecoys('I put away the envelope while the station clock stood still'),
+      },
       ...analysis.sentences.slice(2),
     ],
   });
@@ -431,7 +465,12 @@ test('store analysis arrival and reanalysis remap schedules before a rescan reta
   libraryStore.getState().setAnalysis({
     ...analysis,
     sentences: [
-      { start: 0, end: 2, translation: 'The letter stayed in the desk while the clock stayed still' },
+      {
+        start: 0,
+        end: 2,
+        translation: 'The letter stayed in the desk while the clock stayed still',
+        decoys: testDecoys('The letter stayed in the desk while the clock stayed still'),
+      },
       ...analysis.sentences.slice(2),
     ],
   });

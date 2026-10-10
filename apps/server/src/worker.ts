@@ -1,5 +1,5 @@
 import { setTimeout } from 'node:timers/promises';
-import { songAnalysisDraftSchema, songAnalysisSchema } from '@kashi-koi/shared';
+import { dropInvalidDecoys, songAnalysisDraftSchema, songAnalysisSchema } from '@kashi-koi/shared';
 import { type Analyzer, UsageLimitError } from './analyzer/index.ts';
 import { validateDraft } from './analyzer/validate.ts';
 import type { Store } from './db/index.ts';
@@ -39,7 +39,8 @@ export class Worker {
           lines: job.lines,
           feedback,
         });
-        const errors = validateDraft(output, job.lines.length);
+        const draft = attempt === 0 ? output : dropInvalidDecoys(output);
+        const errors = validateDraft(draft, job.lines.length, attempt === 0);
         if (errors.length) {
           console.error('Analysis validation failed');
           if (attempt === 0) {
@@ -50,13 +51,13 @@ export class Worker {
           return true;
         }
         const analysis = songAnalysisSchema.parse({
-          ...songAnalysisDraftSchema.parse(output),
-          schemaVersion: 1,
+          ...songAnalysisDraftSchema.parse(draft),
+          schemaVersion: 2,
           fingerprint: job.fingerprint,
           model: this.analyzer.model,
           createdAt: new Date(this.now()).toISOString(),
         });
-        this.store.complete(analysis);
+        this.store.complete(analysis, job.lines);
         this.usageDelay = MIN_USAGE_DELAY;
         return true;
       }
@@ -92,7 +93,7 @@ export class Worker {
 }
 
 /** Keep bounded failure details while removing source lines and Japanese text. */
-function errorMessage(error: unknown, lines: string[]) {
+export function errorMessage(error: unknown, lines: string[]) {
   if (!(error instanceof Error)) return 'Unknown analyzer error';
   let message = error.message;
   for (const line of lines) message = message.split(line).join('…');

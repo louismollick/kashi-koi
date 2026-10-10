@@ -1,3 +1,4 @@
+import { canExplain } from '@/analysis/breakdowns';
 import { translationHint } from '@/japanese/translate';
 import { isJapanese } from '@/japanese/text';
 import { useEffect } from 'react';
@@ -61,7 +62,9 @@ export default function PlayerScreen() {
   const canAdd = !!sentenceId && !inReview;
   const reviewed = new Set(reviewList.filter((item) => item.songId === songId).map((item) => item.sentenceId));
   const sentenceAt = timeline.map((_, index) => sentences.find((item) => item.start <= index && item.end >= index));
-  const notes = Object.fromEntries((info?.notes ?? []).map((note) => [note.occurrence, note.text]));
+  // Breakdowns explain song analysis sentences, so they follow the listen-mode translation source.
+  const explainable = !!songId && canExplain(songId) && (quizToggle || useAnalysis);
+  const explain = (id: string) => songId && router.push({ pathname: '/breakdown', params: { songId, sentenceId: id } });
 
   useEffect(() => {
     if (!addedId || addedExpiresAt === null) return;
@@ -150,7 +153,6 @@ export default function PlayerScreen() {
           lines={current?.lines ?? (beforeLyrics || !lines[lineIndex] ? undefined : [lines[lineIndex]])}
           current={answerWait || !occurrence ? -1 : lineIndex - occurrence.start}
           previous={previous?.lines}
-          translation={current?.sentence.translation}
           intro={beforeLyrics ? info : undefined}
           until={answerWait?.until}
           combo={run.combo}
@@ -158,6 +160,8 @@ export default function PlayerScreen() {
           choices={sentenceId ? (run.choices[sentenceId] ?? []) : []}
           selected={selectedAnswer}
           onAnswer={(choice) => appStore.getState().answer(choice)}
+          onExplain={explainable && sentenceId ? () => explain(sentenceId) : undefined}
+          onContinue={answerWait ? () => appStore.getState().continueAfterAnswer() : undefined}
         />
       ) : !lines.length ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -189,13 +193,13 @@ export default function PlayerScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={`Play line ${index + 1}`}
                     onPress={() => appStore.getState().jumpToLine(index)}
+                    onLongPress={explainable && sentence ? () => explain(sentence.sentenceId) : undefined}
                   >
                     <LyricRow
                       line={line}
                       current={useAnalysis && sentence && occurrence ? sentence === occurrence : index === lineIndex}
                       furigana={showTranslations}
                       translation={translation}
-                      note={showTranslations && useAnalysis ? notes[index] : undefined}
                       marked={!!sentence && reviewed.has(sentence.sentenceId)}
                     />
                   </Pressable>
@@ -231,18 +235,30 @@ export default function PlayerScreen() {
                 </Button>
               </PixelFrame>
             )}
-            <Button
-              disabled={!canAdd}
-              label={inReview ? 'In review' : 'Review this sentence later'}
-              fill={colors.coral}
-              border="#ff9aa5"
-              contentStyle={{ paddingVertical: 14 }}
-              onPress={() => appStore.getState().addLostMark()}
-            >
-              <Label style={{ fontSize: 22, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
-                {inReview ? 'IN REVIEW' : 'REVIEW LATER'}
-              </Label>
-            </Button>
+            <View style={styles.row}>
+              {explainable && sentenceId && (
+                <Button
+                  label="Explain this sentence"
+                  contentStyle={{ paddingVertical: 14, paddingHorizontal: 16 }}
+                  onPress={() => explain(sentenceId)}
+                >
+                  <Label style={{ fontSize: 16, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>EXPLAIN</Label>
+                </Button>
+              )}
+              <Button
+                disabled={!canAdd}
+                label={inReview ? 'In review' : 'Review this sentence later'}
+                fill={colors.coral}
+                border="#ff9aa5"
+                style={{ flex: 1 }}
+                contentStyle={{ paddingVertical: 14 }}
+                onPress={() => appStore.getState().addLostMark()}
+              >
+                <Label style={{ fontSize: 22, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
+                  {inReview ? 'IN REVIEW' : 'REVIEW LATER'}
+                </Label>
+              </Button>
+            </View>
           </View>
         </>
       )}

@@ -1,3 +1,4 @@
+import { prefetchBreakdown, resetBreakdowns } from '@/analysis/breakdowns';
 import { remapReview } from '@/lyrics/review';
 import {
   prioritizeAnalyses,
@@ -198,6 +199,7 @@ type AppState = {
   seek: (positionMs: number) => void;
   jumpToLine: (index: number) => void;
   answer: (choice: string) => void;
+  continueAfterAnswer: () => void;
   advanceLine: () => void;
   updatePlayback: (positionMs: number, durationMs: number, playing: boolean) => void;
   completeRun: () => void;
@@ -246,6 +248,7 @@ export const appStore = create<AppState>()(
       analysisToken: '',
       analysisRequests: {},
       setAnalysisServerUrl: (url) => {
+        resetBreakdowns();
         set({ analysisServerUrl: url.trim().replace(/\/+$/, '') });
         void prioritizeAnalyses(
           [
@@ -539,11 +542,20 @@ export const appStore = create<AppState>()(
             ),
           };
         });
-        if (get().answerWait && get().run !== before) {
-          set({ answerWait: { ...get().answerWait!, until: null } });
-          scheduleAnswerRelease(800);
+        if (get().run !== before) {
+          const state = get(),
+            sentence = currentSentence(state.songId, state.lineIndex)?.sentence;
+          const correct = sentence && state.run.answers[sentence.id]?.correct;
+          if (!correct && sentence) prefetchBreakdown(state.songId, sentence.id);
+          if (state.answerWait) {
+            if (answerTimer !== null) clearTimeout(answerTimer);
+            answerTimer = null;
+            set({ answerWait: { ...state.answerWait, until: null } });
+            if (correct) scheduleAnswerRelease(800);
+          }
         }
       },
+      continueAfterAnswer: releaseAnswerWait,
       advanceLine: () => {
         const state = get(),
           length = getLyrics(state.songId).timeline.length;
@@ -592,7 +604,10 @@ export const appStore = create<AppState>()(
         if (playing) transport.play();
         else transport.pause();
       },
-      addLostMark: () =>
+      addLostMark: () => {
+        const state = get(),
+          sentence = currentSentence(state.songId, state.lineIndex)?.sentence;
+        if (sentence) prefetchBreakdown(state.songId, sentence.id);
         set((state) => {
           const line = currentSentence(state.songId, state.lineIndex)?.sentence;
           if (!line) return state;
@@ -605,7 +620,8 @@ export const appStore = create<AppState>()(
             addedExpiresAt: Date.now() + 3000,
             nextReviewId: state.nextReviewId + 1,
           };
-        }),
+        });
+      },
       undoLostMark: () =>
         set((state) => ({
           reviewList:
@@ -691,10 +707,16 @@ export const appStore = create<AppState>()(
         if (get().clipReview !== before) {
           get().setPlaying(false);
           clearClipTimer();
-          clipTimer = setTimeout(() => {
-            clipTimer = null;
-            get().nextClip();
-          }, 800);
+          const state = get(),
+            clip = state.clipReview,
+            id = clip?.ids[clip.index];
+          const item = state.reviewList.find((item) => item.id === id);
+          if (id && clip?.answers[id]?.correct) {
+            clipTimer = setTimeout(() => {
+              clipTimer = null;
+              get().nextClip();
+            }, 800);
+          } else if (item) prefetchBreakdown(item.songId, item.sentenceId);
         }
       },
       jumpToClip: (index) => {
@@ -756,7 +778,7 @@ export const appStore = create<AppState>()(
             ? { ...migrated, step: 0, dueAt: 0 }
             : migrated;
         });
-        return { ...current, ...saved, reviewList };
+        return { ...current, ...saved, reviewList, run: current.run, clipReview: current.clipReview };
       },
       partialize: (state) => ({
         analysisServerUrl: state.analysisServerUrl,
@@ -805,6 +827,7 @@ export async function hydrateAppState(storage: StateStorage) {
 }
 
 export function resetAppState() {
+  resetBreakdowns();
   clearAnswerWait(true);
   clearClipTimer();
   transport.pause();
@@ -852,17 +875,32 @@ libraryStore.subscribe((state, previous) => {
     const entries = reviewList.filter((item) => clip.ids.includes(item.id)),
       ids = clip.ids.filter((id) => entries.some((item) => item.id === id)),
       index = ids.indexOf(clip.ids[clip.index]!);
-    if (index < 0) clearClipTimer();
+    const changed = entries.filter((item) => {
+      const before = previous.lyrics[item.songId]?.sentences.find((sentence) => sentence.id === item.sentenceId),
+        after = state.lyrics[item.songId]?.sentences.find((sentence) => sentence.id === item.sentenceId);
+      return (
+        before?.translation !== after?.translation || JSON.stringify(before?.decoys) !== JSON.stringify(after?.decoys)
+      );
+    });
+    if (index < 0 || changed.some((item) => item.id === clip.ids[clip.index])) clearClipTimer();
     appStore.setState({
       reviewList,
       clipReview: ids.length
         ? {
             ...clip,
             ids,
+            combo: changed.length ? 0 : clip.combo,
             index: index < 0 ? Math.min(clip.index, ids.length - 1) : index,
-            answers: Object.fromEntries(Object.entries(clip.answers).filter(([id]) => ids.includes(id))),
+            answers: Object.fromEntries(
+              Object.entries(clip.answers).filter(
+                ([id]) => ids.includes(id) && !changed.some((item) => item.id === id),
+              ),
+            ),
             choices: Object.fromEntries(
-              Object.entries(clip.choices).filter(([id]) => entries.some((item) => item.sentenceId === id)),
+              Object.entries(clip.choices).filter(
+                ([id]) =>
+                  entries.some((item) => item.sentenceId === id) && !changed.some((item) => item.sentenceId === id),
+              ),
             ),
           }
         : null,

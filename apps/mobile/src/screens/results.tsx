@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { canExplain } from '@/analysis/breakdowns';
 import { appStore, getRunSummary } from '@/store/appStore';
 import { getSentenceText, libraryStore } from '@/store/libraryStore';
 import { colors } from '@/constants/theme';
@@ -30,6 +31,9 @@ export default function ResultsScreen() {
   useEffect(() => {
     missed.forEach((line) => appStore.getState().sendToReview(line.id, true));
   }, [songId, run.answers]);
+  // The picked decoy's reason; unanswered and line-by-line misses have none.
+  const reasonFor = (id: string) =>
+    run.choices[id]?.find((choice) => choice.text === run.answers[id]?.choice && !choice.correct)?.reason;
   if (!song) return null;
   return (
     <View style={styles.page}>
@@ -71,9 +75,26 @@ export default function ResultsScreen() {
               <Label muted style={{ marginTop: 4 }}>
                 {line.translation}
               </Label>
+              {reasonFor(line.id) && (
+                <Label style={{ marginTop: 4, fontSize: 13, lineHeight: 18, color: colors.cream }}>
+                  {reasonFor(line.id)}
+                </Label>
+              )}
               <Label muted style={{ fontSize: 11, marginTop: 4 }}>
                 send to review
               </Label>
+              {canExplain(song.id) && (
+                <Button
+                  label={`Explain ${getSentenceText(song.id, line)}`}
+                  style={{ alignSelf: 'flex-start', marginTop: 10 }}
+                  contentStyle={{ minHeight: 36, paddingVertical: 6 }}
+                  onPress={() =>
+                    router.push({ pathname: '/breakdown', params: { songId: song.id, sentenceId: line.id } })
+                  }
+                >
+                  <Label style={{ fontSize: 13, fontWeight: '800' }}>EXPLAIN</Label>
+                </Button>
+              )}
             </View>
             <PixelToggle
               label={`Send ${getSentenceText(song.id, line)} to review`}

@@ -1,7 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type SongAnalysisDraft, songAnalysisDraftSchema } from '@kashi-koi/shared/analysis';
+import { dropInvalidDecoys, type SongAnalysisDraft, songAnalysisDraftSchema } from '@kashi-koi/shared/analysis';
 import { CodexAnalyzer, UsageLimitError } from './analyzer/index.ts';
 import { validateDraft } from './analyzer/validate.ts';
 
@@ -28,6 +28,17 @@ function report(file: string, fixture: Fixture, output: unknown, errors: string[
   if (parsed.success) out.push(...analysisLines(fixture.lines, parsed.data));
   else out.push('Raw output', JSON.stringify(output, null, 2), '');
 
+  const accepted = songAnalysisDraftSchema.safeParse(dropInvalidDecoys(output));
+  if (accepted.success) {
+    const problems = validateDraft(output, fixture.lines.length);
+    if (problems.length) out.push('Model validation problems', ...problems.map((error) => `  ${error}`), '');
+    accepted.data.sentences.forEach((sentence, index) => {
+      if (!sentence.decoys.length)
+        out.push(
+          `  Sentence ${index}, lines ${sentence.start}-${sentence.end}: ${parsed.success && !parsed.data.sentences[index]?.decoys.length ? 'no decoys' : 'would drop invalid decoys'}`,
+        );
+    });
+  }
   if (fixture.checks.length) out.push('Look for', ...fixture.checks.map((check) => `  ${check}`), '');
   out.push(errors.length ? 'Invalid' : 'Valid', ...errors.map((error) => `  ${error}`), '');
   return out.join('\n');
@@ -45,13 +56,12 @@ function analysisLines(lines: string[], analysis: SongAnalysisDraft) {
   for (const sentence of analysis.sentences) {
     const range = sentence.start === sentence.end ? `${sentence.start}` : `${sentence.start}-${sentence.end}`;
     out.push(`  ${range}  ${sentence.translation}`);
+    for (const decoy of sentence.decoys) out.push(`    ${decoy.from} → ${decoy.to}: ${decoy.reason}`);
     for (let line = sentence.start; line <= sentence.end && line < lines.length; line++)
       out.push(`    ${String(line).padStart(2)}  ${lines[line]}`, `        ${analysis.lines[line] ?? '(missing)'}`);
     out.push('');
   }
-  if (analysis.notes.length) {
-    out.push('Notes', ...analysis.notes.map((note) => `  ${String(note.line).padStart(2)}  ${note.text}`), '');
-  }
+
   return out;
 }
 
@@ -79,7 +89,7 @@ async function main() {
     const started = Date.now();
     try {
       const output = await analyzer.analyze({ title: fixture.title, artist: fixture.artist, lines: fixture.lines });
-      const errors = validateDraft(output, fixture.lines.length);
+      const errors = validateDraft(dropInvalidDecoys(output), fixture.lines.length, false);
       if (errors.length) failures++;
       console.log(report(file, fixture, output, errors, Math.round((Date.now() - started) / 1000)));
     } catch (error) {

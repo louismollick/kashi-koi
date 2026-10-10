@@ -1,3 +1,4 @@
+import { testDecoys } from './fixtures';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createRequire, registerHooks } from 'node:module';
@@ -171,7 +172,7 @@ test('Song info only offers source choices for analyzed songs and switches the p
 
   const lyrics = songLyrics.dawn!;
   const analysis: SongAnalysis = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     fingerprint: lyrics.fingerprint,
     model: 'test',
     createdAt: '2026-10-08T00:00:00Z',
@@ -184,8 +185,8 @@ test('Song info only offers source choices for analyzed songs and switches the p
       start: index,
       end: index,
       translation: `Analyzed sentence ${index}`,
+      decoys: testDecoys(`Analyzed sentence ${index}`),
     })),
-    notes: [],
   };
   libraryStore.getState().setAnalysis(analysis);
   snapshot();

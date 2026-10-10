@@ -52,7 +52,7 @@ test('POST queues, dedupes, and public GET exposes queued, running, failed and r
   assert.equal(store.getJob(key)?.attempts, 0);
   assert.deepEqual(store.getJob(key)?.lines, lines);
   store.claimNext();
-  store.complete(analysis);
+  store.complete(analysis, input.lines);
   const ready = await app.request(`/v1/analyses/${key}`);
   assert.equal(ready.status, 200);
   assert.deepEqual(await ready.json(), analysis);
@@ -66,7 +66,7 @@ test('force queues a replacement and GET returns pending until it completes', as
   const app = createApi(store, token);
   store.enqueue(input);
   store.claimNext();
-  store.complete(analysis);
+  store.complete(analysis, input.lines);
   const forced = await app.request('/v1/analyses', {
     method: 'POST',
     headers,
@@ -76,7 +76,7 @@ test('force queues a replacement and GET returns pending until it completes', as
   assert.equal((await app.request(`/v1/analyses/${key}`)).status, 202);
   store.claimNext();
   assert.equal((await app.request(`/v1/analyses/${key}`)).status, 202);
-  store.complete({ ...analysis, title: 'New title' });
+  store.complete({ ...analysis, title: 'New title' }, input.lines);
   assert.equal((await app.request(`/v1/analyses/${key}`)).status, 200);
   assert.equal(store.getAnalysis(key)?.title, 'New title');
 });
@@ -86,7 +86,7 @@ test('GET reports a failed forced replacement while preserving the existing anal
   const app = createApi(store, token);
   store.enqueue(input);
   store.claimNext();
-  store.complete({ ...analysis, createdAt: '2000-01-01T00:00:00.000Z' });
+  store.complete({ ...analysis, createdAt: '2000-01-01T00:00:00.000Z' }, input.lines);
   await app.request('/v1/analyses', {
     method: 'POST',
     headers,
@@ -105,7 +105,7 @@ test('GET serves an analysis newer than a failed job', async (t) => {
   const app = createApi(store, token);
   store.enqueue(input);
   store.claimNext();
-  store.complete({ ...analysis, createdAt: '2100-01-01T00:00:00.000Z' });
+  store.complete({ ...analysis, createdAt: '2100-01-01T00:00:00.000Z' }, input.lines);
   store.enqueue(input, true);
   store.claimNext();
   store.fail(key, 'Older failure');

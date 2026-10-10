@@ -1,5 +1,6 @@
 import { type SongAnalysis, songAnalysisSchema, validateAnalysis } from '@kashi-koi/shared/analysis';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
+import { type Breakdown, breakdownSchema, validateBreakdown } from '@kashi-koi/shared/breakdown';
 
 export type AnalysisJob = { status: 'queued' | 'running' | 'failed'; error?: string };
 export type AnalysisRequest = { title: string; artist?: string; lines: string[]; force?: boolean };
@@ -14,11 +15,8 @@ export type RequestAnalysisResult =
 function readAnalysis(value: unknown, expectedFingerprint: string, lineCount?: number): SongAnalysis {
   const analysis = songAnalysisSchema.parse(value);
   if (analysis.fingerprint !== expectedFingerprint) throw new Error('Song analysis fingerprint does not match');
-  const { title, summary, speaker, addressee, lines, sentences, notes } = analysis;
-  const errors = validateAnalysis(
-    { title, summary, speaker, addressee, lines, sentences, notes },
-    lineCount ?? lines.length,
-  );
+  const { title, summary, speaker, addressee, lines, sentences } = analysis;
+  const errors = validateAnalysis({ title, summary, speaker, addressee, lines, sentences }, lineCount ?? lines.length);
   if (errors.length) throw new Error(`Invalid song analysis: ${errors.join('; ')}`);
   return analysis;
 }
@@ -75,4 +73,68 @@ export async function requestAnalysis(
     return { status: 202, fingerprint: fp, job };
   }
   throw new Error(`Song analysis request failed: HTTP ${response.status}`);
+}
+
+export type FetchBreakdownResult = { status: 200; breakdown: Breakdown } | { status: 404 };
+
+function readBreakdown(value: unknown, fp: string, start: number, sentenceText: string): Breakdown {
+  const breakdown = breakdownSchema.parse(value);
+  if (breakdown.fingerprint !== fp || breakdown.start !== start) throw new Error('Breakdown target does not match');
+  if (validateBreakdown({ chunks: breakdown.chunks }, sentenceText).length) throw new Error('Invalid breakdown');
+  return breakdown;
+}
+
+/** Public cached lookup, validated against the source sentence. */
+export async function fetchBreakdown(
+  base: string,
+  fp: string,
+  start: number,
+  sentenceText: string,
+  fetcher: typeof fetch = fetch,
+): Promise<FetchBreakdownResult> {
+  const response = await fetcher(
+    `${base.trim().replace(/\/+$/, '')}/v1/analyses/${encodeURIComponent(fp)}/breakdowns/${start}`,
+    {
+      signal: AbortSignal.timeout(30_000),
+    },
+  );
+  if (response.status === 404) return { status: 404 };
+  if (response.status !== 200)
+    throw new Error(
+      response.status === 503
+        ? 'Server busy, try again'
+        : response.status === 429
+          ? 'Usage limit reached, try later'
+          : 'Breakdown failed',
+    );
+  return { status: 200, breakdown: readBreakdown(await response.json(), fp, start, sentenceText) };
+}
+
+// Server: <=120s queued + two 60s attempts. Allow 270s for POST including transport overhead.
+export async function requestBreakdown(
+  base: string,
+  token: string,
+  fp: string,
+  start: number,
+  sentenceText: string,
+  fetcher: typeof fetch = fetch,
+): Promise<FetchBreakdownResult> {
+  const response = await fetcher(
+    `${base.trim().replace(/\/+$/, '')}/v1/analyses/${encodeURIComponent(fp)}/breakdowns/${start}`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(270_000),
+    },
+  );
+  if (response.status === 404) return { status: 404 };
+  if (response.status !== 200)
+    throw new Error(
+      response.status === 503
+        ? 'Server busy, try again'
+        : response.status === 429
+          ? 'Usage limit reached, try later'
+          : 'Breakdown failed',
+    );
+  return { status: 200, breakdown: readBreakdown(await response.json(), fp, start, sentenceText) };
 }

@@ -1,12 +1,25 @@
-import type { SongAnalysis } from '@kashi-koi/shared';
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import type { Breakdown, SongAnalysis } from '@kashi-koi/shared';
+import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const analyses = sqliteTable('analyses', {
   fingerprint: text('fingerprint').primaryKey(),
+  lines: text('lines', { mode: 'json' }).$type<string[]>().notNull(),
   json: text('json', { mode: 'json' }).$type<SongAnalysis>().notNull(),
   model: text('model').notNull(),
   createdAt: text('created_at').notNull(),
 });
+
+export const breakdowns = sqliteTable(
+  'breakdowns',
+  {
+    fingerprint: text('fingerprint').notNull(),
+    start: integer('start').notNull(),
+    json: text('json', { mode: 'json' }).$type<Breakdown>().notNull(),
+    model: text('model').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.fingerprint, table.start] })],
+);
 
 export const jobs = sqliteTable(
   'jobs',

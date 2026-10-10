@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./analysis": "./src/analysis.ts",
+    "./breakdown": "./src/breakdown.ts",
     "./fingerprint": "./src/fingerprint.ts",
     "./lyrics": "./src/lyrics.ts",
     "./subsonic": "./src/subsonic.ts"

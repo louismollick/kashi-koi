@@ -1,3 +1,4 @@
+import { testDecoys } from './fixtures';
 import assert from 'node:assert/strict';
 import { beforeEach, test, type TestContext } from 'node:test';
 import { registerHooks } from 'node:module';
@@ -1113,7 +1114,7 @@ test('answer-time presets persist without the wait and logout restores no limit'
   assert.equal(appStore.getState().answerWait, null);
 });
 
-test('no-limit wait stays paused until an answer, including a wrong answer', (t) => {
+test('a wrong answer stays held until continue, even after the answer deadline', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   const { calls, detach } = pacingRun();
   try {
@@ -1123,9 +1124,37 @@ test('no-limit wait stays paused until an answer, including a wrong answer', (t)
     appStore.getState().answer('wrong');
     t.mock.timers.tick(799);
     assert.equal(appStore.getState().playing, false);
-    t.mock.timers.tick(1);
+    t.mock.timers.tick(60000);
+    assert.equal(appStore.getState().playing, false);
+    assert.equal(appStore.getState().answerWait?.until, null);
+    appStore.getState().continueAfterAnswer();
     assert.equal(appStore.getState().playing, true);
     assert.deepEqual(calls, ['pause', 'play']);
+  } finally {
+    detach();
+  }
+});
+
+test('a wrong answer cancels a finite answer deadline and continue finishes the last held sentence', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const { detach } = pacingRun();
+  try {
+    appStore.setState({ answerTime: 3 });
+    stopFirstLine();
+    appStore.getState().answer('wrong');
+    t.mock.timers.tick(3001);
+    assert.equal(appStore.getState().playing, false);
+    assert.equal(appStore.getState().answerWait?.until, null);
+    appStore.getState().continueAfterAnswer();
+    assert.equal(appStore.getState().playing, true);
+    const timeline = getLyrics(appStore.getState().songId).timeline;
+    appStore.getState().jumpToLine(timeline.length - 1);
+    appStore.getState().updatePlayback(timeline.at(-1)!.endMs, timeline.at(-1)!.endMs, true);
+    appStore.getState().answer('wrong');
+    t.mock.timers.tick(60000);
+    assert.equal(appStore.getState().run.finished, false);
+    appStore.getState().continueAfterAnswer();
+    assert.equal(appStore.getState().run.finished, true);
   } finally {
     detach();
   }
@@ -1400,6 +1429,25 @@ test('clip feedback advances after 800 ms, preserves prior answers and grades co
     t.mock.timers.tick(800);
     assert.equal(appStore.getState().clipReview, null);
     assert.equal(appStore.getState().playing, false);
+  } finally {
+    detach();
+  }
+});
+
+test('a wrong clip answer stays on its clip until nextClip', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { detach } = clipTransport();
+  try {
+    appStore.getState().startClipReview();
+    appStore.getState().answerClip('wrong');
+    assert.equal(appStore.getState().playing, false);
+    t.mock.timers.tick(60000);
+    assert.equal(appStore.getState().clipReview?.index, 0);
+    const clip = appStore.getState().clipReview!;
+    assert.equal(clip.answers[clip.ids[0]!]!.correct, false);
+    appStore.getState().nextClip();
+    assert.equal(appStore.getState().clipReview?.index, 1);
+    assert.equal(appStore.getState().playing, true);
   } finally {
     detach();
   }
@@ -1947,7 +1995,7 @@ test('native EOF preserves results for an analysis-only quiz', async (t) => {
   });
   libraryStore.getState().setLibrary({ songs: [firstSong], albums, artists, lyrics: { dawn: lyrics } });
   libraryStore.getState().setAnalysis({
-    schemaVersion: 1,
+    schemaVersion: 2,
     fingerprint: lyrics.fingerprint,
     model: 'test',
     createdAt: '2026-10-08T00:00:00Z',
@@ -1956,8 +2004,9 @@ test('native EOF preserves results for an analysis-only quiz', async (t) => {
     speaker: 'A walker',
     addressee: 'Unclear',
     lines: ['I floated a paper boat.'],
-    sentences: [{ start: 0, end: 0, translation: 'I floated a paper boat.' }],
-    notes: [],
+    sentences: [
+      { start: 0, end: 0, translation: 'I floated a paper boat.', decoys: testDecoys('I floated a paper boat.') },
+    ],
   });
   const native = await nativePacingRun(t);
   try {

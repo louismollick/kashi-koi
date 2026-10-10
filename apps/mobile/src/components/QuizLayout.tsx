@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, Easing, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
-import type { Line, SongLyrics } from '@/types/domain';
+import type { Choice, Line, SongLyrics } from '@/types/domain';
 import { PixelFrame } from './PixelFrame';
 import { SentenceCard } from './LineCard';
 import { SongIntro } from './SongIntro';
 import { Mascot } from './Mascot';
 import { Answers } from './Answers';
-import { Label, styles } from './ui';
+import { Button, Label, styles } from './ui';
 
 /** Sprite and feedback shrink to the space left between the line and answers. */
 function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
@@ -121,13 +121,13 @@ function AnswerTimeBar({ until }: { until: number }) {
 
 /**
  * A fixed quiz column. `lines` is the current sentence (or a gap line with no choices); before the first sentence
- * an analysed song shows its intro instead.
+ * an analysed song shows its intro instead. After a miss, `onExplain` opens the sentence's breakdown and
+ * `onContinue` (when the song is held) moves on.
  */
 export function QuizColumn({
   lines,
   current,
   previous,
-  translation,
   intro,
   choices,
   selected,
@@ -136,20 +136,27 @@ export function QuizColumn({
   until,
   isNew = false,
   onAnswer,
+  onExplain,
+  onContinue,
+  continueLabel = 'CONTINUE',
 }: {
   lines?: Line[];
   current?: number;
   previous?: Line[];
-  translation?: string;
   intro?: SongLyrics['analysis'];
-  choices: string[];
+  choices: Choice[];
   selected: string | null;
   combo: number;
   nice: boolean;
   until?: number | null;
   isNew?: boolean;
   onAnswer: (choice: string) => void;
+  onExplain?: () => void;
+  onContinue?: () => void;
+  continueLabel?: string;
 }) {
+  // `nice` is the recorded grade, so the miss actions follow scoring even if cached choices went stale.
+  const missed = selected !== null && !nice;
   return (
     <View style={{ flex: 1, minHeight: 0, paddingHorizontal: 16, paddingBottom: 16 }}>
       {!lines?.length && intro ? (
@@ -164,7 +171,21 @@ export function QuizColumn({
       )}
       {until != null && <AnswerTimeBar until={until} />}
       <ComboRow combo={combo} nice={nice} />
-      <Answers compact choices={choices} translation={translation} selected={selected} onAnswer={onAnswer} />
+      <Answers compact choices={choices} selected={selected} onAnswer={onAnswer} />
+      {missed && (onExplain || onContinue) && (
+        <View style={[styles.row, { marginTop: 12 }]}>
+          {onExplain && (
+            <Button label="Explain this sentence" style={{ flex: 1 }} onPress={onExplain}>
+              <Label style={{ fontWeight: '800' }}>EXPLAIN</Label>
+            </Button>
+          )}
+          {onContinue && (
+            <Button label={continueLabel} style={{ flex: 1 }} fill={colors.coral} border="#ff9aa5" onPress={onContinue}>
+              <Label style={{ fontWeight: '800' }}>{continueLabel}</Label>
+            </Button>
+          )}
+        </View>
+      )}
     </View>
   );
 }

@@ -1,3 +1,4 @@
+import { testDecoys } from './fixtures';
 import test, { beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { scan, scanLyrics, syncLibrary, cancelSync } from '../src/navidrome/sync';
@@ -289,7 +290,7 @@ test('sync preserves analyses accepted while SQLite replacement is pending', asy
     await writing;
     const lyrics = libraryStore.getState().lyrics[song.id]!;
     const analysis = {
-      schemaVersion: 1 as const,
+      schemaVersion: 2 as const,
       fingerprint: lyrics.fingerprint,
       model: 'test',
       createdAt: '2026-10-08T00:00:00Z',
@@ -298,8 +299,12 @@ test('sync preserves analyses accepted while SQLite replacement is pending', asy
       speaker: 'A walker',
       addressee: 'Unclear',
       lines: lyrics.timeline.map((_, index) => `Context ${index}`),
-      sentences: lyrics.timeline.map((_, index) => ({ start: index, end: index, translation: `Sentence ${index}` })),
-      notes: [],
+      sentences: lyrics.timeline.map((_, index) => ({
+        start: index,
+        end: index,
+        translation: `Sentence ${index}`,
+        decoys: testDecoys(`Sentence ${index}`),
+      })),
     };
     libraryStore.getState().setAnalysis(analysis);
     release();

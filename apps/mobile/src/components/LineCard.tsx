@@ -5,22 +5,24 @@ import { colors } from '@/constants/theme';
 import { getLineText } from '@/store/libraryStore';
 import type { Line } from '@/types/domain';
 
-/** Ruby stays together; every character reserves reading space on each wrapped row. */
+/** Ruby stays together; every character reserves reading space on each wrapped row. `size` overrides the font size. */
 export function FuriganaLine({
   line,
   compact = false,
   furigana = true,
   color,
+  size: fontSize,
 }: {
   line: Line;
   compact?: boolean;
   furigana?: boolean;
   color?: string;
+  size?: number;
 }) {
   const segments = line.segments.flatMap((segment) =>
     furigana && segment.reading ? [segment] : Array.from(segment.text, (text) => ({ text, reading: undefined })),
   );
-  const size = compact ? 20 : 27;
+  const size = fontSize ?? (compact ? 20 : 27);
   return (
     <View
       accessible

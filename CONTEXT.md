@@ -23,8 +23,16 @@ A dictionary term inside a line. Looking up words helps you understand a line, b
 _Avoid_: Vocab, card
 
 **Song analysis**:
-A reading of a whole song's lyrics, made once by an LLM and shared by every listener whose lyrics match: its sentences, a translation of the title and of each line and sentence made with the whole song in view, a summary, who is speaking to whom, and notes. A song without one falls back to line-by-line translations.
+A reading of a whole song's lyrics, made once by an LLM and shared by every listener whose lyrics match: its sentences, a translation of the title and of each line and sentence made with the whole song in view, a summary, who is speaking to whom, and two decoys per sentence. A song without one falls back to line-by-line translations.
 _Avoid_: AI translation, enrichment, analysis file
+
+**Breakdown**:
+An explanation of one sentence, built chunk by chunk from dictionary forms, with hiragana readings, English glosses and short grammar notes. The server makes it on demand and shares the cached result with listeners whose lyrics match.
+_Avoid_: Analysis (when meaning one sentence's explanation), annotation, lesson
+
+**Decoy**:
+A wrong translation made by swapping one short phrase in a sentence's translation, with a reason the swap is wrong. Meaning Match marks the changed phrases in every choice.
+_Avoid_: Distractor, fake answer
 
 **Translation**:
 A machine translation of a line or sentence into English. It comes from the song analysis when there is one, otherwise it is made on the phone one line at a time without the rest of the song. It is the right answer in Meaning Match, but it can miss what the line actually means.
@@ -94,7 +102,7 @@ Reviewing due sentences one at a time by replaying just their clip, in the same 
 _Avoid_: Flashcards, quiet mode
 
 **Meaning Match**:
-The game played in quiz mode: as each sentence finishes, the user picks its translation from a few choices drawn from the same song.
+The game played in quiz mode: as each sentence finishes, the user picks its translation from the right answer and two decoys. Without a song analysis, the other choices come from the same song.
 _Avoid_: Quiz, rhythm mode
 
 **Answer time**:

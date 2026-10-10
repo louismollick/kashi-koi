@@ -3,6 +3,7 @@ import type { appStore as AppStore } from '@/store/appStore';
 import { getLyrics, getSong, libraryStore } from '@/store/libraryStore';
 import { timelineTexts } from '@/lyrics/sentences';
 import { fetchAnalysis, requestAnalysis } from './client';
+import { resetBreakdowns } from './breakdowns';
 
 const defaults = {
   fetch: ((...args) => globalThis.fetch(...args)) as typeof fetch,
@@ -37,6 +38,14 @@ export function setAnalysisRuntime(overrides: Partial<typeof defaults> = {}) {
 /** An empty override uses the bundled environment default; empty defaults disable reads. */
 export const analysisServerUrl = () =>
   (appStore.getState().analysisServerUrl || process.env.EXPO_PUBLIC_KASHI_SERVER_URL || '').trim().replace(/\/+$/, '');
+
+/** Capture the current transport and login so transient breakdowns use the same cancellation rules. */
+export function analysisSession() {
+  const version = generation,
+    base = analysisServerUrl(),
+    token = appStore.getState().analysisToken;
+  return { base, token, fetch: runtime.fetch, valid: () => version === generation && base === analysisServerUrl() };
+}
 
 /** Load the admin token at boot; it is never included in persisted learning state. */
 export async function loadAnalysisToken() {
@@ -194,6 +203,7 @@ export function analyzeSong(songId: string, { force = false }: { force?: boolean
 /** Invalidate reads and polling immediately, then wait for writes before logout clears SQLite. */
 export async function cancelAnalyses() {
   generation++;
+  resetBreakdowns();
   queue = [];
   await Promise.allSettled([running, ...requests.values(), tokenWrites]);
   appStore.setState({ analysisRequests: {} });

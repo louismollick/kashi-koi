@@ -1155,3 +1155,9 @@ export function fixtureLine(id: string) {
 export function fixtureReviewList() {
   return makeReviewList().map((item) => ({ ...item, sentenceId: fixtureLine(item.sentenceId) }));
 }
+
+/** Small valid swaps for fixtures; behavior tests use explicit decoys. */
+export const testDecoys = (translation: string) => [
+  { from: translation.slice(0, 1), to: 'X', reason: 'Changes the sentence.' },
+  { from: translation.slice(0, 1), to: 'Y', reason: 'Changes the sentence differently.' },
+];

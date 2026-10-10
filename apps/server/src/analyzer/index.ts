@@ -2,7 +2,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { songAnalysisDraftJsonSchema } from '@kashi-koi/shared/analysis';
+import { breakdownDraftJsonSchema, songAnalysisDraftJsonSchema } from '@kashi-koi/shared';
+import { buildBreakdownPrompt, type BreakdownInput } from './breakdown-prompt.ts';
 import { buildPrompt } from './prompt.ts';
 
 export type AnalyzerInput = { title: string; artist?: string; lines: string[]; feedback?: string[] };
@@ -10,47 +11,69 @@ export type AnalyzerInput = { title: string; artist?: string; lines: string[]; f
 /** Produces an unvalidated song analysis draft. Callers check it with `validateAnalysis`. */
 export type Analyzer = { model: string; analyze(input: AnalyzerInput): Promise<unknown> };
 
+export type BreakdownAnalyzer = { model: string; breakdown(input: BreakdownInput): Promise<unknown> };
+export type { BreakdownInput } from './breakdown-prompt.ts';
+
 /** The subscription hit a usage or rate limit. Retry later rather than failing the job. */
 export class UsageLimitError extends Error {
   name = 'UsageLimitError';
 }
 
-type CodexOptions = { model?: string; reasoning?: string; command?: string; timeoutMs?: number };
+type CodexOptions = {
+  model?: string;
+  reasoning?: string;
+  breakdownReasoning?: string;
+  command?: string;
+  timeoutMs?: number;
+  breakdownTimeoutMs?: number;
+};
 
 /**
- * Runs `codex exec` on the CODEX_HOME login, one process per analysis, in a fresh empty directory.
- * Error messages never include lyrics, since the worker stores them.
+ * Runs `codex exec` on the CODEX_HOME login, one process per request, in a fresh empty directory.
+ * Callers sanitize failure messages before logging or storing them.
  */
-export class CodexAnalyzer implements Analyzer {
+export class CodexAnalyzer implements Analyzer, BreakdownAnalyzer {
   readonly model: string;
   private readonly reasoning: string;
+  private readonly breakdownReasoning: string;
   private readonly command: string;
   private readonly timeoutMs: number;
+  private readonly breakdownTimeoutMs: number;
 
   constructor(options: CodexOptions = {}) {
     this.model = options.model ?? process.env.KASHI_MODEL ?? 'gpt-6-luna';
     this.reasoning = options.reasoning ?? process.env.KASHI_REASONING ?? 'medium';
+    this.breakdownReasoning = options.breakdownReasoning ?? process.env.KASHI_BREAKDOWN_REASONING ?? 'low';
     this.command = options.command ?? 'codex';
     this.timeoutMs = options.timeoutMs ?? 5 * 60_000;
+    this.breakdownTimeoutMs = options.breakdownTimeoutMs ?? 60_000;
   }
 
-  async analyze(input: AnalyzerInput): Promise<unknown> {
+  analyze(input: AnalyzerInput): Promise<unknown> {
+    return this.run(buildPrompt(input), songAnalysisDraftJsonSchema, this.reasoning, this.timeoutMs);
+  }
+
+  breakdown(input: BreakdownInput): Promise<unknown> {
+    return this.run(
+      buildBreakdownPrompt(input),
+      breakdownDraftJsonSchema,
+      this.breakdownReasoning,
+      this.breakdownTimeoutMs,
+    );
+  }
+
+  /** Execute either structured prompt with its own schema and reasoning effort. */
+  private async run(prompt: string, schema: object, reasoning: string, timeoutMs: number): Promise<unknown> {
     const dir = await mkdtemp(join(tmpdir(), 'kashi-codex-'));
     try {
       const cwd = join(dir, 'work');
       const schemaPath = join(dir, 'schema.json');
       const outPath = join(dir, 'out.json');
       await mkdir(cwd);
-      await writeFile(schemaPath, JSON.stringify(songAnalysisDraftJsonSchema));
+      await writeFile(schemaPath, JSON.stringify(schema));
 
-      const run = await runProcess(
-        this.command,
-        this.args(schemaPath, outPath),
-        cwd,
-        buildPrompt(input),
-        this.timeoutMs,
-      );
-      if (run.timedOut) throw new Error(`Codex timed out after ${this.timeoutMs / 1000}s`);
+      const run = await runProcess(this.command, this.args(schemaPath, outPath, reasoning), cwd, prompt, timeoutMs);
+      if (run.timedOut) throw new Error(`Codex timed out after ${timeoutMs / 1000}s`);
       if (run.code !== 0) throw codexFailure(run.stdout, run.stderr, `exit ${run.signal ?? run.code}`);
 
       const answer = await readFile(outPath, 'utf8').catch(() => '');
@@ -65,7 +88,7 @@ export class CodexAnalyzer implements Analyzer {
     }
   }
 
-  private args(schemaPath: string, outPath: string) {
+  private args(schemaPath: string, outPath: string, reasoning: string) {
     return [
       'exec',
       '-',
@@ -88,7 +111,7 @@ export class CodexAnalyzer implements Analyzer {
       '-m',
       this.model,
       '-c',
-      `model_reasoning_effort=${JSON.stringify(this.reasoning)}`,
+      `model_reasoning_effort=${JSON.stringify(reasoning)}`,
       '-c',
       'features.shell_tool=false',
       '-c',

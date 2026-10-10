@@ -1,6 +1,6 @@
 # Kashi server
 
-Creates and serves song analyses (ADR 0003). One process runs the HTTP API and a worker that analyses one song at a time with `codex exec` on the owner's ChatGPT subscription. Analyses are keyed by a fingerprint of the lyrics and store no Japanese text: the worker rejects output containing Japanese script, and job lines are cleared when a job finishes.
+Creates and serves song analyses (ADR 0003). One process runs the HTTP API and a worker that analyses one song at a time with `codex exec` on the owner's ChatGPT subscription. Analyses are keyed by a fingerprint of the lyrics. The worker requires English analysis text and retains the source lines for on-demand sentence breakdowns. Breakdowns contain Japanese chunks and readings. Completed job lines are cleared; the analysis row keeps them.
 
 Node 24, port 8787. Commands run from the repository root.
 
@@ -8,10 +8,11 @@ Node 24, port 8787. Commands run from the repository root.
 
 | Variable | Default | |
 | --- | --- | --- |
-| `KASHI_ADMIN_TOKEN` | required | Bearer token for creating analyses |
+| `KASHI_ADMIN_TOKEN` | required | Bearer token for creating analyses and breakdowns |
 | `KASHI_DATA_DIR` | `./data` (`/data` in Docker) | SQLite database |
 | `KASHI_MODEL` | `gpt-6-luna` | Codex model |
-| `KASHI_REASONING` | `medium` | `model_reasoning_effort` |
+| `KASHI_REASONING` | `medium` | Analysis `model_reasoning_effort` |
+| `KASHI_BREAKDOWN_REASONING` | `low` | Breakdown `model_reasoning_effort` |
 | `PORT` | `8787` | |
 | `CODEX_HOME` | `~/.codex` (`/data/codex` in Docker) | Codex login |
 | `NAVIDROME_URL`, `NAVIDROME_USER`, `NAVIDROME_PASSWORD` | | Backfill only |
@@ -58,6 +59,13 @@ Do not copy `auth.json` into a separate Codex home. Refresh tokens rotate, so re
   - `404` otherwise
 - `POST /v1/analyses` with `Authorization: Bearer $KASHI_ADMIN_TOKEN` and `{title, artist?, lines, force?}`. Returns `200` with the existing analysis, or queues a job and returns `202 {fingerprint, status}`. `force` re-analyses a song that already has one. If that fails, `GET` returns the failure until a forced retry succeeds. The previous analysis stays in the database but isn't served in the meantime.
 
+- `GET /v1/analyses/:fingerprint/breakdowns/:start`: public, `Cache-Control: no-store`. Returns `200` with a cached breakdown or `404` when none exists. `start` is the sentence's zero-based first line index.
+- `POST /v1/analyses/:fingerprint/breakdowns/:start` with the same admin bearer token, no body required. Returns a cached breakdown or generates, validates and stores one synchronously, with one retry on validation failure. Returns `200` on success, `404` for a missing analysis or invalid sentence start, `429` for usage limits, `503` when the waiting queue is full, and `502` for generation failures. Concurrent requests for one key share the result; at most two breakdown generations run at once, with two waiting requests. Each attempt has a 60 second timeout and at most two attempts, bounding queue wait plus generation at 240 seconds.
+
+Song analyses use `schemaVersion: 2`, with zero or two valid `{from, to, reason}` decoys per sentence and no notes. The first attempt requires two decoys; after the final attempt, invalid decoys are dropped while structural errors still fail. A breakdown contains `{fingerprint, start, model, createdAt, chunks}`; each chunk has `{text, steps, note}`, and each step has `{japanese, reading, english}`. Replacing an analysis deletes its cached breakdowns.
+
+The initial migration was regenerated for a fresh database. Wipe the existing VPS database before deploying this schema.
+
 `lines` are the song's lyric lines as `lyricLines` from `@kashi-koi/shared` returns them, so the fingerprint matches the app's.
 
 ## Backfill
@@ -84,7 +92,7 @@ A fixture is `{title, artist?, lines, checks?}`. `checks` is only printed in the
 
 ## Codex
 
-Each analysis runs `codex exec` in a fresh empty temp directory, with the prompt on stdin and a 5 minute timeout. Shell and web search are off and the sandbox is read-only. `--ignore-user-config`, `--ignore-rules`, `--disable apps` and `--disable plugins` keep the host's Codex config, MCP servers, exec rules, ChatGPT connectors and plugins out of analyses, while the login in `CODEX_HOME` still works. A global `AGENTS.md` in `CODEX_HOME` is still read, including in containers that mount the host's Codex home.
+Each analysis or breakdown runs `codex exec` in a fresh empty temp directory, with the prompt on stdin. Analyses have a 5 minute timeout per attempt; breakdowns have 60 seconds. Shell and web search are off and the sandbox is read-only. `--ignore-user-config`, `--ignore-rules`, `--disable apps` and `--disable plugins` keep the host's Codex config, MCP servers, exec rules, ChatGPT connectors and plugins out of analyses, while the login in `CODEX_HOME` still works. A global `AGENTS.md` in `CODEX_HOME` is still read, including in containers that mount the host's Codex home.
 
 Usage and rate limits pause the queue instead of failing the job.
 

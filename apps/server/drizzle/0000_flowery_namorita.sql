@@ -1,8 +1,18 @@
 CREATE TABLE `analyses` (
 	`fingerprint` text PRIMARY KEY NOT NULL,
+	`lines` text NOT NULL,
 	`json` text NOT NULL,
 	`model` text NOT NULL,
 	`created_at` text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE `breakdowns` (
+	`fingerprint` text NOT NULL,
+	`start` integer NOT NULL,
+	`json` text NOT NULL,
+	`model` text NOT NULL,
+	`created_at` text NOT NULL,
+	PRIMARY KEY(`fingerprint`, `start`)
 );
 --> statement-breakpoint
 CREATE TABLE `jobs` (

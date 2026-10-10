@@ -96,11 +96,11 @@ test('choices are distinct, shuffled and contain the translation with fewer choi
   });
   const song = libraryStore.getState().bySong['0']!;
   assert.deepEqual(
-    getAnswers(song, 0, () => 0.99),
+    getAnswers(song, 0, () => 0.99).map((choice) => choice.text),
     ['one', 'two'],
   );
   assert.deepEqual(
-    getAnswers(song, 0, () => 0),
+    getAnswers(song, 0, () => 0).map((choice) => choice.text),
     ['two', 'one'],
   );
   libraryStore.getState().setLyricsResult('0', 'synced', {
@@ -109,10 +109,10 @@ test('choices are distinct, shuffled and contain the translation with fewer choi
   });
   const three = getAnswers(song, 0, () => 0);
   assert.equal(three.length, 3);
-  assert.equal(new Set(three).size, 3);
-  assert.ok(three.includes('one'));
+  assert.equal(new Set(three.map((choice) => choice.text)).size, 3);
+  assert.ok(three.some((choice) => choice.text === 'one'));
   libraryStore.getState().setLyricsResult('0', 'synced', { ...getLyrics('0'), lines: [line('0:0', '一つ', 'one')] });
-  assert.deepEqual(getAnswers(song, 0), ['one']);
+  assert.deepEqual(getAnswers(song, 0), [{ text: 'one', parts: [{ text: 'one', marked: false }], correct: true }]);
   assert.deepEqual(getAnswers(song, 2), []);
 });
 
@@ -179,8 +179,8 @@ test('quiz and review gates accept translated songs despite English lines and pa
   appStore.getState().startClipReview();
   assert.deepEqual(appStore.getState().clipReview!.ids, ['ready']);
   const choice = appStore.getState().clipReview!.choices['0:0']![0]!;
-  appStore.getState().answerClip(choice);
-  assert.equal(appStore.getState().clipReview!.answers['ready']?.correct, true);
+  appStore.getState().answerClip(choice.text);
+  assert.equal(appStore.getState().clipReview!.answers.ready?.correct, true);
 });
 
 test('queue persists unique Japanese texts and applies them across shared lines and rescans', async () => {

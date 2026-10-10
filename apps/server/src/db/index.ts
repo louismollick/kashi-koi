@@ -1,12 +1,12 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { SongAnalysis } from '@kashi-koi/shared';
+import type { Breakdown, SongAnalysis } from '@kashi-koi/shared';
 import Database from 'better-sqlite3';
 import { and, eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { analyses, type EnqueueInput, jobs } from './schema.ts';
+import { analyses, breakdowns, type EnqueueInput, jobs } from './schema.ts';
 
 /** Open the local store and apply the checked-in migrations before serving requests. */
 export function openDatabase(dataDir = process.env.KASHI_DATA_DIR ?? './data') {
@@ -30,6 +30,30 @@ export function openDatabase(dataDir = process.env.KASHI_DATA_DIR ?? './data') {
     close: () => sqlite.close(),
     getAnalysis,
     getJob,
+    getAnalysisSource: (fingerprint: string) =>
+      db.select().from(analyses).where(eq(analyses.fingerprint, fingerprint)).get(),
+    getBreakdown: (fingerprint: string, start: number) =>
+      db
+        .select()
+        .from(breakdowns)
+        .where(and(eq(breakdowns.fingerprint, fingerprint), eq(breakdowns.start, start)))
+        .get()?.json,
+    saveBreakdown(breakdown: Breakdown) {
+      const values = {
+        fingerprint: breakdown.fingerprint,
+        start: breakdown.start,
+        json: breakdown,
+        model: breakdown.model,
+        createdAt: breakdown.createdAt,
+      };
+      db.insert(breakdowns)
+        .values(values)
+        .onConflictDoUpdate({
+          target: [breakdowns.fingerprint, breakdowns.start],
+          set: values,
+        })
+        .run();
+    },
     /** Active jobs dedupe even with force, so a running analysis cannot be replaced underneath the worker. */
     enqueue(input: EnqueueInput, force = false) {
       return db.transaction(() => {
@@ -83,14 +107,16 @@ export function openDatabase(dataDir = process.env.KASHI_DATA_DIR ?? './data') {
         };
       });
     },
-    complete(analysis: SongAnalysis) {
+    complete(analysis: SongAnalysis, lines: string[]) {
       db.transaction(() => {
         const values = {
           fingerprint: analysis.fingerprint,
+          lines,
           json: analysis,
           model: analysis.model,
           createdAt: analysis.createdAt,
         };
+        db.delete(breakdowns).where(eq(breakdowns.fingerprint, analysis.fingerprint)).run();
         db.insert(analyses).values(values).onConflictDoUpdate({ target: analyses.fingerprint, set: values }).run();
         db.update(jobs)
           .set({ status: 'done', lines: [], error: null, updatedAt: Date.now() })

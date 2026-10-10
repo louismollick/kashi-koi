@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { canExplain } from '@/analysis/breakdowns';
 import { appStore } from '@/store/appStore';
 import { currentSentence, getSong, libraryStore, sentenceForReview } from '@/store/libraryStore';
 import { ScreenHeader } from '@/components/Header';
@@ -42,13 +43,19 @@ export default function ClipReviewScreen() {
       <QuizColumn
         lines={current?.lines}
         previous={previous?.lines}
-        translation={current?.sentence.translation}
         isNew={item.kind === 'new'}
         choices={clip.choices[item.sentenceId] ?? []}
         selected={answer?.choice ?? null}
         nice={answer?.correct === true}
         combo={clip.combo}
         onAnswer={(choice) => appStore.getState().answerClip(choice)}
+        onExplain={
+          canExplain(song.id)
+            ? () => router.push({ pathname: '/breakdown', params: { songId: song.id, sentenceId: item.sentenceId } })
+            : undefined
+        }
+        onContinue={() => appStore.getState().nextClip()}
+        continueLabel="NEXT"
       />
       <PlayerBar clipReview />
     </View>

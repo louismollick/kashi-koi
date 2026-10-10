@@ -1,3 +1,4 @@
+import { testDecoys } from './test-utils.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { type Analyzer, UsageLimitError } from '../src/analyzer/index.ts';
@@ -5,6 +6,8 @@ import { Worker } from '../src/worker.ts';
 import { draft, input, testStore } from './test-utils.ts';
 
 const model = 'stub-model';
+const firstSentence = draft.sentences[0];
+assert.ok(firstSentence);
 const epoch = Date.parse('2026-10-08T12:00:00.000Z');
 
 test('validates and stamps model output, then clears source lines', async (t) => {
@@ -25,13 +28,14 @@ test('validates and stamps model output, then clears source lines', async (t) =>
   assert.equal(await worker.runNext(), false);
   assert.deepEqual(store.getAnalysis(input.fingerprint), {
     ...draft,
-    schemaVersion: 1,
+    schemaVersion: 2,
     fingerprint: input.fingerprint,
     model,
     createdAt: new Date(epoch).toISOString(),
   });
   assert.equal(store.getJob(input.fingerprint)?.status, 'done');
   assert.deepEqual(store.getJob(input.fingerprint)?.lines, []);
+  assert.deepEqual(store.getAnalysisSource(input.fingerprint)?.lines, input.lines);
 });
 
 test('invalid analysis retries exactly once with validation feedback', async (t) => {
@@ -42,7 +46,11 @@ test('invalid analysis retries exactly once with validation feedback', async (t)
     model,
     async analyze(request) {
       calls++;
-      if (calls === 1) return { ...draft, sentences: [{ start: 1, end: 1, translation: 'Incomplete' }] };
+      if (calls === 1)
+        return {
+          ...draft,
+          sentences: [{ start: 1, end: 1, translation: 'Incomplete', decoys: testDecoys('Incomplete') }],
+        };
       assert.ok(request.feedback?.some((message) => message.includes('expected 0')));
       return draft;
     },
@@ -169,7 +177,7 @@ test('Japanese script in otherwise valid output gets validation feedback and can
     async analyze(request) {
       calls++;
       if (calls === 2) assert.ok(request.feedback?.some((message) => message.includes('Romanize')));
-      return { ...draft, notes: [{ line: 0, text: 'The word 朝 means morning.' }] };
+      return { ...draft, summary: 'The word 朝 means morning.' };
     },
   };
   await new Worker(store, analyzer).runNext();
@@ -297,4 +305,52 @@ test('the worker never runs two analyses concurrently and finishes its active jo
   assert.equal(calls, 1);
   assert.equal(store.getJob(input.fingerprint)?.status, 'done');
   assert.equal(store.getJob('second')?.status, 'queued');
+});
+
+test('the final attempt drops only invalid decoys and accepts the translations', async (t) => {
+  for (const decoys of [
+    firstSentence.decoys.map((decoy) => ({ ...decoy, from: "can't go back" })),
+    [],
+    [{ from: '', to: '', reason: '' }],
+    [
+      { from: 'Opening', to: '閉める', reason: '開ける means open.' },
+      { from: 'Opening', to: 'Shutting', reason: 'Wrong verb' },
+    ],
+  ]) {
+    const { store } = testStore(t);
+    store.enqueue(input);
+    let calls = 0;
+    const valid = {
+      start: 1,
+      end: 1,
+      translation: 'I call your name into the wind',
+      decoys: testDecoys('I call your name into the wind'),
+    };
+    await new Worker(store, {
+      model,
+      async analyze(request) {
+        if (++calls === 2) assert.ok(request.feedback?.length);
+        return { ...draft, sentences: [{ ...firstSentence, end: 0, decoys }, valid] };
+      },
+    }).runNext();
+    assert.equal(calls, 2);
+    assert.equal(store.getJob(input.fingerprint)?.status, 'done');
+    assert.deepEqual(store.getAnalysis(input.fingerprint)?.sentences, [
+      { ...firstSentence, end: 0, decoys: [] },
+      valid,
+    ]);
+  }
+});
+
+test('dropping invalid decoys does not hide structural errors on the final attempt', async (t) => {
+  const { store } = testStore(t);
+  store.enqueue(input);
+  await new Worker(store, {
+    model,
+    async analyze() {
+      return { ...draft, lines: [], sentences: draft.sentences.map((sentence) => ({ ...sentence, decoys: [] })) };
+    },
+  }).runNext();
+  assert.equal(store.getJob(input.fingerprint)?.status, 'failed');
+  assert.equal(store.getAnalysis(input.fingerprint), undefined);
 });

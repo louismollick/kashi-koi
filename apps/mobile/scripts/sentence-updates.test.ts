@@ -1,10 +1,11 @@
+import { testDecoys } from './fixtures';
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { remapReview } from '../src/lyrics/review';
 import { toSongLyrics } from '../src/navidrome/lyrics';
 import { appStore, resetAppState, setTransport } from '../src/store/appStore';
-import { getLyrics, libraryStore } from '../src/store/libraryStore';
+import { getAnswers, getLyrics, libraryStore } from '../src/store/libraryStore';
 import { songs } from './fixtures';
 
 const song = { ...songs[0]!, id: 'paper' };
@@ -22,7 +23,7 @@ const raw = () =>
     3000,
   );
 const analysis = (): SongAnalysis => ({
-  schemaVersion: 1,
+  schemaVersion: 2,
   fingerprint: raw().fingerprint,
   model: 'test',
   createdAt: '2026-10-08T00:00:00Z',
@@ -32,10 +33,14 @@ const analysis = (): SongAnalysis => ({
   addressee: 'Unclear',
   lines: ['A paper boat', 'I set it on the river', 'I waited for dawn'],
   sentences: [
-    { start: 0, end: 1, translation: 'I set a paper boat on the river' },
-    { start: 2, end: 2, translation: 'I waited for dawn' },
+    {
+      start: 0,
+      end: 1,
+      translation: 'I set a paper boat on the river',
+      decoys: testDecoys('I set a paper boat on the river'),
+    },
+    { start: 2, end: 2, translation: 'I waited for dawn', decoys: testDecoys('I waited for dawn') },
   ],
-  notes: [],
 });
 beforeEach(async () => {
   await resetAppState();
@@ -121,7 +126,14 @@ test('replacing a library with a newer cached analysis re-derives its sentences 
     updated = {
       ...analysis(),
       title: 'A new reading',
-      sentences: [{ start: 0, end: 2, translation: 'I floated a paper boat and waited for dawn' }],
+      sentences: [
+        {
+          start: 0,
+          end: 2,
+          translation: 'I floated a paper boat and waited for dawn',
+          decoys: testDecoys('I floated a paper boat and waited for dawn'),
+        },
+      ],
     };
   libraryStore.getState().setLibrary({ ...state, analyses: { [updated.fingerprint]: updated } });
   assert.equal(getLyrics(song.id).analysis?.title, 'A new reading');
@@ -181,4 +193,59 @@ test('removing all lyric sentences ends clip review and cancels feedback', (t) =
   assert.equal(appStore.getState().playing, false);
   t.mock.timers.tick(800);
   assert.equal(appStore.getState().clipReview, null);
+});
+
+test('empty analyzed decoys fall back to unmarked same-song translations', () => {
+  const empty = { ...analysis(), sentences: analysis().sentences.map((sentence) => ({ ...sentence, decoys: [] })) };
+  libraryStore.getState().setAnalysis(empty);
+  const choices = getAnswers(song, 0, () => 0);
+  assert.deepEqual(
+    new Set(choices.map((choice) => choice.text)),
+    new Set(empty.sentences.map((sentence) => sentence.translation)),
+  );
+  assert.equal(choices.filter((choice) => choice.correct).length, 1);
+  assert.ok(choices.every((choice) => choice.parts.length === 1 && !choice.parts[0]!.marked));
+});
+
+test('analysis replacement with the same sentence IDs refreshes clip choices and clears affected answers', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  for (const changeTranslation of [true, false]) {
+    const original = analysis();
+    libraryStore.getState().setAnalysis(original);
+    startReview();
+    appStore.getState().jumpToClip(1);
+    appStore.getState().answerClip(original.sentences[1]!.translation);
+    appStore.getState().jumpToClip(0);
+    appStore.getState().answerClip(original.sentences[0]!.translation);
+    const before = appStore.getState().clipReview!;
+    const translation = changeTranslation ? 'I floated a paper boat downstream' : original.sentences[0]!.translation;
+    libraryStore.getState().setAnalysis({
+      ...original,
+      sentences: [
+        { ...original.sentences[0]!, translation, decoys: changeTranslation ? testDecoys(translation) : [] },
+        original.sentences[1]!,
+      ],
+    });
+    const after = appStore.getState().clipReview!;
+    assert.deepEqual(after.ids, before.ids);
+    assert.equal(after.answers['review-0'], undefined);
+    assert.deepEqual(after.answers['review-1'], before.answers['review-1']);
+    assert.notDeepEqual(
+      after.choices[getLyrics(song.id).sentences[0]!.id],
+      before.choices[getLyrics(song.id).sentences[0]!.id],
+    );
+    assert.deepEqual(
+      after.choices[getLyrics(song.id).sentences[1]!.id],
+      before.choices[getLyrics(song.id).sentences[1]!.id],
+    );
+    assert.equal(
+      after.choices[getLyrics(song.id).sentences[0]!.id]!.find((choice) => choice.correct)?.text,
+      translation,
+    );
+    assert.equal(after.combo, 0);
+    t.mock.timers.tick(800);
+    assert.equal(appStore.getState().clipReview?.index, 0);
+    appStore.getState().answerClip(translation);
+    assert.equal(appStore.getState().clipReview?.answers['review-0']?.correct, true);
+  }
 });

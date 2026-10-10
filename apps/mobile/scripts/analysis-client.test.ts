@@ -1,15 +1,16 @@
+import { testDecoys } from './fixtures';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
-import { fetchAnalysis, requestAnalysis } from '../src/analysis/client';
+import { fetchAnalysis, requestAnalysis, fetchBreakdown, requestBreakdown } from '../src/analysis/client';
 
 // Original lyrics; the repeated line must remain part of the fingerprint.
 const lines = ['窓辺で朝を待つ', 'まだ名のない風を呼ぶ', '窓辺で朝を待つ'];
 const fp = fingerprint(lines);
 const input = { title: '窓辺の風', artist: '試作の歌い手', lines };
 const analysis: SongAnalysis = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   fingerprint: fp,
   model: 'test-model',
   createdAt: '2026-10-08T00:00:00Z',
@@ -19,10 +20,14 @@ const analysis: SongAnalysis = {
   addressee: 'The wind',
   lines: ['I wait for morning by the window', 'And call to a wind without a name', 'I wait by the window again'],
   sentences: [
-    { start: 0, end: 1, translation: 'I wait for morning by the window, calling to an unnamed wind.' },
-    { start: 2, end: 2, translation: 'I wait by the window again.' },
+    {
+      start: 0,
+      end: 1,
+      translation: 'I wait for morning by the window, calling to an unnamed wind.',
+      decoys: testDecoys('I wait for morning by the window, calling to an unnamed wind.'),
+    },
+    { start: 2, end: 2, translation: 'I wait by the window again.', decoys: testDecoys('I wait by the window again.') },
   ],
-  notes: [{ line: 1, text: 'The speaker continues the thought from the first line.' }],
 };
 const reply =
   (value: unknown, status = 200): typeof fetch =>
@@ -73,25 +78,37 @@ test('POST returns validated pending jobs with the computed fingerprint and acce
   }
 });
 
-test('GET and POST reject schema errors, wrong fingerprints and invalid sentence or note ranges', async () => {
+test('GET and POST reject schema errors, wrong fingerprints and invalid sentences or obsolete notes', async () => {
   const invalid: unknown[] = [
     null,
     {},
-    { ...analysis, schemaVersion: 2 },
+    { ...analysis, schemaVersion: 1 },
     { ...analysis, model: ' ' },
     { ...analysis, fingerprint: fingerprint(['別の窓を開ける']) },
     { ...analysis, extra: 'unrecognized' },
     { ...analysis, lines: [' ', ...analysis.lines.slice(1)] },
     { ...analysis, sentences: [] },
-    { ...analysis, sentences: [{ start: 1, end: 2, translation: 'Gap' }] },
-    { ...analysis, sentences: [analysis.sentences[0], { start: 1, end: 2, translation: 'Overlap' }] },
+    { ...analysis, sentences: [{ start: 1, end: 2, translation: 'Gap', decoys: testDecoys('Gap') }] },
+    {
+      ...analysis,
+      sentences: [analysis.sentences[0], { start: 1, end: 2, translation: 'Overlap', decoys: testDecoys('Overlap') }],
+    },
     { ...analysis, sentences: [...analysis.sentences].reverse() },
-    { ...analysis, sentences: [{ start: 0, end: 3, translation: 'Out of range' }] },
-    { ...analysis, sentences: [{ start: 0, end: -1, translation: 'Reversed' }] },
-    { ...analysis, sentences: [{ start: 0.5, end: 2, translation: 'Fractional' }] },
-    { ...analysis, notes: [{ line: 3, text: 'Out of range' }] },
-    { ...analysis, notes: [{ line: -1, text: 'Negative' }] },
-    { ...analysis, notes: [{ line: 0, text: '\n ' }] },
+    { ...analysis, sentences: [{ start: 0, end: 3, translation: 'Out of range', decoys: testDecoys('Out of range') }] },
+    { ...analysis, sentences: [{ start: 0, end: -1, translation: 'Reversed', decoys: testDecoys('Reversed') }] },
+    { ...analysis, sentences: [{ start: 0.5, end: 2, translation: 'Fractional', decoys: testDecoys('Fractional') }] },
+    { ...analysis, notes: [] },
+    {
+      ...analysis,
+      sentences: analysis.sentences.map((sentence) => ({ ...sentence, decoys: sentence.decoys.slice(0, 1) })),
+    },
+    {
+      ...analysis,
+      sentences: analysis.sentences.map((sentence) => ({
+        ...sentence,
+        decoys: sentence.decoys.map((decoy) => ({ ...decoy, from: 'missing' })),
+      })),
+    },
   ];
   for (const value of invalid) {
     await assert.rejects(fetchAnalysis('https://analysis.test', fp, reply(value)));
@@ -177,4 +194,102 @@ test('default fetch calls use a 30 second timeout and propagate aborts', async (
   await assert.rejects(fetchAnalysis('https://analysis.test', fp), (error) => error === timeout);
   await assert.rejects(requestAnalysis('https://analysis.test', 'token', input), (error) => error === timeout);
   assert.equal(calls, 2);
+});
+
+test('phone GET and POST accept analyses with empty decoys', async () => {
+  const empty = { ...analysis, sentences: analysis.sentences.map((sentence) => ({ ...sentence, decoys: [] })) };
+  assert.deepEqual(await fetchAnalysis('https://analysis.test', fp, reply(empty)), { status: 200, analysis: empty });
+  assert.deepEqual(await requestAnalysis('https://analysis.test', 'token', input, reply(empty)), {
+    status: 200,
+    analysis: empty,
+  });
+});
+
+const breakdown = {
+  fingerprint: fp,
+  start: 0,
+  model: 'test',
+  createdAt: '2026-10-09T00:00:00Z',
+  chunks: [
+    { text: lines.slice(0, 2).join(''), steps: [{ japanese: '窓', reading: 'まど', english: 'window' }], note: '' },
+  ],
+};
+const sentenceText = lines.slice(0, 2).join('\n');
+
+test('breakdown GET and POST validate the target and preserve the API base path', async (t) => {
+  const timeouts: number[] = [];
+  t.mock.method(AbortSignal, 'timeout', (ms: number) => {
+    timeouts.push(ms);
+    return new AbortController().signal;
+  });
+  const fetcher: typeof fetch = async (url, init) => {
+    assert.equal(url, `https://analysis.test/api/v1/analyses/${encodeURIComponent(fp)}/breakdowns/0`);
+    assert.ok(init?.signal instanceof AbortSignal);
+    if (init?.method === 'POST') assert.deepEqual(init.headers, { Authorization: 'Bearer owner' });
+    else assert.equal(init?.headers, undefined);
+    return Response.json(breakdown);
+  };
+  assert.deepEqual(await fetchBreakdown(' https://analysis.test/api/// ', fp, 0, sentenceText, fetcher), {
+    status: 200,
+    breakdown,
+  });
+  assert.deepEqual(await requestBreakdown('https://analysis.test/api/', 'owner', fp, 0, sentenceText, fetcher), {
+    status: 200,
+    breakdown,
+  });
+  assert.deepEqual(timeouts, [30_000, 270_000]);
+});
+
+test('breakdown GET and POST accept 404 and reject invalid targets, coverage, readings and JSON', async () => {
+  const missing: typeof fetch = async () => new Response(null, { status: 404 });
+  assert.deepEqual(await fetchBreakdown('https://analysis.test', fp, 0, sentenceText, missing), { status: 404 });
+  assert.deepEqual(await requestBreakdown('https://analysis.test', 'owner', fp, 0, sentenceText, missing), {
+    status: 404,
+  });
+  for (const value of [
+    null,
+    {},
+    { ...breakdown, fingerprint: 'wrong' },
+    { ...breakdown, start: 2 },
+    { ...breakdown, chunks: [] },
+    { ...breakdown, chunks: [{ ...breakdown.chunks[0]!, text: '違う' }] },
+    {
+      ...breakdown,
+      chunks: [{ ...breakdown.chunks[0]!, steps: [{ japanese: '窓', reading: '', english: 'window' }] }],
+    },
+  ]) {
+    await assert.rejects(fetchBreakdown('https://analysis.test', fp, 0, sentenceText, reply(value)));
+    await assert.rejects(requestBreakdown('https://analysis.test', 'owner', fp, 0, sentenceText, reply(value)));
+  }
+  const invalidJson: typeof fetch = async () => new Response('invalid JSON', { status: 200 });
+  await assert.rejects(fetchBreakdown('https://analysis.test', fp, 0, sentenceText, invalidJson), SyntaxError);
+  await assert.rejects(
+    requestBreakdown('https://analysis.test', 'owner', fp, 0, sentenceText, invalidJson),
+    SyntaxError,
+  );
+});
+
+test('breakdown HTTP failures show short messages and network failures propagate', async () => {
+  for (const [status, message] of [
+    [503, 'Server busy, try again'],
+    [429, 'Usage limit reached, try later'],
+    [502, 'Breakdown failed'],
+  ] as const) {
+    await assert.rejects(fetchBreakdown('https://analysis.test', fp, 0, sentenceText, reply({}, status)), { message });
+    await assert.rejects(requestBreakdown('https://analysis.test', 'owner', fp, 0, sentenceText, reply({}, status)), {
+      message,
+    });
+  }
+  const failure = new Error('offline');
+  const fetcher: typeof fetch = async () => {
+    throw failure;
+  };
+  await assert.rejects(
+    fetchBreakdown('https://analysis.test', fp, 0, sentenceText, fetcher),
+    (error) => error === failure,
+  );
+  await assert.rejects(
+    requestBreakdown('https://analysis.test', 'owner', fp, 0, sentenceText, fetcher),
+    (error) => error === failure,
+  );
 });

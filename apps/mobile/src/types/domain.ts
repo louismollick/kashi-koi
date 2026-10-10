@@ -1,3 +1,6 @@
+import type { Decoy } from '@kashi-koi/shared/analysis';
+
+export type { Decoy } from '@kashi-koi/shared/analysis';
 export type Rank = 'S' | 'A' | 'B' | 'C';
 export type Combo = number;
 export type QuizToggle = boolean;
@@ -5,7 +8,8 @@ export type ListenMode = 'listen';
 export type QuizMode = 'quiz';
 export type Line = { id: string; segments: { text: string; reading?: string }[]; translation?: string };
 export type Occurrence = { lineId: string; startMs: number; endMs: number; translation?: string };
-export type Sentence = { id: string; lineIds: string[]; translation?: string };
+export type Sentence = { id: string; lineIds: string[]; translation?: string; decoys?: Decoy[] };
+export type Choice = { text: string; parts: { text: string; marked: boolean }[]; correct: boolean; reason?: string };
 export type SentenceOccurrence = { sentenceId: string; start: number; end: number };
 export type SongLyrics = {
   songId: string;
@@ -19,7 +23,6 @@ export type SongLyrics = {
     summary: string;
     speaker: string;
     addressee: string;
-    notes: { occurrence: number; text: string }[];
   };
 };
 export type LyricsStatus = 'unchecked' | 'synced' | 'none' | 'error';
@@ -61,12 +64,12 @@ export type ClipReview = {
   ids: string[];
   index: number;
   answers: Record<string, { choice: string; correct: boolean }>;
-  choices: Record<string, string[]>;
+  choices: Record<string, Choice[]>;
   combo: Combo;
 };
 /** Each sentence keeps its first answer until the next run. */
 export type Run = {
-  choices: Record<string, string[]>;
+  choices: Record<string, Choice[]>;
   answers: Record<string, { choice: string; correct: boolean }>;
   combo: Combo;
   bestCombo: Combo;
