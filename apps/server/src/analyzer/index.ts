@@ -41,7 +41,7 @@ export class CodexAnalyzer implements Analyzer, BreakdownAnalyzer {
   private readonly breakdownTimeoutMs: number;
 
   constructor(options: CodexOptions = {}) {
-    this.model = options.model ?? process.env.KASHI_MODEL ?? 'gpt-6-luna';
+    this.model = options.model ?? process.env.KASHI_MODEL ?? 'gpt-6.1-sol';
     this.reasoning = options.reasoning ?? process.env.KASHI_REASONING ?? 'medium';
     this.breakdownReasoning = options.breakdownReasoning ?? process.env.KASHI_BREAKDOWN_REASONING ?? 'low';
     this.command = options.command ?? 'codex';

@@ -878,9 +878,7 @@ libraryStore.subscribe((state, previous) => {
     const changed = entries.filter((item) => {
       const before = previous.lyrics[item.songId]?.sentences.find((sentence) => sentence.id === item.sentenceId),
         after = state.lyrics[item.songId]?.sentences.find((sentence) => sentence.id === item.sentenceId);
-      return (
-        before?.translation !== after?.translation || JSON.stringify(before?.decoys) !== JSON.stringify(after?.decoys)
-      );
+      return before?.translation !== after?.translation || JSON.stringify(before?.quiz) !== JSON.stringify(after?.quiz);
     });
     if (index < 0 || changed.some((item) => item.id === clip.ids[clip.index])) clearClipTimer();
     appStore.setState({

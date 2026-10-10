@@ -10,7 +10,7 @@ Node 24, port 8787. Commands run from the repository root.
 | --- | --- | --- |
 | `KASHI_ADMIN_TOKEN` | required | Bearer token for creating analyses and breakdowns |
 | `KASHI_DATA_DIR` | `./data` (`/data` in Docker) | SQLite database |
-| `KASHI_MODEL` | `gpt-6-luna` | Codex model |
+| `KASHI_MODEL` | `gpt-6.1-sol` | Codex model |
 | `KASHI_REASONING` | `medium` | Analysis `model_reasoning_effort` |
 | `KASHI_BREAKDOWN_REASONING` | `low` | Breakdown `model_reasoning_effort` |
 | `PORT` | `8787` | |
@@ -62,7 +62,9 @@ Do not copy `auth.json` into a separate Codex home. Refresh tokens rotate, so re
 - `GET /v1/analyses/:fingerprint/breakdowns/:start`: public, `Cache-Control: no-store`. Returns `200` with a cached breakdown or `404` when none exists. `start` is the sentence's zero-based first line index.
 - `POST /v1/analyses/:fingerprint/breakdowns/:start` with the same admin bearer token, no body required. Returns a cached breakdown or generates, validates and stores one synchronously, with one retry on validation failure. Returns `200` on success, `404` for a missing analysis or invalid sentence start, `429` for usage limits, `503` when the waiting queue is full, and `502` for generation failures. Concurrent requests for one key share the result; at most two breakdown generations run at once, with two waiting requests. Each attempt has a 60 second timeout and at most two attempts, bounding queue wait plus generation at 240 seconds.
 
-Song analyses use `schemaVersion: 2`, with zero or two valid `{from, to, reason}` decoys per sentence and no notes. The first attempt requires two decoys; after the final attempt, invalid decoys are dropped while structural errors still fail. A breakdown contains `{fingerprint, start, model, createdAt, chunks}`; each chunk has `{text, steps, note}`, and each step has `{japanese, reading, english}`. Replacing an analysis deletes its cached breakdowns.
+Song analyses use `schemaVersion: 3`, with `{title, about, lines, sentences}` plus server metadata. Each sentence is `{start, end, translation, quiz}`. A quiz is `{phrase, decoys: [{phrase, reason}]}` or `null`; both decoys replace the first occurrence of the same phrase. Quizzes on English-only lyrics or phrases already shown in the lyrics are rejected. Reasons may quote Japanese. The final attempt drops invalid quizzes to `null` while structural errors still fail. Long sentences are advice sent back on the first attempt only.
+
+A breakdown contains `{fingerprint, start, model, createdAt, chunks}`; each chunk has `{text, reading, english, steps, note}`, and each step has `{japanese, reading, english}`. Coverage compares only Japanese characters. Chunk and step readings must be hiragana, and kanji requires a reading. Chunk `english` is empty or an exact substring of the sentence translation. Replacing an analysis deletes its cached breakdowns.
 
 The initial migration was regenerated for a fresh database. Wipe the existing VPS database before deploying this schema.
 
@@ -79,7 +81,7 @@ docker compose exec server node --import tsx apps/server/src/backfill.ts
 
 ## Eval
 
-Runs the analyzer on the original lyrics in `apps/server/eval/` and prints each analysis next to its lines, with what to look for and any validation problems. It uses the real Codex login and spends subscription usage. Pass a fixture name to run only that one, or a path (containing `/`) to run any fixture file. Paths are relative to where you run the command.
+Runs the same two-attempt validation and quiz dropping as the worker on the original lyrics in `apps/server/eval/` and prints each analysis next to its lines, with About, gap phrases and decoy reasons, first-attempt advice, dropped quizzes, timings and fixture checks. It uses the real Codex login and spends subscription usage. Pass a fixture name to run only that one, or a path (containing `/`) to run any fixture file. Paths are relative to where you run the command.
 
 ```sh
 npm run eval -w @kashi-koi/server

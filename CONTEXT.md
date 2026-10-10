@@ -23,7 +23,7 @@ A dictionary term inside a line. Looking up words helps you understand a line, b
 _Avoid_: Vocab, card
 
 **Song analysis**:
-A reading of a whole song's lyrics, made once by an LLM and shared by every listener whose lyrics match: its sentences, a translation of the title and of each line and sentence made with the whole song in view, a summary, who is speaking to whom, and two decoys per sentence. A song without one falls back to line-by-line translations.
+A reading of a whole song's lyrics, made once by an LLM and shared by every listener whose lyrics match: its sentences, a translation of the title and of each line and sentence made with the whole song in view, an about sentence explaining who speaks to whom and the gist, and an optional gap quiz per sentence. A song without one falls back to line-by-line translations.
 _Avoid_: AI translation, enrichment, analysis file
 
 **Breakdown**:
@@ -31,7 +31,7 @@ An explanation of one sentence, built chunk by chunk from dictionary forms, with
 _Avoid_: Analysis (when meaning one sentence's explanation), annotation, lesson
 
 **Decoy**:
-A wrong translation made by swapping one short phrase in a sentence's translation, with a reason the swap is wrong. Meaning Match marks the changed phrases in every choice.
+A wrong phrase for a sentence's gap, with a reason it does not fit the Japanese grammar. Each decoy fits the same gap as the right phrase.
 _Avoid_: Distractor, fake answer
 
 **Translation**:
@@ -102,7 +102,7 @@ Reviewing due sentences one at a time by replaying just their clip, in the same 
 _Avoid_: Flashcards, quiet mode
 
 **Meaning Match**:
-The game played in quiz mode: as each sentence finishes, the user picks its translation from the right answer and two decoys. Without a song analysis, the other choices come from the same song.
+The game played in quiz mode: as each sentence finishes, the user fills a gap in its translation with the right phrase or one of two decoys. Without a gap quiz, the user picks a full translation from choices drawn from the same song.
 _Avoid_: Quiz, rhythm mode
 
 **Answer time**:

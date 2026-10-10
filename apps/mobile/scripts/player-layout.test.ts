@@ -1,4 +1,3 @@
-import { testDecoys } from './fixtures';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createRequire, registerHooks } from 'node:module';
@@ -172,20 +171,18 @@ test('Song info only offers source choices for analyzed songs and switches the p
 
   const lyrics = songLyrics.dawn!;
   const analysis: SongAnalysis = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     fingerprint: lyrics.fingerprint,
     model: 'test',
     createdAt: '2026-10-08T00:00:00Z',
     title: 'Dawn bus',
-    summary: 'A bus ride at dawn.',
-    speaker: 'A passenger',
-    addressee: 'A remembered friend',
+    about: 'A bus ride at dawn.',
     lines: lyrics.timeline.map((_, index) => `Analyzed line ${index}`),
     sentences: lyrics.timeline.map((_, index) => ({
       start: index,
       end: index,
       translation: `Analyzed sentence ${index}`,
-      decoys: testDecoys(`Analyzed sentence ${index}`),
+      quiz: null,
     })),
   };
   libraryStore.getState().setAnalysis(analysis);

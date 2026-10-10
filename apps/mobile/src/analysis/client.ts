@@ -15,8 +15,8 @@ export type RequestAnalysisResult =
 function readAnalysis(value: unknown, expectedFingerprint: string, lineCount?: number): SongAnalysis {
   const analysis = songAnalysisSchema.parse(value);
   if (analysis.fingerprint !== expectedFingerprint) throw new Error('Song analysis fingerprint does not match');
-  const { title, summary, speaker, addressee, lines, sentences } = analysis;
-  const errors = validateAnalysis({ title, summary, speaker, addressee, lines, sentences }, lineCount ?? lines.length);
+  const { title, about, lines, sentences } = analysis;
+  const errors = validateAnalysis({ title, about, lines, sentences }, lineCount ?? lines.length);
   if (errors.length) throw new Error(`Invalid song analysis: ${errors.join('; ')}`);
   return analysis;
 }
@@ -77,10 +77,17 @@ export async function requestAnalysis(
 
 export type FetchBreakdownResult = { status: 200; breakdown: Breakdown } | { status: 404 };
 
-function readBreakdown(value: unknown, fp: string, start: number, sentenceText: string): Breakdown {
+function readBreakdown(
+  value: unknown,
+  fp: string,
+  start: number,
+  sentenceText: string,
+  translation: string,
+): Breakdown {
   const breakdown = breakdownSchema.parse(value);
   if (breakdown.fingerprint !== fp || breakdown.start !== start) throw new Error('Breakdown target does not match');
-  if (validateBreakdown({ chunks: breakdown.chunks }, sentenceText).length) throw new Error('Invalid breakdown');
+  if (validateBreakdown({ chunks: breakdown.chunks }, sentenceText, translation).length)
+    throw new Error('Invalid breakdown');
   return breakdown;
 }
 
@@ -90,6 +97,7 @@ export async function fetchBreakdown(
   fp: string,
   start: number,
   sentenceText: string,
+  translation: string,
   fetcher: typeof fetch = fetch,
 ): Promise<FetchBreakdownResult> {
   const response = await fetcher(
@@ -107,7 +115,7 @@ export async function fetchBreakdown(
           ? 'Usage limit reached, try later'
           : 'Breakdown failed',
     );
-  return { status: 200, breakdown: readBreakdown(await response.json(), fp, start, sentenceText) };
+  return { status: 200, breakdown: readBreakdown(await response.json(), fp, start, sentenceText, translation) };
 }
 
 // Server: <=120s queued + two 60s attempts. Allow 270s for POST including transport overhead.
@@ -117,6 +125,7 @@ export async function requestBreakdown(
   fp: string,
   start: number,
   sentenceText: string,
+  translation: string,
   fetcher: typeof fetch = fetch,
 ): Promise<FetchBreakdownResult> {
   const response = await fetcher(
@@ -136,5 +145,5 @@ export async function requestBreakdown(
           ? 'Usage limit reached, try later'
           : 'Breakdown failed',
     );
-  return { status: 200, breakdown: readBreakdown(await response.json(), fp, start, sentenceText) };
+  return { status: 200, breakdown: readBreakdown(await response.json(), fp, start, sentenceText, translation) };
 }

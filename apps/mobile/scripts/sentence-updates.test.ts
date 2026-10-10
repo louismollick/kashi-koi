@@ -1,4 +1,4 @@
-import { testDecoys } from './fixtures';
+import { testQuiz } from './fixtures';
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
@@ -23,23 +23,21 @@ const raw = () =>
     3000,
   );
 const analysis = (): SongAnalysis => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   fingerprint: raw().fingerprint,
   model: 'test',
   createdAt: '2026-10-08T00:00:00Z',
   title: 'A paper boat',
-  summary: 'A walker sends a paper boat downstream.',
-  speaker: 'A walker',
-  addressee: 'Unclear',
+  about: 'A walker sends a paper boat downstream.',
   lines: ['A paper boat', 'I set it on the river', 'I waited for dawn'],
   sentences: [
     {
       start: 0,
       end: 1,
       translation: 'I set a paper boat on the river',
-      decoys: testDecoys('I set a paper boat on the river'),
+      quiz: testQuiz('I set a paper boat on the river'),
     },
-    { start: 2, end: 2, translation: 'I waited for dawn', decoys: testDecoys('I waited for dawn') },
+    { start: 2, end: 2, translation: 'I waited for dawn', quiz: testQuiz('I waited for dawn') },
   ],
 });
 beforeEach(async () => {
@@ -131,7 +129,7 @@ test('replacing a library with a newer cached analysis re-derives its sentences 
           start: 0,
           end: 2,
           translation: 'I floated a paper boat and waited for dawn',
-          decoys: testDecoys('I floated a paper boat and waited for dawn'),
+          quiz: testQuiz('I floated a paper boat and waited for dawn'),
         },
       ],
     };
@@ -196,7 +194,7 @@ test('removing all lyric sentences ends clip review and cancels feedback', (t) =
 });
 
 test('empty analyzed decoys fall back to unmarked same-song translations', () => {
-  const empty = { ...analysis(), sentences: analysis().sentences.map((sentence) => ({ ...sentence, decoys: [] })) };
+  const empty = { ...analysis(), sentences: analysis().sentences.map((sentence) => ({ ...sentence, quiz: null })) };
   libraryStore.getState().setAnalysis(empty);
   const choices = getAnswers(song, 0, () => 0);
   assert.deepEqual(
@@ -222,7 +220,7 @@ test('analysis replacement with the same sentence IDs refreshes clip choices and
     libraryStore.getState().setAnalysis({
       ...original,
       sentences: [
-        { ...original.sentences[0]!, translation, decoys: changeTranslation ? testDecoys(translation) : [] },
+        { ...original.sentences[0]!, translation, quiz: changeTranslation ? testQuiz(translation) : null },
         original.sentences[1]!,
       ],
     });

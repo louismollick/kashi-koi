@@ -1,4 +1,4 @@
-import { testDecoys } from './fixtures';
+import { testQuiz } from './fixtures';
 import assert from 'node:assert/strict';
 import { beforeEach, test, type TestContext } from 'node:test';
 import { registerHooks } from 'node:module';
@@ -1995,17 +1995,15 @@ test('native EOF preserves results for an analysis-only quiz', async (t) => {
   });
   libraryStore.getState().setLibrary({ songs: [firstSong], albums, artists, lyrics: { dawn: lyrics } });
   libraryStore.getState().setAnalysis({
-    schemaVersion: 2,
+    schemaVersion: 3,
     fingerprint: lyrics.fingerprint,
     model: 'test',
     createdAt: '2026-10-08T00:00:00Z',
     title: 'Paper boat',
-    summary: 'A walker floats a paper boat.',
-    speaker: 'A walker',
-    addressee: 'Unclear',
+    about: 'A walker floats a paper boat.',
     lines: ['I floated a paper boat.'],
     sentences: [
-      { start: 0, end: 0, translation: 'I floated a paper boat.', decoys: testDecoys('I floated a paper boat.') },
+      { start: 0, end: 0, translation: 'I floated a paper boat.', quiz: testQuiz('I floated a paper boat.') },
     ],
   });
   const native = await nativePacingRun(t);

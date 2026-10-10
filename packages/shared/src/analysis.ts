@@ -2,59 +2,60 @@ import { z } from 'zod';
 
 const text = z.string().regex(/\S/, 'Must not be empty');
 const lineIndex = z.number().int().nonnegative();
-const decoySchema = z.strictObject({ from: text, to: text, reason: text });
+const decoySchema = z.strictObject({ phrase: z.string(), reason: text });
+const quizSchema = z.strictObject({ phrase: z.string(), decoys: z.array(decoySchema) });
 const sentenceSchema = z.strictObject({
   start: lineIndex,
   end: lineIndex,
   translation: text,
-  decoys: z.array(decoySchema),
+  quiz: quizSchema.nullable(),
 });
+const japanese = /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}ー々]/u;
 
 export type Decoy = z.infer<typeof decoySchema>;
+export type Quiz = z.infer<typeof quizSchema>;
 
-/** Replace only the first occurrence of the changed phrase, keeping replacement text literal. */
-export function decoyText(translation: string, decoy: Decoy): string {
-  const start = translation.indexOf(decoy.from);
+/** Build a full choice by replacing the first gap phrase, keeping replacement text literal. */
+export function decoySentence(translation: string, phrase: string, decoy: Decoy): string {
+  const start = translation.indexOf(phrase);
   return start < 0
     ? translation
-    : translation.slice(0, start) + decoy.to + translation.slice(start + decoy.from.length);
+    : translation.slice(0, start) + decoy.phrase + translation.slice(start + phrase.length);
 }
 
 export const songAnalysisDraftSchema = z.strictObject({
   title: text,
-  summary: text,
-  speaker: text,
-  addressee: text,
+  about: text,
   lines: z.array(text),
   sentences: z.array(sentenceSchema),
 });
-
 export const songAnalysisSchema = songAnalysisDraftSchema.extend({
-  sentences: z.array(sentenceSchema.refine((sentence) => !decoyErrors(sentence, 0).length, 'Invalid decoys')),
-  schemaVersion: z.literal(2),
+  sentences: z.array(sentenceSchema.refine((sentence) => !quizErrors(sentence, 0).length, 'Invalid quiz')),
+  schemaVersion: z.literal(3),
   fingerprint: text,
   model: text,
   createdAt: text,
 });
 
-/** Strict, required fields for OpenAI structured output; metadata is added later. */
+/** Required fields and nullable quizzes for OpenAI strict structured output. */
 export const songAnalysisDraftJsonSchema = z.toJSONSchema(songAnalysisDraftSchema);
-
 export type SongAnalysisDraft = z.infer<typeof songAnalysisDraftSchema>;
 export type SongAnalysis = z.infer<typeof songAnalysisSchema>;
 
-/** Check model output and contiguous, inclusive sentence ranges against the input. */
-export function validateAnalysis(draft: unknown, lineCount: number, requireDecoys = false): string[] {
+const structuralSchema = songAnalysisDraftSchema.extend({
+  sentences: z.array(sentenceSchema.extend({ quiz: z.unknown() })),
+});
+
+/** Check structure and contiguous inclusive ranges; quiz failures are checked separately. */
+export function validateAnalysis(draft: unknown, lineCount: number): string[] {
   if (!Number.isInteger(lineCount) || lineCount < 0) return ['Input line count must be a non-negative integer'];
-  const result = songAnalysisDraftSchema.safeParse(draft);
+  const result = structuralSchema.safeParse(draft);
   if (!result.success)
     return result.error.issues.map((issue) => `${issue.path.join('.') || 'Analysis'}: ${issue.message}`);
-
   const analysis = result.data;
   const errors: string[] = [];
   if (analysis.lines.length !== lineCount)
     errors.push(`Expected ${lineCount} line translations, received ${analysis.lines.length}`);
-
   let nextLine = 0;
   analysis.sentences.forEach((sentence, index) => {
     if (sentence.start !== nextLine)
@@ -63,64 +64,68 @@ export function validateAnalysis(draft: unknown, lineCount: number, requireDecoy
     if (sentence.start >= lineCount || sentence.end >= lineCount)
       errors.push(`Sentence ${index} is outside the input line range`);
     nextLine = sentence.end + 1;
-    errors.push(...decoyErrors(sentence, index, requireDecoys));
   });
   if (nextLine !== lineCount) errors.push(`Sentences must cover all ${lineCount} input lines`);
   return errors;
 }
 
-/** Validate optional stored decoys, or require two for a model's first attempt. */
-export function decoyErrors(
-  sentence: { translation: string; decoys: unknown },
+/** Check one gap's phrases, optionally against the original lyric lines. Null means no quiz. */
+export function quizErrors(
+  sentence: { translation: string; quiz: unknown },
   index: number,
-  requireDecoys = false,
+  lines?: string[],
 ): string[] {
-  const parsed = z.array(decoySchema).safeParse(sentence.decoys);
+  if (sentence.quiz === null) return [];
+  const parsed = quizSchema.safeParse(sentence.quiz);
   if (!parsed.success)
-    return parsed.error.issues.map((issue) => `Sentence ${index} decoys ${issue.path.join('.')}: ${issue.message}`);
-  const decoys = parsed.data;
+    return parsed.error.issues.map((issue) => `Sentence ${index} quiz ${issue.path.join('.')}: ${issue.message}`);
+  const { phrase, decoys } = parsed.data;
   const errors: string[] = [];
-  if (!requireDecoys && !decoys.length) return [];
-  if (decoys.length !== 2) errors.push(`Sentence ${index} must have exactly 2 decoys`);
-  const spans = decoys.map((decoy, decoyIndex) => {
-    const start = sentence.translation.indexOf(decoy.from);
-    if (start < 0 || decoy.from.length >= sentence.translation.length || decoy.from === decoy.to)
-      errors.push(`Sentence ${index} decoy ${decoyIndex} must replace a shorter phrase with different text`);
-    return { start, end: start + decoy.from.length };
-  });
-  const [first, second] = spans;
-  if (
-    first &&
-    second &&
-    first.start >= 0 &&
-    second.start >= 0 &&
-    !(first.start === second.start && first.end === second.end) &&
-    first.start < second.end &&
-    second.start < first.end
-  )
-    errors.push(`Sentence ${index} decoy spans must be identical or not overlap`);
-  const texts = decoys.map((decoy) => decoyText(sentence.translation, decoy));
-  if (texts.includes(sentence.translation) || new Set(texts).size !== texts.length)
-    errors.push(`Sentence ${index} decoy translations must differ from the answer and each other`);
-  // Reasons quote the Japanese form they explain; the choices themselves stay English.
-  if (decoys.some((decoy) => /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(decoy.from + decoy.to)))
-    errors.push(`Sentence ${index} decoy phrases must be English`);
+  const prefix = `Sentence ${index} quiz`;
+  if (lines && !lines.some((line) => japanese.test(line))) errors.push(`${prefix} must be null without Japanese`);
+  if (!phrase.trim() || !sentence.translation.includes(phrase) || phrase.length >= sentence.translation.length)
+    errors.push(`${prefix} phrase must occur in the translation and be shorter`);
+  const lyricPhrase = new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+  if (phrase.trim() && lines?.some((line) => lyricPhrase.test(line)))
+    errors.push(`${prefix} phrase is already shown in the lyrics`);
+  if (decoys.length !== 2) errors.push(`${prefix} must have exactly 2 decoys`);
+  const phrases = [phrase, ...decoys.map((decoy) => decoy.phrase)];
+  if (phrases.some((value) => !value.trim() || value !== value.trim()))
+    errors.push(`${prefix} phrases must be nonempty without leading or trailing whitespace`);
+  if (new Set(phrases.map((value) => value.replace(/\s+/g, ' ').toLowerCase())).size !== phrases.length)
+    errors.push(`${prefix} phrases must differ ignoring case and collapsed whitespace`);
+  if (phrases.some((value) => japanese.test(value))) errors.push(`${prefix} phrases must be English`);
   return errors;
 }
 
-const analysisWithoutDecoyChecks = songAnalysisDraftSchema.extend({
-  sentences: z.array(sentenceSchema.extend({ decoys: z.unknown() })),
-});
+/** Collect hard quiz failures independently of fatal analysis structure. */
+export function validateQuizzes(draft: unknown, lines?: string[]): string[] {
+  const parsed = structuralSchema.safeParse(draft);
+  if (!parsed.success) return [];
+  return parsed.data.sentences.flatMap((sentence, index) =>
+    quizErrors(sentence, index, lines?.slice(sentence.start, sentence.end + 1)),
+  );
+}
 
-/** Preserve translations when quiz decoys are invalid, leaving structural errors for validation. */
-export function dropInvalidDecoys(draft: unknown): unknown {
-  const parsed = analysisWithoutDecoyChecks.safeParse(draft);
+/** Preserve translations while dropping only invalid quizzes on the final attempt. */
+export function dropInvalidQuizzes(draft: unknown, lines?: string[]): unknown {
+  const parsed = structuralSchema.safeParse(draft);
   if (!parsed.success) return draft;
   return {
     ...parsed.data,
     sentences: parsed.data.sentences.map((sentence, index) => ({
       ...sentence,
-      decoys: decoyErrors(sentence, index).length ? [] : sentence.decoys,
+      quiz: quizErrors(sentence, index, lines?.slice(sentence.start, sentence.end + 1)).length ? null : sentence.quiz,
     })),
   };
+}
+
+/** First-attempt advice only: prefer sentences of at most three lines. */
+export function analysisAdvice(draft: unknown): string[] {
+  const parsed = structuralSchema.safeParse(draft);
+  if (!parsed.success) return [];
+  return parsed.data.sentences.flatMap((sentence, index) => {
+    const length = sentence.end - sentence.start + 1;
+    return length > 3 ? [`Sentence ${index} has ${length} lines; prefer at most 3`] : [];
+  });
 }

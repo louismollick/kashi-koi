@@ -32,7 +32,7 @@ export function createBreakdownGenerator(store: Store, analyzer: BreakdownAnalyz
         artist: job?.artist ?? undefined,
         lines: source.lines,
         translations: source.json.lines,
-        summary: source.json.summary,
+        about: source.json.about,
         start,
         end: sentence.end,
         translation: sentence.translation,
@@ -40,7 +40,11 @@ export function createBreakdownGenerator(store: Store, analyzer: BreakdownAnalyz
       let feedback: string[] | undefined;
       for (let attempt = 0; attempt < 2; attempt++) {
         const output = await analyzer.breakdown({ ...input, feedback });
-        feedback = validateBreakdown(output, source.lines.slice(start, sentence.end + 1).join('\n'));
+        feedback = validateBreakdown(
+          output,
+          source.lines.slice(start, sentence.end + 1).join('\n'),
+          sentence.translation,
+        );
         if (feedback.length) continue;
         // A forced analysis can finish while this prompt runs. Do not cache an obsolete explanation.
         if (JSON.stringify(store.getAnalysis(fingerprint)) !== JSON.stringify(source.json))

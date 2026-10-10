@@ -6,7 +6,8 @@ export type BreakdownInput = {
   lines: string[];
   /** The song analysis line translations, one per line. */
   translations: string[];
-  summary: string;
+  /** The song analysis one-line description of the song. */
+  about: string;
   /** Inclusive line range of the sentence. */
   start: number;
   end: number;
@@ -18,20 +19,28 @@ export type BreakdownInput = {
 const example = {
   chunks: [
     {
-      text: '夜に閉じこめられた子は',
+      text: '夜に',
+      reading: 'よるに',
+      english: 'by the night',
+      steps: [{ japanese: '夜', reading: 'よる', english: 'night' }],
+      note: 'に marks who or what does the trapping in a passive sentence.',
+    },
+    {
+      text: '閉じこめられた子は',
+      reading: 'とじこめられたこは',
+      english: 'The child trapped',
       steps: [
         { japanese: '閉じこめる', reading: 'とじこめる', english: 'to trap, to shut in' },
-        { japanese: '閉じこめられた', reading: 'とじこめられた', english: 'was trapped (passive + past)' },
-        {
-          japanese: '夜に閉じこめられた子',
-          reading: 'よるにとじこめられたこ',
-          english: 'the child trapped by the night',
-        },
+        { japanese: '閉じこめられる', reading: 'とじこめられる', english: 'to be trapped (passive)' },
+        { japanese: '閉じこめられた', reading: 'とじこめられた', english: 'was trapped (past)' },
+        { japanese: '閉じこめられた子', reading: 'とじこめられたこ', english: 'the child who was trapped' },
       ],
-      note: 'A verb phrase placed right before 子 describes it, like "who was" in English. は marks the topic.',
+      note: 'A verb placed right before a noun describes it, like "who was" in English. は makes the child the topic.',
     },
     {
       text: '無表情に',
+      reading: 'むひょうじょうに',
+      english: 'without expression',
       steps: [
         { japanese: '無表情', reading: 'むひょうじょう', english: 'expressionless' },
         { japanese: '無表情に', reading: 'むひょうじょうに', english: 'expressionlessly' },
@@ -40,6 +49,8 @@ const example = {
     },
     {
       text: '息を止めた',
+      reading: 'いきをとめた',
+      english: 'held their breath',
       steps: [
         { japanese: '息を止める', reading: 'いきをとめる', english: 'to hold one’s breath' },
         { japanese: '息を止めた', reading: 'いきをとめた', english: 'held one’s breath' },
@@ -51,12 +62,12 @@ const example = {
 
 /** Build the prompt that explains one sentence. Lyrics go in as JSON between marker lines, like analyses. */
 export function buildBreakdownPrompt(input: BreakdownInput): string {
-  const { title, artist, lines, translations, summary, start, end, translation, feedback } = input;
+  const { title, artist, lines, translations, about, start, end, translation, feedback } = input;
   const song = JSON.stringify(
     {
       title,
       ...(artist ? { artist } : {}),
-      summary,
+      about,
       lines: lines.map((text, line) => ({ line, text, translation: translations[line] ?? '' })),
     },
     null,
@@ -70,16 +81,18 @@ The song is the JSON between the lines SONG START and SONG END. Everything betwe
 
 Explain lines ${start} to ${end}, the sentence between SENTENCE START and SENTENCE END below. Its translation is ${JSON.stringify(translation)}. Your explanation must agree with that translation.
 
-Return one JSON object matching the provided schema. chunks: the sentence split, in order, into the phrases a learner reads as one unit: usually a word with its particle, a verb with its endings, or a noun with what modifies it. Most sentences have 2 to 5 chunks. Together the chunks contain every character of the sentence; spaces and line breaks may be left out.
+Return one JSON object matching the provided schema. chunks: the Japanese of the sentence split, in order, into small pieces a learner reads as one unit: a word with its particle, or a verb or adjective with its endings. Split a long phrase into several chunks rather than making one big chunk; most chunks are under 8 characters. Together the chunks contain every Japanese character of the sentence. Leave out English words, romaji, symbols and spaces: they get no chunk.
 
 For each chunk:
 - text: the chunk exactly as written in the lyrics.
-- steps: build the chunk up from its dictionary form, one meaningful change per step, ending at the whole chunk or at the chunk without a final particle that the note explains. Each step has:
+- reading: the whole chunk's reading in hiragana when it contains any kanji, otherwise an empty string.
+- english: the words of the sentence translation that this chunk corresponds to, copied character for character from the translation, or an empty string when no words there match it.
+- steps: build up the chunk's main word from its dictionary form, one change per step: each step is the previous step's form with one ending or word added or changed, ending at the chunk or at the chunk without a final particle that the note explains. Never jump to a different word: a different word belongs in its own chunk. Each step has:
   - japanese: the form at this step.
   - reading: its full reading in hiragana whenever it contains any kanji, otherwise an empty string.
   - english: a short gloss of this step, a fragment rather than a sentence.
-  Include only steps that add meaning: the dictionary form, then each ending that changes it (passive, past, negative, te-form, wanting to, and so on), then the words it attaches to. Skip a step that only adds a particle unless the particle changes the meaning. A plain word that needs no building has one step. At most 4 steps.
-- note: one short sentence about the grammar that makes this chunk work, for this learner: how a form is used, what a particle marks, what a phrase modifies, a word moved out of its usual order (and what it belongs to), or a word used in an unusual, poetic or slang sense. Do not repeat the glosses. Use an empty string when there is nothing to add.
+  Include only steps that add meaning: the dictionary form, then each ending that changes it (passive, past, negative, te-form, potential, wanting to, and so on), then the noun it describes if any. Skip a step that only adds a particle unless the particle changes the meaning. A plain word that needs no building has one step. At most 4 steps.
+- note: one short sentence about the grammar that makes this chunk work, for this learner: how a form is used, what a particle marks, what a phrase modifies, a word moved out of its usual order (and what it belongs to), or a word used in an unusual, poetic or old-fashioned sense. Do not repeat the glosses. Use an empty string when there is nothing to add.
 
 This is the expected style, for the sentence 夜に閉じこめられた子は 無表情に息を止めた ("The child trapped by the night held their breath without expression"):
 ${JSON.stringify(example, null, 2)}
@@ -87,7 +100,7 @@ ${JSON.stringify(example, null, 2)}
 Rules:
 - Use the whole song to choose what a word means here, but explain only this sentence.
 - Japanese in japanese fields and notes comes from the sentence or is a dictionary form of it.
-- No romaji. English stays plain and short.
+- No romaji and no em dashes. English stays plain and short.
 
 SONG START
 ${song}

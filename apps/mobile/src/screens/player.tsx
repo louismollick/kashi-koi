@@ -52,7 +52,6 @@ export default function PlayerScreen() {
   // While the quiz holds a sentence, it stays current even if playback has moved past its last line.
   const occurrence = answerWait?.occurrence ?? sentenceOccurrenceAt(songId, lineIndex);
   const current = occurrence ? currentSentence(songId, occurrence.start) : undefined;
-  const previous = current?.previous ? currentSentence(songId, current.previous.start) : undefined;
   const sentenceId = current?.sentence.id;
   const info = songAnalysisInfo(songId);
   const beforeLyrics = lineIndex < (sentences[0]?.start ?? 0);
@@ -152,7 +151,6 @@ export default function PlayerScreen() {
         <QuizColumn
           lines={current?.lines ?? (beforeLyrics || !lines[lineIndex] ? undefined : [lines[lineIndex]])}
           current={answerWait || !occurrence ? -1 : lineIndex - occurrence.start}
-          previous={previous?.lines}
           intro={beforeLyrics ? info : undefined}
           until={answerWait?.until}
           combo={run.combo}

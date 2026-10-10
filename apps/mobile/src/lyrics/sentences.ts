@@ -1,5 +1,5 @@
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
-import { songAnalysisSchema, validateAnalysis, type SongAnalysis } from '@kashi-koi/shared/analysis';
+import { songAnalysisSchema, validateAnalysis, validateQuizzes, type SongAnalysis } from '@kashi-koi/shared/analysis';
 import { isJapanese } from '@/japanese/text';
 import type { Sentence, SentenceOccurrence, SongLyrics } from '@/types/domain';
 
@@ -21,7 +21,11 @@ export function withSentences(lyrics: LyricsInput, analysis?: SongAnalysis): Son
   let accepted: SongAnalysis | undefined;
   if (matched) {
     const { schemaVersion: _version, fingerprint: _hash, model: _model, createdAt: _date, ...draft } = analysis;
-    if (songAnalysisSchema.safeParse(analysis).success && !validateAnalysis(draft, texts.length).length)
+    if (
+      songAnalysisSchema.safeParse(analysis).success &&
+      !validateAnalysis(draft, texts.length).length &&
+      !validateQuizzes(draft, texts).length
+    )
       accepted = analysis;
   }
   const sentences = new Map<string, Sentence>();
@@ -37,7 +41,7 @@ export function withSentences(lyrics: LyricsInput, analysis?: SongAnalysis): Son
       sentences.set(id, {
         id,
         lineIds,
-        ...('decoys' in range ? { decoys: range.decoys } : {}),
+        ...('quiz' in range ? { quiz: range.quiz } : {}),
         translation: accepted ? range.translation : lyrics.lines.find((line) => line.id === id)?.translation,
       });
     sentenceTimeline.push({ sentenceId: id, start: range.start, end: range.end });
@@ -53,9 +57,7 @@ export function withSentences(lyrics: LyricsInput, analysis?: SongAnalysis): Son
     analysis: accepted
       ? {
           title: accepted.title,
-          summary: accepted.summary,
-          speaker: accepted.speaker,
-          addressee: accepted.addressee,
+          about: accepted.about,
         }
       : undefined,
   };

@@ -82,3 +82,39 @@ type Choice = { text: string; parts: { text: string; marked: boolean }[]; correc
 - Results: each missed sentence gets EXPLAIN.
 - `/breakdown?songId&sentenceId`: a sheet with the sentence, its translation, and the chunks.
 - Notes are removed everywhere. The summary is one sentence and speaker/addressee are a few words each.
+
+## Round 2 (after testing "Won't Leave You Behind")
+
+Problems found: over-merged sentences (up to 4 lines, 3 thoughts), a sentence boundary splitting "it won't end / even if I crumble", repeated choruses grouped differently, decoys that are vocabulary opposites or test English already in the lyric, a long generic summary, breakdown chunks forced to cover "Ah", chunks swallowing whole lines, and steps that jump between different words.
+
+### Analysis schema (schemaVersion 3)
+
+```ts
+{
+  title, about,            // about: one sentence, at most 15 words: who speaks to whom, and the gist
+  lines,
+  sentences: [{ start, end, translation, quiz: { phrase, decoys: [{ phrase, reason }] } | null }],
+}
+```
+
+- `quiz` is a fill-in-the-gap question: `phrase` is the part of `translation` the gap hides; each decoy is another phrase for the same gap. The full decoy sentence is `translation` with the first occurrence of `phrase` replaced.
+- Hard checks (invalid quiz becomes `null` on the final attempt, never failing the analysis): `quiz` is null for sentences without Japanese; `phrase` occurs in `translation` and is shorter; `phrase` does not occur (case-insensitively) in the English already in the sentence's lyric lines; exactly 2 decoys, distinct from each other and from `phrase` (case-insensitive); no Japanese script in phrases.
+- Soft checks (sent back as feedback on the first attempt only, never fatal): a sentence has at most 3 lines. Repeated grouping relies on the prompt's `same_as` marking; no repeat-consistency check.
+- The prompt marks repeated lines with `same_as`.
+- Default model `gpt-6.1-sol`, reasoning `medium` for analyses and `low` for breakdowns.
+
+### Breakdown schema
+
+```ts
+chunks: [{ text, reading, english, steps: [{ japanese, reading, english }], note }]
+```
+
+- Coverage compares Japanese characters only (Han, Hiragana, Katakana, ー, 々); English, romaji and symbols get no chunk.
+- `reading` is required when `text` has kanji. `english` is empty or a substring of the sentence translation; the phone colors those words to match the chunk.
+
+### Phone
+
+- `SongLyrics.analysis` is `{ title, about }`. `Sentence.quiz` replaces `Sentence.decoys`.
+- Choices keep `{ text, parts, correct, reason }`; with a quiz every choice has exactly one marked part with identical text around it, which the quiz screen shows as a sentence with a gap and short phrase buttons.
+- Quiz card: no previous sentence, left-aligned lyrics, a mascot row at least one button tall, EXPLAIN / CONTINUE always on screen after a miss.
+- Explain sheet: colored chunk map with glosses, translation colored to match, then each chunk's build-up on a rail in its color; the part each step adds is highlighted.

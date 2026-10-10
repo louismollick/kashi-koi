@@ -1,4 +1,4 @@
-import { testDecoys } from './fixtures';
+import { testQuiz } from './fixtures';
 import test, { beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { scan, scanLyrics, syncLibrary, cancelSync } from '../src/navidrome/sync';
@@ -290,20 +290,18 @@ test('sync preserves analyses accepted while SQLite replacement is pending', asy
     await writing;
     const lyrics = libraryStore.getState().lyrics[song.id]!;
     const analysis = {
-      schemaVersion: 2 as const,
+      schemaVersion: 3 as const,
       fingerprint: lyrics.fingerprint,
       model: 'test',
       createdAt: '2026-10-08T00:00:00Z',
       title: 'Paper boats',
-      summary: 'A walker follows a paper boat.',
-      speaker: 'A walker',
-      addressee: 'Unclear',
+      about: 'A walker follows a paper boat.',
       lines: lyrics.timeline.map((_, index) => `Context ${index}`),
       sentences: lyrics.timeline.map((_, index) => ({
         start: index,
         end: index,
         translation: `Sentence ${index}`,
-        decoys: testDecoys(`Sentence ${index}`),
+        quiz: testQuiz(`Sentence ${index}`),
       })),
     };
     libraryStore.getState().setAnalysis(analysis);

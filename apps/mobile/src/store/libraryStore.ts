@@ -1,4 +1,4 @@
-import { decoyChoices } from '@/lyrics/choices';
+import { quizChoices } from '@/lyrics/choices';
 import { withSentences, type LyricsInput } from '@/lyrics/sentences';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { isJapanese } from '@/japanese/text';
@@ -150,7 +150,7 @@ export const occurrenceLine = (id: string | null, index: number) => {
 export function getAnswers(song: Song, index: number, random = Math.random): Choice[] {
   const line = currentSentence(song.id, index)?.sentence;
   if (!line?.translation) return [];
-  const decoys = line.decoys?.length ? decoyChoices(line.translation, line.decoys) : undefined;
+  const choices = line.quiz ? quizChoices(line.translation, line.quiz) : undefined;
   const others = [
     ...new Set(
       getLyrics(song.id)
@@ -166,7 +166,7 @@ export function getAnswers(song: Song, index: number, random = Math.random): Cho
     return texts;
   };
   return shuffle(
-    decoys ??
+    choices ??
       [line.translation, ...shuffle(others).slice(0, 2)].map((text) => ({
         text,
         parts: [{ text, marked: false }],

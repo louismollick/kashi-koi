@@ -11,6 +11,8 @@ const outputFor = (input: BreakdownInput) => ({
   chunks: [
     {
       text: input.lines.slice(input.start, input.end + 1).join(''),
+      reading: 'あける',
+      english: '',
       steps: [{ japanese: '開ける', reading: 'あける', english: 'to open' }],
       note: '',
     },
@@ -37,6 +39,7 @@ test('breakdown POST validates once more with feedback, caches, and GET is publi
       assert.equal(request.artist, input.artist);
       assert.deepEqual(request.lines, lines);
       assert.deepEqual(request.translations, analysis.lines);
+      assert.equal(request.about, analysis.about);
       assert.equal(request.translation, analysis.sentences[0]?.translation);
       if (++calls === 1) return { chunks: [] };
       assert.ok(request.feedback?.some((error) => error.includes('at least one chunk')));

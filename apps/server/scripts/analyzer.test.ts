@@ -98,7 +98,7 @@ fs.writeFileSync(args[args.indexOf('-o') + 1], JSON.stringify({ ...${JSON.string
   const output = await analyzer.analyze(input);
   assert.deepEqual(output, {
     ...draft,
-    schemaKeys: ['title', 'summary', 'speaker', 'addressee', 'lines', 'sentences'],
+    schemaKeys: ['title', 'about', 'lines', 'sentences'],
   });
 
   const { args, stdin, cwd, cwdEntries } = called();
@@ -157,7 +157,7 @@ fs.writeFileSync(args[args.indexOf('-o') + 1], JSON.stringify({ schemaKeys: Obje
     title: '朝の窓',
     lines,
     translations: draft.lines,
-    summary: draft.summary,
+    about: draft.about,
     start: 0,
     end: 1,
     translation: sentence.translation,
@@ -203,7 +203,7 @@ test('breakdown execution has a separate timeout from song analysis', async (t) 
       title: input.title,
       lines,
       translations: draft.lines,
-      summary: draft.summary,
+      about: draft.about,
       start: 0,
       end: 1,
       translation: sentence.translation,
@@ -213,8 +213,12 @@ test('breakdown execution has a separate timeout from song analysis', async (t) 
 });
 
 test('draft validation lets decoy reasons quote Japanese but rejects it elsewhere', () => {
-  const sentence = draft.sentences[0]!;
-  const quoted = sentence.decoys.map((decoy) => ({ ...decoy, reason: 'ない makes it negative.' }));
-  assert.deepEqual(validateDraft({ ...draft, sentences: [{ ...sentence, decoys: quoted }] }, lines.length), []);
-  assert.notDeepEqual(validateDraft({ ...draft, summary: '朝 is morning.' }, lines.length), []);
+  const sentence = draft.sentences[0];
+  assert.ok(sentence?.quiz);
+  const quoted = sentence.quiz.decoys.map((decoy) => ({ ...decoy, reason: 'ない makes it negative.' }));
+  assert.deepEqual(
+    validateDraft({ ...draft, sentences: [{ ...sentence, quiz: { ...sentence.quiz, decoys: quoted } }] }, lines.length),
+    [],
+  );
+  assert.notDeepEqual(validateDraft({ ...draft, about: '朝 is morning.' }, lines.length), []);
 });

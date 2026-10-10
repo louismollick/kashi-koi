@@ -1,5 +1,5 @@
 import { setTimeout } from 'node:timers/promises';
-import { dropInvalidDecoys, songAnalysisDraftSchema, songAnalysisSchema } from '@kashi-koi/shared';
+import { analysisAdvice, dropInvalidQuizzes, songAnalysisDraftSchema, songAnalysisSchema } from '@kashi-koi/shared';
 import { type Analyzer, UsageLimitError } from './analyzer/index.ts';
 import { validateDraft } from './analyzer/validate.ts';
 import type { Store } from './db/index.ts';
@@ -39,12 +39,13 @@ export class Worker {
           lines: job.lines,
           feedback,
         });
-        const draft = attempt === 0 ? output : dropInvalidDecoys(output);
-        const errors = validateDraft(draft, job.lines.length, attempt === 0);
-        if (errors.length) {
-          console.error('Analysis validation failed');
+        const draft = attempt === 0 ? output : dropInvalidQuizzes(output, job.lines);
+        const errors = validateDraft(draft, job.lines.length, job.lines);
+        const advice = attempt === 0 ? analysisAdvice(draft) : [];
+        if (errors.length || advice.length) {
+          if (errors.length) console.error('Analysis validation failed');
           if (attempt === 0) {
-            feedback = errors;
+            feedback = [...errors, ...advice];
             continue;
           }
           this.store.fail(job.fingerprint, 'Analysis validation failed');
@@ -52,7 +53,7 @@ export class Worker {
         }
         const analysis = songAnalysisSchema.parse({
           ...songAnalysisDraftSchema.parse(draft),
-          schemaVersion: 2,
+          schemaVersion: 3,
           fingerprint: job.fingerprint,
           model: this.analyzer.model,
           createdAt: new Date(this.now()).toISOString(),

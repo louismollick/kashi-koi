@@ -1,7 +1,13 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dropInvalidDecoys, type SongAnalysisDraft, songAnalysisDraftSchema } from '@kashi-koi/shared/analysis';
+import {
+  analysisAdvice,
+  dropInvalidQuizzes,
+  validateQuizzes,
+  type SongAnalysisDraft,
+  songAnalysisDraftSchema,
+} from '@kashi-koi/shared/analysis';
 import { CodexAnalyzer, UsageLimitError } from './analyzer/index.ts';
 import { validateDraft } from './analyzer/validate.ts';
 
@@ -22,41 +28,37 @@ function parseFixture(value: unknown, file: string): Fixture {
 }
 
 /** Render one result for reading in a terminal. Malformed output is printed as raw JSON. */
-function report(file: string, fixture: Fixture, output: unknown, errors: string[], seconds: number) {
+function report(
+  file: string,
+  fixture: Fixture,
+  output: unknown,
+  errors: string[],
+  seconds: number,
+  advice: string[],
+  dropped: string[],
+) {
   const out = [`━━ ${basename(file)}  ${fixture.title}  ${seconds}s`, ''];
   const parsed = songAnalysisDraftSchema.safeParse(output);
   if (parsed.success) out.push(...analysisLines(fixture.lines, parsed.data));
   else out.push('Raw output', JSON.stringify(output, null, 2), '');
 
-  const accepted = songAnalysisDraftSchema.safeParse(dropInvalidDecoys(output));
-  if (accepted.success) {
-    const problems = validateDraft(output, fixture.lines.length);
-    if (problems.length) out.push('Model validation problems', ...problems.map((error) => `  ${error}`), '');
-    accepted.data.sentences.forEach((sentence, index) => {
-      if (!sentence.decoys.length)
-        out.push(
-          `  Sentence ${index}, lines ${sentence.start}-${sentence.end}: ${parsed.success && !parsed.data.sentences[index]?.decoys.length ? 'no decoys' : 'would drop invalid decoys'}`,
-        );
-    });
-  }
+  if (advice.length) out.push('Advice from first attempt', ...advice.map((item) => `  ${item}`), '');
+  if (dropped.length) out.push('Dropped quizzes on final attempt', ...dropped.map((item) => `  ${item}`), '');
   if (fixture.checks.length) out.push('Look for', ...fixture.checks.map((check) => `  ${check}`), '');
   out.push(errors.length ? 'Invalid' : 'Valid', ...errors.map((error) => `  ${error}`), '');
   return out.join('\n');
 }
 
 function analysisLines(lines: string[], analysis: SongAnalysisDraft) {
-  const out = [
-    `Title      ${analysis.title}`,
-    `Summary    ${analysis.summary}`,
-    `Speaker    ${analysis.speaker}`,
-    `Addressee  ${analysis.addressee}`,
-    '',
-    'Sentences',
-  ];
+  const out = [`Title      ${analysis.title}`, `About      ${analysis.about}`, '', 'Sentences'];
   for (const sentence of analysis.sentences) {
     const range = sentence.start === sentence.end ? `${sentence.start}` : `${sentence.start}-${sentence.end}`;
     out.push(`  ${range}  ${sentence.translation}`);
-    for (const decoy of sentence.decoys) out.push(`    ${decoy.from} → ${decoy.to}: ${decoy.reason}`);
+    out.push(
+      sentence.quiz
+        ? `    ${sentence.quiz.phrase} | ${sentence.quiz.decoys.map((decoy) => `${decoy.phrase} (${decoy.reason})`).join(' | ')}`
+        : '    No quiz',
+    );
     for (let line = sentence.start; line <= sentence.end && line < lines.length; line++)
       out.push(`    ${String(line).padStart(2)}  ${lines[line]}`, `        ${analysis.lines[line] ?? '(missing)'}`);
     out.push('');
@@ -88,10 +90,31 @@ async function main() {
     const fixture = parseFixture(JSON.parse(await readFile(file, 'utf8')), file);
     const started = Date.now();
     try {
-      const output = await analyzer.analyze({ title: fixture.title, artist: fixture.artist, lines: fixture.lines });
-      const errors = validateDraft(dropInvalidDecoys(output), fixture.lines.length, false);
+      let output: unknown;
+      let feedback: string[] | undefined;
+      let advice: string[] = [];
+      let dropped: string[] = [];
+      let errors: string[] = [];
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const attemptStarted = Date.now();
+        const raw = await analyzer.analyze({
+          title: fixture.title,
+          artist: fixture.artist,
+          lines: fixture.lines,
+          feedback,
+        });
+        console.log(`Attempt ${attempt + 1}: ${((Date.now() - attemptStarted) / 1000).toFixed(1)}s`);
+        if (attempt === 0) advice = analysisAdvice(raw);
+        else dropped = validateQuizzes(raw, fixture.lines);
+        output = attempt === 0 ? raw : dropInvalidQuizzes(raw, fixture.lines);
+        errors = validateDraft(output, fixture.lines.length, fixture.lines);
+        if (!errors.length && (attempt !== 0 || !advice.length)) break;
+        if (attempt !== 0) break;
+        feedback = [...errors, ...advice];
+        console.log('First-attempt feedback', ...feedback.map((item) => `\n  ${item}`), '\n');
+      }
       if (errors.length) failures++;
-      console.log(report(file, fixture, output, errors, Math.round((Date.now() - started) / 1000)));
+      console.log(report(file, fixture, output, errors, Math.round((Date.now() - started) / 1000), advice, dropped));
     } catch (error) {
       failures++;
       console.log(`━━ ${basename(file)}  ${fixture.title}\n\n${error instanceof Error ? error.message : error}\n`);

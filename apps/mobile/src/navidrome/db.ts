@@ -33,10 +33,8 @@ function rawLyrics(lyrics: LyricsInput) {
 function validAnalysis(value: unknown, fp: string): SongAnalysis | undefined {
   const result = songAnalysisSchema.safeParse(value);
   if (!result.success || result.data.fingerprint !== fp) return undefined;
-  const { title, summary, speaker, addressee, lines, sentences } = result.data;
-  return validateAnalysis({ title, summary, speaker, addressee, lines, sentences }, lines.length).length
-    ? undefined
-    : result.data;
+  const { title, about, lines, sentences } = result.data;
+  return validateAnalysis({ title, about, lines, sentences }, lines.length).length ? undefined : result.data;
 }
 
 export async function loadAll(): Promise<Library> {

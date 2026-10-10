@@ -12,7 +12,7 @@ import { cancelAnalyses, setAnalysisRuntime } from '../src/analysis/fetcher';
 import { appStore, resetAppState } from '../src/store/appStore';
 import { getLyrics, libraryStore } from '../src/store/libraryStore';
 import { toSongLyrics } from '../src/navidrome/lyrics';
-import { songs, testDecoys } from './fixtures';
+import { songs, testQuiz } from './fixtures';
 
 const songId = songs[0]!.id;
 let sentenceId = '',
@@ -25,7 +25,15 @@ const response = () => {
     start: target.start,
     model: 'test',
     createdAt: '2026-10-09T00:00:00Z',
-    chunks: [{ text: target.text, steps: [{ japanese: '紙', reading: 'かみ', english: 'paper' }], note: '' }],
+    chunks: [
+      {
+        text: target.text,
+        reading: 'かみのふねをかわにうかべた',
+        english: '',
+        steps: [{ japanese: '紙', reading: 'かみ', english: 'paper' }],
+        note: '',
+      },
+    ],
   };
 };
 const deferred = () => {
@@ -54,20 +62,18 @@ beforeEach(async () => {
   );
   libraryStore.getState().setLibrary({ songs: [songs[0]!], albums: [], artists: [], lyrics: { [songId]: lyrics } });
   analysis = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     fingerprint: lyrics.fingerprint,
     model: 'test',
     createdAt: '2026-10-08T00:00:00Z',
     title: 'Paper boat',
-    summary: 'A paper boat floats on the river.',
-    speaker: 'A walker',
-    addressee: 'Unclear',
+    about: 'A paper boat floats on the river.',
     lines: ['A paper boat', 'I floated it on the river', 'A paper boat', 'I floated it on the river'],
     sentences: [0, 2].map((start) => ({
       start,
       end: start + 1,
       translation: 'I floated a paper boat on the river',
-      decoys: testDecoys('I floated a paper boat on the river'),
+      quiz: testQuiz('I floated a paper boat on the river'),
     })),
   };
   libraryStore.getState().setAnalysis(analysis);

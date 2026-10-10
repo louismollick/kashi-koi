@@ -72,7 +72,14 @@ export function loadBreakdown(songId: string | null | undefined, sentenceId: str
   update({ status: 'loading' });
   const work = (async () => {
     try {
-      let result = await fetchBreakdown(session.base, target.fingerprint, target.start, target.text, session.fetch);
+      let result = await fetchBreakdown(
+        session.base,
+        target.fingerprint,
+        target.start,
+        target.text,
+        target.translation,
+        session.fetch,
+      );
       if (!valid()) return;
       if (result.status === 404 && session.token) {
         result = await requestBreakdown(
@@ -81,6 +88,7 @@ export function loadBreakdown(songId: string | null | undefined, sentenceId: str
           target.fingerprint,
           target.start,
           target.text,
+          target.translation,
           session.fetch,
         );
       }

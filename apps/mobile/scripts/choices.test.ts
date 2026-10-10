@@ -1,76 +1,73 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { decoyChoices } from '../src/lyrics/choices';
+import { gapOf, quizChoices } from '../src/lyrics/choices';
+import type { Choice } from '../src/types/domain';
 
-const translation = 'I left the letter at home, then left.';
-const action = { from: 'left', to: 'found', reason: 'The verb means leaving it.' };
-const place = { from: 'home', to: 'the station', reason: 'The location is home.' };
+const quiz = {
+  phrase: 'left',
+  decoys: [
+    { phrase: 'will leave', reason: 'The verb is past tense.' },
+    { phrase: '$& had left', reason: 'The verb has no past-perfect marking.' },
+  ],
+};
 
-test('every choice marks every changed region, preserving spaces, punctuation and repeated text', () => {
-  const choices = decoyChoices(translation, [place, action]);
+test('gap choices replace only the first phrase and share exactly one marked part', () => {
+  const choices = quizChoices('I left the letter, then left.', quiz);
   assert.deepEqual(
-    choices.map((choice) => choice.parts.filter((part) => part.marked).map((part) => part.text)),
-    [
-      ['left', 'home'],
-      ['left', 'the station'],
-      ['found', 'home'],
-    ],
+    choices.map((choice) => choice.text),
+    ['I left the letter, then left.', 'I will leave the letter, then left.', 'I $& had left the letter, then left.'],
   );
   assert.deepEqual(
     choices.map((choice) => choice.correct),
     [true, false, false],
   );
-  assert.equal(choices[1]!.reason, place.reason);
-  assert.equal(choices[2]!.reason, action.reason);
-  assert.equal(choices[0]!.reason, undefined);
   for (const choice of choices) {
+    assert.equal(choice.parts.filter((part) => part.marked).length, 1);
     assert.equal(choice.parts.map((part) => part.text).join(''), choice.text);
-    assert.ok(choice.parts.every((part) => part.text.length > 0));
-    assert.ok(choice.text.endsWith(', then left.'));
   }
+  assert.equal(choices[1]!.reason, quiz.decoys[0]!.reason);
+  assert.equal(choices[0]!.reason, undefined);
+  assert.deepEqual(gapOf(choices), { before: 'I ', after: ' the letter, then left.' });
 });
 
-test('decoys sharing the same first-occurrence span mark that span only once', () => {
-  const choices = decoyChoices('left left', [action, { ...action, to: '$&' }]);
+test('gaps at either edge support empty surrounding text and split unmarked parts', () => {
+  assert.deepEqual(gapOf(quizChoices('left again', quiz)), { before: '', after: ' again' });
+  assert.deepEqual(gapOf(quizChoices('I left', quiz)), { before: 'I ', after: '' });
   assert.deepEqual(
-    choices.map((choice) => choice.parts),
-    [
-      [
-        { text: 'left', marked: true },
-        { text: ' left', marked: false },
-      ],
-      [
-        { text: 'found', marked: true },
-        { text: ' left', marked: false },
-      ],
-      [
-        { text: '$&', marked: true },
-        { text: ' left', marked: false },
-      ],
-    ],
+    gapOf([
+      {
+        text: 'I left',
+        correct: true,
+        parts: [
+          { text: 'I', marked: false },
+          { text: ' ', marked: false },
+          { text: 'left', marked: true },
+        ],
+      },
+    ]),
+    { before: 'I ', after: '' },
   );
 });
 
-test('adjacent spans stay distinct even when a replacement grows or shrinks', () => {
-  const choices = decoyChoices('ab', [
-    { from: 'a', to: 'alpha', reason: 'First character.' },
-    { from: 'b', to: 'beta', reason: 'Second character.' },
-  ]);
-  assert.deepEqual(
-    choices.map((choice) => choice.parts),
-    [
-      [
-        { text: 'a', marked: true },
-        { text: 'b', marked: true },
-      ],
-      [
-        { text: 'alpha', marked: true },
-        { text: 'b', marked: true },
-      ],
-      [
-        { text: 'a', marked: true },
-        { text: 'beta', marked: true },
-      ],
-    ],
+test('gapOf rejects empty choices, full sentences, multiple gaps and mismatched surrounding text', () => {
+  const choices = quizChoices('I left.', quiz);
+  const plain: Choice = { text: 'I left.', correct: false, parts: [{ text: 'I left.', marked: false }] };
+  assert.equal(gapOf([]), undefined);
+  assert.equal(gapOf([plain]), undefined);
+  assert.equal(gapOf([...choices, plain]), undefined);
+  assert.equal(
+    gapOf([
+      ...choices,
+      {
+        ...plain,
+        parts: [
+          { text: 'I', marked: true },
+          { text: ' left.', marked: true },
+        ],
+      },
+    ]),
+    undefined,
   );
+  assert.equal(gapOf([...choices, ...quizChoices('You left.', quiz)]), undefined);
+  assert.equal(gapOf([...choices, ...quizChoices('I left!', quiz)]), undefined);
 });

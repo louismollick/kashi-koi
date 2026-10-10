@@ -1,4 +1,4 @@
-import { testDecoys } from './test-utils.ts';
+import { testQuiz } from './test-utils.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { type Analyzer, UsageLimitError } from '../src/analyzer/index.ts';
@@ -28,7 +28,7 @@ test('validates and stamps model output, then clears source lines', async (t) =>
   assert.equal(await worker.runNext(), false);
   assert.deepEqual(store.getAnalysis(input.fingerprint), {
     ...draft,
-    schemaVersion: 2,
+    schemaVersion: 3,
     fingerprint: input.fingerprint,
     model,
     createdAt: new Date(epoch).toISOString(),
@@ -49,7 +49,7 @@ test('invalid analysis retries exactly once with validation feedback', async (t)
       if (calls === 1)
         return {
           ...draft,
-          sentences: [{ start: 1, end: 1, translation: 'Incomplete', decoys: testDecoys('Incomplete') }],
+          sentences: [{ start: 1, end: 1, translation: 'Incomplete', quiz: testQuiz('Incomplete') }],
         };
       assert.ok(request.feedback?.some((message) => message.includes('expected 0')));
       return draft;
@@ -307,15 +307,18 @@ test('the worker never runs two analyses concurrently and finishes its active jo
   assert.equal(store.getJob('second')?.status, 'queued');
 });
 
-test('the final attempt drops only invalid decoys and accepts the translations', async (t) => {
-  for (const decoys of [
-    firstSentence.decoys.map((decoy) => ({ ...decoy, from: "can't go back" })),
-    [],
-    [{ from: '', to: '', reason: '' }],
-    [
-      { from: 'Opening', to: '閉める', reason: '開ける means open.' },
-      { from: 'Opening', to: 'Shutting', reason: 'Wrong verb' },
-    ],
+test('the final attempt drops only invalid quizzes and accepts the translations', async (t) => {
+  for (const quiz of [
+    { ...firstSentence.quiz, phrase: "can't go back" },
+    { phrase: 'Opening', decoys: [] },
+    { phrase: '', decoys: [{ phrase: '', reason: '' }] },
+    {
+      phrase: 'Opening',
+      decoys: [
+        { phrase: '閉める', reason: '開ける means open.' },
+        { phrase: 'Shutting', reason: 'Wrong verb' },
+      ],
+    },
   ]) {
     const { store } = testStore(t);
     store.enqueue(input);
@@ -324,19 +327,19 @@ test('the final attempt drops only invalid decoys and accepts the translations',
       start: 1,
       end: 1,
       translation: 'I call your name into the wind',
-      decoys: testDecoys('I call your name into the wind'),
+      quiz: testQuiz('I call your name into the wind'),
     };
     await new Worker(store, {
       model,
       async analyze(request) {
         if (++calls === 2) assert.ok(request.feedback?.length);
-        return { ...draft, sentences: [{ ...firstSentence, end: 0, decoys }, valid] };
+        return { ...draft, sentences: [{ ...firstSentence, end: 0, quiz }, valid] };
       },
     }).runNext();
     assert.equal(calls, 2);
     assert.equal(store.getJob(input.fingerprint)?.status, 'done');
     assert.deepEqual(store.getAnalysis(input.fingerprint)?.sentences, [
-      { ...firstSentence, end: 0, decoys: [] },
+      { ...firstSentence, end: 0, quiz: null },
       valid,
     ]);
   }
@@ -348,9 +351,80 @@ test('dropping invalid decoys does not hide structural errors on the final attem
   await new Worker(store, {
     model,
     async analyze() {
-      return { ...draft, lines: [], sentences: draft.sentences.map((sentence) => ({ ...sentence, decoys: [] })) };
+      return { ...draft, lines: [], sentences: draft.sentences.map((sentence) => ({ ...sentence, quiz: null })) };
     },
   }).runNext();
   assert.equal(store.getJob(input.fingerprint)?.status, 'failed');
   assert.equal(store.getAnalysis(input.fingerprint), undefined);
+});
+
+test('length advice retries once while differing repeat grouping is accepted on the first attempt', async (t) => {
+  for (const repeated of [false, true]) {
+    const { store } = testStore(t);
+    const source = repeated ? ['朝', '窓', '朝', '窓'] : ['朝', '窓', '風', '空'];
+    const sentences = repeated
+      ? [
+          { start: 0, end: 1, translation: 'Morning window', quiz: testQuiz('Morning window') },
+          { start: 2, end: 2, translation: 'Morning', quiz: testQuiz('Morning') },
+          { start: 3, end: 3, translation: 'Window', quiz: testQuiz('Window') },
+        ]
+      : [
+          {
+            start: 0,
+            end: 3,
+            translation: 'Morning window and wind in the sky',
+            quiz: testQuiz('Morning window and wind in the sky'),
+          },
+        ];
+    const output = { ...draft, lines: source.map(() => 'A translated line'), sentences };
+    store.enqueue({ ...input, lines: source });
+    let calls = 0;
+    await new Worker(store, {
+      model,
+      async analyze(request) {
+        if (++calls === 1) assert.equal(request.feedback, undefined);
+        else assert.match(request.feedback?.join('\n') ?? '', /at most 3/);
+        return output;
+      },
+    }).runNext();
+    assert.equal(calls, repeated ? 1 : 2);
+    assert.equal(store.getJob(input.fingerprint)?.status, 'done');
+    assert.deepEqual(store.getAnalysis(input.fingerprint)?.sentences, sentences);
+  }
+});
+
+test('final quiz dropping checks Japanese presence and English already visible in the original lyrics', async (t) => {
+  for (const lyric of ['English only', 'I need to 朝']) {
+    const { store } = testStore(t);
+    store.enqueue({ ...input, lines: [lyric] });
+    const output = {
+      ...draft,
+      lines: ['I need to go'],
+      sentences: [
+        {
+          start: 0,
+          end: 0,
+          translation: 'I need to go',
+          quiz: {
+            phrase: 'I need to',
+            decoys: [
+              { phrase: 'I used to', reason: 'Wrong tense.' },
+              { phrase: 'I can', reason: 'Wrong modality.' },
+            ],
+          },
+        },
+      ],
+    };
+    let calls = 0;
+    await new Worker(store, {
+      model,
+      async analyze(request) {
+        if (++calls === 2) assert.ok(request.feedback?.some((error) => /without Japanese|already shown/.test(error)));
+        return output;
+      },
+    }).runNext();
+    assert.equal(calls, 2);
+    assert.equal(store.getJob(input.fingerprint)?.status, 'done');
+    assert.equal(store.getAnalysis(input.fingerprint)?.sentences[0]?.quiz, null);
+  }
 });

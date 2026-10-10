@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, Easing, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
 import type { Choice, Line, SongLyrics } from '@/types/domain';
@@ -7,10 +7,11 @@ import { PixelFrame } from './PixelFrame';
 import { SentenceCard } from './LineCard';
 import { SongIntro } from './SongIntro';
 import { Mascot } from './Mascot';
-import { Answers } from './Answers';
+import { Answers, GapSentence } from './Answers';
+import { gapOf } from '@/lyrics/choices';
 import { Button, Label, styles } from './ui';
 
-/** Sprite and feedback shrink to the space left between the line and answers. */
+/** Sprite and feedback fill the space left between the sentence and answers, never shorter than an answer button. */
 function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
   const pop = useSharedValue(0);
   const [size, setSize] = useState(0);
@@ -35,7 +36,7 @@ function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
       onLayout={({ nativeEvent: { layout } }) =>
         setSize(Math.max(0, Math.min(250, layout.height - 8, layout.width - 128)))
       }
-      style={[styles.row, { flex: 1, minHeight: 0, paddingHorizontal: 4 }]}
+      style={[styles.row, { flex: 1, minHeight: 72, paddingHorizontal: 4 }]}
     >
       <View>
         <Mascot combo={combo} size={size} />
@@ -121,13 +122,12 @@ function AnswerTimeBar({ until }: { until: number }) {
 
 /**
  * A fixed quiz column. `lines` is the current sentence (or a gap line with no choices); before the first sentence
- * an analysed song shows its intro instead. After a miss, `onExplain` opens the sentence's breakdown and
- * `onContinue` (when the song is held) moves on.
+ * an analysed song shows its intro instead. The sentence scrolls when it is long, so the answers and, after a miss,
+ * EXPLAIN (`onExplain`) and CONTINUE (`onContinue`, when the song is held) always stay on screen.
  */
 export function QuizColumn({
   lines,
   current,
-  previous,
   intro,
   choices,
   selected,
@@ -142,7 +142,6 @@ export function QuizColumn({
 }: {
   lines?: Line[];
   current?: number;
-  previous?: Line[];
   intro?: SongLyrics['analysis'];
   choices: Choice[];
   selected: string | null;
@@ -157,21 +156,25 @@ export function QuizColumn({
 }) {
   // `nice` is the recorded grade, so the miss actions follow scoring even if cached choices went stale.
   const missed = selected !== null && !nice;
+  const gap = gapOf(choices);
+  const answer = selected === null ? undefined : choices.find((choice) => choice.correct);
   return (
     <View style={{ flex: 1, minHeight: 0, paddingHorizontal: 16, paddingBottom: 16 }}>
-      {!lines?.length && intro ? (
-        <SongIntro info={intro} />
-      ) : (
-        <SentenceCard
-          lines={lines?.length ? lines : [{ id: 'gap', segments: [{ text: '♪' }] }]}
-          current={current}
-          previous={previous}
-          isNew={isNew}
-        />
-      )}
+      <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ gap: 18 }}>
+        {!lines?.length && intro ? (
+          <SongIntro info={intro} />
+        ) : (
+          <SentenceCard
+            lines={lines?.length ? lines : [{ id: 'gap', segments: [{ text: '♪' }] }]}
+            current={current}
+            isNew={isNew}
+          />
+        )}
+        {gap && <GapSentence gap={gap} answer={answer?.parts.find((part) => part.marked)?.text} />}
+      </ScrollView>
       {until != null && <AnswerTimeBar until={until} />}
       <ComboRow combo={combo} nice={nice} />
-      <Answers compact choices={choices} selected={selected} onAnswer={onAnswer} />
+      <Answers choices={choices} selected={selected} onAnswer={onAnswer} />
       {missed && (onExplain || onContinue) && (
         <View style={[styles.row, { marginTop: 12 }]}>
           {onExplain && (

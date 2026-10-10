@@ -1,37 +1,43 @@
-import { decoyText, type Decoy } from '@kashi-koi/shared/analysis';
+import { decoySentence, type Quiz } from '@kashi-koi/shared/analysis';
 import type { Choice } from '@/types/domain';
 
-/** Mark every distinct changed span in all options, using offsets in the original translation. */
-export function decoyChoices(translation: string, decoys: Decoy[]): Choice[] {
-  const spans = decoys.map((decoy) => {
-    const start = translation.indexOf(decoy.from);
-    return { start, end: start + decoy.from.length };
-  });
-  const regions = spans
-    .filter((span, index) => spans.findIndex((other) => other.start === span.start && other.end === span.end) === index)
-    .sort((a, b) => a.start - b.start);
-  const parts = (decoy?: Decoy): Choice['parts'] => {
-    const result: Choice['parts'] = [];
-    let cursor = 0;
-    const changed = decoy ? translation.indexOf(decoy.from) : -1;
-    for (const region of regions) {
-      if (cursor < region.start) result.push({ text: translation.slice(cursor, region.start), marked: false });
-      result.push({
-        text: decoy && changed === region.start ? decoy.to : translation.slice(region.start, region.end),
-        marked: true,
-      });
-      cursor = region.end;
-    }
-    if (cursor < translation.length) result.push({ text: translation.slice(cursor), marked: false });
-    return result;
-  };
+/** Each gap choice changes one phrase and shares the same surrounding sentence. */
+export function quizChoices(translation: string, quiz: Quiz): Choice[] {
+  const start = translation.indexOf(quiz.phrase);
+  const before = translation.slice(0, start);
+  const after = translation.slice(start + quiz.phrase.length);
+  const parts = (phrase: string): Choice['parts'] => [
+    { text: before, marked: false },
+    { text: phrase, marked: true },
+    { text: after, marked: false },
+  ];
   return [
-    { text: translation, parts: parts(), correct: true },
-    ...decoys.map((decoy) => ({
-      text: decoyText(translation, decoy),
-      parts: parts(decoy),
+    { text: translation, parts: parts(quiz.phrase), correct: true },
+    ...quiz.decoys.map((decoy) => ({
+      text: decoySentence(translation, quiz.phrase, decoy),
+      parts: parts(decoy.phrase),
       correct: false,
       reason: decoy.reason,
     })),
   ];
+}
+
+/** Return a shared sentence gap only when every choice marks exactly one phrase. */
+export function gapOf(choices: Choice[]): { before: string; after: string } | undefined {
+  let gap: { before: string; after: string } | undefined;
+  for (const choice of choices) {
+    const marked = choice.parts.findIndex((part) => part.marked);
+    if (marked < 0 || choice.parts.filter((part) => part.marked).length !== 1) return undefined;
+    const before = choice.parts
+      .slice(0, marked)
+      .map((part) => part.text)
+      .join('');
+    const after = choice.parts
+      .slice(marked + 1)
+      .map((part) => part.text)
+      .join('');
+    if (gap && (gap.before !== before || gap.after !== after)) return undefined;
+    gap = { before, after };
+  }
+  return gap;
 }

@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { canExplain } from '@/analysis/breakdowns';
 import { appStore } from '@/store/appStore';
-import { currentSentence, getSong, libraryStore, sentenceForReview } from '@/store/libraryStore';
+import { getSong, libraryStore, sentenceForReview } from '@/store/libraryStore';
 import { ScreenHeader } from '@/components/Header';
 import { QuizColumn } from '@/components/QuizLayout';
 import { PlayerBar } from '@/components/PlayerBar';
@@ -35,14 +35,12 @@ export default function ClipReviewScreen() {
   const song = getSong(item.songId);
   if (!song) return null;
   const current = sentenceForReview(item),
-    previous = current?.previous ? currentSentence(song.id, current.previous.start) : undefined,
     answer = clip.answers[item.id];
   return (
     <View style={styles.page}>
       <ScreenHeader sheet title={`Sentence ${clip.index + 1} of ${clip.ids.length}`} />
       <QuizColumn
         lines={current?.lines}
-        previous={previous?.lines}
         isNew={item.kind === 'new'}
         choices={clip.choices[item.sentenceId] ?? []}
         selected={answer?.choice ?? null}

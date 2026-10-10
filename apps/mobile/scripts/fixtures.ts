@@ -1157,7 +1157,10 @@ export function fixtureReviewList() {
 }
 
 /** Small valid swaps for fixtures; behavior tests use explicit decoys. */
-export const testDecoys = (translation: string) => [
-  { from: translation.slice(0, 1), to: 'X', reason: 'Changes the sentence.' },
-  { from: translation.slice(0, 1), to: 'Y', reason: 'Changes the sentence differently.' },
-];
+export const testQuiz = (translation: string) => ({
+  phrase: translation.slice(0, 1),
+  decoys: [
+    { phrase: 'X', reason: 'Changes the sentence.' },
+    { phrase: 'Y', reason: 'Changes the sentence differently.' },
+  ],
+});

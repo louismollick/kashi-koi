@@ -1,4 +1,4 @@
-import { testDecoys } from './fixtures';
+import { testQuiz } from './fixtures';
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
@@ -20,20 +20,18 @@ let launch = 0;
 const analysisFor = (id: string): SongAnalysis => {
   const lyrics = getLyrics(id);
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     fingerprint: lyrics.fingerprint,
     model: 'test',
     createdAt: '2026-10-08T00:00:00Z',
     title: 'Paper boats',
-    summary: 'A speaker follows a paper boat.',
-    speaker: 'A walker',
-    addressee: 'Unclear',
+    about: 'A speaker follows a paper boat.',
     lines: lyrics.timeline.map((_, index) => `Context ${index}`),
     sentences: lyrics.timeline.map((_, index) => ({
       start: index,
       end: index,
       translation: `Sentence ${index}`,
-      decoys: testDecoys(`Sentence ${index}`),
+      quiz: testQuiz(`Sentence ${index}`),
     })),
   };
 };

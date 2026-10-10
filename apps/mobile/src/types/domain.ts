@@ -1,6 +1,6 @@
-import type { Decoy } from '@kashi-koi/shared/analysis';
+import type { Quiz } from '@kashi-koi/shared/analysis';
 
-export type { Decoy } from '@kashi-koi/shared/analysis';
+export type { Decoy, Quiz } from '@kashi-koi/shared/analysis';
 export type Rank = 'S' | 'A' | 'B' | 'C';
 export type Combo = number;
 export type QuizToggle = boolean;
@@ -8,7 +8,7 @@ export type ListenMode = 'listen';
 export type QuizMode = 'quiz';
 export type Line = { id: string; segments: { text: string; reading?: string }[]; translation?: string };
 export type Occurrence = { lineId: string; startMs: number; endMs: number; translation?: string };
-export type Sentence = { id: string; lineIds: string[]; translation?: string; decoys?: Decoy[] };
+export type Sentence = { id: string; lineIds: string[]; translation?: string; quiz?: Quiz | null };
 export type Choice = { text: string; parts: { text: string; marked: boolean }[]; correct: boolean; reason?: string };
 export type SentenceOccurrence = { sentenceId: string; start: number; end: number };
 export type SongLyrics = {
@@ -20,9 +20,7 @@ export type SongLyrics = {
   sentenceTimeline: SentenceOccurrence[];
   analysis?: {
     title: string;
-    summary: string;
-    speaker: string;
-    addressee: string;
+    about: string;
   };
 };
 export type LyricsStatus = 'unchecked' | 'synced' | 'none' | 'error';
