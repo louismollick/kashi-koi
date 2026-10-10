@@ -1,171 +1,1023 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Round 4: pop palettes and the flow</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Dela+Gothic+One&family=Fredoka:wght@600;700&family=Kiwi+Maru:wght@500&family=Lilita+One&family=M+PLUS+Rounded+1c:wght@800&family=Mochiy+Pop+One&family=Potta+One&family=Rampart+One&family=Reggae+One&family=RocknRoll+One&family=Zen+Maru+Gothic:wght@900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<style>
-  /* ---------- themes ---------- */
-  .theme-ramune { --bg:#33b7ff; --dot:rgba(255,255,255,.22); --line:#10224a; --ink:#10224a; --card:#fff; --cardink:#10224a; --a1:#ff5fae; --a1t:#10224a; --a2:#ffe14d; --a2t:#10224a; --a3:#8af0b0; --a3t:#10224a; --hi:#ffe14d; --hit:#2fe07a; --miss:#ff5f5f; --stat:#fff; --hair:#10224a; --font:"Fredoka","Mochiy Pop One"; --fontH:"Mochiy Pop One"; }
-  .theme-neon { --bg:#000; --dot:rgba(255,46,136,.22); --line:#fff; --ink:#ff2e88; --card:#141414; --cardink:#fff; --a1:#ff2e88; --a1t:#000; --a2:#00e5ff; --a2t:#000; --a3:#b6ff3b; --a3t:#000; --hi:#00e5ff; --hit:#b6ff3b; --miss:#ff2e88; --stat:#fff; --hair:#7a3cff; --font:"M PLUS Rounded 1c"; --fontH:"Dela Gothic One"; }
-  .theme-melon { --bg:#4fdc9a; --dot:rgba(255,255,255,.25); --line:#0f3d2e; --ink:#0f3d2e; --card:#fffbe8; --cardink:#0f3d2e; --a1:#ff3b5c; --a1t:#fff; --a2:#fff27a; --a2t:#0f3d2e; --a3:#ffb3c7; --a3t:#0f3d2e; --hi:#fff27a; --hit:#fff27a; --miss:#ff3b5c; --stat:#0f3d2e; --hair:#5a3a1a; --font:"Kiwi Maru"; --fontH:"Rampart One"; }
-  .theme-sakura { --bg:#ff8fc1; --dot:rgba(255,255,255,.28); --line:#3b1650; --ink:#3b1650; --card:#fff; --cardink:#3b1650; --a1:#8b6cff; --a1t:#fff; --a2:#ffe14d; --a2t:#3b1650; --a3:#4fd2ff; --a3t:#3b1650; --hi:#ffe14d; --hit:#3ee07a; --miss:#3b1650; --stat:#fff; --hair:#3b1650; --font:"Baloo 2","RocknRoll One"; --fontH:"RocknRoll One"; }
-  .theme-grape { --bg:#6b3cff; --dot:rgba(255,255,255,.14); --line:#1a0b3d; --ink:#1a0b3d; --card:#fff; --cardink:#1a0b3d; --a1:#ff6b6b; --a1t:#1a0b3d; --a2:#ffd23f; --a2t:#1a0b3d; --a3:#2de2c6; --a3t:#1a0b3d; --hi:#ffd23f; --hit:#2de2c6; --miss:#ff6b6b; --stat:#fff; --hair:#ff6b6b; --font:"Zen Maru Gothic"; --fontH:"Reggae One"; }
-  .theme-yuzu { --bg:#ffe14d; --dot:rgba(0,0,0,.08); --line:#111; --ink:#111; --card:#fff; --cardink:#111; --a1:#2f6bff; --a1t:#fff; --a2:#ff4040; --a2t:#fff; --a3:#fff; --a3t:#111; --hi:#2f6bff; --hit:#20c060; --miss:#ff4040; --stat:#111; --hair:#111; --font:"Lilita One","Potta One"; --fontH:"Potta One"; }
+  <head>
+    <meta charset="utf-8">
+    <title>Round 4: pop palettes and the flow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Dela+Gothic+One&family=Fredoka:wght@600;700&family=Kiwi+Maru:wght@500&family=Lilita+One&family=M+PLUS+Rounded+1c:wght@800&family=Mochiy+Pop+One&family=Potta+One&family=Rampart+One&family=Reggae+One&family=RocknRoll+One&family=Zen+Maru+Gothic:wght@900&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="style.css">
+    <style>
+    /* ---------- themes ---------- */
+    .theme-ramune {
+      --bg: #33b7ff;
+      --dot: rgba(255, 255, 255, 0.22);
+      --line: #10224a;
+      --ink: #10224a;
+      --card: #fff;
+      --cardink: #10224a;
+      --a1: #ff5fae;
+      --a1t: #10224a;
+      --a2: #ffe14d;
+      --a2t: #10224a;
+      --a3: #8af0b0;
+      --a3t: #10224a;
+      --hi: #ffe14d;
+      --hit: #2fe07a;
+      --miss: #ff5f5f;
+      --stat: #fff;
+      --hair: #10224a;
+      --font: "Fredoka", "Mochiy Pop One";
+      --fontH: "Mochiy Pop One";
+    }
+    .theme-neon {
+      --bg: #000;
+      --dot: rgba(255, 46, 136, 0.22);
+      --line: #fff;
+      --ink: #ff2e88;
+      --card: #141414;
+      --cardink: #fff;
+      --a1: #ff2e88;
+      --a1t: #000;
+      --a2: #00e5ff;
+      --a2t: #000;
+      --a3: #b6ff3b;
+      --a3t: #000;
+      --hi: #00e5ff;
+      --hit: #b6ff3b;
+      --miss: #ff2e88;
+      --stat: #fff;
+      --hair: #7a3cff;
+      --font: "M PLUS Rounded 1c";
+      --fontH: "Dela Gothic One";
+    }
+    .theme-melon {
+      --bg: #4fdc9a;
+      --dot: rgba(255, 255, 255, 0.25);
+      --line: #0f3d2e;
+      --ink: #0f3d2e;
+      --card: #fffbe8;
+      --cardink: #0f3d2e;
+      --a1: #ff3b5c;
+      --a1t: #fff;
+      --a2: #fff27a;
+      --a2t: #0f3d2e;
+      --a3: #ffb3c7;
+      --a3t: #0f3d2e;
+      --hi: #fff27a;
+      --hit: #fff27a;
+      --miss: #ff3b5c;
+      --stat: #0f3d2e;
+      --hair: #5a3a1a;
+      --font: "Kiwi Maru";
+      --fontH: "Rampart One";
+    }
+    .theme-sakura {
+      --bg: #ff8fc1;
+      --dot: rgba(255, 255, 255, 0.28);
+      --line: #3b1650;
+      --ink: #3b1650;
+      --card: #fff;
+      --cardink: #3b1650;
+      --a1: #8b6cff;
+      --a1t: #fff;
+      --a2: #ffe14d;
+      --a2t: #3b1650;
+      --a3: #4fd2ff;
+      --a3t: #3b1650;
+      --hi: #ffe14d;
+      --hit: #3ee07a;
+      --miss: #3b1650;
+      --stat: #fff;
+      --hair: #3b1650;
+      --font: "Baloo 2", "RocknRoll One";
+      --fontH: "RocknRoll One";
+    }
+    .theme-grape {
+      --bg: #6b3cff;
+      --dot: rgba(255, 255, 255, 0.14);
+      --line: #1a0b3d;
+      --ink: #1a0b3d;
+      --card: #fff;
+      --cardink: #1a0b3d;
+      --a1: #ff6b6b;
+      --a1t: #1a0b3d;
+      --a2: #ffd23f;
+      --a2t: #1a0b3d;
+      --a3: #2de2c6;
+      --a3t: #1a0b3d;
+      --hi: #ffd23f;
+      --hit: #2de2c6;
+      --miss: #ff6b6b;
+      --stat: #fff;
+      --hair: #ff6b6b;
+      --font: "Zen Maru Gothic";
+      --fontH: "Reggae One";
+    }
+    .theme-yuzu {
+      --bg: #ffe14d;
+      --dot: rgba(0, 0, 0, 0.08);
+      --line: #111;
+      --ink: #111;
+      --card: #fff;
+      --cardink: #111;
+      --a1: #2f6bff;
+      --a1t: #fff;
+      --a2: #ff4040;
+      --a2t: #fff;
+      --a3: #fff;
+      --a3t: #111;
+      --hi: #2f6bff;
+      --hit: #20c060;
+      --miss: #ff4040;
+      --stat: #111;
+      --hair: #111;
+      --font: "Lilita One", "Potta One";
+      --fontH: "Potta One";
+    }
 
-  /* ---------- themed phone ---------- */
-  .t { background: var(--bg); color: var(--ink); font-family: var(--font); border-color: #333; }
-  .t .dots { position: absolute; inset: 0; background-image: radial-gradient(var(--dot) 2.5px, transparent 3px); background-size: 18px 18px; }
-  .t .status { color: var(--stat); position: relative; z-index: 2; }
-  .t .scr { position: relative; z-index: 1; }
-  .ol { color: #fff; -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; font-family: var(--fontH); }
-  .t .card { background: var(--card); color: var(--cardink); border: 3.5px solid var(--line); border-radius: 18px; box-shadow: 0 5px 0 var(--line); padding: 12px 14px; }
-  .t .ans { border: 3.5px solid var(--line); border-radius: 18px; box-shadow: 0 5px 0 var(--line); padding: 11px 14px; font-size: 15px; line-height: 1.25; margin-bottom: 10px; position: relative; }
-  .t .a1 { background: var(--a1); color: var(--a1t); } .t .a2 { background: var(--a2); color: var(--a2t); } .t .a3 { background: var(--a3); color: var(--a3t); }
-  .t .ans.hit { transform: translateY(3px); box-shadow: 0 2px 0 var(--line), 0 0 0 4px var(--hit); }
-  .t .ans.hit::after { content: "✓"; position: absolute; right: -6px; top: -12px; width: 28px; height: 28px; border-radius: 50%; background: var(--hit); border: 3px solid var(--line); color: var(--line); display: flex; align-items: center; justify-content: center; font-size: 15px; }
-  .t .ans.dim { opacity: .45; }
-  .t .rb { width: 34px; height: 34px; border-radius: 50%; background: var(--card); color: var(--cardink); border: 3px solid var(--line); box-shadow: 0 3px 0 var(--line); display: flex; align-items: center; justify-content: center; font-size: 12px; flex: none; }
-  .t .tbar { display: flex; align-items: center; gap: 8px; padding: 2px 0 6px; }
-  .t .tbar .art { width: 38px; height: 38px; border: 3px solid var(--line); border-radius: 10px; }
-  .t .ttl { flex: 1; min-width: 0; overflow: hidden; padding: 3px 0 0 3px; }
-  .t .ttl .ol { font-size: 15px; -webkit-text-stroke-width: 5px; white-space: nowrap; }
-  .t .sub { font-size: 11px; color: var(--stat); font-weight: 700; }
-  .t .lane { display: flex; gap: 3px; height: 14px; margin: 6px 0 12px; }
-  .t .lane i { border: 2.5px solid var(--line); border-radius: 8px; background: var(--card); position: relative; overflow: hidden; }
-  .t .lane i.ok { background: var(--hit); } .t .lane i.no { background: var(--miss); }
-  .t .lane i.cur::after { content: ""; position: absolute; inset: 0 42% 0 0; background: var(--hi); }
-  .t .jp { font-family: var(--fontH); font-size: 19px; line-height: 1.75; text-align: center; position: relative; }
-  .t .jp rt { font-family: var(--font); font-size: 9px; color: inherit; opacity: .7; }
-  .t .badge { position: absolute; top: -13px; left: -8px; background: var(--hi); color: var(--line); border: 3px solid var(--line); border-radius: 10px; font-size: 11px; padding: 1px 7px; transform: rotate(-8deg); font-family: var(--fontH); }
-  .t .mid { display: flex; align-items: center; gap: 10px; margin: 10px 0 8px; height: 76px; }
-  .t .combo { font-size: 34px; line-height: 1; }
-  .t .judge { font-size: 26px; margin-left: auto; transform: rotate(-6deg); -webkit-text-stroke-color: var(--line); color: var(--hi); }
-  .t .bigbtn { border: 3.5px solid var(--line); border-radius: 20px; box-shadow: 0 6px 0 var(--line); padding: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
-  .t .bigbtn .ic { font-size: 26px; }
-  .t .bigbtn b { display: block; font-family: var(--fontH); font-weight: 400; font-size: 17px; }
-  .t .bigbtn span.s { font-size: 12px; }
-  .t .tg { width: 40px; height: 24px; border-radius: 14px; border: 3px solid var(--line); background: var(--card); position: relative; flex: none; }
-  .t .tg::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--line); }
-  .t .tg.on { background: var(--hit); } .t .tg.on::after { left: 18px; }
-  .t .lrow { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 9px 10px; margin-bottom: 8px; }
-  .t .lostbtn { height: 112px; border: 4px solid var(--line); border-radius: 26px; box-shadow: 0 7px 0 var(--line); background: var(--a1); color: var(--a1t); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 18px; }
-  .t .lostbtn b { font-family: var(--fontH); font-weight: 400; font-size: 30px; }
-  .t .lyl { font-family: var(--fontH); color: #fff; -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; font-size: 14px; line-height: 1.6; margin: 6px 4px; opacity: .8; }
-  .t .pill { display: inline-block; border: 3px solid var(--line); border-radius: 12px; padding: 2px 9px; font-size: 12px; background: var(--hi); color: var(--line); }
+    /* ---------- themed phone ---------- */
+    .t {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font);
+      border-color: #333;
+    }
+    .t .dots {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(var(--dot) 2.5px, transparent 3px);
+      background-size: 18px 18px;
+    }
+    .t .status {
+      color: var(--stat);
+      position: relative;
+      z-index: 2;
+    }
+    .t .scr {
+      position: relative;
+      z-index: 1;
+    }
+    .ol {
+      color: #fff;
+      -webkit-text-stroke: 6px var(--ink);
+      paint-order: stroke fill;
+      font-family: var(--fontH);
+    }
+    .t .card {
+      background: var(--card);
+      color: var(--cardink);
+      border: 3.5px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 5px 0 var(--line);
+      padding: 12px 14px;
+    }
+    .t .ans {
+      border: 3.5px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 5px 0 var(--line);
+      padding: 11px 14px;
+      font-size: 15px;
+      line-height: 1.25;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .t .a1 {
+      background: var(--a1);
+      color: var(--a1t);
+    }
+    .t .a2 {
+      background: var(--a2);
+      color: var(--a2t);
+    }
+    .t .a3 {
+      background: var(--a3);
+      color: var(--a3t);
+    }
+    .t .ans.hit {
+      transform: translateY(3px);
+      box-shadow:
+        0 2px 0 var(--line),
+        0 0 0 4px var(--hit);
+    }
+    .t .ans.hit::after {
+      content: "✓";
+      position: absolute;
+      right: -6px;
+      top: -12px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--hit);
+      border: 3px solid var(--line);
+      color: var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+    .t .ans.dim {
+      opacity: 0.45;
+    }
+    .t .rb {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--card);
+      color: var(--cardink);
+      border: 3px solid var(--line);
+      box-shadow: 0 3px 0 var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex: none;
+    }
+    .t .tbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 2px 0 6px;
+    }
+    .t .tbar .art {
+      width: 38px;
+      height: 38px;
+      border: 3px solid var(--line);
+      border-radius: 10px;
+    }
+    .t .ttl {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      padding: 3px 0 0 3px;
+    }
+    .t .ttl .ol {
+      font-size: 15px;
+      -webkit-text-stroke-width: 5px;
+      white-space: nowrap;
+    }
+    .t .sub {
+      font-size: 11px;
+      color: var(--stat);
+      font-weight: 700;
+    }
+    .t .lane {
+      display: flex;
+      gap: 3px;
+      height: 14px;
+      margin: 6px 0 12px;
+    }
+    .t .lane i {
+      border: 2.5px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      position: relative;
+      overflow: hidden;
+    }
+    .t .lane i.ok {
+      background: var(--hit);
+    }
+    .t .lane i.no {
+      background: var(--miss);
+    }
+    .t .lane i.cur::after {
+      content: "";
+      position: absolute;
+      inset: 0 42% 0 0;
+      background: var(--hi);
+    }
+    .t .jp {
+      font-family: var(--fontH);
+      font-size: 19px;
+      line-height: 1.75;
+      text-align: center;
+      position: relative;
+    }
+    .t .jp rt {
+      font-family: var(--font);
+      font-size: 9px;
+      color: inherit;
+      opacity: 0.7;
+    }
+    .t .badge {
+      position: absolute;
+      top: -13px;
+      left: -8px;
+      background: var(--hi);
+      color: var(--line);
+      border: 3px solid var(--line);
+      border-radius: 10px;
+      font-size: 11px;
+      padding: 1px 7px;
+      transform: rotate(-8deg);
+      font-family: var(--fontH);
+    }
+    .t .mid {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0 8px;
+      height: 76px;
+    }
+    .t .combo {
+      font-size: 34px;
+      line-height: 1;
+    }
+    .t .judge {
+      font-size: 26px;
+      margin-left: auto;
+      transform: rotate(-6deg);
+      -webkit-text-stroke-color: var(--line);
+      color: var(--hi);
+    }
+    .t .bigbtn {
+      border: 3.5px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 6px 0 var(--line);
+      padding: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .t .bigbtn .ic {
+      font-size: 26px;
+    }
+    .t .bigbtn b {
+      display: block;
+      font-family: var(--fontH);
+      font-weight: 400;
+      font-size: 17px;
+    }
+    .t .bigbtn span.s {
+      font-size: 12px;
+    }
+    .t .tg {
+      width: 40px;
+      height: 24px;
+      border-radius: 14px;
+      border: 3px solid var(--line);
+      background: var(--card);
+      position: relative;
+      flex: none;
+    }
+    .t .tg::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--line);
+    }
+    .t .tg.on {
+      background: var(--hit);
+    }
+    .t .tg.on::after {
+      left: 18px;
+    }
+    .t .lrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      padding: 9px 10px;
+      margin-bottom: 8px;
+    }
+    .t .lostbtn {
+      height: 112px;
+      border: 4px solid var(--line);
+      border-radius: 26px;
+      box-shadow: 0 7px 0 var(--line);
+      background: var(--a1);
+      color: var(--a1t);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+    .t .lostbtn b {
+      font-family: var(--fontH);
+      font-weight: 400;
+      font-size: 30px;
+    }
+    .t .lyl {
+      font-family: var(--fontH);
+      color: #fff;
+      -webkit-text-stroke: 4px var(--ink);
+      paint-order: stroke fill;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 6px 4px;
+      opacity: 0.8;
+    }
+    .t .pill {
+      display: inline-block;
+      border: 3px solid var(--line);
+      border-radius: 12px;
+      padding: 2px 9px;
+      font-size: 12px;
+      background: var(--hi);
+      color: var(--line);
+    }
 
-  /* ---------- chibi ---------- */
-  .chibi { position: relative; width: 58px; height: 74px; flex: none; transform-origin: 50% 100%; animation: dance .38s ease-in-out infinite alternate; }
-  .chibi.idle { animation: bob 1.1s ease-in-out infinite alternate; }
-  @keyframes dance { from { transform: rotate(-9deg); } to { transform: rotate(9deg) translateY(-7px); } }
-  @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
-  .chibi .hd { position: absolute; left: 6px; top: 6px; width: 46px; height: 42px; border-radius: 50% 50% 46% 46%; background: #ffe3cf; border: 3px solid var(--line); overflow: hidden; z-index: 2; }
-  .chibi .hd::before { content: ""; position: absolute; left: -6px; right: -6px; top: -8px; height: 22px; background: var(--hair); border-radius: 0 0 45% 45%; }
-  .chibi .e { position: absolute; top: 19px; width: 7px; height: 10px; background: #1a1a1a; border-radius: 50%; }
-  .chibi .e::after { content: ""; position: absolute; left: 1px; top: 1px; width: 3px; height: 3px; background: #fff; border-radius: 50%; }
-  .chibi .e.l { left: 11px; } .chibi .e.r { right: 11px; }
-  .chibi .bl { position: absolute; top: 28px; width: 8px; height: 4px; background: #ff9ab0; border-radius: 50%; }
-  .chibi .bl.l { left: 5px; } .chibi .bl.r { right: 5px; }
-  .chibi .m { position: absolute; top: 29px; left: 17px; width: 7px; height: 5px; background: #d6334a; border-radius: 0 0 6px 6px; }
-  .chibi.idle .m { height: 2px; background: #1a1a1a; border-radius: 2px; }
-  .chibi .band { position: absolute; left: 1px; top: 1px; width: 56px; height: 32px; border: 4px solid var(--line); border-bottom: none; border-radius: 32px 32px 0 0; z-index: 3; box-sizing: border-box; }
-  .chibi .cup { position: absolute; top: 20px; width: 12px; height: 18px; background: var(--a3); border: 3px solid var(--line); border-radius: 6px; z-index: 4; }
-  .chibi .cup.l { left: -1px; } .chibi .cup.r { right: -1px; }
-  .chibi .bd { position: absolute; left: 17px; top: 46px; width: 24px; height: 19px; background: var(--a1); border: 3px solid var(--line); border-radius: 9px 9px 6px 6px; z-index: 1; }
-  .chibi .arm { position: absolute; top: 49px; width: 7px; height: 17px; background: #ffe3cf; border: 2.5px solid var(--line); border-radius: 5px; transform-origin: 50% 3px; }
-  .chibi .arm.l { left: 16px; animation: wl .38s ease-in-out infinite alternate; }
-  .chibi .arm.r { right: 16px; animation: wr .38s ease-in-out infinite alternate; }
-  .chibi.idle .arm.l, .chibi.idle .arm.r { animation: none; transform: rotate(0); }
-  @keyframes wl { from { transform: rotate(120deg); } to { transform: rotate(165deg); } }
-  @keyframes wr { from { transform: rotate(-165deg); } to { transform: rotate(-120deg); } }
-  .chibi .lg { position: absolute; top: 63px; width: 7px; height: 10px; background: var(--line); border-radius: 3px; }
-  .chibi .lg.l { left: 21px; } .chibi .lg.r { left: 30px; }
+    /* ---------- chibi ---------- */
+    .chibi {
+      position: relative;
+      width: 58px;
+      height: 74px;
+      flex: none;
+      transform-origin: 50% 100%;
+      animation: dance 0.38s ease-in-out infinite alternate;
+    }
+    .chibi.idle {
+      animation: bob 1.1s ease-in-out infinite alternate;
+    }
+    @keyframes dance {
+      from {
+        transform: rotate(-9deg);
+      }
+      to {
+        transform: rotate(9deg) translateY(-7px);
+      }
+    }
+    @keyframes bob {
+      from {
+        transform: translateY(0);
+      }
+      to {
+        transform: translateY(-3px);
+      }
+    }
+    .chibi .hd {
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      width: 46px;
+      height: 42px;
+      border-radius: 50% 50% 46% 46%;
+      background: #ffe3cf;
+      border: 3px solid var(--line);
+      overflow: hidden;
+      z-index: 2;
+    }
+    .chibi .hd::before {
+      content: "";
+      position: absolute;
+      left: -6px;
+      right: -6px;
+      top: -8px;
+      height: 22px;
+      background: var(--hair);
+      border-radius: 0 0 45% 45%;
+    }
+    .chibi .e {
+      position: absolute;
+      top: 19px;
+      width: 7px;
+      height: 10px;
+      background: #1a1a1a;
+      border-radius: 50%;
+    }
+    .chibi .e::after {
+      content: "";
+      position: absolute;
+      left: 1px;
+      top: 1px;
+      width: 3px;
+      height: 3px;
+      background: #fff;
+      border-radius: 50%;
+    }
+    .chibi .e.l {
+      left: 11px;
+    }
+    .chibi .e.r {
+      right: 11px;
+    }
+    .chibi .bl {
+      position: absolute;
+      top: 28px;
+      width: 8px;
+      height: 4px;
+      background: #ff9ab0;
+      border-radius: 50%;
+    }
+    .chibi .bl.l {
+      left: 5px;
+    }
+    .chibi .bl.r {
+      right: 5px;
+    }
+    .chibi .m {
+      position: absolute;
+      top: 29px;
+      left: 17px;
+      width: 7px;
+      height: 5px;
+      background: #d6334a;
+      border-radius: 0 0 6px 6px;
+    }
+    .chibi.idle .m {
+      height: 2px;
+      background: #1a1a1a;
+      border-radius: 2px;
+    }
+    .chibi .band {
+      position: absolute;
+      left: 1px;
+      top: 1px;
+      width: 56px;
+      height: 32px;
+      border: 4px solid var(--line);
+      border-bottom: none;
+      border-radius: 32px 32px 0 0;
+      z-index: 3;
+      box-sizing: border-box;
+    }
+    .chibi .cup {
+      position: absolute;
+      top: 20px;
+      width: 12px;
+      height: 18px;
+      background: var(--a3);
+      border: 3px solid var(--line);
+      border-radius: 6px;
+      z-index: 4;
+    }
+    .chibi .cup.l {
+      left: -1px;
+    }
+    .chibi .cup.r {
+      right: -1px;
+    }
+    .chibi .bd {
+      position: absolute;
+      left: 17px;
+      top: 46px;
+      width: 24px;
+      height: 19px;
+      background: var(--a1);
+      border: 3px solid var(--line);
+      border-radius: 9px 9px 6px 6px;
+      z-index: 1;
+    }
+    .chibi .arm {
+      position: absolute;
+      top: 49px;
+      width: 7px;
+      height: 17px;
+      background: #ffe3cf;
+      border: 2.5px solid var(--line);
+      border-radius: 5px;
+      transform-origin: 50% 3px;
+    }
+    .chibi .arm.l {
+      left: 16px;
+      animation: wl 0.38s ease-in-out infinite alternate;
+    }
+    .chibi .arm.r {
+      right: 16px;
+      animation: wr 0.38s ease-in-out infinite alternate;
+    }
+    .chibi.idle .arm.l,
+    .chibi.idle .arm.r {
+      animation: none;
+      transform: rotate(0);
+    }
+    @keyframes wl {
+      from {
+        transform: rotate(120deg);
+      }
+      to {
+        transform: rotate(165deg);
+      }
+    }
+    @keyframes wr {
+      from {
+        transform: rotate(-165deg);
+      }
+      to {
+        transform: rotate(-120deg);
+      }
+    }
+    .chibi .lg {
+      position: absolute;
+      top: 63px;
+      width: 7px;
+      height: 10px;
+      background: var(--line);
+      border-radius: 3px;
+    }
+    .chibi .lg.l {
+      left: 21px;
+    }
+    .chibi .lg.r {
+      left: 30px;
+    }
 
-  /* ---------- page bits ---------- */
-  .switch { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 18px; }
-  .switch button { background: #111; color: #fff; border: 1px solid #333; padding: 7px 12px; font: 600 12px -apple-system, sans-serif; cursor: pointer; }
-  .switch button.on { background: #fff; color: #000; }
-  .spec td { padding: 10px 22px 10px 0; vertical-align: middle; }
-  .spec .j { font-size: 24px; }
-  .spec .n { font-size: 28px; color: #fff; }
-</style>
-</head>
-<body>
+    /* ---------- page bits ---------- */
+    .switch {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 6px 0 18px;
+    }
+    .switch button {
+      background: #111;
+      color: #fff;
+      border: 1px solid #333;
+      padding: 7px 12px;
+      font:
+        600 12px -apple-system,
+        sans-serif;
+      cursor: pointer;
+    }
+    .switch button.on {
+      background: #fff;
+      color: #000;
+    }
+    .spec td {
+      padding: 10px 22px 10px 0;
+      vertical-align: middle;
+    }
+    .spec .j {
+      font-size: 24px;
+    }
+    .spec .n {
+      font-size: 28px;
+      color: #fff;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Round 4: pop palettes and the flow</h1>
+    <div class="m" style="max-width:900px">
+      Taiko's energy (big type, thick outlines, chunky buttons, loud colors) without Taiko's orange or drums. The chibi
+      dances while you hold a combo and idles in Walk mode. Every phone on this page is built from the same parts, so
+      any palette can swap with any other.
+    </div>
+    <nav>
+      <a href="round-3-loop.html">← Round 3</a>
+      <a href="#pal">Palettes</a>
+      <a href="#fonts">Fonts</a>
+      <a href="#flow">The flow</a>
+    </nav>
 
-<h1>Round 4: pop palettes and the flow</h1>
-<div class="m" style="max-width:900px">Taiko's energy (big type, thick outlines, chunky buttons, loud colors) without Taiko's orange or drums. The chibi dances while you hold a combo and idles in Walk mode. Every phone on this page is built from the same parts, so any palette can swap with any other.</div>
-<nav>
-  <a href="round-3-loop.html">← Round 3</a>
-  <a href="#pal">Palettes</a>
-  <a href="#fonts">Fonts</a>
-  <a href="#flow">The flow</a>
-</nav>
-
-<section id="pal">
-  <h2>Six palettes, same screen</h2>
-  <div class="m" style="margin:4px 0 16px">A run in progress: line 4 is being sung and you just hit the right meaning. Transport controls (⏮ ⏸ ⏭) sit at the top right.</div>
-  <div class="row" id="palettes"></div>
-</section>
-
-<section id="fonts">
-  <h2>Font pairings</h2>
-  <div class="m" style="margin:4px 0 6px">All on Google Fonts with full Japanese coverage. The heading font is for lines, numbers and buttons; the body font is for English answers. Any pairing works with any palette.</div>
-  <table class="spec" id="spec"></table>
-</section>
-
-<section id="flow">
-  <h2>The flow</h2>
-  <div class="m" style="margin:4px 0 4px">Sit hub → two ways to do today's reviews → results → and Walk, in the same skin. Switch the palette:</div>
-  <div class="switch" id="switch"></div>
-  <div class="row theme-ramune" id="flowrow">
-
-    <figure>
-      <div class="phone t">
-        <div class="dots"></div>
-        <div class="status"><span>21:00</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin:6px 0 12px"><div class="ol" style="font-size:30px">今日</div><div class="chibi idle"><div class="band"></div><div class="cup l"></div><div class="cup r"></div><div class="hd"><div class="e l"></div><div class="e r"></div><div class="bl l"></div><div class="bl r"></div><div class="m"></div></div><div class="arm l"></div><div class="arm r"></div><div class="bd"></div><div class="lg l"></div><div class="lg r"></div></div></div>
-          <div class="card" style="margin-bottom:14px;display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--fontH);font-size:30px">12</span><span>lines due today</span></div>
-          <div class="bigbtn a2"><span class="ic">🎧</span><div><b>Clip review</b><span class="s">Just the lines. No timer. ~4 min</span></div></div>
-          <div class="bigbtn a1"><span class="ic">▶</span><div><b>Review mix</b><span class="s">6 songs with due lines · 24 min</span></div></div>
-          <div class="bigbtn a3"><span class="ic">📍</span><div><b>Sort 5 lost marks</b><span class="s">from today's walk</span></div></div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--stat);margin-top:auto;margin-bottom:12px"><div class="tg on"></div>Autoplay starts with the review mix</div>
-        </div>
+    <section id="pal">
+      <h2>Six palettes, same screen</h2>
+      <div class="m" style="margin:4px 0 16px">
+        A run in progress: line 4 is being sung and you just hit the right meaning. Transport controls (⏮ ⏸ ⏭) sit at
+        the top right.
       </div>
-      <figcaption><b>1. Sit hub.</b> Two ways to do today's reviews. Playing anything else just works; due lines in any song count.</figcaption>
-    </figure>
+      <div class="row" id="palettes"></div>
+    </section>
 
-    <figure>
-      <div class="phone t">
-        <div class="dots"></div>
-        <div class="status"><span>21:01</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="tbar"><div class="rb">✕</div><div class="ttl" style="text-align:center"><div class="ol">Clip review</div></div><div class="sub">3/12</div></div>
-          <div class="lane"><i class="ok" style="flex:1"></i><i class="ok" style="flex:1"></i><i class="cur" style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i></div>
-          <div class="card jp" style="margin-top:8px"><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</div>
-          <div style="display:flex;align-items:center;gap:10px;margin:14px 0"><div class="rb" style="width:46px;height:46px;font-size:16px">▶</div><div style="font-size:12px;color:var(--stat)">夜明けのバス · ミナミ<br>clip 1:05 to 1:11 · tap to replay</div></div>
-          <div class="ans a1 dim">I meant to get off at the next stop</div>
-          <div class="ans a2 hit">Counting the fading town lights</div>
-          <div class="ans a3 dim">Unsaid words sleep in my chest</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px"><span class="pill">next in 9 days</span><div class="rb" style="width:auto;padding:0 14px;border-radius:16px">Next ▸</div></div>
-        </div>
+    <section id="fonts">
+      <h2>Font pairings</h2>
+      <div class="m" style="margin:4px 0 6px">
+        All on Google Fonts with full Japanese coverage. The heading font is for lines, numbers and buttons; the body
+        font is for English answers. Any pairing works with any palette.
       </div>
-      <figcaption><b>2. Clip review.</b> Just the clip, no timer, take your time. Right pushes the line out, wrong brings it back sooner. Never self-graded.</figcaption>
-    </figure>
+      <table class="spec" id="spec"></table>
+    </section>
 
-    <figure>
+    <section id="flow">
+      <h2>The flow</h2>
+      <div class="m" style="margin:4px 0 4px">
+        Sit hub → two ways to do today's reviews → results → and Walk, in the same skin. Switch the palette:
+      </div>
+      <div class="switch" id="switch"></div>
+      <div class="row theme-ramune" id="flowrow">
+        <figure>
+          <div class="phone t">
+            <div class="dots"></div>
+            <div class="status"><span>21:00</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="display:flex;align-items:flex-end;justify-content:space-between;margin:6px 0 12px">
+                <div class="ol" style="font-size:30px">今日</div>
+                <div class="chibi idle">
+                  <div class="band"></div>
+                  <div class="cup l"></div>
+                  <div class="cup r"></div>
+                  <div class="hd">
+                    <div class="e l"></div>
+                    <div class="e r"></div>
+                    <div class="bl l"></div>
+                    <div class="bl r"></div>
+                    <div class="m"></div>
+                  </div>
+                  <div class="arm l"></div>
+                  <div class="arm r"></div>
+                  <div class="bd"></div>
+                  <div class="lg l"></div>
+                  <div class="lg r"></div>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:14px;display:flex;align-items:baseline;gap:8px">
+                <span style="font-family:var(--fontH);font-size:30px">12</span><span>lines due today</span>
+              </div>
+              <div class="bigbtn a2">
+                <span class="ic">🎧</span>
+                <div><b>Clip review</b><span class="s">Just the lines. No timer. ~4 min</span></div>
+              </div>
+              <div class="bigbtn a1">
+                <span class="ic">▶</span>
+                <div><b>Review mix</b><span class="s">6 songs with due lines · 24 min</span></div>
+              </div>
+              <div class="bigbtn a3">
+                <span class="ic">📍</span>
+                <div><b>Sort 5 lost marks</b><span class="s">from today's walk</span></div>
+              </div>
+              <div
+                style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--stat);margin-top:auto;margin-bottom:12px"
+              >
+                <div class="tg on"></div>
+                Autoplay starts with the review mix
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <b>1. Sit hub.</b>
+            Two ways to do today's reviews. Playing anything else just works; due lines in any song count.
+          </figcaption>
+        </figure>
+
+        <figure>
+          <div class="phone t">
+            <div class="dots"></div>
+            <div class="status"><span>21:01</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="tbar">
+                <div class="rb">✕</div>
+                <div class="ttl" style="text-align:center"><div class="ol">Clip review</div></div>
+                <div class="sub">3/12</div>
+              </div>
+              <div class="lane">
+                <i class="ok" style="flex:1"></i><i class="ok" style="flex:1"></i><i class="cur" style="flex:1"></i
+                ><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i
+                ><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i><i style="flex:1"></i
+                ><i style="flex:1"></i>
+              </div>
+              <div class="card jp" style="margin-top:8px">
+                <ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby
+                >りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;margin:14px 0">
+                <div class="rb" style="width:46px;height:46px;font-size:16px">▶</div>
+                <div style="font-size:12px;color:var(--stat)">
+                  夜明けのバス · ミナミ<br>clip 1:05 to 1:11 · tap to replay
+                </div>
+              </div>
+              <div class="ans a1 dim">I meant to get off at the next stop</div>
+              <div class="ans a2 hit">Counting the fading town lights</div>
+              <div class="ans a3 dim">Unsaid words sleep in my chest</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+                <span class="pill">next in 9 days</span>
+                <div class="rb" style="width:auto;padding:0 14px;border-radius:16px">Next ▸</div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <b>2. Clip review.</b>
+            Just the clip, no timer, take your time. Right pushes the line out, wrong brings it back sooner. Never
+            self-graded.
+          </figcaption>
+        </figure>
+
+        <figure>
+          <div class="phone t">
+            <div class="dots"></div>
+            <div class="status"><span>21:10</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="tbar">
+                <div class="art"></div>
+                <div class="ttl">
+                  <div class="ol">夜明けのバス</div>
+                  <div class="sub">Review mix 2/6 · 3 due</div>
+                </div>
+                <div class="rb">⏮</div>
+                <div class="rb">⏸</div>
+                <div class="rb">⏭</div>
+              </div>
+              <div class="lane">
+                <i class="ok" style="flex:4"></i><i class="ok" style="flex:3"></i><i class="no" style="flex:5"></i
+                ><i class="cur" style="flex:6"></i><i style="flex:3"></i><i style="flex:5"></i><i style="flex:4"></i>
+              </div>
+              <div class="card jp" style="margin-top:6px">
+                <span class="badge">DUE</span><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby
+                  >灯<rt>あか</rt></ruby
+                >りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた
+              </div>
+              <div class="mid">
+                <div class="chibi">
+                  <div class="band"></div>
+                  <div class="cup l"></div>
+                  <div class="cup r"></div>
+                  <div class="hd">
+                    <div class="e l"></div>
+                    <div class="e r"></div>
+                    <div class="bl l"></div>
+                    <div class="bl r"></div>
+                    <div class="m"></div>
+                  </div>
+                  <div class="arm l"></div>
+                  <div class="arm r"></div>
+                  <div class="bd"></div>
+                  <div class="lg l"></div>
+                  <div class="lg r"></div>
+                </div>
+                <div>
+                  <div class="ol combo">12</div>
+                  <div class="ol" style="font-size:11px;-webkit-text-stroke-width:4px">COMBO</div>
+                </div>
+                <div class="ol judge">NICE!</div>
+              </div>
+              <div class="ans a1 dim">I meant to get off at the next stop</div>
+              <div class="ans a2 hit">Counting the fading town lights</div>
+              <div class="ans a3 dim">Unsaid words sleep in my chest</div>
+            </div>
+          </div>
+          <figcaption>
+            <b>3. Review mix.</b>
+            The real game, no stopping. A DUE line answered right here counts as today's review. ⏮ ⏸ ⏭ always available.
+          </figcaption>
+        </figure>
+
+        <figure>
+          <div class="phone t">
+            <div class="dots"></div>
+            <div class="status"><span>21:14</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="text-align:center;margin-top:8px">
+                <div class="ol" style="font-size:15px">夜明けのバス</div>
+                <div style="display:flex;justify-content:center;align-items:center;gap:14px">
+                  <div class="ol" style="font-size:78px;line-height:1.05">A</div>
+                  <div class="chibi">
+                    <div class="band"></div>
+                    <div class="cup l"></div>
+                    <div class="cup r"></div>
+                    <div class="hd">
+                      <div class="e l"></div>
+                      <div class="e r"></div>
+                      <div class="bl l"></div>
+                      <div class="bl r"></div>
+                      <div class="m"></div>
+                    </div>
+                    <div class="arm l"></div>
+                    <div class="arm r"></div>
+                    <div class="bd"></div>
+                    <div class="lg l"></div>
+                    <div class="lg r"></div>
+                  </div>
+                </div>
+                <div class="pill">NEW BEST · was B</div>
+              </div>
+              <div
+                class="card"
+                style="display:flex;justify-content:space-around;text-align:center;margin:14px 0 12px;font-size:11px"
+              >
+                <div>
+                  <div style="font-family:var(--fontH);font-size:22px">12/14</div>
+                  hit
+                </div>
+                <div>
+                  <div style="font-family:var(--fontH);font-size:22px">×9</div>
+                  combo
+                </div>
+                <div>
+                  <div style="font-family:var(--fontH);font-size:22px">3/3</div>
+                  reviews
+                </div>
+              </div>
+              <div style="font-size:13px;color:var(--stat);margin:0 2px 6px">Missed: send to review?</div>
+              <div class="card lrow">
+                <div class="tg on"></div>
+                言えなかった言葉が 胸の奥で眠ってる
+              </div>
+              <div class="card lrow">
+                <div class="tg on"></div>
+                ガラス越しに 君が笑った気がした
+              </div>
+              <div style="display:flex;gap:10px;margin-top:auto;margin-bottom:14px">
+                <div class="ans a3" style="flex:1;text-align:center;margin:0">⟲ Again</div>
+                <div class="ans a1" style="flex:1.4;text-align:center;margin:0">Next song ▸</div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <b>4. Results.</b>
+            Missed lines are on by default; switch off the flukes. "Reviews 3/3" means every due line in this song got
+            done.
+          </figcaption>
+        </figure>
+
+        <figure>
+          <div class="phone t">
+            <div class="dots"></div>
+            <div class="status"><span>8:31</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="tbar">
+                <div class="art"></div>
+                <div class="ttl">
+                  <div class="ol">夜明けのバス</div>
+                  <div class="sub">ミナミ · Walk</div>
+                </div>
+                <div class="rb" style="font-size:11px">ふ</div>
+                <div class="rb" style="font-size:10px">EN</div>
+              </div>
+              <div class="lyl">窓に映る君の面影</div>
+              <div class="lyl">
+                言えなかった言葉が 胸の奥で眠ってる <span style="-webkit-text-stroke:0;color:var(--hi)">●</span>
+              </div>
+              <div class="card jp" style="margin:8px 0;font-size:18px">
+                <ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby
+                >りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた
+              </div>
+              <div class="lyl">「さよなら」なんて 似合わないよ</div>
+              <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin:auto 0 12px">
+                <div class="rb">⏮</div>
+                <div class="rb" style="width:44px;height:44px">⏸</div>
+                <div class="rb">⏭</div>
+                <div class="chibi idle" style="transform:scale(.8)">
+                  <div class="band"></div>
+                  <div class="cup l"></div>
+                  <div class="cup r"></div>
+                  <div class="hd">
+                    <div class="e l"></div>
+                    <div class="e r"></div>
+                    <div class="bl l"></div>
+                    <div class="bl r"></div>
+                    <div class="m"></div>
+                  </div>
+                  <div class="arm l"></div>
+                  <div class="arm r"></div>
+                  <div class="bd"></div>
+                  <div class="lg l"></div>
+                  <div class="lg r"></div>
+                </div>
+              </div>
+              <div class="lostbtn"><b>LOST IT</b><span style="font-size:11px">marks this moment</span></div>
+            </div>
+          </div>
+          <figcaption>
+            <b>5. Walk.</b>
+            Same skin, calmer: chibi just bobs, one giant button. Whether Walk should use this skin or stay plain black
+            is still open.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <template id="play">
       <div class="phone t">
         <div class="dots"></div>
-        <div class="status"><span>21:10</span><span>●●●</span></div>
+        <div class="status"><span>21:15</span><span>●●●</span></div>
         <div class="scr">
-          <div class="tbar"><div class="art"></div><div class="ttl"><div class="ol">夜明けのバス</div><div class="sub">Review mix 2/6 · 3 due</div></div><div class="rb">⏮</div><div class="rb">⏸</div><div class="rb">⏭</div></div>
-          <div class="lane"><i class="ok" style="flex:4"></i><i class="ok" style="flex:3"></i><i class="no" style="flex:5"></i><i class="cur" style="flex:6"></i><i style="flex:3"></i><i style="flex:5"></i><i style="flex:4"></i></div>
-          <div class="card jp" style="margin-top:6px"><span class="badge">DUE</span><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</div>
+          <div class="tbar">
+            <div class="art"></div>
+            <div class="ttl">
+              <div class="ol">夜明けのバス</div>
+              <div class="sub">ミナミ · 4/14</div>
+            </div>
+            <div class="rb">⏮</div>
+            <div class="rb">⏸</div>
+            <div class="rb">⏭</div>
+          </div>
+          <div class="lane">
+            <i class="ok" style="flex:4"></i><i class="ok" style="flex:3"></i><i class="no" style="flex:5"></i
+            ><i class="cur" style="flex:6"></i><i style="flex:3"></i><i style="flex:5"></i><i style="flex:4"></i>
+          </div>
+          <div class="card jp">
+            <ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby
+            >りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた
+          </div>
           <div class="mid">
-            <div class="chibi"><div class="band"></div><div class="cup l"></div><div class="cup r"></div><div class="hd"><div class="e l"></div><div class="e r"></div><div class="bl l"></div><div class="bl r"></div><div class="m"></div></div><div class="arm l"></div><div class="arm r"></div><div class="bd"></div><div class="lg l"></div><div class="lg r"></div></div>
-            <div><div class="ol combo">12</div><div class="ol" style="font-size:11px;-webkit-text-stroke-width:4px">COMBO</div></div>
+            <div class="chibi">
+              <div class="band"></div>
+              <div class="cup l"></div>
+              <div class="cup r"></div>
+              <div class="hd">
+                <div class="e l"></div>
+                <div class="e r"></div>
+                <div class="bl l"></div>
+                <div class="bl r"></div>
+                <div class="m"></div>
+              </div>
+              <div class="arm l"></div>
+              <div class="arm r"></div>
+              <div class="bd"></div>
+              <div class="lg l"></div>
+              <div class="lg r"></div>
+            </div>
+            <div>
+              <div class="ol combo">12</div>
+              <div class="ol" style="font-size:11px;-webkit-text-stroke-width:4px">COMBO</div>
+            </div>
             <div class="ol judge">NICE!</div>
           </div>
           <div class="ans a1 dim">I meant to get off at the next stop</div>
@@ -173,115 +1025,65 @@
           <div class="ans a3 dim">Unsaid words sleep in my chest</div>
         </div>
       </div>
-      <figcaption><b>3. Review mix.</b> The real game, no stopping. A DUE line answered right here counts as today's review. ⏮ ⏸ ⏭ always available.</figcaption>
-    </figure>
+    </template>
 
-    <figure>
-      <div class="phone t">
-        <div class="dots"></div>
-        <div class="status"><span>21:14</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="text-align:center;margin-top:8px"><div class="ol" style="font-size:15px">夜明けのバス</div><div style="display:flex;justify-content:center;align-items:center;gap:14px"><div class="ol" style="font-size:78px;line-height:1.05">A</div><div class="chibi"><div class="band"></div><div class="cup l"></div><div class="cup r"></div><div class="hd"><div class="e l"></div><div class="e r"></div><div class="bl l"></div><div class="bl r"></div><div class="m"></div></div><div class="arm l"></div><div class="arm r"></div><div class="bd"></div><div class="lg l"></div><div class="lg r"></div></div></div><div class="pill">NEW BEST · was B</div></div>
-          <div class="card" style="display:flex;justify-content:space-around;text-align:center;margin:14px 0 12px;font-size:11px"><div><div style="font-family:var(--fontH);font-size:22px">12/14</div>hit</div><div><div style="font-family:var(--fontH);font-size:22px">×9</div>combo</div><div><div style="font-family:var(--fontH);font-size:22px">3/3</div>reviews</div></div>
-          <div style="font-size:13px;color:var(--stat);margin:0 2px 6px">Missed: send to review?</div>
-          <div class="card lrow"><div class="tg on"></div>言えなかった言葉が 胸の奥で眠ってる</div>
-          <div class="card lrow"><div class="tg on"></div>ガラス越しに 君が笑った気がした</div>
-          <div style="display:flex;gap:10px;margin-top:auto;margin-bottom:14px"><div class="ans a3" style="flex:1;text-align:center;margin:0">⟲ Again</div><div class="ans a1" style="flex:1.4;text-align:center;margin:0">Next song ▸</div></div>
-        </div>
-      </div>
-      <figcaption><b>4. Results.</b> Missed lines are on by default; switch off the flukes. "Reviews 3/3" means every due line in this song got done.</figcaption>
-    </figure>
+    <script>
+    const themes = [
+      ['ramune', 'Ramune', 'Soda blue, bubblegum pink, lemon.', 'Mochiy Pop One + Fredoka'],
+      [
+        'neon',
+        'Neon Night',
+        'True black with magenta, cyan, lime. Your dark-mode taste, made loud.',
+        'Dela Gothic One + M PLUS Rounded 1c',
+      ],
+      ['melon', 'Melon Soda', 'Mint green, cherry red, cream. Kissaten float.', 'Rampart One + Kiwi Maru'],
+      ['sakura', 'Sakura Pop', 'Pink, violet, sky blue.', 'RocknRoll One + Baloo 2'],
+      ['grape', 'Grape Arcade', 'Purple cabinet, coral, gold, teal.', 'Reggae One + Zen Maru Gothic'],
+      ['yuzu', 'Yuzu', 'Lemon yellow, cobalt, red. Sticker-brutalist.', 'Potta One + Lilita One'],
+    ];
+    const tpl = document.getElementById('play').content;
+    const pal = document.getElementById('palettes');
+    const sw = document.getElementById('switch');
+    const flow = document.getElementById('flowrow');
+    for (const [id, name, desc, fonts] of themes) {
+      const fig = document.createElement('figure');
+      const ph = tpl.cloneNode(true);
+      ph.querySelector('.phone').classList.add('theme-' + id);
+      fig.appendChild(ph);
+      const cap = document.createElement('figcaption');
+      cap.innerHTML = `<b>${name}.</b> ${desc}<br>${fonts}`;
+      fig.appendChild(cap);
+      pal.appendChild(fig);
 
-    <figure>
-      <div class="phone t">
-        <div class="dots"></div>
-        <div class="status"><span>8:31</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="tbar"><div class="art"></div><div class="ttl"><div class="ol">夜明けのバス</div><div class="sub">ミナミ · Walk</div></div><div class="rb" style="font-size:11px">ふ</div><div class="rb" style="font-size:10px">EN</div></div>
-          <div class="lyl">窓に映る君の面影</div>
-          <div class="lyl">言えなかった言葉が 胸の奥で眠ってる <span style="-webkit-text-stroke:0;color:var(--hi)">●</span></div>
-          <div class="card jp" style="margin:8px 0;font-size:18px"><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</div>
-          <div class="lyl">「さよなら」なんて 似合わないよ</div>
-          <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin:auto 0 12px"><div class="rb">⏮</div><div class="rb" style="width:44px;height:44px">⏸</div><div class="rb">⏭</div><div class="chibi idle" style="transform:scale(.8)"><div class="band"></div><div class="cup l"></div><div class="cup r"></div><div class="hd"><div class="e l"></div><div class="e r"></div><div class="bl l"></div><div class="bl r"></div><div class="m"></div></div><div class="arm l"></div><div class="arm r"></div><div class="bd"></div><div class="lg l"></div><div class="lg r"></div></div></div>
-          <div class="lostbtn"><b>LOST IT</b><span style="font-size:11px">marks this moment</span></div>
-        </div>
-      </div>
-      <figcaption><b>5. Walk.</b> Same skin, calmer: chibi just bobs, one giant button. Whether Walk should use this skin or stay plain black is still open.</figcaption>
-    </figure>
+      const b = document.createElement('button');
+      b.textContent = name;
+      if (id === 'ramune') b.classList.add('on');
+      b.onclick = () => {
+        flow.className = 'row theme-' + id;
+        sw.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+      };
+      sw.appendChild(b);
+    }
 
-  </div>
-</section>
-
-<template id="play">
-  <div class="phone t">
-    <div class="dots"></div>
-    <div class="status"><span>21:15</span><span>●●●</span></div>
-    <div class="scr">
-      <div class="tbar"><div class="art"></div><div class="ttl"><div class="ol">夜明けのバス</div><div class="sub">ミナミ · 4/14</div></div><div class="rb">⏮</div><div class="rb">⏸</div><div class="rb">⏭</div></div>
-      <div class="lane"><i class="ok" style="flex:4"></i><i class="ok" style="flex:3"></i><i class="no" style="flex:5"></i><i class="cur" style="flex:6"></i><i style="flex:3"></i><i style="flex:5"></i><i style="flex:4"></i></div>
-      <div class="card jp"><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</div>
-      <div class="mid">
-        <div class="chibi"><div class="band"></div><div class="cup l"></div><div class="cup r"></div><div class="hd"><div class="e l"></div><div class="e r"></div><div class="bl l"></div><div class="bl r"></div><div class="m"></div></div><div class="arm l"></div><div class="arm r"></div><div class="bd"></div><div class="lg l"></div><div class="lg r"></div></div>
-        <div><div class="ol combo">12</div><div class="ol" style="font-size:11px;-webkit-text-stroke-width:4px">COMBO</div></div>
-        <div class="ol judge">NICE!</div>
-      </div>
-      <div class="ans a1 dim">I meant to get off at the next stop</div>
-      <div class="ans a2 hit">Counting the fading town lights</div>
-      <div class="ans a3 dim">Unsaid words sleep in my chest</div>
-    </div>
-  </div>
-</template>
-
-<script>
-  const themes = [
-    ['ramune', 'Ramune', 'Soda blue, bubblegum pink, lemon.', 'Mochiy Pop One + Fredoka'],
-    ['neon', 'Neon Night', 'True black with magenta, cyan, lime. Your dark-mode taste, made loud.', 'Dela Gothic One + M PLUS Rounded 1c'],
-    ['melon', 'Melon Soda', 'Mint green, cherry red, cream. Kissaten float.', 'Rampart One + Kiwi Maru'],
-    ['sakura', 'Sakura Pop', 'Pink, violet, sky blue.', 'RocknRoll One + Baloo 2'],
-    ['grape', 'Grape Arcade', 'Purple cabinet, coral, gold, teal.', 'Reggae One + Zen Maru Gothic'],
-    ['yuzu', 'Yuzu', 'Lemon yellow, cobalt, red. Sticker-brutalist.', 'Potta One + Lilita One'],
-  ];
-  const tpl = document.getElementById('play').content;
-  const pal = document.getElementById('palettes');
-  const sw = document.getElementById('switch');
-  const flow = document.getElementById('flowrow');
-  for (const [id, name, desc, fonts] of themes) {
-    const fig = document.createElement('figure');
-    const ph = tpl.cloneNode(true);
-    ph.querySelector('.phone').classList.add('theme-' + id);
-    fig.appendChild(ph);
-    const cap = document.createElement('figcaption');
-    cap.innerHTML = `<b>${name}.</b> ${desc}<br>${fonts}`;
-    fig.appendChild(cap);
-    pal.appendChild(fig);
-
-    const b = document.createElement('button');
-    b.textContent = name;
-    if (id === 'ramune') b.classList.add('on');
-    b.onclick = () => {
-      flow.className = 'row theme-' + id;
-      sw.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-    };
-    sw.appendChild(b);
-  }
-
-  const pairs = [
-    ['Mochiy Pop One', 'Fredoka', 'round, chunky, friendly'],
-    ['Dela Gothic One', 'M PLUS Rounded 1c', 'heavy, gamey, arcade'],
-    ['Rampart One', 'Kiwi Maru', '3D outline, decorative (headings only)'],
-    ['RocknRoll One', 'Baloo 2', 'bouncy, soft'],
-    ['Reggae One', 'Zen Maru Gothic', 'brushy, festival poster'],
-    ['Potta One', 'Lilita One', 'brush marker, punchy'],
-  ];
-  const spec = document.getElementById('spec');
-  for (const [h, b, note] of pairs) {
-    spec.insertAdjacentHTML('beforeend', `<tr>
+    const pairs = [
+      ['Mochiy Pop One', 'Fredoka', 'round, chunky, friendly'],
+      ['Dela Gothic One', 'M PLUS Rounded 1c', 'heavy, gamey, arcade'],
+      ['Rampart One', 'Kiwi Maru', '3D outline, decorative (headings only)'],
+      ['RocknRoll One', 'Baloo 2', 'bouncy, soft'],
+      ['Reggae One', 'Zen Maru Gothic', 'brushy, festival poster'],
+      ['Potta One', 'Lilita One', 'brush marker, punchy'],
+    ];
+    const spec = document.getElementById('spec');
+    for (const [h, b, note] of pairs) {
+      spec.insertAdjacentHTML(
+        'beforeend',
+        `<tr>
       <td class="j" style="font-family:'${h}'">遠ざかる街の灯り</td>
       <td class="n" style="font-family:'${h}'">12 コンボ</td>
       <td style="font-family:'${b}','${h}';font-size:16px">Counting the fading town lights</td>
-      <td class="m">${h} + ${b}<br>${note}</td></tr>`);
-  }
-</script>
-
-</body>
+      <td class="m">${h} + ${b}<br>${note}</td></tr>`,
+      );
+    }
+    </script>
+  </body>
 </html>

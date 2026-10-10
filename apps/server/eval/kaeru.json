@@ -1,0 +1,32 @@
+{
+  "title": "かえる",
+  "artist": "Kashi-Koi eval",
+  "checks": [
+    "Title: kaeru is both 帰る (go home) and 変える/変わる (change), and the chorus plays on both",
+    "Lines 1-2: one clause split across lines (the stranger's face reflected in the window)",
+    "Lines 9 and 18: inverted, the object 君を comes after the verb",
+    "Lines 13-14: omitted subject is you, from line 3",
+    "Lines 6-9 and 15-18: the chorus repeats and is grouped the same way both times"
+  ],
+  "lines": [
+    "最終の電車に揺られながら",
+    "窓に映った",
+    "知らない顔の自分を見ていた",
+    "君が笑ってくれた春の日",
+    "あの駅で降りれば",
+    "何か変わるかな",
+    "帰りたい 帰れない",
+    "変わりたい 変われない",
+    "ずっと同じ場所で",
+    "待っていたんだ 君を",
+    "改札を抜けて",
+    "冷えた指先に",
+    "息をかけながら歩いた",
+    "約束なんてもう",
+    "覚えてないよね",
+    "帰りたい 帰れない",
+    "変わりたい 変われない",
+    "ずっと同じ場所で",
+    "待っていたんだ 君を"
+  ]
+}

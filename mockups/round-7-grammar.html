@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Kashi-Koi round 7: quiz, explain sheet, song intro</title>
+    <style>
+    :root {
+      --bg: #000;
+      --surface: #1d1f35;
+      --panel: #1e2033;
+      --slate: #272945;
+      --coral: #fb4a5e;
+      --maroon: #4a3441;
+      --green-deep: #1c6747;
+      --green: #55ee9c;
+      --red: #f95362;
+      --track: #3e3d5b;
+      --cream: #fbf8c6;
+      --combo: #ffc93c;
+      --text: #fff;
+      --muted: #9a9cb8;
+      --lavender: #b4a6e6;
+      --sky: #7cc7ff;
+      --mint: #7be0b0;
+      --peach: #ffb38a;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #0b0b10;
+      color: var(--text);
+      font:
+        15px / 1.4 -apple-system,
+        BlinkMacSystemFont,
+        "Hiragino Sans",
+        sans-serif;
+      padding: 32px;
+    }
+    h1 {
+      font-size: 26px;
+      margin-bottom: 6px;
+    }
+    h2 {
+      font-size: 21px;
+      margin: 48px 0 6px;
+      padding-top: 24px;
+      border-top: 1px solid #222;
+    }
+    .intro {
+      color: var(--muted);
+      max-width: 900px;
+      margin-bottom: 8px;
+    }
+    .row {
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      margin-top: 18px;
+    }
+    .col {
+      width: 390px;
+    }
+    .col h3 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .col p.why {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 10px;
+      min-height: 54px;
+    }
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: var(--bg);
+      border-radius: 44px;
+      border: 2px solid #2a2a35;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .status {
+      height: 50px;
+      flex: none;
+    }
+    .px {
+      clip-path: polygon(
+        5px 0,
+        calc(100% - 5px) 0,
+        100% 5px,
+        100% calc(100% - 5px),
+        calc(100% - 5px) 100%,
+        5px 100%,
+        0 calc(100% - 5px),
+        0 5px
+      );
+    }
+    .hdr {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 14px 10px;
+      flex: none;
+    }
+    .iconbtn {
+      width: 40px;
+      height: 40px;
+      background: var(--panel);
+      border: 2px solid #4b4d6a;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 16px;
+    }
+    .hdr .title {
+      font-weight: 700;
+      font-size: 18px;
+      flex: 1;
+    }
+    .toggle {
+      width: 48px;
+      height: 28px;
+      background: var(--green);
+      position: relative;
+    }
+    .toggle::after {
+      content: "";
+      position: absolute;
+      right: 4px;
+      top: 4px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+    }
+    .quizlbl {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .combo {
+      color: var(--combo);
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+    .combo b {
+      color: var(--cream);
+      font-size: 20px;
+      margin-left: 4px;
+    }
+    .playerbar {
+      flex: none;
+      margin-top: auto;
+      background: var(--surface);
+      border-top: 3px solid var(--track);
+      padding: 12px 14px 30px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .playerbar .cover {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #5a3a7a, #c06a3a);
+    }
+    .playerbar .meta {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .playerbar .meta span {
+      display: block;
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 12px;
+    }
+    .pb {
+      width: 46px;
+      height: 46px;
+      border: 2px solid #4b4d6a;
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+    }
+    .pb.play {
+      background: var(--coral);
+      border-color: var(--coral);
+    }
+    .card {
+      background: var(--surface);
+      border: 2px solid #363a5e;
+      padding: 14px 16px;
+    }
+    ruby rt {
+      font-size: 9px;
+      color: #d9d6ea;
+    }
+    .jp {
+      font-size: 22px;
+      line-height: 1.55;
+      font-weight: 500;
+    }
+    .jp.dim {
+      color: var(--muted);
+    }
+    .ans {
+      background: var(--maroon);
+      border: 2px solid #7a4b56;
+      padding: 12px 14px;
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.35;
+    }
+    .ans + .ans {
+      margin-top: 8px;
+    }
+    .ans.right {
+      background: var(--green-deep);
+      border-color: var(--green);
+    }
+    .ans.wrong {
+      background: #5c2632;
+      border-color: var(--red);
+    }
+    .ans.faded {
+      opacity: 0.5;
+    }
+    .ans .reason {
+      display: block;
+      color: var(--cream);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    u.m {
+      text-decoration: underline;
+      text-decoration-color: var(--combo);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+      font-weight: 700;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      flex: 1;
+      text-align: center;
+      font-weight: 800;
+      padding: 13px 0;
+      background: var(--slate);
+      border: 2px solid #4b4d6a;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+    }
+    .btn.coral {
+      background: var(--coral);
+      border-color: #ff9aa5;
+    }
+    .gap {
+      display: inline-block;
+      min-width: 92px;
+      border-bottom: 2px solid var(--combo);
+      margin: 0 2px;
+    }
+    .gapfill {
+      color: var(--combo);
+      font-weight: 700;
+      border-bottom: 2px solid var(--combo);
+    }
+    .bad {
+      color: var(--red);
+    }
+    .note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .problem {
+      outline: 2px dashed var(--red);
+      outline-offset: 2px;
+    }
+    .tag {
+      color: var(--red);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    /* Explain sheet */
+    .sheet {
+      position: absolute;
+      inset: 120px 0 0 0;
+      background: var(--bg);
+      border-top: 2px solid var(--track);
+      display: flex;
+      flex-direction: column;
+    }
+    .sheet .top {
+      padding: 12px 18px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sheet .body {
+      padding: 12px 18px 30px;
+      overflow: hidden;
+    }
+    .shade {
+      position: absolute;
+      inset: 0;
+      background: #090a16;
+      opacity: 0.9;
+    }
+    .shade .ghost {
+      padding: 70px 22px;
+      color: #3c3d55;
+      font-size: 20px;
+    }
+    .sent {
+      font-size: 20px;
+      line-height: 1.6;
+    }
+    .trans {
+      font-size: 16px;
+      margin-top: 4px;
+    }
+    .rule {
+      height: 1px;
+      background: var(--track);
+      margin: 16px 0;
+    }
+    .chunkhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .chunkhead .j {
+      font-size: 19px;
+      font-weight: 700;
+    }
+    .chunkhead .e {
+      color: var(--text);
+      font-size: 15px;
+      text-align: right;
+    }
+    .gram {
+      color: var(--lavender);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+    .gram b {
+      font-weight: 800;
+    }
+    .add {
+      color: var(--combo);
+      font-weight: 700;
+    }
+    /* A: rail */
+    .rail {
+      margin: 8px 0 0 6px;
+      border-left: 2px solid var(--track);
+      padding-left: 14px;
+    }
+    .rail .step {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+      position: relative;
+      padding: 3px 0;
+    }
+    .rail .step::before {
+      content: "";
+      position: absolute;
+      left: -19px;
+      top: 13px;
+      width: 8px;
+      height: 8px;
+      background: var(--track);
+    }
+    .rail .step .j {
+      font-size: 16px;
+    }
+    .rail .step .e {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: right;
+    }
+    .rail .step:last-child .e {
+      color: var(--text);
+    }
+    /* B: interlinear + colors */
+    .inter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      margin-top: 4px;
+    }
+    .inter .c {
+      border-top: 3px solid;
+      padding-top: 4px;
+    }
+    .inter .c .j {
+      font-size: 18px;
+    }
+    .inter .c .e {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .k1 {
+      border-color: var(--sky) !important;
+    }
+    .k2 {
+      border-color: var(--mint) !important;
+    }
+    .k3 {
+      border-color: var(--peach) !important;
+    }
+    .t1 {
+      color: var(--sky);
+    }
+    .t2 {
+      color: var(--mint);
+    }
+    .t3 {
+      color: var(--peach);
+    }
+    .detail {
+      border-left: 3px solid;
+      padding-left: 12px;
+      margin-top: 16px;
+    }
+    .detail .steps {
+      font-size: 15px;
+      margin-top: 4px;
+      line-height: 1.7;
+    }
+    .detail .steps .arrow {
+      color: var(--muted);
+      margin: 0 6px;
+    }
+    /* C: grid */
+    table.grid {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+    }
+    table.grid td {
+      padding: 5px 0;
+      vertical-align: baseline;
+    }
+    table.grid td.j {
+      font-size: 16px;
+      width: 48%;
+    }
+    table.grid td.e {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    table.grid tr.head td {
+      padding-top: 14px;
+    }
+    table.grid tr.head td.j {
+      font-size: 19px;
+      font-weight: 700;
+    }
+    table.grid tr.head td.e {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+    }
+    table.grid tr.g td {
+      color: var(--lavender);
+      font-size: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #1c1c28;
+    }
+    /* D: accordion */
+    .acc {
+      border-bottom: 1px solid #1f1f2c;
+      padding: 12px 0;
+    }
+    .acc .chev {
+      color: var(--muted);
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .acc.open {
+      padding-bottom: 14px;
+    }
+    .intro-card {
+      padding: 16px;
+    }
+    .intro-line {
+      font-size: 15px;
+      color: var(--muted);
+    }
+    .intro-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .pill-q {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Round 7: quiz screen, explain sheet, song intro</h1>
+    <p class="intro">
+      Real data from Cö shu Nie, “Won't Leave You Behind”. Groupings shown are the fixed ones (lines 3 and 4 are
+      separate thoughts). Every phone is 390 × 844, the app's palette.
+    </p>
+
+    <!-- ───────────────────────────── QUIZ ───────────────────────────── -->
+    <h2>1. Quiz screen</h2>
+    <p class="intro">
+      Current problems: 4-line sentence card, previous sentence above it, ellipsized answers, mascot row eating space,
+      EXPLAIN / CONTINUE pushed under the player bar after a miss.
+    </p>
+    <div class="row">
+      <div class="col">
+        <h3>Current (for reference)</h3>
+        <p class="why">The miss buttons render below the answers, which are already past the bottom of the screen.</p>
+        <div class="phone">
+          <div class="status"></div>
+          <div class="hdr">
+            <div class="iconbtn px">⌄</div>
+            <div class="title">Sentence 3 of 15</div>
+            <span class="quizlbl">QUIZ</span>
+            <div class="toggle px"></div>
+          </div>
+          <div style="padding: 0 16px; flex: 1; overflow: hidden;">
+            <p class="note problem" style="text-align:center; margin-bottom: 8px;">直ぐに open your eyes</p>
+            <div class="card px problem" style="text-align: center;">
+              <div class="jp dim" style="font-size: 26px;">
+                <ruby>諸刃<rt>もろは</rt></ruby>でも<ruby>挑<rt>いど</rt></ruby>むべき<ruby>時<rt>とき</rt></ruby>はある
+                だろう
+              </div>
+              <div class="jp" style="font-size: 26px;">
+                <ruby>青<rt>あお</rt></ruby>く<ruby>加速<rt>かそく</rt></ruby>してく<ruby>鼓動<rt>こどう</rt></ruby
+                ><ruby>鳴<rt>な</rt></ruby>らせ
+              </div>
+              <div class="jp dim" style="font-size: 26px;">
+                <ruby>尖<rt>とが</rt></ruby>った<ruby>残像<rt>ざんぞう</rt></ruby>が<ruby>脳裏<rt>のうり</rt></ruby
+                >を<ruby>掠<rt>かす</rt></ruby>める けど
+              </div>
+            </div>
+            <div style="margin-top: 10px;">
+              <div class="ans px problem">
+                There are times when <u class="m">you must avoid</u> even a double-edged risk. Let your heartbeat
+                accelerate with…
+              </div>
+              <div class="ans px">
+                There are times when <u class="m">you should take on</u> even a double-edged risk. Let your heartbeat
+                accelerate with…
+              </div>
+            </div>
+          </div>
+          <div class="playerbar">
+            <div class="cover px"></div>
+            <div class="meta">Won't Leave You Behind<span>Cö shu Nie</span></div>
+            <div class="pb px">⏮</div>
+            <div class="pb px play">❚❚</div>
+            <div class="pb px">⏭</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h3>Q-A · Fill the gap (recommended)</h3>
+        <p class="why">
+          Decoys all change the same phrase, so the translation shows once with a gap and the buttons hold only the
+          phrase. Short buttons, no ellipses, and the test is clearly about one grammar point. Combo moves to the
+          header; the mascot goes.
+        </p>
+        <div class="phone">
+          <div class="status"></div>
+          <div class="hdr">
+            <div class="iconbtn px">⌄</div>
+            <div class="title">3 / 15</div>
+            <span class="combo">COMBO<b>4</b></span>
+            <div class="toggle px"></div>
+          </div>
+          <div style="padding: 0 16px; flex: 1; display: flex; flex-direction: column;">
+            <div class="card px">
+              <div class="jp">
+                <ruby>諸刃<rt>もろは</rt></ruby>でも<ruby>挑<rt>いど</rt></ruby>むべき<ruby>時<rt>とき</rt></ruby
+                >はあるだろう
+              </div>
+            </div>
+            <p style="font-size: 17px; margin: 22px 2px; line-height: 1.6;">
+              There are times when<span class="gap"></span>even a double-edged risk.
+            </p>
+            <div style="margin-top: auto; margin-bottom: 16px;">
+              <div class="ans px">you should take on</div>
+              <div class="ans px">you must avoid</div>
+              <div class="ans px">you were forced into</div>
+            </div>
+          </div>
+          <div class="playerbar">
+            <div class="cover px"></div>
+            <div class="meta">Won't Leave You Behind<span>Cö shu Nie</span></div>
+            <div class="pb px">⏮</div>
+            <div class="pb px play">❚❚</div>
+            <div class="pb px">⏭</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h3>Q-A · after a miss</h3>
+        <p class="why">
+          The gap fills with the right phrase, the reason shows under your pick, and EXPLAIN / CONTINUE take the spot
+          the answers were in, so they can never be pushed off screen.
+        </p>
+        <div class="phone">
+          <div class="status"></div>
+          <div class="hdr">
+            <div class="iconbtn px">⌄</div>
+            <div class="title">3 / 15</div>
+            <span class="combo">COMBO<b>0</b></span>
+            <div class="toggle px"></div>
+          </div>
+          <div style="padding: 0 16px; flex: 1; display: flex; flex-direction: column;">
+            <div class="card px">
+              <div class="jp">
+                <ruby>諸刃<rt>もろは</rt></ruby>でも<ruby>挑<rt>いど</rt></ruby>む<span class="add">べき</span
+                ><ruby>時<rt>とき</rt></ruby>はあるだろう
+              </div>
+            </div>
+            <p style="font-size: 17px; margin: 22px 2px; line-height: 1.6;">
+              There are times when <span class="gapfill">you should take on</span> even a double-edged risk.
+            </p>
+            <div style="margin-top: auto; margin-bottom: 16px;">
+              <div class="ans px right">you should take on</div>
+              <div class="ans px wrong">
+                you must avoid<span class="reason">べき means should, and 挑む is to take on, not avoid.</span>
+              </div>
+              <div class="ans px faded">you were forced into</div>
+              <div class="actions" style="margin-top: 12px;">
+                <div class="btn px">EXPLAIN</div>
+                <div class="btn px coral">CONTINUE</div>
+              </div>
+            </div>
+          </div>
+          <div class="playerbar">
+            <div class="cover px"></div>
+            <div class="meta">Won't Leave You Behind<span>Cö shu Nie</span></div>
+            <div class="pb px">⏮</div>
+            <div class="pb px play">▶</div>
+            <div class="pb px">⏭</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h3>Q-B · Full sentences, compact</h3>
+        <p class="why">
+          Keeps whole-sentence options (also what songs without an analysis use). Left-aligned 22px lyrics, no previous
+          line, answers never clamp. On a miss, the wrong options collapse so the buttons stay on screen.
+        </p>
+        <div class="phone">
+          <div class="status"></div>
+          <div class="hdr">
+            <div class="iconbtn px">⌄</div>
+            <div class="title">3 / 15</div>
+            <span class="combo">COMBO<b>0</b></span>
+            <div class="toggle px"></div>
+          </div>
+          <div style="padding: 0 16px; flex: 1; display: flex; flex-direction: column;">
+            <div class="card px">
+              <div class="jp">
+                <ruby>尖<rt>とが</rt></ruby>った<ruby>残像<rt>ざんぞう</rt></ruby>が<ruby>脳裏<rt>のうり</rt></ruby
+                >を<ruby>掠<rt>かす</rt></ruby>めるけど
+              </div>
+              <div class="jp">
+                <ruby>越<rt>こ</rt></ruby>えていけるだろ
+              </div>
+            </div>
+            <div style="margin-top: auto; margin-bottom: 16px;">
+              <div class="ans px right">
+                <u class="m">Though</u>
+                a sharp afterimage flashes through my mind, we can get through it, right?
+              </div>
+              <div class="ans px wrong">
+                <u class="m">Because</u>
+                a sharp afterimage flashes…<span class="reason">けど marks a contrast: though, not because.</span>
+              </div>
+              <div class="actions" style="margin-top: 12px;">
+                <div class="btn px">EXPLAIN</div>
+                <div class="btn px coral">CONTINUE</div>
+              </div>
+            </div>
+          </div>
+          <div class="playerbar">
+            <div class="cover px"></div>
+            <div class="meta">Won't Leave You Behind<span>Cö shu Nie</span></div>
+            <div class="pb px">⏮</div>
+            <div class="pb px play">▶</div>
+            <div class="pb px">⏭</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────────────── EXPLAIN ───────────────────────────── -->
+    <h2>2. Explain sheet</h2>
+    <p class="intro">
+      Same sentence in each: <ruby>枯<rt>か</rt></ruby>れるは<ruby>必然<rt>ひつぜん</rt></ruby>
+      <ruby>咲<rt>さ</rt></ruby>かぬは<ruby>偶然<rt>ぐうぜん</rt></ruby>か. “Ah” is no longer a chunk. In every option,
+      the part each step adds is <span class="add">yellow</span>, so you see what changed instead of rereading the whole
+      form.
+    </p>
+    <div class="row">
+      <div class="col">
+        <h3>E-A · Ladder on a rail</h3>
+        <p class="why">
+          Closest to today. Each chunk is a heading with its meaning on the right; its steps hang off a vertical rail,
+          glosses dimmed except the last. Grammar note in lavender under a rule.
+        </p>
+        <div class="phone">
+          <div class="shade"><div class="ghost">kinder future where everyone can smile.</div></div>
+          <div class="sheet">
+            <div class="top"><div class="iconbtn px">✕</div></div>
+            <div class="body">
+              <div class="sent">
+                Ah <ruby>枯<rt>か</rt></ruby>れるは<ruby>必然<rt>ひつぜん</rt></ruby>
+                <ruby>咲<rt>さ</rt></ruby>かぬは<ruby>偶然<rt>ぐうぜん</rt></ruby>か
+              </div>
+              <div class="trans">Ah, is it inevitable to wither, and mere chance not to bloom?</div>
+              <div class="rule"></div>
+              <div class="chunkhead">
+                <span class="j">枯れるは必然</span><span class="e">withering is inevitable</span>
+              </div>
+              <div class="rail">
+                <div class="step">
+                  <span class="j"
+                    ><ruby>枯<rt>か</rt></ruby>れる</span
+                  ><span class="e">to wither</span>
+                </div>
+                <div class="step">
+                  <span class="j"
+                    ><ruby>枯<rt>か</rt></ruby>れる<span class="add"
+                      >は<ruby>必然<rt>ひつぜん</rt></ruby></span
+                    ></span
+                  ><span class="e">withering is inevitable</span>
+                </div>
+              </div>
+              <div class="gram">
+                A plain verb can be the topic by itself: 枯れるは means “withering”. Normal speech would say 枯れるのは.
+              </div>
+              <div class="rule"></div>
+              <div class="chunkhead">
+                <span class="j">咲かぬは偶然か</span><span class="e">is not blooming chance?</span>
+              </div>
+              <div class="rail">
+                <div class="step">
+                  <span class="j"
+                    ><ruby>咲<rt>さ</rt></ruby>く</span
+                  ><span class="e">to bloom</span>
+                </div>
+                <div class="step">
+                  <span class="j"
+                    ><ruby>咲<rt>さ</rt></ruby>か<span class="add">ぬ</span></span
+                  ><span class="e">not bloom (old negative)</span>
+                </div>
+                <div class="step">
+                  <span class="j"
+                    ><ruby>咲<rt>さ</rt></ruby>かぬ<span class="add"
+                      >は<ruby>偶然<rt>ぐうぜん</rt></ruby>か</span
+                    ></span
+                  ><span class="e">is not blooming chance?</span>
+                </div>
+              </div>
+              <div class="gram">ぬ is the literary form of ない. か at the end turns it into a question.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h3>E-B · Color map</h3>
+        <p class="why">
+          Top: the sentence split into colored chunks with a one-line gloss under each, so you see the whole structure
+          at once. Below: each chunk's build-up keyed by its color. Most structure, a bit more color.
+        </p>
+        <div class="phone">
+          <div class="shade"><div class="ghost">kinder future where everyone can smile.</div></div>
+          <div class="sheet">
+            <div class="top"><div class="iconbtn px">✕</div></div>
+            <div class="body">
+              <div class="inter">
+                <div class="c" style="border-color: transparent;">
+                  <div class="j" style="color: var(--muted)">Ah</div>
+                  <div class="e">&nbsp;</div>
+                </div>
+                <div class="c k1">
+                  <div class="j">
+                    <ruby>枯<rt>か</rt></ruby>れるは<ruby>必然<rt>ひつぜん</rt></ruby>
+                  </div>
+                  <div class="e">withering is inevitable</div>
+                </div>
+                <div class="c k2">
+                  <div class="j">
+                    <ruby>咲<rt>さ</rt></ruby>かぬは<ruby>偶然<rt>ぐうぜん</rt></ruby>か
+                  </div>
+                  <div class="e">is not blooming chance?</div>
+                </div>
+              </div>
+              <div class="trans" style="margin-top: 12px;">
+                Ah, is it <span class="t1">inevitable to wither</span>, and
+                <span class="t2">mere chance not to bloom</span>?
+              </div>
+              <div class="detail k1">
+                <div class="steps">
+                  <ruby>枯<rt>か</rt></ruby>れる <span class="note">to wither</span><span class="arrow">→</span
+                  ><ruby>枯<rt>か</rt></ruby>れる<span class="add"
+                    >は<ruby>必然<rt>ひつぜん</rt></ruby></span
+                  > <span class="note">withering is inevitable</span>
+                </div>
+                <div class="gram">A plain verb can be the topic by itself: 枯れるは means “withering”.</div>
+              </div>
+              <div class="detail k2">
+                <div class="steps">
+                  <ruby>咲<rt>さ</rt></ruby>く <span class="note">to bloom</span><span class="arrow">→</span
+                  ><ruby>咲<rt>さ</rt></ruby>か<span class="add">ぬ</span> <span class="note">not bloom</span
+                  ><span class="arrow">→</span><ruby>咲<rt>さ</rt></ruby>かぬ<span class="add"
+                    >は<ruby>偶然<rt>ぐうぜん</rt></ruby>か</span
+                  > <span class="note">is not blooming chance?</span>
+                </div>
+                <div class="gram">ぬ is the literary form of ない. か at the end makes it a question.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h3>E-C · Dense two-column</h3>
+        <p class="why">
+          A table: Japanese left, English right, rules between chunks. Most information per screen, least decoration.
+          Chunk rows are bold; step rows are dimmed; notes span both columns.
+        </p>
+        <div class="phone">
+          <div class="shade"><div class="ghost">kinder future where everyone can smile.</div></div>
+          <div class="sheet">
+            <div class="top"><div class="iconbtn px">✕</div></div>
+            <div class="body">
+              <div class="sent">
+                Ah <ruby>枯<rt>か</rt></ruby>れるは<ruby>必然<rt>ひつぜん</rt></ruby>
+                <ruby>咲<rt>さ</rt></ruby>かぬは<ruby>偶然<rt>ぐうぜん</rt></ruby>か
+              </div>
+              <div class="trans">Ah, is it inevitable to wither, and mere chance not to bloom?</div>
+              <table class="grid">
+                <tr class="head">
+                  <td class="j">枯れるは必然</td>
+                  <td class="e">withering is inevitable</td>
+                </tr>
+                <tr>
+                  <td class="j">
+                    <ruby>枯<rt>か</rt></ruby>れる
+                  </td>
+                  <td class="e">to wither</td>
+                </tr>
+                <tr>
+                  <td class="j">
+                    <ruby>枯<rt>か</rt></ruby>れる<span class="add">は</span>
+                  </td>
+                  <td class="e">withering (as topic)</td>
+                </tr>
+                <tr class="g">
+                  <td colspan="2">A plain verb can be the topic by itself. Normal speech would say 枯れるのは.</td>
+                </tr>
+                <tr class="head">
+                  <td class="j">咲かぬは偶然か</td>
+                  <td class="e">is not blooming chance?</td>
+                </tr>
+                <tr>
+                  <td class="j">
+                    <ruby>咲<rt>さ</rt></ruby>く
+                  </td>
+                  <td class="e">to bloom</td>
+                </tr>
+                <tr>
+                  <td class="j">
+                    <ruby>咲<rt>さ</rt></ruby>か<span class="add">ぬ</span>
+                  </td>
+                  <td class="e">not bloom (old negative)</td>
+                </tr>
+                <tr>
+                  <td class="j">
+                    <ruby>偶然<rt>ぐうぜん</rt></ruby>
+                  </td>
+                  <td class="e">chance, coincidence</td>
+                </tr>
+                <tr class="g">
+                  <td colspan="2">ぬ is the literary form of ない. か at the end makes it a question.</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h3>E-D · Collapsed chunks</h3>
+        <p class="why">
+          Each chunk is one row (Japanese + meaning). Tap to open its build-up and note. Shortest to scan; the build-up
+          is one tap away. First chunk opens automatically.
+        </p>
+        <div class="phone">
+          <div class="shade"><div class="ghost">kinder future where everyone can smile.</div></div>
+          <div class="sheet">
+            <div class="top"><div class="iconbtn px">✕</div></div>
+            <div class="body">
+              <div class="sent">
+                Ah <ruby>枯<rt>か</rt></ruby>れるは<ruby>必然<rt>ひつぜん</rt></ruby>
+                <ruby>咲<rt>さ</rt></ruby>かぬは<ruby>偶然<rt>ぐうぜん</rt></ruby>か
+              </div>
+              <div class="trans">Ah, is it inevitable to wither, and mere chance not to bloom?</div>
+              <div style="margin-top: 10px;">
+                <div class="acc open">
+                  <div class="chunkhead">
+                    <span class="j">枯れるは必然<span class="chev">▾</span></span
+                    ><span class="e">withering is inevitable</span>
+                  </div>
+                  <div class="rail">
+                    <div class="step">
+                      <span class="j"
+                        ><ruby>枯<rt>か</rt></ruby>れる</span
+                      ><span class="e">to wither</span>
+                    </div>
+                    <div class="step">
+                      <span class="j"
+                        ><ruby>枯<rt>か</rt></ruby>れる<span class="add"
+                          >は<ruby>必然<rt>ひつぜん</rt></ruby></span
+                        ></span
+                      ><span class="e">withering is inevitable</span>
+                    </div>
+                  </div>
+                  <div class="gram">A plain verb can be the topic by itself: 枯れるは means “withering”.</div>
+                </div>
+                <div class="acc">
+                  <div class="chunkhead">
+                    <span class="j">咲かぬは偶然か<span class="chev">▸</span></span
+                    ><span class="e">is not blooming chance?</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────────────────────────── INTRO ───────────────────────────── -->
+    <h2>3. Song intro (summary + speaker)</h2>
+    <p class="intro">
+      Today: title, “speaker → addressee” in lavender, then a 2-line summary. Options below replace all three with one
+      line from the analysis.
+    </p>
+    <div class="row">
+      <div class="col">
+        <h3>Current</h3>
+        <div class="card px intro-card" style="margin-top: 8px;">
+          <div class="intro-title">Won't Leave You Behind</div>
+          <div style="color: var(--lavender); margin-top: 6px;">
+            someone determined to protect another person → someone the speaker wants to protect
+          </div>
+          <div class="intro-line" style="margin-top: 6px;">
+            Facing danger and uncertainty, the speaker vows to keep going and protect someone, hoping for a kinder
+            future where everyone can smile.
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <h3>I-A · One “who and what” line (recommended)</h3>
+        <p class="why">One sentence under 15 words that names the speaker, who they talk to, and the gist.</p>
+        <div class="card px intro-card">
+          <div class="intro-title">Won't Leave You Behind</div>
+          <div class="intro-line" style="margin-top: 6px; color: var(--text);">
+            Someone vows to fight on and protect the person they love.
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <h3>I-B · Title only</h3>
+        <p class="why">
+          Drop the summary entirely. Cleanest, but you lose “who is I / you”, which helps with omitted subjects.
+        </p>
+        <div class="card px intro-card">
+          <div class="intro-title">Won't Leave You Behind</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

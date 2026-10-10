@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Builds an unsigned IPA for SideStore, plus the SideStore source entry describing it.
-# Called by .github/workflows/sidestore.yml. Writes build/sidestore/<asset>.ipa and build/sidestore/app.json.
+# Called by .github/workflows/sidestore.yml. Writes apps/mobile/build/sidestore/<asset>.ipa and apps/mobile/build/sidestore/app.json.
 #
 # Env: CHANNEL (main|pr), RELEASE_TAG, COMMIT_SHA, GITHUB_REPOSITORY, GITHUB_RUN_NUMBER,
 #      and for PRs: PR_NUMBER, PR_TITLE, PR_URL.
 set -euo pipefail
 : "${CHANNEL:?}" "${RELEASE_TAG:?}" "${COMMIT_SHA:?}" "${GITHUB_REPOSITORY:?}" "${GITHUB_RUN_NUMBER:?}"
+
+# Resolve the app from the script path, independent of the caller's working directory.
+cd "$(dirname "$0")/../apps/mobile"
 
 BASE_BUNDLE_ID=$(jq -r .expo.ios.bundleIdentifier app.json)
 BASE_NAME=$(jq -r .expo.name app.json)
@@ -50,6 +53,7 @@ cp -R "$APP" build/Payload/
 (cd build && zip -qry "sidestore/$ASSET" Payload)
 
 # One entry of the source's `apps` array (AltStore/SideStore source format).
+# Use the root compatibility icon so PR builds work before the app move reaches main.
 plutil -convert json -o - "$APP/Info.plist" | jq \
   --arg name "$NAME" --arg bundle "$BUNDLE_ID" --arg subtitle "$SUBTITLE" --arg description "$DESCRIPTION" \
   --arg version "$VERSION" --arg build "$BUILD_NUMBER" --arg sha "${COMMIT_SHA:0:7}" \

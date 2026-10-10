@@ -1,0 +1,54 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": { "ignoreUnknown": true },
+  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
+  "javascript": { "formatter": { "quoteStyle": "single" } },
+  "html": { "formatter": { "enabled": true } },
+  "linter": { "enabled": true, "rules": { "preset": "recommended" } },
+  "assist": { "enabled": false },
+  "overrides": [
+    {
+      "includes": ["apps/mobile/**/*.ts", "apps/mobile/**/*.tsx"],
+      "linter": {
+        "rules": {
+          // Existing indexed lookups assert invariants already covered by app tests.
+          "style": { "noNonNullAssertion": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["apps/mobile/src/**/*.tsx"],
+      "linter": {
+        "rules": {
+          // Changing effect triggers or occurrence keys would change app behaviour.
+          "correctness": { "useExhaustiveDependencies": "off" },
+          // forEach ignores these callbacks' return values.
+          "suspicious": { "noArrayIndexKey": "off", "useIterableCallbackReturn": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["apps/mobile/assets/icons/*.svg"],
+      "linter": {
+        "rules": {
+          // The native controls provide accessible labels for these decorative icons.
+          "a11y": { "noSvgWithoutTitle": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["mockups/**"],
+      "linter": {
+        "rules": {
+          // Preserve archived mockup navigation, font choices and cascade ordering.
+          "a11y": { "useValidAnchor": "off", "useGenericFontNames": "off", "noSvgWithoutTitle": "off" },
+          "style": { "noDescendingSpecificity": "off" },
+          "complexity": { "noImportantStyles": "off" },
+          // Keep the seeded generator and callbacks whose results are ignored.
+          "suspicious": { "noAssignInExpressions": "off", "useIterableCallbackReturn": "off" }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "title": "雨宿り",
+  "checks": [
+    "No artist given",
+    "Speaker: someone sheltering from the rain, with no gender, age or relationship invented",
+    "Addressee: the rain, in the chorus",
+    "Lines 0-1 and 2-3: clauses run across line breaks",
+    "Lines 8-9: inverted, rain is addressed after the request",
+    "Lines 12-13: the omitted subject could be the speaker or the waiting person from line 3; a note should say so rather than guess",
+    "Lines 14-19 repeat lines 6-11"
+  ],
+  "lines": [
+    "駅前の古い本屋の",
+    "軒下で雨が止むのを待つ",
+    "濡れた靴のまま",
+    "誰かを待っている人がいる",
+    "止まない雨はないって",
+    "誰が言ったんだろう",
+    "傘を持たずに",
+    "走り出せたらいいのに",
+    "もう少しだけ降っていてよ",
+    "雨よ",
+    "帰る理由が",
+    "まだ見つからないから",
+    "信号が青に変わっても",
+    "動けないまま",
+    "傘を持たずに",
+    "走り出せたらいいのに",
+    "もう少しだけ降っていてよ",
+    "雨よ",
+    "帰る理由が",
+    "まだ見つからないから"
+  ]
+}

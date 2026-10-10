@@ -1,388 +1,744 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Round 2: lines, not words</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <head>
+    <meta charset="utf-8">
+    <title>Round 2: lines, not words</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <h1>Round 2: lines, not words</h1>
+    <ul class="intro m">
+      <li>
+        The unit is the <b style="color:#fff">line</b>. The goal is to understand the whole song, phrase by phrase. Word
+        lookup is a tool, not the goal.
+      </li>
+      <li>
+        Two modes, both first-class: <b style="color:#fff">Walk</b> (big buttons, tap only if you want) and
+        <b style="color:#fff">Sit</b>
+        (focused decoding and games).
+      </li>
+      <li>
+        Translation help is layered from free and literal to smart: dictionary gloss, then Apple's on-device
+        translation, then optionally ChatGPT.
+      </li>
+    </ul>
+    <nav>
+      <a href="round-1.html">← Round 1</a>
+      <a href="#ladder">Help Ladder</a>
+      <a href="#f">F · Fog Map</a>
+      <a href="#g">G · Three Stars</a>
+      <a href="#h">H · Meaning Match</a>
+      <a href="#i">I · Liner Notes</a>
+      <a href="#pick">Pick</a>
+    </nav>
 
-<h1>Round 2: lines, not words</h1>
-<ul class="intro m">
-  <li>The unit is the <b style="color:#fff">line</b>. The goal is to understand the whole song, phrase by phrase. Word lookup is a tool, not the goal.</li>
-  <li>Two modes, both first-class: <b style="color:#fff">Walk</b> (big buttons, tap only if you want) and <b style="color:#fff">Sit</b> (focused decoding and games).</li>
-  <li>Translation help is layered from free and literal to smart: dictionary gloss, then Apple's on-device translation, then optionally ChatGPT.</li>
-</ul>
-<nav>
-  <a href="round-1.html">← Round 1</a>
-  <a href="#ladder">Help Ladder</a>
-  <a href="#f">F · Fog Map</a>
-  <a href="#g">G · Three Stars</a>
-  <a href="#h">H · Meaning Match</a>
-  <a href="#i">I · Liner Notes</a>
-  <a href="#pick">Pick</a>
-</nav>
+    <!-- ============================ LADDER ============================ -->
+    <section id="ladder">
+      <div class="head">
+        <span class="tag">◆</span>
+        <h2>Help Ladder (shared by every option below)</h2>
+      </div>
+      <div class="pitch">
+        The Sit-mode decode screen. You start with the bare line and climb one rung at a time until it makes sense. The
+        fewer rungs you need, the better the line scores. This gives you a measurable result without trusting your own
+        "I got it".
+      </div>
+      <div class="loop">
+        bare line → <b>furigana</b> → <b>word gloss</b> (yomitan-core, free, exact) → <b>literal</b> (Apple Translation,
+        on-device) → <b>reading</b> (ChatGPT, optional)
+      </div>
+      <div class="row">
+        <figure>
+          <div class="phone">
+            <div class="status"><span>21:02</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="small" style="padding:6px 0 0">夜明けのバス · line 4 of 14 · ▶ replay</div>
+              <div style="font-size:21px;line-height:1.6;margin:40px 0 50px">
+                遠ざかる街の灯りを<br>ひとつずつ数えてた
+              </div>
+              <div class="rung on"><b>0</b>Bare line<span class="x">◆◆◆</span></div>
+              <div class="rung off"><b>1</b>Furigana<span class="x">◆◆◇</span></div>
+              <div class="rung off"><b>2</b>Word gloss<span class="x">◆◇◇</span></div>
+              <div class="rung off"><b>3</b>Literal translation<span class="x">◇◇◇</span></div>
+              <div class="rung off"><b>4</b>What it means<span class="x">◇◇◇</span></div>
+              <div class="btns" style="margin-top:auto;margin-bottom:14px">
+                <div class="btn">Climb ↓</div>
+                <div class="btn p">I get it</div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>1.</b> Start bare. "I get it" here earns the full score.</figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="status"><span>21:02</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="small" style="padding:6px 0 0">夜明けのバス · line 4 of 14 · ▶ replay</div>
+              <div style="margin:22px 0 14px;line-height:1.2">
+                <span class="gloss"
+                  ><span
+                    ><ruby>遠<rt>とお</rt></ruby>ざかる</span
+                  ><small>recede</small></span
+                ><span class="gloss"
+                  ><span
+                    ><ruby>街<rt>まち</rt></ruby>の</span
+                  ><small>town's</small></span
+                ><span class="gloss"
+                  ><span
+                    ><ruby>灯<rt>あか</rt></ruby>りを</span
+                  ><small>lights (obj)</small></span
+                ><br>
+                <span class="gloss"><span>ひとつずつ</span><small>one by one</small></span
+                ><span class="gloss"
+                  ><span
+                    ><ruby>数<rt>かぞ</rt></ruby>えてた</span
+                  ><small>was counting</small></span
+                >
+              </div>
+              <div class="small">Tap any word for the full dictionary entry.</div>
+              <div class="rung" style="margin-top:14px"><b>0</b>Bare line<span class="x">✓</span></div>
+              <div class="rung"><b>1</b>Furigana<span class="x">✓</span></div>
+              <div class="rung on"><b>2</b>Word gloss<span class="x">◆◇◇</span></div>
+              <div class="rung off"><b>3</b>Literal translation<span class="x">◇◇◇</span></div>
+              <div class="rung off"><b>4</b>What it means<span class="x">◇◇◇</span></div>
+              <div class="btns" style="margin-top:auto;margin-bottom:14px">
+                <div class="btn">Climb ↓</div>
+                <div class="btn p">I get it</div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <b>2.</b>
+            Word gloss in line order. Free, offline, and never wrong about what the words are.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="status"><span>21:03</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="small" style="padding:6px 0 0">夜明けのバス · line 4 of 14 · ▶ replay</div>
+              <div style="font-size:17px;line-height:1.6;margin:18px 0 12px">遠ざかる街の灯りを ひとつずつ数えてた</div>
+              <div class="small">Literal · Apple Translation</div>
+              <div style="font-size:13px;margin-bottom:12px">
+                I was counting the lights of the receding town one by one.
+              </div>
+              <div class="small">What it means · ChatGPT</div>
+              <div style="font-size:13px">
+                Watching the town's lights shrink away behind the bus. Counting them one at a time is a way of not
+                letting go yet.
+              </div>
+              <div class="small" style="margin-top:6px">Ties to line 3 (the words they couldn't say).</div>
+              <div class="hr"></div>
+              <div class="small">How well do you get it now?</div>
+              <div class="grade">
+                <div>Still lost</div>
+                <div>Mostly</div>
+                <div>Fully</div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <b>3.</b>
+            Top rungs. Results are cached per line, so ChatGPT runs at most once per line, ever.
+          </figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Sources</dt>
+          <dd><b>Gloss:</b> yomitan-core parse plus first definition. Free, offline, exact.</dd>
+          <dd><b>Literal:</b> Apple Translation framework. Free, on-device, iOS 18+. Flat but fine for lyrics.</dd>
+          <dd>
+            <b>Meaning:</b>
+            Sign in with ChatGPT bills your Plus plan (DevDay, Sep 29). It's new, and it's unclear whether it's open to
+            any app or only launch partners. Fallback is Apple's on-device Foundation Models (supports Japanese, free,
+            weaker).
+          </dd>
+          <dt>Why it helps the game</dt>
+          <dd class="plus">Score = how many rungs you climbed. More honest than self-grading.</dd>
+          <dd class="plus">
+            Grammar is implicit: you see it in the gloss and the reading, not as lessons you could get wrong.
+          </dd>
+        </dl>
+      </div>
+    </section>
 
-<!-- ============================ LADDER ============================ -->
-<section id="ladder">
-  <div class="head"><span class="tag">◆</span><h2>Help Ladder (shared by every option below)</h2></div>
-  <div class="pitch">The Sit-mode decode screen. You start with the bare line and climb one rung at a time until it makes sense. The fewer rungs you need, the better the line scores. This gives you a measurable result without trusting your own "I got it".</div>
-  <div class="loop">bare line → <b>furigana</b> → <b>word gloss</b> (yomitan-core, free, exact) → <b>literal</b> (Apple Translation, on-device) → <b>reading</b> (ChatGPT, optional)</div>
-  <div class="row">
-    <figure>
-      <div class="phone">
-        <div class="status"><span>21:02</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="small" style="padding:6px 0 0">夜明けのバス · line 4 of 14 · ▶ replay</div>
-          <div style="font-size:21px;line-height:1.6;margin:40px 0 50px">遠ざかる街の灯りを<br>ひとつずつ数えてた</div>
-          <div class="rung on"><b>0</b>Bare line<span class="x">◆◆◆</span></div>
-          <div class="rung off"><b>1</b>Furigana<span class="x">◆◆◇</span></div>
-          <div class="rung off"><b>2</b>Word gloss<span class="x">◆◇◇</span></div>
-          <div class="rung off"><b>3</b>Literal translation<span class="x">◇◇◇</span></div>
-          <div class="rung off"><b>4</b>What it means<span class="x">◇◇◇</span></div>
-          <div class="btns" style="margin-top:auto;margin-bottom:14px"><div class="btn">Climb ↓</div><div class="btn p">I get it</div></div>
-        </div>
+    <!-- ============================ F ============================ -->
+    <section id="f">
+      <div class="head">
+        <span class="tag">F</span>
+        <h2>Fog Map</h2>
       </div>
-      <figcaption><b>1.</b> Start bare. "I get it" here earns the full score.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone">
-        <div class="status"><span>21:02</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="small" style="padding:6px 0 0">夜明けのバス · line 4 of 14 · ▶ replay</div>
-          <div style="margin:22px 0 14px;line-height:1.2">
-            <span class="gloss"><span><ruby>遠<rt>とお</rt></ruby>ざかる</span><small>recede</small></span><span class="gloss"><span><ruby>街<rt>まち</rt></ruby>の</span><small>town's</small></span><span class="gloss"><span><ruby>灯<rt>あか</rt></ruby>りを</span><small>lights (obj)</small></span><br>
-            <span class="gloss"><span>ひとつずつ</span><small>one by one</small></span><span class="gloss"><span><ruby>数<rt>かぞ</rt></ruby>えてた</span><small>was counting</small></span>
+      <div class="pitch">
+        Every song starts covered in fog. On a walk, you tap ✓ when a line makes sense as it plays, or ? when it
+        doesn't. ✓ clears that line. ? flags it for Sit mode, where you decode it with the ladder. The song's map clears
+        up over time.
+      </div>
+      <div class="loop">
+        <b>Walk:</b>
+        line plays → ✓ or ? (or nothing) → <b>Sit:</b> clear flagged lines with the ladder → map clears → song cleared
+      </div>
+      <div class="row">
+        <figure>
+          <div class="phone">
+            <div class="status"><span>8:31</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="np">
+                <div class="art"></div>
+                <div>
+                  <div class="t">夜明けのバス</div>
+                  <div class="a">ミナミ · Walk</div>
+                </div>
+                <div class="r">9/14<br>clear</div>
+              </div>
+              <div class="bar"><i style="width:30%"></i></div>
+              <div class="lyr" style="font-size:16px">
+                <p style="color:#bbb">夜明けのバスに揺られて</p>
+                <p style="color:#bbb">窓に映る君の面影</p>
+                <p class="flag">言えなかった言葉が 胸の奥で眠ってる</p>
+                <p class="cur">遠ざかる街の灯りを ひとつずつ数えてた</p>
+                <p class="fog">「さよなら」なんて 似合わないよ</p>
+              </div>
+              <div class="walk">
+                <div>?<small>flag it</small></div>
+                <div class="yes">✓<small>got it</small></div>
+              </div>
+            </div>
           </div>
-          <div class="small">Tap any word for the full dictionary entry.</div>
-          <div class="rung" style="margin-top:14px"><b>0</b>Bare line<span class="x">✓</span></div>
-          <div class="rung"><b>1</b>Furigana<span class="x">✓</span></div>
-          <div class="rung on"><b>2</b>Word gloss<span class="x">◆◇◇</span></div>
-          <div class="rung off"><b>3</b>Literal translation<span class="x">◇◇◇</span></div>
-          <div class="rung off"><b>4</b>What it means<span class="x">◇◇◇</span></div>
-          <div class="btns" style="margin-top:auto;margin-bottom:14px"><div class="btn">Climb ↓</div><div class="btn p">I get it</div></div>
-        </div>
+          <figcaption>
+            <b>1.</b>
+            Walk mode. Big buttons in the thumb zone, also on the lock screen. Fogged lines are ones you haven't cleared
+            yet.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="status"><span>21:00</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="padding:8px 0 12px">
+                <span class="big">3</span> <span class="m">flagged lines in</span> <span class="big">2</span>
+                <span class="m">songs</span>
+              </div>
+              <div class="list">
+                <div>
+                  <div class="art sm"></div>
+                  <div style="flex:1">
+                    <div>夜明けのバス</div>
+                    <div class="tiles" style="margin-top:5px">
+                      <i class="c"></i><i class="c"></i><i class="q"></i><i class="c"></i><i class="c"></i
+                      ><i class="c"></i><i class="q"></i><i class="c"></i><i class="c"></i><i class="c"></i
+                      ><i class="c"></i><i></i><i></i><i></i>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div class="art sm" style="background:linear-gradient(135deg,#1e3a8a,#93c5fd)"></div>
+                  <div style="flex:1">
+                    <div>雨宿り</div>
+                    <div class="tiles" style="margin-top:5px">
+                      <i class="c"></i><i class="c"></i><i class="c"></i><i class="q"></i><i></i><i></i><i></i><i></i
+                      ><i></i><i></i><i></i><i></i>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div class="art sm" style="background:linear-gradient(135deg,#0f3d3e,#4ade80)"></div>
+                  <div style="flex:1">
+                    <div>硝子の街 <span class="k">cleared</span></div>
+                    <div class="tiles" style="margin-top:5px">
+                      <i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i
+                      ><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i
+                      ><i class="c"></i><i class="c"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="btns" style="margin-top:auto;margin-bottom:12px">
+                <div class="btn p">Clear 3 flagged lines</div>
+              </div>
+            </div>
+            <div class="tabs"><span class="on">Map</span><span>Library</span><span>Player</span><span>Me</span></div>
+          </div>
+          <figcaption>
+            <b>2.</b>
+            Every song is a strip of line tiles: white = cleared, yellow = flagged, dark = fog.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="status"><span>21:06</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="padding:30px 0 6px" class="m">夜明けのバス</div>
+              <div class="big">Cleared</div>
+              <div class="small" style="margin:4px 0 20px">14/14 lines · 3 needed help · first listen 11 days ago</div>
+              <div class="tiles" style="grid-template-columns:repeat(7,1fr)">
+                <i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i
+                ><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i
+                ><i class="c"></i><i class="c"></i>
+              </div>
+              <div class="list" style="margin-top:18px">
+                <div>
+                  <span>環状線 (album)</span
+                  ><span class="x"><span class="pct" style="color:#fff">4/11</span> cleared</span>
+                </div>
+                <div>
+                  <span>ミナミ</span><span class="x"><span class="pct" style="color:#fff">5/23</span> cleared</span>
+                </div>
+                <div>
+                  <span>All songs</span><span class="x"><span class="pct" style="color:#fff">31</span> cleared</span>
+                </div>
+              </div>
+              <div class="small" style="margin-top:12px">
+                Cleared lines come back now and then on walks to check they've stuck.
+              </div>
+            </div>
+          </div>
+          <figcaption><b>3.</b> Song cleared. Album and artist counts go up.</figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Feel</dt>
+          <dd>Exploration. Uncovering a map, one song at a time.</dd>
+          <dt>Good</dt>
+          <dd class="plus">Walk mode is two buttons, and doing nothing is fine</dd>
+          <dd class="plus">Walk feeds Sit: what you flagged is your study list</dd>
+          <dd class="plus">Very simple to build</dd>
+          <dt>Bad</dt>
+          <dd class="minus">✓ is self-reported; easy to fool yourself</dd>
+          <dd class="minus">One state per line, so no deeper levels after clearing</dd>
+        </dl>
       </div>
-      <figcaption><b>2.</b> Word gloss in line order. Free, offline, and never wrong about what the words are.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone">
-        <div class="status"><span>21:03</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="small" style="padding:6px 0 0">夜明けのバス · line 4 of 14 · ▶ replay</div>
-          <div style="font-size:17px;line-height:1.6;margin:18px 0 12px">遠ざかる街の灯りを ひとつずつ数えてた</div>
-          <div class="small">Literal · Apple Translation</div>
-          <div style="font-size:13px;margin-bottom:12px">I was counting the lights of the receding town one by one.</div>
-          <div class="small">What it means · ChatGPT</div>
-          <div style="font-size:13px">Watching the town's lights shrink away behind the bus. Counting them one at a time is a way of not letting go yet.</div>
-          <div class="small" style="margin-top:6px">Ties to line 3 (the words they couldn't say).</div>
-          <div class="hr"></div>
-          <div class="small">How well do you get it now?</div>
-          <div class="grade"><div>Still lost</div><div>Mostly</div><div>Fully</div></div>
-        </div>
-      </div>
-      <figcaption><b>3.</b> Top rungs. Results are cached per line, so ChatGPT runs at most once per line, ever.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Sources</dt>
-      <dd><b>Gloss:</b> yomitan-core parse plus first definition. Free, offline, exact.</dd>
-      <dd><b>Literal:</b> Apple Translation framework. Free, on-device, iOS 18+. Flat but fine for lyrics.</dd>
-      <dd><b>Meaning:</b> Sign in with ChatGPT bills your Plus plan (DevDay, Sep 29). It's new, and it's unclear whether it's open to any app or only launch partners. Fallback is Apple's on-device Foundation Models (supports Japanese, free, weaker).</dd>
-      <dt>Why it helps the game</dt>
-      <dd class="plus">Score = how many rungs you climbed. More honest than self-grading.</dd>
-      <dd class="plus">Grammar is implicit: you see it in the gloss and the reading, not as lessons you could get wrong.</dd>
-    </dl>
-  </div>
-</section>
+    </section>
 
-<!-- ============================ F ============================ -->
-<section id="f">
-  <div class="head"><span class="tag">F</span><h2>Fog Map</h2></div>
-  <div class="pitch">Every song starts covered in fog. On a walk, you tap ✓ when a line makes sense as it plays, or ? when it doesn't. ✓ clears that line. ? flags it for Sit mode, where you decode it with the ladder. The song's map clears up over time.</div>
-  <div class="loop"><b>Walk:</b> line plays → ✓ or ? (or nothing) → <b>Sit:</b> clear flagged lines with the ladder → map clears → song cleared</div>
-  <div class="row">
-    <figure>
-      <div class="phone">
-        <div class="status"><span>8:31</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="np"><div class="art"></div><div><div class="t">夜明けのバス</div><div class="a">ミナミ · Walk</div></div><div class="r">9/14<br>clear</div></div>
-          <div class="bar"><i style="width:30%"></i></div>
-          <div class="lyr" style="font-size:16px">
-            <p style="color:#bbb">夜明けのバスに揺られて</p>
-            <p style="color:#bbb">窓に映る君の面影</p>
-            <p class="flag">言えなかった言葉が 胸の奥で眠ってる</p>
-            <p class="cur">遠ざかる街の灯りを ひとつずつ数えてた</p>
-            <p class="fog">「さよなら」なんて 似合わないよ</p>
-          </div>
-          <div class="walk"><div>?<small>flag it</small></div><div class="yes">✓<small>got it</small></div></div>
-        </div>
+    <!-- ============================ G ============================ -->
+    <section id="g">
+      <div class="head">
+        <span class="tag">G</span>
+        <h2>Three Stars (read → hear)</h2>
       </div>
-      <figcaption><b>1.</b> Walk mode. Big buttons in the thumb zone, also on the lock screen. Fogged lines are ones you haven't cleared yet.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone">
-        <div class="status"><span>21:00</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="padding:8px 0 12px"><span class="big">3</span> <span class="m">flagged lines in</span> <span class="big">2</span> <span class="m">songs</span></div>
-          <div class="list">
-            <div><div class="art sm"></div><div style="flex:1"><div>夜明けのバス</div><div class="tiles" style="margin-top:5px"><i class="c"></i><i class="c"></i><i class="q"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="q"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i></i><i></i><i></i></div></div></div>
-            <div><div class="art sm" style="background:linear-gradient(135deg,#1e3a8a,#93c5fd)"></div><div style="flex:1"><div>雨宿り</div><div class="tiles" style="margin-top:5px"><i class="c"></i><i class="c"></i><i class="c"></i><i class="q"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
-            <div><div class="art sm" style="background:linear-gradient(135deg,#0f3d3e,#4ade80)"></div><div style="flex:1"><div>硝子の街 <span class="k">cleared</span></div><div class="tiles" style="margin-top:5px"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></div></div></div>
-          </div>
-          <div class="btns" style="margin-top:auto;margin-bottom:12px"><div class="btn p">Clear 3 flagged lines</div></div>
-        </div>
-        <div class="tabs"><span class="on">Map</span><span>Library</span><span>Player</span><span>Me</span></div>
+      <div class="pitch">
+        Each song is a stage with three stars, and each star is harder. ★ Decode: understand every line with any help.
+        ★★ Read: understand it from the Japanese alone, no furigana, no help. ★★★ Hear: understand it by ear with the
+        lyrics hidden. This fits an N3/N2 reader: reading is ahead of listening, and sung Japanese is where the gap is.
       </div>
-      <figcaption><b>2.</b> Every song is a strip of line tiles: white = cleared, yellow = flagged, dark = fog.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone">
-        <div class="status"><span>21:06</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="padding:30px 0 6px" class="m">夜明けのバス</div>
-          <div class="big">Cleared</div>
-          <div class="small" style="margin:4px 0 20px">14/14 lines · 3 needed help · first listen 11 days ago</div>
-          <div class="tiles" style="grid-template-columns:repeat(7,1fr)"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></div>
-          <div class="list" style="margin-top:18px">
-            <div><span>環状線 (album)</span><span class="x"><span class="pct" style="color:#fff">4/11</span> cleared</span></div>
-            <div><span>ミナミ</span><span class="x"><span class="pct" style="color:#fff">5/23</span> cleared</span></div>
-            <div><span>All songs</span><span class="x"><span class="pct" style="color:#fff">31</span> cleared</span></div>
-          </div>
-          <div class="small" style="margin-top:12px">Cleared lines come back now and then on walks to check they've stuck.</div>
-        </div>
+      <div class="loop">
+        <b>Sit:</b>
+        ★ decode with the ladder → <b>Walk:</b> ★★ glance at plain lyrics, tap the lines you lose →
+        <b>Walk, eyes free:</b>
+        ★★★ lyrics hidden, tap "lost" when you lose the thread
       </div>
-      <figcaption><b>3.</b> Song cleared. Album and artist counts go up.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Feel</dt><dd>Exploration. Uncovering a map, one song at a time.</dd>
-      <dt>Good</dt>
-      <dd class="plus">Walk mode is two buttons, and doing nothing is fine</dd>
-      <dd class="plus">Walk feeds Sit: what you flagged is your study list</dd>
-      <dd class="plus">Very simple to build</dd>
-      <dt>Bad</dt>
-      <dd class="minus">✓ is self-reported; easy to fool yourself</dd>
-      <dd class="minus">One state per line, so no deeper levels after clearing</dd>
-    </dl>
-  </div>
-</section>
+      <div class="row">
+        <figure>
+          <div class="phone">
+            <div class="status"><span>8:28</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="display:flex;gap:10px;align-items:center;padding:8px 0 12px">
+                <div class="art"></div>
+                <div>
+                  <div style="font-weight:700">環状線</div>
+                  <div class="small">ミナミ · 17 of 33 stars</div>
+                </div>
+              </div>
+              <div class="list">
+                <div><span class="m">1</span><span>始発</span><span class="x stars">★★★</span></div>
+                <div>
+                  <span class="m">2</span><span>夜明けのバス</span
+                  ><span class="x stars">★★<span class="o">★</span></span>
+                </div>
+                <div>
+                  <span class="m">3</span><span>硝子の街</span><span class="x stars">★★<span class="o">★</span></span>
+                </div>
+                <div>
+                  <span class="m">4</span><span>白昼夢</span><span class="x stars">★<span class="o">★★</span></span>
+                </div>
+                <div><span class="m">5</span><span>雨宿り</span><span class="x stars">★★★</span></div>
+                <div>
+                  <span class="m">6</span><span>環状線</span><span class="x stars">★<span class="o">★★</span></span>
+                </div>
+                <div>
+                  <span class="m">7</span><span>終電</span><span class="x stars"><span class="o">★★★</span></span>
+                </div>
+                <div>
+                  <span class="m">8</span><span>Blue Hour</span><span class="x stars"><span class="o">★★★</span></span>
+                </div>
+              </div>
+              <div class="btns" style="margin-top:auto;margin-bottom:12px">
+                <div class="btn">Sit: decode 終電</div>
+                <div class="btn p">Walk: try ★★★</div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>1.</b> An album is a level select. Normal playback earns stars as you go.</figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="status"><span>8:33</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="np">
+                <div class="art"></div>
+                <div>
+                  <div class="t">夜明けのバス</div>
+                  <div class="a">Going for <span class="stars">★★★</span> · lyrics hidden</div>
+                </div>
+              </div>
+              <div class="bar"><i style="width:30%"></i></div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px">
+                <div class="tiles" style="grid-template-columns:repeat(7,1fr);width:220px">
+                  <i class="c"></i><i class="c"></i><i class="c"></i><i class="h" style="outline:1px solid #fff"></i
+                  ><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+                <div class="small">line 4 of 14 · just listen</div>
+              </div>
+              <div class="walk" style="grid-template-columns:1fr">
+                <div>Lost it<small>tap if this line went past you</small></div>
+              </div>
+              <div class="small" style="text-align:center;padding-bottom:12px">
+                Lines you don't tap count as understood.
+              </div>
+            </div>
+          </div>
+          <figcaption><b>2.</b> ★★★ run. No text to read. One button, for when you lose the thread.</figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="status"><span>8:37</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="padding:26px 0 4px" class="m">夜明けのバス · hear run</div>
+              <div class="big">
+                13/14 <span class="stars" style="font-size:20px">★★<span class="o">★</span></span>
+              </div>
+              <div class="small" style="margin:2px 0 18px">One line away from ★★★</div>
+              <div class="small">Lost</div>
+              <div style="font-size:16px;margin:4px 0 2px">言えなかった言葉が 胸の奥で眠ってる</div>
+              <div class="small">
+                You've read it fine (★★). It's the sung part that lost you: 「胸の奥で」 is sung fast.
+              </div>
+              <div class="btns" style="margin-top:14px"><div class="btn">▶ Loop this line ×3</div></div>
+              <div class="btns" style="margin-top:auto;margin-bottom:14px">
+                <div class="btn">Done</div>
+                <div class="btn p">Retry next walk</div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <b>3.</b>
+            Results. A line you read fine but lost by ear gets a listening drill, not a translation.
+          </figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Feel</dt>
+          <dd>A Mario-style star chase. Clear progression with a ceiling you can reach.</dd>
+          <dt>Good</dt>
+          <dd class="plus">Separates reading gaps from listening gaps, and that split is your real problem</dd>
+          <dd class="plus">★★★ works with the phone in your pocket</dd>
+          <dd class="plus">Albums and artists as worlds make for natural, low-cost meta-progression</dd>
+          <dt>Bad</dt>
+          <dd class="minus">Still honor-system at ★★ and ★★★</dd>
+          <dd class="minus">Three star states per line make the model more complex than F</dd>
+        </dl>
+      </div>
+    </section>
 
-<!-- ============================ G ============================ -->
-<section id="g">
-  <div class="head"><span class="tag">G</span><h2>Three Stars (read → hear)</h2></div>
-  <div class="pitch">Each song is a stage with three stars, and each star is harder. ★ Decode: understand every line with any help. ★★ Read: understand it from the Japanese alone, no furigana, no help. ★★★ Hear: understand it by ear with the lyrics hidden. This fits an N3/N2 reader: reading is ahead of listening, and sung Japanese is where the gap is.</div>
-  <div class="loop"><b>Sit:</b> ★ decode with the ladder → <b>Walk:</b> ★★ glance at plain lyrics, tap the lines you lose → <b>Walk, eyes free:</b> ★★★ lyrics hidden, tap "lost" when you lose the thread</div>
-  <div class="row">
-    <figure>
-      <div class="phone">
-        <div class="status"><span>8:28</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="display:flex;gap:10px;align-items:center;padding:8px 0 12px"><div class="art"></div><div><div style="font-weight:700">環状線</div><div class="small">ミナミ · 17 of 33 stars</div></div></div>
-          <div class="list">
-            <div><span class="m">1</span><span>始発</span><span class="x stars">★★★</span></div>
-            <div><span class="m">2</span><span>夜明けのバス</span><span class="x stars">★★<span class="o">★</span></span></div>
-            <div><span class="m">3</span><span>硝子の街</span><span class="x stars">★★<span class="o">★</span></span></div>
-            <div><span class="m">4</span><span>白昼夢</span><span class="x stars">★<span class="o">★★</span></span></div>
-            <div><span class="m">5</span><span>雨宿り</span><span class="x stars">★★★</span></div>
-            <div><span class="m">6</span><span>環状線</span><span class="x stars">★<span class="o">★★</span></span></div>
-            <div><span class="m">7</span><span>終電</span><span class="x stars"><span class="o">★★★</span></span></div>
-            <div><span class="m">8</span><span>Blue Hour</span><span class="x stars"><span class="o">★★★</span></span></div>
+    <!-- ============================ H ============================ -->
+    <section id="h">
+      <div class="head">
+        <span class="tag">H</span>
+        <h2>Meaning Match</h2>
+      </div>
+      <div class="pitch">
+        Option C again, at the line level. As a line is sung, pick which translation it is. Wrong answers are
+        translations of other lines from the same song, so there's nothing extra to generate and they're plausible by
+        default. It's an actual test, not a self-report.
+      </div>
+      <div class="loop">
+        <b>Sit:</b>
+        rhythm mode, 3 choices per line, combo → <b>Walk:</b> lock screen shows 2 choices for the current line, tap when
+        you feel like it
+      </div>
+      <div class="row">
+        <figure>
+          <div class="phone">
+            <div class="status"><span>21:15</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="np">
+                <div class="art"></div>
+                <div>
+                  <div class="t">夜明けのバス</div>
+                  <div class="a">Match · Sit</div>
+                </div>
+                <div class="r"><span style="color:var(--due);font-weight:700;font-size:15px">×5</span><br>1,800</div>
+              </div>
+              <div class="bar"><i style="width:30%"></i></div>
+              <div class="small" style="margin-top:22px">Now singing</div>
+              <div class="bar due" style="margin:6px 0 30px"><i style="width:45%"></i></div>
+              <div class="opt">I meant to get off at the next stop.</div>
+              <div class="opt">I was counting the lights of the receding town, one by one.</div>
+              <div class="opt">The words I couldn't say are sleeping deep in my chest.</div>
+              <div class="small">Lyrics hidden. Tap the eye to show the Japanese (halves the points).</div>
+            </div>
           </div>
-          <div class="btns" style="margin-top:auto;margin-bottom:12px"><div class="btn">Sit: decode 終電</div><div class="btn p">Walk: try ★★★</div></div>
-        </div>
-      </div>
-      <figcaption><b>1.</b> An album is a level select. Normal playback earns stars as you go.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone">
-        <div class="status"><span>8:33</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="np"><div class="art"></div><div><div class="t">夜明けのバス</div><div class="a">Going for <span class="stars">★★★</span> · lyrics hidden</div></div></div>
-          <div class="bar"><i style="width:30%"></i></div>
-          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px">
-            <div class="tiles" style="grid-template-columns:repeat(7,1fr);width:220px"><i class="c"></i><i class="c"></i><i class="c"></i><i class="h" style="outline:1px solid #fff"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-            <div class="small">line 4 of 14 · just listen</div>
+          <figcaption>
+            <b>1.</b>
+            Sit mode. Pick by ear before the line ends. Showing the lyrics costs points.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="phone lock">
+            <div class="status"><span></span><span>●●●</span></div>
+            <div class="scr" style="padding:0">
+              <div class="date">Saturday, October 3</div>
+              <div class="clock">8:34</div>
+              <div class="la">
+                <div style="display:flex;gap:10px;align-items:center">
+                  <div class="art sm"></div>
+                  <div style="flex:1">
+                    <div style="font-size:12px;font-weight:600">夜明けのバス</div>
+                    <div class="small">ミナミ</div>
+                  </div>
+                  <div class="small">×3</div>
+                </div>
+                <div class="small" style="margin:10px 0 6px">What's being sung?</div>
+                <div class="btns" style="flex-direction:column;gap:6px">
+                  <div class="btn" style="text-align:left;padding:9px 10px;font-weight:400">
+                    Counting the town's lights as they fade
+                  </div>
+                  <div class="btn" style="text-align:left;padding:9px 10px;font-weight:400">
+                    Getting off at the next stop
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="walk" style="grid-template-columns:1fr"><div>Lost it<small>tap if this line went past you</small></div></div>
-          <div class="small" style="text-align:center;padding-bottom:12px">Lines you don't tap count as understood.</div>
-        </div>
+          <figcaption><b>2.</b> Walk mode on the lock screen. Two short choices. Ignoring it costs nothing.</figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="status"><span>21:19</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="padding:20px 0 6px" class="m">夜明けのバス · match</div>
+              <div style="display:flex;gap:22px;margin:4px 0 16px">
+                <div>
+                  <div class="big">12/14</div>
+                  <div class="small">by ear</div>
+                </div>
+                <div>
+                  <div class="big">×9</div>
+                  <div class="small">max combo</div>
+                </div>
+                <div>
+                  <div class="big">A</div>
+                  <div class="small">best: B</div>
+                </div>
+              </div>
+              <div class="tiles" style="grid-template-columns:repeat(7,1fr)">
+                <i class="c"></i><i class="c"></i><i class="q"></i><i class="c"></i><i class="c"></i><i class="c"></i
+                ><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="q"></i><i class="c"></i
+                ><i class="c"></i><i class="c"></i>
+              </div>
+              <div class="list" style="margin-top:14px">
+                <div>
+                  <span style="font-size:13px">言えなかった言葉が 胸の奥で眠ってる</span
+                  ><span class="x" style="color:var(--acc)">missed</span>
+                </div>
+                <div>
+                  <span style="font-size:13px">ガラス越しに 君が笑った気がした</span
+                  ><span class="x" style="color:var(--acc)">missed</span>
+                </div>
+              </div>
+              <div class="btns" style="margin-top:auto;margin-bottom:14px">
+                <div class="btn">Decode 2 missed</div>
+                <div class="btn p">Next song</div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>3.</b> Results. Missed lines go straight to the Help Ladder.</figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Feel</dt>
+          <dd>Rhythm game, but testing meaning, which is what you want.</dd>
+          <dt>Good</dt>
+          <dd class="plus">Real test, real score; no honor system</dd>
+          <dd class="plus">Wrong answers come free from the same song</dd>
+          <dd class="plus">Works for both Sit (fast, rhythm) and Walk (lock screen)</dd>
+          <dt>Bad</dt>
+          <dd class="minus">
+            Needs a translation for every line up front (Apple Translation could do this once per song)
+          </dd>
+          <dd class="minus">Once you know a song's lines, matching gets easy from memory</dd>
+          <dd class="minus">Lock-screen buttons mean native Swift work (Live Activity)</dd>
+        </dl>
       </div>
-      <figcaption><b>2.</b> ★★★ run. No text to read. One button, for when you lose the thread.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone">
-        <div class="status"><span>8:37</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="padding:26px 0 4px" class="m">夜明けのバス · hear run</div>
-          <div class="big">13/14 <span class="stars" style="font-size:20px">★★<span class="o">★</span></span></div>
-          <div class="small" style="margin:2px 0 18px">One line away from ★★★</div>
-          <div class="small">Lost</div>
-          <div style="font-size:16px;margin:4px 0 2px">言えなかった言葉が 胸の奥で眠ってる</div>
-          <div class="small">You've read it fine (★★). It's the sung part that lost you: 「胸の奥で」 is sung fast.</div>
-          <div class="btns" style="margin-top:14px"><div class="btn">▶ Loop this line ×3</div></div>
-          <div class="btns" style="margin-top:auto;margin-bottom:14px"><div class="btn">Done</div><div class="btn p">Retry next walk</div></div>
-        </div>
-      </div>
-      <figcaption><b>3.</b> Results. A line you read fine but lost by ear gets a listening drill, not a translation.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Feel</dt><dd>A Mario-style star chase. Clear progression with a ceiling you can reach.</dd>
-      <dt>Good</dt>
-      <dd class="plus">Separates reading gaps from listening gaps, and that split is your real problem</dd>
-      <dd class="plus">★★★ works with the phone in your pocket</dd>
-      <dd class="plus">Albums and artists as worlds make for natural, low-cost meta-progression</dd>
-      <dt>Bad</dt>
-      <dd class="minus">Still honor-system at ★★ and ★★★</dd>
-      <dd class="minus">Three star states per line make the model more complex than F</dd>
-    </dl>
-  </div>
-</section>
+    </section>
 
-<!-- ============================ H ============================ -->
-<section id="h">
-  <div class="head"><span class="tag">H</span><h2>Meaning Match</h2></div>
-  <div class="pitch">Option C again, at the line level. As a line is sung, pick which translation it is. Wrong answers are translations of other lines from the same song, so there's nothing extra to generate and they're plausible by default. It's an actual test, not a self-report.</div>
-  <div class="loop"><b>Sit:</b> rhythm mode, 3 choices per line, combo → <b>Walk:</b> lock screen shows 2 choices for the current line, tap when you feel like it</div>
-  <div class="row">
-    <figure>
-      <div class="phone">
-        <div class="status"><span>21:15</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="np"><div class="art"></div><div><div class="t">夜明けのバス</div><div class="a">Match · Sit</div></div><div class="r"><span style="color:var(--due);font-weight:700;font-size:15px">×5</span><br>1,800</div></div>
-          <div class="bar"><i style="width:30%"></i></div>
-          <div class="small" style="margin-top:22px">Now singing</div>
-          <div class="bar due" style="margin:6px 0 30px"><i style="width:45%"></i></div>
-          <div class="opt">I meant to get off at the next stop.</div>
-          <div class="opt">I was counting the lights of the receding town, one by one.</div>
-          <div class="opt">The words I couldn't say are sleeping deep in my chest.</div>
-          <div class="small">Lyrics hidden. Tap the eye to show the Japanese (halves the points).</div>
-        </div>
+    <!-- ============================ I ============================ -->
+    <section id="i">
+      <div class="head">
+        <span class="tag">I</span>
+        <h2>Liner Notes (your own translation)</h2>
       </div>
-      <figcaption><b>1.</b> Sit mode. Pick by ear before the line ends. Showing the lyrics costs points.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone lock">
-        <div class="status"><span></span><span>●●●</span></div>
-        <div class="scr" style="padding:0">
-          <div class="date">Saturday, October 3</div>
-          <div class="clock">8:34</div>
-          <div class="la">
-            <div style="display:flex;gap:10px;align-items:center"><div class="art sm"></div><div style="flex:1"><div style="font-size:12px;font-weight:600">夜明けのバス</div><div class="small">ミナミ</div></div><div class="small">×3</div></div>
-            <div class="small" style="margin:10px 0 6px">What's being sung?</div>
-            <div class="btns" style="flex-direction:column;gap:6px"><div class="btn" style="text-align:left;padding:9px 10px;font-weight:400">Counting the town's lights as they fade</div><div class="btn" style="text-align:left;padding:9px 10px;font-weight:400">Getting off at the next stop</div></div>
+      <div class="pitch">
+        The end product is your own translation of the song. In Sit mode you write it phrase by phrase: tap the phrases,
+        choose from gloss suggestions, or type. Then check it against the machine translation. The finished song plays
+        with your words under each line. Later, this is what you'd share.
+      </div>
+      <div class="loop">
+        <b>Sit:</b>
+        translate phrase by phrase → compare → <b>Walk:</b> listen with your translation as subtitles → song in your
+        collection
+      </div>
+      <div class="row">
+        <figure>
+          <div class="phone">
+            <div class="status"><span>21:30</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="small" style="padding:6px 0 14px">夜明けのバス · line 3 of 14 · ▶ replay</div>
+              <div>
+                <span class="chunk on">言えなかった</span><span class="chunk on">言葉が</span
+                ><span class="chunk">胸の奥で</span><span class="chunk">眠ってる</span>
+              </div>
+              <div class="hr"></div>
+              <div style="font-size:16px;line-height:1.5">
+                <span class="mine">The words I never got to say</span> <span class="m">|</span>
+              </div>
+              <div class="small" style="margin-top:16px">胸の奥で · suggestions</div>
+              <div style="margin-top:6px">
+                <span class="chunk" style="font-size:12px">deep in my chest</span
+                ><span class="chunk" style="font-size:12px">in the back of my heart</span
+                ><span class="chunk" style="font-size:12px">⌨ type</span>
+              </div>
+              <div class="btns" style="margin-top:auto;margin-bottom:14px">
+                <div class="btn">Skip line</div>
+                <div class="btn p">Next phrase</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <figcaption><b>2.</b> Walk mode on the lock screen. Two short choices. Ignoring it costs nothing.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone">
-        <div class="status"><span>21:19</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="padding:20px 0 6px" class="m">夜明けのバス · match</div>
-          <div style="display:flex;gap:22px;margin:4px 0 16px"><div><div class="big">12/14</div><div class="small">by ear</div></div><div><div class="big">×9</div><div class="small">max combo</div></div><div><div class="big">A</div><div class="small">best: B</div></div></div>
-          <div class="tiles" style="grid-template-columns:repeat(7,1fr)"><i class="c"></i><i class="c"></i><i class="q"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="q"></i><i class="c"></i><i class="c"></i><i class="c"></i></div>
-          <div class="list" style="margin-top:14px">
-            <div><span style="font-size:13px">言えなかった言葉が 胸の奥で眠ってる</span><span class="x" style="color:var(--acc)">missed</span></div>
-            <div><span style="font-size:13px">ガラス越しに 君が笑った気がした</span><span class="x" style="color:var(--acc)">missed</span></div>
+          <figcaption>
+            <b>1.</b>
+            Build your line phrase by phrase. Suggestions come from the gloss, and typing is optional.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="status"><span>21:32</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="small" style="padding:6px 0 14px">Compare · line 3</div>
+              <div style="font-size:17px">言えなかった言葉が 胸の奥で眠ってる</div>
+              <div class="small" style="margin-top:14px">Yours</div>
+              <div class="mine" style="font-size:14px">
+                The words I never got to say are still asleep in the back of my heart.
+              </div>
+              <div class="small" style="margin-top:12px">Apple Translation</div>
+              <div style="font-size:14px">Words I couldn't say are sleeping deep in my chest.</div>
+              <div class="small" style="margin-top:12px">ChatGPT check</div>
+              <div style="font-size:13px">
+                <span class="k">Matches.</span>
+                "Still" isn't in the Japanese, but 眠ってる (ongoing) supports it.
+              </div>
+              <div class="btns" style="margin-top:auto;margin-bottom:14px">
+                <div class="btn">Edit mine</div>
+                <div class="btn p">Keep</div>
+              </div>
+            </div>
           </div>
-          <div class="btns" style="margin-top:auto;margin-bottom:14px"><div class="btn">Decode 2 missed</div><div class="btn p">Next song</div></div>
-        </div>
-      </div>
-      <figcaption><b>3.</b> Results. Missed lines go straight to the Help Ladder.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Feel</dt><dd>Rhythm game, but testing meaning, which is what you want.</dd>
-      <dt>Good</dt>
-      <dd class="plus">Real test, real score; no honor system</dd>
-      <dd class="plus">Wrong answers come free from the same song</dd>
-      <dd class="plus">Works for both Sit (fast, rhythm) and Walk (lock screen)</dd>
-      <dt>Bad</dt>
-      <dd class="minus">Needs a translation for every line up front (Apple Translation could do this once per song)</dd>
-      <dd class="minus">Once you know a song's lines, matching gets easy from memory</dd>
-      <dd class="minus">Lock-screen buttons mean native Swift work (Live Activity)</dd>
-    </dl>
-  </div>
-</section>
-
-<!-- ============================ I ============================ -->
-<section id="i">
-  <div class="head"><span class="tag">I</span><h2>Liner Notes (your own translation)</h2></div>
-  <div class="pitch">The end product is your own translation of the song. In Sit mode you write it phrase by phrase: tap the phrases, choose from gloss suggestions, or type. Then check it against the machine translation. The finished song plays with your words under each line. Later, this is what you'd share.</div>
-  <div class="loop"><b>Sit:</b> translate phrase by phrase → compare → <b>Walk:</b> listen with your translation as subtitles → song in your collection</div>
-  <div class="row">
-    <figure>
-      <div class="phone">
-        <div class="status"><span>21:30</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="small" style="padding:6px 0 14px">夜明けのバス · line 3 of 14 · ▶ replay</div>
-          <div><span class="chunk on">言えなかった</span><span class="chunk on">言葉が</span><span class="chunk">胸の奥で</span><span class="chunk">眠ってる</span></div>
-          <div class="hr"></div>
-          <div style="font-size:16px;line-height:1.5"><span class="mine">The words I never got to say</span> <span class="m">|</span></div>
-          <div class="small" style="margin-top:16px">胸の奥で · suggestions</div>
-          <div style="margin-top:6px"><span class="chunk" style="font-size:12px">deep in my chest</span><span class="chunk" style="font-size:12px">in the back of my heart</span><span class="chunk" style="font-size:12px">⌨ type</span></div>
-          <div class="btns" style="margin-top:auto;margin-bottom:14px"><div class="btn">Skip line</div><div class="btn p">Next phrase</div></div>
-        </div>
-      </div>
-      <figcaption><b>1.</b> Build your line phrase by phrase. Suggestions come from the gloss, and typing is optional.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone">
-        <div class="status"><span>21:32</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="small" style="padding:6px 0 14px">Compare · line 3</div>
-          <div style="font-size:17px">言えなかった言葉が 胸の奥で眠ってる</div>
-          <div class="small" style="margin-top:14px">Yours</div>
-          <div class="mine" style="font-size:14px">The words I never got to say are still asleep in the back of my heart.</div>
-          <div class="small" style="margin-top:12px">Apple Translation</div>
-          <div style="font-size:14px">Words I couldn't say are sleeping deep in my chest.</div>
-          <div class="small" style="margin-top:12px">ChatGPT check</div>
-          <div style="font-size:13px"><span class="k">Matches.</span> "Still" isn't in the Japanese, but 眠ってる (ongoing) supports it.</div>
-          <div class="btns" style="margin-top:auto;margin-bottom:14px"><div class="btn">Edit mine</div><div class="btn p">Keep</div></div>
-        </div>
-      </div>
-      <figcaption><b>2.</b> Check yours against the machine. The ChatGPT check is optional.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone">
-        <div class="status"><span>8:40</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="np"><div class="art"></div><div><div class="t">夜明けのバス</div><div class="a">ミナミ · your notes</div></div><div class="r">14/14<br>written</div></div>
-          <div class="bar"><i style="width:30%"></i></div>
-          <div class="lyr" style="font-size:15px">
-            <p>窓に映る君の面影<br><span class="mine" style="font-size:12px">your face, a trace in the window</span></p>
-            <p class="cur">言えなかった言葉が 胸の奥で眠ってる<br><span class="mine" style="font-size:12px;font-weight:400">the words I never got to say are still asleep in the back of my heart</span></p>
-            <p class="next">遠ざかる街の灯りを ひとつずつ数えてた<br><span class="mine" style="font-size:12px">counting the town lights one by one as they fell away</span></p>
+          <figcaption><b>2.</b> Check yours against the machine. The ChatGPT check is optional.</figcaption>
+        </figure>
+        <figure>
+          <div class="phone">
+            <div class="status"><span>8:40</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="np">
+                <div class="art"></div>
+                <div>
+                  <div class="t">夜明けのバス</div>
+                  <div class="a">ミナミ · your notes</div>
+                </div>
+                <div class="r">14/14<br>written</div>
+              </div>
+              <div class="bar"><i style="width:30%"></i></div>
+              <div class="lyr" style="font-size:15px">
+                <p>
+                  窓に映る君の面影<br><span class="mine" style="font-size:12px">your face, a trace in the window</span>
+                </p>
+                <p class="cur">
+                  言えなかった言葉が 胸の奥で眠ってる<br>
+                  <span class="mine" style="font-size:12px;font-weight:400"
+                    >the words I never got to say are still asleep in the back of my heart</span
+                  >
+                </p>
+                <p class="next">
+                  遠ざかる街の灯りを ひとつずつ数えてた<br>
+                  <span class="mine" style="font-size:12px">counting the town lights one by one as they fell away</span>
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+          <figcaption><b>3.</b> Listening with your own subtitles.</figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Feel</dt>
+          <dd>Creative. Fansub-translator energy.</dd>
+          <dt>Good</dt>
+          <dd class="plus">Deepest understanding; a translation is the proof</dd>
+          <dd class="plus">Produces something worth sharing (phase 2 social, built in)</dd>
+          <dt>Bad</dt>
+          <dd class="minus">Slowest loop; Sit only</dd>
+          <dd class="minus">Not much of a game</dd>
+          <dd class="minus">Phrase suggestions need decent chunking</dd>
+        </dl>
       </div>
-      <figcaption><b>3.</b> Listening with your own subtitles.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Feel</dt><dd>Creative. Fansub-translator energy.</dd>
-      <dt>Good</dt>
-      <dd class="plus">Deepest understanding; a translation is the proof</dd>
-      <dd class="plus">Produces something worth sharing (phase 2 social, built in)</dd>
-      <dt>Bad</dt>
-      <dd class="minus">Slowest loop; Sit only</dd>
-      <dd class="minus">Not much of a game</dd>
-      <dd class="minus">Phrase suggestions need decent chunking</dd>
-    </dl>
-  </div>
-</section>
+    </section>
 
-<!-- ============================ pick ============================ -->
-<section id="pick">
-  <h2>How these could stack</h2>
-  <table>
-    <tr><th></th><th>F Fog</th><th>G Stars</th><th>H Match</th><th>I Notes</th></tr>
-    <tr><td>Walk mode</td><td class="y">✓ / ?</td><td class="y">"lost it"</td><td class="h">lock-screen quiz</td><td class="n">read only</td></tr>
-    <tr><td>Sit mode</td><td class="h">ladder</td><td class="h">ladder</td><td class="y">rhythm game</td><td class="y">translate</td></tr>
-    <tr><td>Honest signal</td><td class="n">self-report</td><td class="n">self-report</td><td class="y">tested</td><td class="y">tested</td></tr>
-    <tr><td>Meta-progression</td><td class="h">cleared songs</td><td class="y">stars, albums as worlds</td><td class="h">grades</td><td class="h">collection</td></tr>
-    <tr><td>Build cost</td><td class="y">low</td><td class="y">low to mid</td><td class="h">mid (+native)</td><td class="h">mid</td></tr>
-  </table>
-  <p style="margin-top:18px;max-width:860px">My pick: <b>G as the structure</b> (stars per song, albums as worlds) with <b>the Help Ladder as the ★ screen</b> in Sit mode, <b>F's two buttons as the Walk input</b> for ★★, and <b>H as the Sit-mode game</b> that tests ★★★ for real instead of on trust. I fits as phase 2 when social arrives.</p>
-</section>
-
-</body>
+    <!-- ============================ pick ============================ -->
+    <section id="pick">
+      <h2>How these could stack</h2>
+      <table>
+        <tr>
+          <th></th>
+          <th>F Fog</th>
+          <th>G Stars</th>
+          <th>H Match</th>
+          <th>I Notes</th>
+        </tr>
+        <tr>
+          <td>Walk mode</td>
+          <td class="y">✓ / ?</td>
+          <td class="y">"lost it"</td>
+          <td class="h">lock-screen quiz</td>
+          <td class="n">read only</td>
+        </tr>
+        <tr>
+          <td>Sit mode</td>
+          <td class="h">ladder</td>
+          <td class="h">ladder</td>
+          <td class="y">rhythm game</td>
+          <td class="y">translate</td>
+        </tr>
+        <tr>
+          <td>Honest signal</td>
+          <td class="n">self-report</td>
+          <td class="n">self-report</td>
+          <td class="y">tested</td>
+          <td class="y">tested</td>
+        </tr>
+        <tr>
+          <td>Meta-progression</td>
+          <td class="h">cleared songs</td>
+          <td class="y">stars, albums as worlds</td>
+          <td class="h">grades</td>
+          <td class="h">collection</td>
+        </tr>
+        <tr>
+          <td>Build cost</td>
+          <td class="y">low</td>
+          <td class="y">low to mid</td>
+          <td class="h">mid (+native)</td>
+          <td class="h">mid</td>
+        </tr>
+      </table>
+      <p style="margin-top:18px;max-width:860px">
+        My pick: <b>G as the structure</b> (stars per song, albums as worlds) with
+        <b>the Help Ladder as the ★ screen</b>
+        in Sit mode, <b>F's two buttons as the Walk input</b> for ★★, and
+        <b>H as the Sit-mode game</b>
+        that tests ★★★ for real instead of on trust. I fits as phase 2 when social arrives.
+      </p>
+    </section>
+  </body>
 </html>
