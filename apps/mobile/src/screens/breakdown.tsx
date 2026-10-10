@@ -14,9 +14,6 @@ import { Button, IconButton, Label, styles } from '@/components/ui';
 const tapped = '#6fb8ff';
 type Chunk = Breakdown['chunks'][number];
 
-/** A chunk with one step and no note is plain vocabulary for the word list; anything else gets a ladder. */
-const isWord = (chunk: Chunk) => chunk.steps.length === 1 && !chunk.note;
-
 /**
  * Where `next` stops repeating `previous`, so a step highlights only what it added. A form that shares nothing
  * with the previous step (する → した, ある → ない) is highlighted whole; the first step is never highlighted.
@@ -100,26 +97,9 @@ function ChunkSentence({
   );
 }
 
-/** One plain word: the word, its reading and its meaning on one row. */
-function WordRow({ chunk, on }: { chunk: Chunk; on: boolean }) {
-  const [word] = chunk.steps;
-  if (!word) return null;
-  return (
-    <View style={[styles.row, { alignItems: 'baseline', paddingVertical: 3 }]}>
-      <Label style={{ width: '30%', fontSize: 17, lineHeight: 23, color: on ? tapped : colors.text }}>
-        {word.japanese}
-      </Label>
-      <Label muted style={{ width: '28%', fontSize: 13, lineHeight: 18 }}>
-        {word.reading}
-      </Label>
-      <Label style={{ flex: 1, fontSize: 15, lineHeight: 21 }}>{word.english}</Label>
-    </View>
-  );
-}
-
 /**
- * A chunk with grammar: its reading once in the heading, then its build-up on a rail, then its note. A chunk with
- * one step keeps its meaning beside the heading instead of a one-row rail.
+ * One chunk: its reading once in the heading, then its build-up on a rail, then its note. A chunk with one step
+ * (a plain word) keeps its meaning beside the heading instead of a one-row rail.
  */
 function Ladder({ chunk, on }: { chunk: Chunk; on: boolean }) {
   const single = chunk.steps.length === 1;
@@ -178,8 +158,8 @@ function Ladder({ chunk, on }: { chunk: Chunk; on: boolean }) {
 
 /**
  * Drawer explaining one sentence of an analyzed song. Playback keeps going underneath. The sentence and its
- * translation stay pinned while the words and ladders scroll; tapping a chunk (or its row) lights it everywhere
- * and scrolls to its explanation.
+ * translation stay pinned while the chunks scroll; tapping a chunk (or its explanation) lights it everywhere and
+ * scrolls to its explanation. The first chunk starts selected so it is clear chunks can be tapped.
  */
 export default function BreakdownScreen() {
   const { songId, sentenceId } = useLocalSearchParams<{ songId: string; sentenceId: string }>();
@@ -189,7 +169,7 @@ export default function BreakdownScreen() {
   const router = useRouter();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const [selected, setSelected] = useState<number>();
+  const [selected, setSelected] = useState<number | undefined>(0);
   const scroll = useRef<ScrollView>(null);
   const offsets = useRef<Record<number, number>>({});
   // iOS does not clamp scrollTo, so keep the scrollable range to avoid scrolling past the end.
@@ -200,9 +180,6 @@ export default function BreakdownScreen() {
   }, [songId, sentenceId, state]);
 
   const chunks = state?.status === 'ready' ? state.breakdown.chunks : [];
-  const indexed = chunks.map((chunk, index) => ({ chunk, index }));
-  const words = indexed.filter(({ chunk }) => isWord(chunk));
-  const grammar = indexed.filter(({ chunk }) => !isWord(chunk));
   const select = (index: number) => {
     const next = index === selected ? undefined : index;
     setSelected(next);
@@ -211,7 +188,7 @@ export default function BreakdownScreen() {
     const end = Math.max(0, range.current.content - range.current.viewport);
     scroll.current?.scrollTo({ y: Math.min(end, Math.max(0, offset - 14)), animated: true });
   };
-  // Rows and ladders are direct children of the scroll content, so their layout y is their scroll offset.
+  // Explanations are direct children of the scroll content, so their layout y is their scroll offset.
   const item = (index: number, child: ReactNode, style?: ViewStyle) => (
     <Pressable
       key={index}
@@ -273,11 +250,7 @@ export default function BreakdownScreen() {
           }}
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: insets.bottom + 24 }}
         >
-          {words.map(({ chunk, index }) => item(index, <WordRow chunk={chunk} on={index === selected} />))}
-          {!!words.length && !!grammar.length && (
-            <View style={{ height: 1, backgroundColor: colors.track, marginTop: 11, marginBottom: 14 }} />
-          )}
-          {grammar.map(({ chunk, index }) =>
+          {chunks.map((chunk, index) =>
             item(index, <Ladder chunk={chunk} on={index === selected} />, { paddingBottom: 22 }),
           )}
           {state?.status === 'ready' ? null : state?.status === 'failed' ? (
