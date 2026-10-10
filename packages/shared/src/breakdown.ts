@@ -5,7 +5,7 @@ const step = z.strictObject({ japanese: text, reading: z.string(), english: text
 
 export const breakdownDraftSchema = z.strictObject({
   chunks: z.array(
-    z.strictObject({ text, reading: z.string(), english: z.string(), steps: z.array(step), note: z.string() }),
+    z.strictObject({ text, reading: z.string(), english: z.array(text), steps: z.array(step), note: z.string() }),
   ),
 });
 export const breakdownSchema = breakdownDraftSchema.extend({
@@ -39,8 +39,9 @@ export function validateBreakdown(draft: unknown, sentenceText: string, translat
       errors.push(`Chunk ${index} needs a reading for kanji`);
     if (!/^[\p{Script=Hiragana}]*$/u.test(chunk.reading))
       errors.push(`Chunk ${index} reading must be hiragana or empty`);
-    if (chunk.english && !translation.includes(chunk.english))
-      errors.push(`Chunk ${index} English must occur in the sentence translation`);
+    for (const piece of chunk.english)
+      if (!translation.includes(piece))
+        errors.push(`Chunk ${index} English ${JSON.stringify(piece)} must occur in the sentence translation`);
     chunk.steps.forEach((step, stepIndex) => {
       if (/[\p{Script=Han}々]/u.test(step.japanese) && !step.reading)
         errors.push(`Chunk ${index} step ${stepIndex} needs a reading for kanji`);

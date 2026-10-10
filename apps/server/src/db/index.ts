@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Breakdown, SongAnalysis } from '@kashi-koi/shared';
+import { type Breakdown, breakdownSchema, type SongAnalysis } from '@kashi-koi/shared';
 import Database from 'better-sqlite3';
 import { and, eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
@@ -32,12 +32,16 @@ export function openDatabase(dataDir = process.env.KASHI_DATA_DIR ?? './data') {
     getJob,
     getAnalysisSource: (fingerprint: string) =>
       db.select().from(analyses).where(eq(analyses.fingerprint, fingerprint)).get(),
-    getBreakdown: (fingerprint: string, start: number) =>
-      db
+    /** A row saved in an older breakdown format counts as missing, so it regenerates and gets overwritten. */
+    getBreakdown(fingerprint: string, start: number): Breakdown | undefined {
+      const json = db
         .select()
         .from(breakdowns)
         .where(and(eq(breakdowns.fingerprint, fingerprint), eq(breakdowns.start, start)))
-        .get()?.json,
+        .get()?.json;
+      const parsed = breakdownSchema.safeParse(json);
+      return parsed.success ? parsed.data : undefined;
+    },
     saveBreakdown(breakdown: Breakdown) {
       const values = {
         fingerprint: breakdown.fingerprint,

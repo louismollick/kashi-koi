@@ -5,6 +5,7 @@ import {
   breakdownStore,
   breakdownTarget,
   canExplain,
+  englishSpans,
   loadBreakdown,
   prefetchBreakdown,
 } from '../src/analysis/breakdowns';
@@ -29,7 +30,7 @@ const response = () => {
       {
         text: target.text,
         reading: 'かみのふねをかわにうかべた',
-        english: '',
+        english: [],
         steps: [{ japanese: '紙', reading: 'かみ', english: 'paper' }],
         note: '',
       },
@@ -301,4 +302,19 @@ test('replacement invalidates pending responses and reloads the same target once
   await stale;
   assert.equal(calls, 2);
   assert.deepEqual(breakdownStore.getState().states[key], { status: 'ready', breakdown: response() });
+});
+
+test('English spans assign repeated words to chunks in order and keep pieces apart', () => {
+  const chunk = (english: string[]) => ({ text: 'あ', reading: '', english, steps: [], note: '' });
+  assert.deepEqual(englishSpans('I love you and you love me', [chunk(['you']), chunk(['you'])]), [
+    { start: 7, end: 10, chunk: 0 },
+    { start: 15, end: 18, chunk: 1 },
+  ]);
+  assert.deepEqual(
+    englishSpans('Though it flits through, fine', [chunk(['Though', 'flits through']), chunk(['nope'])]),
+    [
+      { start: 0, end: 6, chunk: 0 },
+      { start: 10, end: 23, chunk: 0 },
+    ],
+  );
 });

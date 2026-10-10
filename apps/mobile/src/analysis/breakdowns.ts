@@ -112,6 +112,25 @@ export function prefetchBreakdown(songId: string | null | undefined, sentenceId:
   if (analysisSession().token) void loadBreakdown(songId, sentenceId);
 }
 
+/**
+ * Where each chunk's English pieces sit in the translation, in sentence order. Occurrences are assigned across all
+ * chunks so two chunks meaning the same word ("you") get its first and second occurrence. Overlaps keep the first.
+ */
+export function englishSpans(translation: string, chunks: Breakdown['chunks']) {
+  const spans: { start: number; end: number; chunk: number }[] = [];
+  chunks.forEach((chunk, index) => {
+    for (const piece of chunk.english) {
+      for (let start = translation.indexOf(piece); start >= 0; start = translation.indexOf(piece, start + 1)) {
+        const end = start + piece.length;
+        if (spans.some((span) => start < span.end && span.start < end)) continue;
+        spans.push({ start, end, chunk: index });
+        break;
+      }
+    }
+  });
+  return spans.sort((a, b) => a.start - b.start);
+}
+
 export const canExplain = (songId: string | null | undefined) =>
   !!getLyrics(songId ?? null).analysis && !!analysisServerUrl();
 

@@ -12,7 +12,7 @@ const outputFor = (input: BreakdownInput) => ({
     {
       text: input.lines.slice(input.start, input.end + 1).join(''),
       reading: 'あける',
-      english: '',
+      english: [],
       steps: [{ japanese: '開ける', reading: 'あける', english: 'to open' }],
       note: '',
     },
@@ -232,4 +232,21 @@ test('the breakdown queue allows two waiters, rejects overflow with 503 and stil
   assert.equal(calls, 4);
   assert.equal((await app.request(path('five'), post)).status, 200);
   assert.equal(calls, 5);
+});
+
+test('a cached breakdown in an older format reads as missing and regenerates', async (t) => {
+  const { store } = testStore(t);
+  store.enqueue(input);
+  store.complete(analysis, lines);
+  const analyzer: BreakdownAnalyzer = { model: 'breakdown-test', breakdown: async (request) => outputFor(request) };
+  const app = createApi(store, token, analyzer);
+  assert.equal((await app.request(path(), post)).status, 200);
+  const current = store.getBreakdown(key, 0);
+  assert.ok(current);
+  const old = { ...current, chunks: current.chunks.map((chunk) => ({ ...chunk, english: '' })) };
+  store.saveBreakdown(old as unknown as typeof current);
+  assert.equal(store.getBreakdown(key, 0), undefined);
+  assert.equal((await app.request(path())).status, 404);
+  assert.equal((await app.request(path(), post)).status, 200);
+  assert.deepEqual(store.getBreakdown(key, 0)?.chunks[0]?.english, []);
 });

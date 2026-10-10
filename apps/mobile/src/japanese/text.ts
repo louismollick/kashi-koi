@@ -16,7 +16,11 @@ export function alignReading(surface: string, reading?: string): Line['segments'
     const text = runs[index]!;
     if (!kanji.test(text)) {
       const kana = hiragana(text);
-      const rest = reading!.startsWith(kana, offset) ? match(index + 1, offset + kana.length) : null;
+      // A long vowel mark is often spelled out in hiragana readings (コーヒー → こおひい), so ー matches any kana.
+      const same = Array.from(kana).every((character, at) =>
+        character === 'ー' ? !!reading![offset + at] : reading![offset + at] === character,
+      );
+      const rest = same ? match(index + 1, offset + kana.length) : null;
       return rest ? [{ text }, ...rest] : null;
     }
     for (let end = offset + 1; end <= reading!.length; end++) {

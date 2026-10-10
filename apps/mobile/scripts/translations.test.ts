@@ -73,6 +73,10 @@ test('alignReading trims okurigana and matches internal kana', () => {
   ]);
   assert.deepEqual(alignReading('食べ', 'たべ'), [{ text: '食', reading: 'た' }, { text: 'べ' }]);
   assert.deepEqual(alignReading('かな', 'かな'), [{ text: 'かな' }]);
+  assert.deepEqual(alignReading('冷めたコーヒーを', 'さめたこおひいを'), [
+    { text: '冷', reading: 'さ' },
+    { text: 'めたコーヒーを' },
+  ]);
   assert.deepEqual(alignReading('食べ', 'しょく'), [{ text: '食べ', reading: 'しょく' }]);
   assert.deepEqual(alignReading('朝'), [{ text: '朝' }]);
 });

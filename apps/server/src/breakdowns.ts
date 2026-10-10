@@ -59,7 +59,7 @@ export function createBreakdownGenerator(store: Store, analyzer: BreakdownAnalyz
         store.saveBreakdown(breakdown);
         return breakdown;
       }
-      throw new Error('Breakdown validation failed');
+      throw new Error(`Breakdown validation failed: ${feedback?.join('; ')}`);
     } finally {
       const next = waiting.shift();
       if (next) next();

@@ -106,14 +106,14 @@ const breakdown = {
     {
       text: '窓を',
       reading: 'まどを',
-      english: 'the window',
+      english: ['the window'],
       steps: [{ japanese: '窓', reading: 'まど', english: 'window' }],
       note: 'The object.',
     },
     {
       text: '開けた',
       reading: 'あけた',
-      english: 'opened',
+      english: ['opened'],
       steps: [
         { japanese: '開ける', reading: 'あける', english: 'to open' },
         { japanese: '開けた', reading: 'あけた', english: 'opened' },
@@ -137,7 +137,7 @@ test('breakdown schema is strict and coverage compares only Japanese characters'
   assert.equal(breakdownDraftSchema.safeParse({ ...breakdown, extra: true }).success, false);
   assert.notDeepEqual(
     validateBreakdown(
-      { chunks: [{ ...breakdown.chunks[0], text: '窓', reading: 'まど', english: '' }] },
+      { chunks: [{ ...breakdown.chunks[0], text: '窓', reading: 'まど', english: [] }] },
       '窓ー々',
       translation,
     ),
@@ -152,8 +152,8 @@ test('breakdown validation checks coverage, step counts, chunk readings and Engl
     breakdown.chunks.slice(1),
     [{ ...breakdown.chunks[0], steps: [] }, breakdown.chunks[1]],
     [{ ...breakdown.chunks[0], steps: Array(5).fill(breakdown.chunks[0]?.steps[0]) }, breakdown.chunks[1]],
-    [{ ...breakdown.chunks[0], english: 'a window' }, breakdown.chunks[1]],
-    [{ ...breakdown.chunks[0], english: 'Opened' }, breakdown.chunks[1]],
+    [{ ...breakdown.chunks[0], english: ['a window'] }, breakdown.chunks[1]],
+    [{ ...breakdown.chunks[0], english: ['Opened'] }, breakdown.chunks[1]],
     [{ ...breakdown.chunks[0], reading: '' }, breakdown.chunks[1]],
   ])
     assert.notDeepEqual(validateBreakdown({ chunks }, '窓を開けた', translation), []);
@@ -165,7 +165,7 @@ test('breakdown validation checks coverage, step counts, chunk readings and Engl
             {
               text: '窓',
               reading,
-              english: '',
+              english: [],
               steps: [{ japanese: '窓', english: 'window', reading: 'まど' }],
               note: '',
             },
@@ -183,7 +183,7 @@ test('breakdown validation checks coverage, step counts, chunk readings and Engl
             {
               text: '窓',
               reading: 'まど',
-              english: '',
+              english: [],
               steps: [{ japanese: '窓', english: 'window', reading }],
               note: '',
             },
@@ -199,7 +199,7 @@ test('breakdown validation checks coverage, step counts, chunk readings and Engl
     validateBreakdown(
       {
         chunks: [
-          { text: 'あ', reading: '', english: '', steps: [{ japanese: 'あ', reading: '', english: 'ah' }], note: '' },
+          { text: 'あ', reading: '', english: [], steps: [{ japanese: 'あ', reading: '', english: 'ah' }], note: '' },
         ],
       },
       'あ',
@@ -400,7 +400,7 @@ test('breakdown chunks and steps with kanji or the repetition mark require readi
       validateBreakdown(
         {
           chunks: [
-            { text: japanese, reading: '', english: '', steps: [{ japanese, reading: '', english: 'test' }], note: '' },
+            { text: japanese, reading: '', english: [], steps: [{ japanese, reading: '', english: 'test' }], note: '' },
           ],
         },
         japanese,
@@ -413,7 +413,7 @@ test('breakdown chunks and steps with kanji or the repetition mark require readi
 test('Japanese coverage keeps dakuten while accepting NFC-equivalent source and chunk text', () => {
   const chunk = (text: string) => ({
     chunks: [
-      { text, reading: '', english: '', steps: [{ japanese: 'が', reading: '', english: 'subject' }], note: '' },
+      { text, reading: '', english: [], steps: [{ japanese: 'が', reading: '', english: 'subject' }], note: '' },
     ],
   });
   assert.deepEqual(validateBreakdown(chunk('が'), 'か\u3099', 'subject'), []);
@@ -458,7 +458,7 @@ test('English lyric checks match whole phrases rather than substrings', () => {
 
 test('Japanese coverage retains half-width dakuten and handakuten through NFKC', () => {
   const chunk = (text: string) => ({
-    chunks: [{ text, reading: '', english: '', steps: [{ japanese: text, reading: '', english: 'test' }], note: '' }],
+    chunks: [{ text, reading: '', english: [], steps: [{ japanese: text, reading: '', english: 'test' }], note: '' }],
   });
   for (const [source, fullWidth, unvoiced] of [
     ['ｶﾞ', 'ガ', 'ｶ'],

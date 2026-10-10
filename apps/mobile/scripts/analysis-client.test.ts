@@ -216,7 +216,7 @@ const breakdown = {
     {
       text: lines.slice(0, 2).join(''),
       reading: 'まど',
-      english: '',
+      english: [],
       steps: [{ japanese: '窓', reading: 'まど', english: 'window' }],
       note: '',
     },
