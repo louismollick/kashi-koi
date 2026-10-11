@@ -21,7 +21,8 @@ async function setup(t: TestContext) {
   const sources: ({ uri?: string } | null)[] = [],
     artworks: (string | undefined)[] = [],
     played: string[] = [],
-    network: string[] = [];
+    network: string[] = [],
+    plays: number[] = [];
   type Status = {
     playing: boolean;
     currentTime: number;
@@ -29,10 +30,13 @@ async function setup(t: TestContext) {
     isLoaded: boolean;
     didJustFinish: boolean;
     isBuffering: boolean;
+    error?: string;
   };
   let listener: (status: Status) => void = () => {};
   const player = {
-    play() {},
+    play() {
+      plays.push(1);
+    },
     pause() {},
     seekTo: async () => {},
     replace: (source: { uri?: string } | null) => {
@@ -101,7 +105,24 @@ async function setup(t: TestContext) {
       didJustFinish: false,
       isBuffering: false,
     });
-  return { sources, artworks, played, network, status };
+  return {
+    sources,
+    artworks,
+    played,
+    network,
+    plays,
+    status,
+    fail: () =>
+      listener({
+        playing: false,
+        currentTime: 0,
+        duration: 238,
+        isLoaded: false,
+        didJustFinish: false,
+        isBuffering: false,
+        error: 'Native playback failed',
+      }),
+  };
 }
 function downloaded() {
   downloadStore.setState({
@@ -151,4 +172,40 @@ test('switching offline reloads a song downloaded since playback began and prese
   assert.equal(appStore.getState().positionMs, 30000);
   assert.equal(appStore.getState().playbackError, null);
   assert.equal(network.length, requests);
+});
+
+test('ancillary error messages do not block resuming a loaded song', async (t) => {
+  downloaded();
+  const { plays, status } = await setup(t);
+  appStore.getState().startSong('dawn');
+  status(0);
+  await Promise.resolve();
+  for (const playbackError of [
+    'Could not save Recently played',
+    'Could not scrobble this song',
+    'Could not announce this song to the server',
+  ]) {
+    appStore.getState().setPlaying(false);
+    appStore.setState({ playbackError });
+    const before = plays.length;
+    appStore.getState().setPlaying(true);
+    assert.equal(plays.length, before + 1, playbackError);
+  }
+});
+
+test('native playback failure blocks resume until another song loads', async (t) => {
+  downloaded();
+  const { plays, status, fail } = await setup(t);
+  appStore.getState().startSong('dawn');
+  status(0);
+  await Promise.resolve();
+  fail();
+  appStore.setState({ playbackError: null });
+  const before = plays.length;
+  appStore.getState().setPlaying(true);
+  assert.equal(plays.length, before);
+  appStore.getState().startSong('glass');
+  status(0);
+  await Promise.resolve();
+  assert.equal(plays.length, before + 1);
 });

@@ -1,3 +1,5 @@
+import type { SongAnalysis } from '@kashi-koi/shared/analysis';
+import type { DownloadMedia } from './validation';
 import { fetchAnalysis } from '@/analysis/client';
 import { analysisSession } from '@/analysis/fetcher';
 import { cacheSongBreakdowns } from '@/analysis/breakdowns';
@@ -10,7 +12,7 @@ import { mediaUrl } from '@/navidrome/subsonic';
 import type { Song } from '@/types/domain';
 import { assetName, audioExtension } from './names';
 import type { DownloadArt } from './store';
-import { downloadStore, type DownloadEntry, type DownloadTarget } from './store';
+import { downloadStore, type DownloadEntries, type DownloadEntry, type DownloadTarget } from './store';
 import { eligibleSongs, targetSongs } from './targets';
 
 /** Files and the iOS task are native; `downloads/native.ts` provides them at boot. */
@@ -20,32 +22,33 @@ const unconfigured = async (): Promise<never> => {
 
 const defaults = {
   prepare: unconfigured as () => Promise<{ root: string; art: DownloadArt }>,
-  download: unconfigured as (url: string, uri: string, signal: AbortSignal) => Promise<number>,
+  download: unconfigured as (
+    url: string,
+    uri: string,
+    signal: AbortSignal,
+    kind: DownloadMedia,
+    onProgress?: (fraction: number) => void,
+  ) => Promise<number>,
   move: unconfigured as (from: string, to: string) => Promise<void>,
   remove: unconfigured as (uri: string) => Promise<void>,
   exists: unconfigured as (uri: string) => Promise<boolean>,
   clearFiles: unconfigured as () => Promise<void>,
-  load: async () => (await import('@/navidrome/db')).loadDownloads(),
-  save: async (id: string, entry: DownloadEntry) => (await import('@/navidrome/db')).saveDownload(id, entry),
-  delete: async (id: string) => (await import('@/navidrome/db')).deleteDownload(id),
-  clear: async () => (await import('@/navidrome/db')).clearDownloads(),
+  load: unconfigured as () => Promise<DownloadEntries>,
+  save: unconfigured as (id: string, entry: DownloadEntry) => Promise<void>,
+  saveMany: unconfigured as (entries: DownloadEntries) => Promise<void>,
+  saveAnalysis: unconfigured as (analysis: SongAnalysis) => Promise<void>,
+  delete: unconfigured as (id: string) => Promise<void>,
+  clear: unconfigured as () => Promise<void>,
   prepareText: async (song: Song, valid: () => boolean, signal: AbortSignal) => {
     const session = analysisSession(),
       lyrics = libraryStore.getState().lyrics[song.id];
     if (valid() && session.base && lyrics && !libraryStore.getState().analyses[lyrics.fingerprint]) {
-      try {
-        const result = await fetchAnalysis(session.base, lyrics.fingerprint, session.fetch, signal);
-        if (
-          result.status === 200 &&
-          result.analysis.lines.length === lyrics.timeline.length &&
-          valid() &&
-          session.valid()
-        ) {
-          await (await import('@/navidrome/db')).saveAnalysis(result.analysis);
-          if (valid() && session.valid()) libraryStore.getState().setAnalysis(result.analysis);
-        }
-      } catch {
-        /* Cached lyrics and on-device translations remain usable. */
+      const result = await fetchAnalysis(session.base, lyrics.fingerprint, session.fetch, signal);
+      if (result.status === 200 && valid() && session.valid()) {
+        if (result.analysis.lines.length !== lyrics.timeline.length)
+          throw new Error('Song analysis length does not match');
+        await runtime.saveAnalysis(result.analysis);
+        if (valid() && session.valid()) libraryStore.getState().setAnalysis(result.analysis);
       }
     }
     if (!valid()) return;
@@ -112,7 +115,7 @@ async function cover(id: string, signal: AbortSignal, valid: () => boolean) {
     temp = `${destination}.part`;
   const work = (async () => {
     try {
-      const bytes = await runtime.download(mediaUrl(session, 'getCoverArt', id, 600), temp, signal);
+      const bytes = await runtime.download(mediaUrl(session, 'getCoverArt', id, 600), temp, signal, 'image');
       if (!valid()) return;
       await runtime.move(temp, destination);
       if (valid()) downloadStore.setState(({ art }) => ({ art: { ...art, [id]: { fileName, bytes } } }));
@@ -143,6 +146,18 @@ function start() {
     version === generation && !appStore.getState().offlineMode && session === sessionStore.getState().session;
   if (!downloadStore.getState().progress) downloadStore.setState({ progress: { completed: 0, total: pending() } });
   let failures = false;
+  const stages = new Map<string, number>();
+  /** Native progress includes byte and cache stages; the UI still counts finished songs. */
+  const report = (id: string, fraction: number) => {
+    const stage = Math.floor(fraction * 100) / 100;
+    if (stage <= (stages.get(id) ?? 0)) return;
+    stages.set(id, stage);
+    const progress = downloadStore.getState().progress;
+    if (valid() && background && progress)
+      void runtime
+        .progress(progress.completed + [...stages.values()].reduce((sum, value) => sum + value, 0), progress.total)
+        .catch(() => {});
+  };
   running = (async () => {
     await prepare();
     const results = await Promise.allSettled(
@@ -169,12 +184,17 @@ function start() {
             await runtime.save(id, downloading);
             if (!song || !hasJapaneseLyrics(id)) throw new Error('Song is no longer eligible');
             if (!valid()) break;
-            const bytes = await runtime.download(mediaUrl(session!, 'stream', id), temp, signal);
+            const bytes = await runtime.download(mediaUrl(session!, 'stream', id), temp, signal, 'audio', (fraction) =>
+              report(id, Math.max(0, Math.min(fraction, 1)) * 0.7),
+            );
             if (!valid()) break;
+            report(id, 0.7);
             const coverIds = new Set([libraryStore.getState().byAlbum[song.albumId]?.coverArt, song.coverArt]);
             for (const coverId of coverIds) if (coverId && valid()) await cover(coverId, signal, valid);
+            report(id, 0.8);
             if (valid()) await runtime.prepareText(song, valid, signal);
             if (!valid()) break;
+            report(id, 0.9);
             await runtime.move(temp, destination);
             renamed = true;
             if (!valid()) break;
@@ -196,11 +216,15 @@ function start() {
             if (renamed && downloadStore.getState().entries[id]?.status !== 'done') await runtime.remove(destination);
           }
           if (!valid()) break;
+          stages.delete(id);
           const progress = downloadStore.getState().progress;
           if (progress) {
             const completed = progress.completed + 1;
             downloadStore.setState({ progress: { ...progress, completed } });
-            if (background) await runtime.progress(completed, progress.total).catch(() => {});
+            if (background)
+              await runtime
+                .progress(completed + [...stages.values()].reduce((sum, value) => sum + value, 0), progress.total)
+                .catch(() => {});
           }
         }
       }),
@@ -247,15 +271,23 @@ async function queueSongs(candidates: Song[]): Promise<number> {
   const version = generation;
   queueing = true;
   try {
-    setBackground(await runtime.begin(total, downloadStore.getState().progress?.completed ?? 0).catch(() => false));
+    const granted = await runtime.begin(total, downloadStore.getState().progress?.completed ?? 0).catch(() => false);
+    setBackground(background || granted);
     if (appStore.getState().offlineMode || !sessionStore.getState().session) {
       if (background) await runtime.end(false).catch(() => {});
       setBackground(false);
       return 0;
     }
-    for (const song of songs) {
+    if (songs.length) {
       const now = Date.now();
-      await publish(song.id, { status: 'queued', createdAt: entries[song.id]?.createdAt ?? now, updatedAt: now });
+      const queued: DownloadEntries = Object.fromEntries(
+        songs.map((song) => [
+          song.id,
+          { status: 'queued', createdAt: entries[song.id]?.createdAt ?? now, updatedAt: now },
+        ]),
+      );
+      await runtime.saveMany(queued);
+      downloadStore.setState(({ entries }) => ({ entries: { ...entries, ...queued } }));
     }
     const progress = downloadStore.getState().progress;
     if (progress) downloadStore.setState({ progress: { ...progress, total: progress.total + songs.length } });

@@ -2,6 +2,15 @@ import { AppState } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
 import Downloads from '../../modules/kashi-downloads';
 import type { DownloadArt } from './store';
+import { validateMediaHeader, type DownloadMedia } from './validation';
+import {
+  loadDownloads,
+  saveDownload,
+  saveDownloads,
+  deleteDownload,
+  clearDownloads,
+  saveAnalysis,
+} from '@/navidrome/db';
 
 // Native-only: the root layout injects these with setDownloadRuntime, so the queue stays importable in Node tests.
 export async function prepareFiles() {
@@ -22,10 +31,28 @@ export async function prepareFiles() {
   for (const file of audio.list()) if (file instanceof File && file.name.endsWith('.part')) file.delete();
   return { root: root.uri.replace(/\/$/, ''), art: artwork };
 }
-export async function downloadFile(url: string, uri: string, signal: AbortSignal) {
-  const file = await File.downloadFileAsync(url, new File(uri), { idempotent: true, signal });
+export async function downloadFile(
+  url: string,
+  uri: string,
+  signal: AbortSignal,
+  kind: DownloadMedia,
+  onProgress?: (fraction: number) => void,
+) {
+  const file = await File.downloadFileAsync(url, new File(uri), {
+    idempotent: true,
+    signal,
+    onProgress: ({ bytesWritten, totalBytes }) => {
+      if (totalBytes > 0) onProgress?.(Math.min(bytesWritten / totalBytes, 1));
+    },
+  });
   const bytes = file.size ?? 0;
   if (!bytes) throw new Error('Empty download');
+  const handle = file.open();
+  try {
+    validateMediaHeader(handle.readBytes(Math.min(bytes, 512)), kind);
+  } finally {
+    handle.close();
+  }
   return bytes;
 }
 export async function moveFile(from: string, to: string) {
@@ -46,10 +73,10 @@ export async function clearFiles() {
 /** Start or extend the iOS continued-processing task; iOS only grants it from the foreground. */
 export async function beginTask(total: number, completed = 0) {
   if (AppState.currentState !== 'active') return false;
-  return Downloads.begin('Downloading songs', `${completed} of ${total}`, total);
+  return Downloads.begin('Downloading songs', `${completed} of ${total}`, total * 100);
 }
 export async function taskProgress(completed: number, total: number) {
-  Downloads.setProgress(completed, total, `${completed} of ${total}`);
+  Downloads.setProgress(Math.floor(completed * 100), total * 100, `${Math.floor(completed)} of ${total}`);
 }
 export async function endTask(success: boolean) {
   Downloads.end(success);
@@ -62,6 +89,12 @@ export async function observeTask(onExpired: () => void, onActive: (active: bool
 }
 
 export const nativeDownloadRuntime = {
+  load: loadDownloads,
+  save: saveDownload,
+  saveMany: saveDownloads,
+  saveAnalysis,
+  delete: deleteDownload,
+  clear: clearDownloads,
   prepare: prepareFiles,
   download: downloadFile,
   move: moveFile,

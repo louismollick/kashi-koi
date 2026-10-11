@@ -23,6 +23,8 @@ import {
 import { downloadStore, isDownloaded, localAudioUri, localArtUri, type DownloadEntries } from '../src/downloads/store';
 import { eligibleSongs } from '../src/downloads/targets';
 import { downloadSummary } from '../src/downloads/selectors';
+import { validateMediaHeader, type DownloadMedia } from '../src/downloads/validation';
+import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { assetName, audioExtension } from '../src/downloads/names';
 import { appStore, resetAppState, setTransport, hydrateAppState } from '../src/store/appStore';
 import { libraryStore, readyReviewLines, hasTranslations } from '../src/store/libraryStore';
@@ -153,13 +155,17 @@ test('failed partial audio never becomes local and a retry completes it', async 
 });
 
 /** Reuse this test's in-memory disk and database while replacing a transfer behavior. */
-function testRuntime() {
+function testRuntime(headers: Partial<Record<DownloadMedia, Uint8Array>> = {}) {
   return {
     prepare: async () => ({ root, art: {} }),
     load: async () => structuredClone(rows),
     save: async (id: string, value: DownloadEntries[string]) => {
       rows[id] = structuredClone(value);
     },
+    saveMany: async (entries: DownloadEntries) => {
+      Object.assign(rows, structuredClone(entries));
+    },
+    saveAnalysis: async () => {},
     delete: async (id: string) => {
       delete rows[id];
     },
@@ -173,9 +179,18 @@ function testRuntime() {
     clearFiles: async () => {
       files.clear();
     },
-    download: async (url: string, uri: string, _signal: AbortSignal) => {
+    download: async (
+      url: string,
+      uri: string,
+      _signal: AbortSignal,
+      kind: DownloadMedia,
+      onProgress?: (fraction: number) => void,
+    ) => {
       transfers.push(url);
       files.set(uri, 100);
+      onProgress?.(0.5);
+      onProgress?.(1);
+      validateMediaHeader(headers[kind] ?? new Uint8Array([0xff, kind === 'audio' ? 0xfb : 0xd8, 0xff]), kind);
       return 100;
     },
     move: async (from: string, to: string) => {
@@ -559,4 +574,255 @@ test('cancellation aborts the real analysis cache GET and releases persisted dow
   assert.equal(rows.dawn?.status, 'queued');
   assert.equal(isDownloaded('dawn'), false);
   assert.ok([...files.keys()].every((file) => !file.endsWith('.part')));
+});
+
+test('HTTP 200 error documents and invalid artwork fail without retaining partial audio', async () => {
+  for (const [kind, text] of [
+    ['audio', '  {"subsonic-response":{"status":"failed"}}'],
+    ['audio', '\n<subsonic-response status="failed"/>'],
+    ['image', ' {"subsonic-response":{"status":"failed"}}'],
+    ['image', '<subsonic-response status="failed"/>'],
+  ] as const) {
+    await deleteAllDownloads();
+    libraryStore
+      .getState()
+      .setLibrary({ songs: [{ ...songs[0]!, coverArt: 'cover' }], albums: [], artists, lyrics: songLyrics });
+    setDownloadRuntime(testRuntime({ [kind]: new TextEncoder().encode(text) }));
+    await queueDownloads({ kind: 'song', id: 'dawn' });
+    await waitForDownloads();
+    assert.equal(rows.dawn?.status, 'failed');
+    assert.match(rows.dawn?.error ?? '', /not audio|not an image/);
+    assert.equal(files.size, 0);
+    assert.equal(localAudioUri('dawn'), undefined);
+    assert.equal(localArtUri('cover'), undefined);
+  }
+  setDownloadRuntime(testRuntime());
+  await retryFailedDownloads();
+  await waitForDownloads();
+  assert.equal(rows.dawn?.status, 'done');
+});
+
+test('artwork accepts JPEG, PNG, WebP and both GIF headers; audio rejects empty and BOM error documents', () => {
+  for (const bytes of [
+    [0xff, 0xd8, 0xff],
+    [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+    [...new TextEncoder().encode('RIFF'), 0, 0, 0, 0, ...new TextEncoder().encode('WEBP')],
+    [...new TextEncoder().encode('GIF87a')],
+    [...new TextEncoder().encode('GIF89a')],
+  ])
+    assert.doesNotThrow(() => validateMediaHeader(new Uint8Array(bytes), 'image'));
+  assert.throws(() => validateMediaHeader(new Uint8Array(), 'audio'), /Empty/);
+  assert.throws(() => validateMediaHeader(new TextEncoder().encode('\uFEFF \n{}'), 'audio'), /not audio/);
+  assert.doesNotThrow(() => validateMediaHeader(new TextEncoder().encode('fLaC'), 'audio'));
+});
+
+test('a later refused background begin retains the running grant through drain', async () => {
+  const transfer = gate();
+  let calls = 0;
+  setDownloadRuntime({
+    ...testRuntime(),
+    begin: async () => ++calls === 1,
+    download: async (_url, uri) => {
+      await transfer.promise;
+      files.set(uri, 100);
+      return 100;
+    },
+  });
+  await queueDownloads({ kind: 'song', id: 'dawn' });
+  assert.equal(await queueDownloads({ kind: 'song', id: 'glass' }), 1);
+  assert.deepEqual(ends, []);
+  transfer.resolve();
+  await waitForDownloads();
+  assert.equal(rows.dawn?.status, 'done');
+  assert.equal(rows.glass?.status, 'done');
+  assert.deepEqual(ends, [true]);
+});
+
+function dawnAnalysis(): SongAnalysis {
+  const lyrics = libraryStore.getState().lyrics.dawn!;
+  return {
+    schemaVersion: 3,
+    fingerprint: lyrics.fingerprint,
+    model: 'test',
+    createdAt: '2026-10-11T00:00:00Z',
+    title: 'Dawn',
+    about: 'A bus ride.',
+    lines: lyrics.timeline.map(() => 'A bus ride'),
+    sentences: [{ start: 0, end: lyrics.timeline.length - 1, translation: 'A bus ride', quiz: null }],
+  };
+}
+
+test('analysis GET HTTP and network failures remain retryable; 404 is allowed', async () => {
+  appStore.setState({ analysisServerUrl: 'https://analysis.test' });
+  const { prepareText: _prepareText, ...adapters } = testRuntime();
+  setDownloadRuntime(adapters);
+  for (const fetcher of [
+    async () => new Response(null, { status: 503 }),
+    async () => {
+      throw new Error('Network failed');
+    },
+  ]) {
+    setAnalysisRuntime({ fetch: fetcher });
+    await queueDownloads({ kind: 'song', id: 'dawn' });
+    await waitForDownloads();
+    assert.equal(rows.dawn?.status, 'failed');
+    assert.equal(files.size, 0);
+  }
+  setAnalysisRuntime({ fetch: async () => new Response(null, { status: 404 }) });
+  await retryFailedDownloads();
+  await waitForDownloads();
+  assert.equal(rows.dawn?.status, 'done');
+});
+
+test('analysis persistence failures fail the download and retry saves before marking done', async () => {
+  appStore.setState({ analysisServerUrl: 'https://analysis.test' });
+  const analysis = dawnAnalysis();
+  setAnalysisRuntime({ fetch: async () => Response.json(analysis) });
+  const { prepareText: _prepareText, ...adapters } = testRuntime();
+  setDownloadRuntime({
+    ...adapters,
+    saveAnalysis: async () => {
+      throw new Error('Disk full');
+    },
+  });
+  await queueDownloads({ kind: 'song', id: 'dawn' });
+  await waitForDownloads();
+  assert.equal(rows.dawn?.status, 'failed');
+  assert.equal(rows.dawn?.error, 'Disk full');
+  assert.equal(libraryStore.getState().analyses[analysis.fingerprint], undefined);
+  setDownloadRuntime(adapters);
+  setAnalysisRuntime({
+    fetch: async (url) =>
+      String(url).includes('/breakdowns/') ? new Response(null, { status: 404 }) : Response.json(analysis),
+  });
+  await retryFailedDownloads();
+  await waitForDownloads();
+  assert.equal(rows.dawn?.status, 'done');
+  assert.ok(libraryStore.getState().analyses[analysis.fingerprint]);
+});
+
+test('breakdown HTTP, network, read and save failures fail downloads; missing explanations allow retry', async () => {
+  appStore.setState({ analysisServerUrl: 'https://analysis.test' });
+  const analysis = dawnAnalysis();
+  libraryStore.getState().setAnalysis(analysis);
+  const { prepareText: _prepareText, ...adapters } = testRuntime();
+  setDownloadRuntime(adapters);
+  for (const failure of ['http', 'network', 'read', 'save']) {
+    let saveAttempts = 0;
+    setBreakdownRuntime({
+      read: async () => {
+        if (failure === 'read') throw new Error('Read failed');
+        return undefined;
+      },
+      save: async () => {
+        saveAttempts++;
+        if (failure === 'save') throw new Error('Save failed');
+      },
+      remove: async () => {},
+    });
+    setAnalysisRuntime({
+      fetch: async () => {
+        if (failure === 'network') throw new Error('Network failed');
+        if (failure !== 'save') return new Response(null, { status: 503 });
+        const lyrics = libraryStore.getState().lyrics.dawn!;
+        const text = lyrics.timeline
+          .map(({ lineId }) =>
+            lyrics.lines
+              .find((line) => line.id === lineId)!
+              .segments.map(({ text }) => text)
+              .join(''),
+          )
+          .join('\n');
+        return Response.json({
+          fingerprint: analysis.fingerprint,
+          start: 0,
+          model: 'test',
+          createdAt: analysis.createdAt,
+          chunks: [
+            {
+              text,
+              reading: 'よあけ',
+              role: 'topic',
+              english: [],
+              steps: [{ japanese: 'あ', reading: '', english: 'a' }],
+              note: '',
+            },
+          ],
+        });
+      },
+    });
+    await queueDownloads({ kind: 'song', id: 'dawn' });
+    await waitForDownloads();
+    assert.equal(rows.dawn?.status, 'failed', failure);
+    assert.equal(files.size, 0);
+    assert.equal(saveAttempts, failure === 'save' ? 1 : 0, failure);
+  }
+  setBreakdownRuntime({ read: async () => undefined, save: async () => {}, remove: async () => {} });
+  setAnalysisRuntime({ fetch: async () => new Response(null, { status: 404 }) });
+  await retryFailedDownloads();
+  await waitForDownloads();
+  assert.equal(rows.dawn?.status, 'done');
+});
+
+test('bulk enqueue persists once and publishes all queued rows together; summary indexes are shared', async () => {
+  const writes: DownloadEntries[] = [],
+    published: DownloadEntries[] = [],
+    transfer = gate();
+  setDownloadRuntime({
+    ...testRuntime(),
+    saveMany: async (entries) => {
+      writes.push(entries);
+      Object.assign(rows, structuredClone(entries));
+    },
+    download: async (_url, uri) => {
+      await transfer.promise;
+      files.set(uri, 100);
+      return 100;
+    },
+  });
+  const unsubscribe = downloadStore.subscribe((state, previous) => {
+    if (state.entries !== previous.entries) published.push(state.entries);
+  });
+  try {
+    assert.equal(await queueDownloads({ kind: 'library' }), 6);
+    assert.equal(writes.length, 1);
+    assert.equal(Object.keys(writes[0]!).length, 6);
+    assert.equal(Object.values(published[0]!).filter(({ status }) => status === 'queued').length, 6);
+    const target = { kind: 'album', id: 'dawn' } as const;
+    const summary = downloadSummary(target);
+    for (const song of songs) downloadSummary({ kind: 'song', id: song.id });
+    assert.equal(downloadSummary(target), summary);
+    downloadStore.setState({ progress: { completed: 0, total: 6 } });
+    assert.equal(downloadSummary(target), summary);
+    downloadStore.setState(({ entries }) => ({ entries: { ...entries } }));
+    assert.notEqual(downloadSummary(target), summary);
+  } finally {
+    unsubscribe();
+    transfer.resolve();
+    await waitForDownloads();
+  }
+});
+
+test('background progress advances during audio and text stages before a song finishes', async () => {
+  const text = gate(),
+    updates: number[] = [];
+  setDownloadRuntime({
+    ...testRuntime(),
+    prepareText: async () => {
+      await text.promise;
+    },
+    progress: async (completed) => {
+      updates.push(completed);
+    },
+  });
+  await queueDownloads({ kind: 'song', id: 'dawn' });
+  await tick();
+  assert.equal(isDownloaded('dawn'), false);
+  assert.ok(updates.some((completed) => completed > 0 && completed < 0.7));
+  assert.ok(updates.includes(0.7));
+  assert.ok(updates.includes(0.8));
+  text.resolve();
+  await waitForDownloads();
+  assert.ok(updates.includes(0.9));
+  assert.equal(updates.at(-1), 1);
 });

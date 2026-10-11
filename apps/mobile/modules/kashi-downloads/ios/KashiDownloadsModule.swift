@@ -141,14 +141,14 @@ private final class TaskHolder {
     lock.unlock()
 
     // Complete before telling JS to stop its queue when the task expires.
-    task.expirationHandler = { [weak self] in
-      guard let self = self else { return }
+    task.expirationHandler = { [weak self, weak task] in
+      guard let self = self, let task = task else { return }
       self.lock.lock()
-      let current = self.task
+      guard self.task === task else { self.lock.unlock(); return }
       self.task = nil
       let callback = self.onExpired
       self.lock.unlock()
-      current?.setTaskCompleted(success: false)
+      task.setTaskCompleted(success: false)
       callback?("expired")
     }
   }

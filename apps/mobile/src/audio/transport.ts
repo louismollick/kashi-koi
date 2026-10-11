@@ -15,6 +15,7 @@ export async function setupTransport(valid = () => true) {
   const player = createAudioPlayer(null, { updateInterval: 200, keepAudioSessionActive: true });
   let song: Song | null = null,
     sourceUri: string | null = null,
+    failed = false,
     submitted = false,
     finished = false,
     awaitingStart = false,
@@ -24,6 +25,7 @@ export async function setupTransport(valid = () => true) {
     startMs = 0,
     revision = 0;
   const fail = (error: unknown) => {
+    failed = true;
     wantsPlay = false;
     appStore.setState({
       loading: false,
@@ -124,6 +126,7 @@ export async function setupTransport(valid = () => true) {
     seeking = false;
     startMs = offset;
     song = next;
+    failed = false;
     submitted = false;
     finished = false;
     awaitingStart = true;
@@ -156,7 +159,7 @@ export async function setupTransport(valid = () => true) {
   const detach = setTransport({
     load: transportLoad,
     play: () => {
-      if (!song || appStore.getState().playbackError) return;
+      if (!song || failed) return;
       wantsPlay = true;
       pausePending = false;
       try {

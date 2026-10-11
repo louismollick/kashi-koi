@@ -194,19 +194,23 @@ export async function loadDownloads(): Promise<DownloadEntries> {
     ]),
   );
 }
-export async function saveDownload(id: string, entry: DownloadEntry) {
+export const saveDownload = (id: string, entry: DownloadEntry) => saveDownloads({ [id]: entry });
+
+/** Persist a whole enqueue in one transaction before publishing its entries. */
+export async function saveDownloads(entries: DownloadEntries) {
   const db = await database;
   await writeTransaction(db, async (tx) => {
-    await tx.runAsync(
-      'INSERT OR REPLACE INTO downloads (id, status, file_name, bytes, created_at, updated_at, error) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      id,
-      entry.status,
-      entry.fileName ?? null,
-      entry.bytes ?? null,
-      entry.createdAt,
-      entry.updatedAt,
-      entry.error ?? null,
-    );
+    for (const [id, entry] of Object.entries(entries))
+      await tx.runAsync(
+        'INSERT OR REPLACE INTO downloads (id, status, file_name, bytes, created_at, updated_at, error) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        id,
+        entry.status,
+        entry.fileName ?? null,
+        entry.bytes ?? null,
+        entry.createdAt,
+        entry.updatedAt,
+        entry.error ?? null,
+      );
   });
 }
 export async function deleteDownload(id: string) {

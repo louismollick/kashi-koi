@@ -8,13 +8,17 @@ import { fingerprint } from '@kashi-koi/shared/fingerprint';
 
 test('SQLite atomically invalidates replacement breakdowns, rolls back interruptions, and keeps identical-analysis caches', async () => {
   const sqlite = new DatabaseSync(':memory:');
-  let interrupt = false;
+  let interrupt = false,
+    interruptDownloads = false,
+    transactions = 0;
   const adapter = {
     execAsync: async (sql: string) => {
       sqlite.exec(sql);
     },
     runAsync: async (sql: string, ...params: SQLInputValue[]) => {
       if (interrupt && sql.startsWith('INSERT OR REPLACE INTO analyses')) throw new Error('Interrupted replacement');
+      if (interruptDownloads && sql.startsWith('INSERT OR REPLACE INTO downloads') && params[0] === 'second')
+        throw new Error('Interrupted enqueue');
       return sqlite.prepare(sql).run(...params);
     },
     getFirstAsync: async <T>(sql: string, ...params: SQLInputValue[]) =>
@@ -24,6 +28,7 @@ test('SQLite atomically invalidates replacement breakdowns, rolls back interrupt
   const database = {
     ...adapter,
     withExclusiveTransactionAsync: async (work: (tx: typeof adapter) => Promise<void>) => {
+      transactions++;
       sqlite.exec('BEGIN');
       try {
         await work(adapter);
@@ -95,6 +100,22 @@ test('SQLite atomically invalidates replacement breakdowns, rolls back interrupt
     await db.saveDownload('song', { status: 'downloading', fileName: 'song.flac', createdAt: 1, updatedAt: 2 });
     assert.equal((await db.loadDownloads()).song?.fileName, 'song.flac');
     await db.clearDownloads();
+    assert.deepEqual(await db.loadDownloads(), {});
+    const queued = {
+      status: 'queued' as const,
+      createdAt: 1,
+      updatedAt: 1,
+      fileName: undefined,
+      bytes: undefined,
+      error: undefined,
+    };
+    const before = transactions;
+    await db.saveDownloads({ first: queued, second: queued });
+    assert.equal(transactions - before, 1);
+    assert.deepEqual(await db.loadDownloads(), { first: queued, second: queued });
+    await db.clearDownloads();
+    interruptDownloads = true;
+    await assert.rejects(db.saveDownloads({ first: queued, second: queued }), /Interrupted enqueue/);
     assert.deepEqual(await db.loadDownloads(), {});
   } finally {
     hooks.deregister();
