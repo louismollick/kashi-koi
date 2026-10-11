@@ -121,7 +121,6 @@ export async function scan(
     .sort((a, b) => (b.played ?? 0) - (a.played ?? 0));
   let cursor = 0,
     completed = 0,
-    lastUpdate = Date.now(),
     errors = 0,
     stopped = false;
   let failure: unknown,
@@ -132,10 +131,12 @@ export async function scan(
     if (pending.length && (valid() || sessionStore.getState().session === session))
       libraryStore.getState().setLyricsResults(pending);
     pending = [];
-    lastUpdate = Date.now();
-    libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
+    if (libraryStore.getState().progress?.completed !== completed)
+      libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
   };
   libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
+  // A timer, so saved results still appear while every worker waits on a slow request.
+  const timer = setInterval(flush, 500);
   await Promise.allSettled(
     Array.from({ length: 4 }, async () => {
       try {
@@ -164,7 +165,6 @@ export async function scan(
             if (!online() || stopped) break;
           }
           completed++;
-          if (Date.now() - lastUpdate >= 500) flush();
         }
       } catch (error) {
         if (!stopped) {
@@ -174,6 +174,7 @@ export async function scan(
       }
     }),
   );
+  clearInterval(timer);
   flush();
   if (stopped) throw failure;
   if (online()) {

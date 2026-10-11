@@ -11,9 +11,12 @@ import { sessionStore } from '@/navidrome/session';
 import { mediaUrl, type Session } from '@/navidrome/subsonic';
 import { artStore } from '@/store/artStore';
 
-/** Two server sizes only, so rows, grids, prefetching and the lock screen share cache entries. */
+/**
+ * Two of Navidrome's sizes (150, 300, 600): rows and the mini player share 150px, grids, headers,
+ * the lock screen and downloads share 600px, so each album has at most two cache entries.
+ */
 export const coverUrl = (session: Session, coverArt: string, size: number) =>
-  mediaUrl(session, 'getCoverArt', coverArt, size > 160 ? 600 : 360);
+  mediaUrl(session, 'getCoverArt', coverArt, size > 60 ? 600 : 150);
 
 let latest: (string | undefined)[] | null = null,
   prefetching = false;
@@ -33,9 +36,11 @@ export async function prefetchCovers(coverArts: (string | undefined)[]) {
       latest = null;
       for (let start = 0; session && start < ids.length; start += 8) {
         if (latest || sessionStore.getState().session !== session || appStore.getState().offlineMode) break;
-        const urls = ids.slice(start, start + 8).flatMap((id) => (localArtUri(id) ? [] : [coverUrl(session, id, 0)]));
-        // A failed batch only means those covers load on demand.
-        if (urls.length) await Image.prefetch(urls, 'disk').catch(() => false);
+        const urls = ids
+          .slice(start, start + 8)
+          .flatMap((id) => (localArtUri(id) ? [] : [coverUrl(session, id, 0), coverUrl(session, id, 600)]));
+        // One request per URL, so a failure can't end the batch early. Failed covers load on demand.
+        await Promise.all(urls.map((url) => Image.prefetch(url, 'disk').catch(() => false)));
       }
     }
   } finally {
