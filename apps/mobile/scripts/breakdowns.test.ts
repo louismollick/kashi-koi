@@ -8,13 +8,14 @@ import {
   flushBreakdowns,
   breakdownTarget,
   canExplain,
+  cacheSongBreakdowns,
   englishSpans,
   loadBreakdown,
   prefetchBreakdown,
 } from '../src/analysis/breakdowns';
 import { cancelAnalyses, setAnalysisRuntime } from '../src/analysis/fetcher';
 import { appStore, resetAppState } from '../src/store/appStore';
-import { getLyrics, libraryStore } from '../src/store/libraryStore';
+import { getLineText, getLyrics, libraryStore } from '../src/store/libraryStore';
 import { toSongLyrics } from '../src/navidrome/lyrics';
 import { songs, testQuiz } from './fixtures';
 
@@ -413,3 +414,60 @@ test('download cancellation aborts breakdown GET and leaves the cache empty', as
   assert.equal(requestSignal?.aborted, true);
   assert.equal(persisted.has(key), false);
 });
+
+for (const update of ['replacement analysis', 'translations', 'another song analysis'] as const)
+  test(`download breakdown caching ${update === 'replacement analysis' ? 'rejects' : 'allows'} mid-run ${update}`, async () => {
+    const gate = deferred(),
+      started = deferred(),
+      originalLyrics = getLyrics(songId),
+      originalAnalysis = libraryStore.getState().analyses[analysis.fingerprint];
+    if (update === 'another song analysis') {
+      const other = toSongLyrics(songs[1]!.id, { synced: true, line: [{ start: 0, value: '別の歌' }] }, 4000);
+      libraryStore.getState().setLibrary({
+        songs: [songs[0]!, songs[1]!],
+        albums: [],
+        artists: [],
+        lyrics: { ...libraryStore.getState().lyrics, [songs[1]!.id]: other },
+        analyses: libraryStore.getState().analyses,
+      });
+    }
+    let calls = 0;
+    setAnalysisRuntime({
+      fetch: async (_url, init) => {
+        assert.equal(init?.method ?? 'GET', 'GET');
+        calls++;
+        started.resolve();
+        await gate.promise;
+        return new Response(null, { status: 404 });
+      },
+    });
+    const work = cacheSongBreakdowns(songId, () => true);
+    const result =
+      update === 'replacement analysis'
+        ? assert.rejects(work, { message: 'Song analysis changed during download' })
+        : assert.doesNotReject(work);
+    await started.promise;
+    if (update === 'replacement analysis') {
+      libraryStore.getState().setAnalysis({ ...analysis, title: 'Another reading' });
+      assert.notEqual(libraryStore.getState().analyses[analysis.fingerprint], originalAnalysis);
+    } else if (update === 'translations') {
+      const line = originalLyrics.lines[0]!;
+      libraryStore.getState().applyTranslationsToSong(songId, {
+        [getLineText(line)]: { translation: 'On-device translation', segments: line.segments },
+      });
+      assert.notEqual(getLyrics(songId), originalLyrics);
+      assert.equal(getLyrics(songId).lines[0]!.translation, 'On-device translation');
+      assert.equal(libraryStore.getState().analyses[analysis.fingerprint], originalAnalysis);
+    } else {
+      libraryStore.getState().setAnalysis({
+        ...analysis,
+        fingerprint: getLyrics(songs[1]!.id).fingerprint,
+        lines: ['Another song'],
+        sentences: [{ ...analysis.sentences[0]!, start: 0, end: 0 }],
+      });
+      assert.equal(libraryStore.getState().analyses[analysis.fingerprint], originalAnalysis);
+    }
+    gate.resolve();
+    await result;
+    assert.equal(calls, 1);
+  });

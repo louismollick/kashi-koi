@@ -22,7 +22,8 @@ async function setup(t: TestContext) {
     artworks: (string | undefined)[] = [],
     played: string[] = [],
     network: string[] = [],
-    plays: number[] = [];
+    plays: number[] = [],
+    seeks: number[] = [];
   type Status = {
     playing: boolean;
     currentTime: number;
@@ -38,7 +39,9 @@ async function setup(t: TestContext) {
       plays.push(1);
     },
     pause() {},
-    seekTo: async () => {},
+    seekTo: async (seconds: number) => {
+      seeks.push(seconds);
+    },
     replace: (source: { uri?: string } | null) => {
       sources.push(source);
     },
@@ -111,6 +114,7 @@ async function setup(t: TestContext) {
     played,
     network,
     plays,
+    seeks,
     status,
     fail: () =>
       listener({
@@ -209,3 +213,41 @@ test('native playback failure blocks resume until another song loads', async (t)
   await Promise.resolve();
   assert.equal(plays.length, before + 1);
 });
+
+for (const clip of [false, true])
+  test(`leaving offline mode resumes a released song at its saved ${clip ? 'clip' : 'song'} position`, async (t) => {
+    const { sources, seeks, plays, status } = await setup(t);
+    appStore.getState().startSong('dawn');
+    status(0);
+    await Promise.resolve();
+    status(30);
+    if (clip) {
+      appStore.setState({
+        reviewList: [
+          { id: 'review-dawn', songId: 'dawn', sentenceId: songLyrics.dawn!.sentences[0]!.id, kind: 'due', misses: 1 },
+        ],
+      });
+      appStore.getState().startClipReview();
+      await Promise.resolve();
+      status(1);
+    }
+    const saved = appStore.getState(),
+      positionMs = saved.clipPlayback?.positionMs ?? saved.positionMs;
+    if (clip) assert.notEqual(positionMs, saved.positionMs);
+    appStore.setState({ offlineMode: true });
+    assert.equal(sources.at(-1), null);
+    assert.equal(appStore.getState().playbackError, 'Song is not downloaded');
+    assert.equal(appStore.getState().playing, false);
+    const before = plays.length;
+    appStore.setState({ offlineMode: false });
+    appStore.getState().setPlaying(true);
+    assert.equal(sources.length, 3);
+    assert.deepEqual(sources.at(-1), sources[0]);
+    assert.equal(plays.length, before);
+    status(0);
+    await Promise.resolve();
+    assert.equal(seeks.at(-1), positionMs / 1000);
+    assert.equal(plays.length, before + 1);
+    assert.equal(appStore.getState().playing, true);
+    assert.equal(appStore.getState().playbackError, null);
+  });

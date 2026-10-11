@@ -164,6 +164,7 @@ export async function setupTransport(valid = () => true) {
         const { songId, positionMs, clipPlayback } = appStore.getState(),
           current = songId ? libraryStore.getState().bySong[songId] : undefined;
         if (!current) return;
+        appStore.setState({ loading: true, playbackError: null });
         transportLoad(current, clipPlayback?.positionMs ?? positionMs);
       }
       if (!song || failed) return;
