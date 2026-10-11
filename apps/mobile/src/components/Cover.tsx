@@ -15,12 +15,26 @@ import { artStore } from '@/store/artStore';
 export const coverUrl = (session: Session, coverArt: string, size: number) =>
   mediaUrl(session, 'getCoverArt', coverArt, size > 160 ? 600 : 360);
 
-/** Warm the disk cache for grid and row covers after a sync, so the first scroll doesn't wait on the server. */
-export function prefetchCovers(coverArts: (string | undefined)[]) {
+let prefetching = false;
+/**
+ * Warm the disk cache for grid and row covers after a sync, so the first scroll doesn't wait on the server.
+ * Native prefetches can't be cancelled, so small batches stop once the session changes or the app goes offline.
+ */
+export async function prefetchCovers(coverArts: (string | undefined)[]) {
   const session = sessionStore.getState().session;
-  if (!session || appStore.getState().offlineMode) return;
-  const urls = [...new Set(coverArts)].flatMap((id) => (id && !localArtUri(id) ? [coverUrl(session, id, 0)] : []));
-  if (urls.length) void Image.prefetch(urls, 'disk');
+  if (prefetching || !session) return;
+  prefetching = true;
+  const ids = [...new Set(coverArts)].filter((id): id is string => !!id);
+  try {
+    for (let start = 0; start < ids.length; start += 8) {
+      if (sessionStore.getState().session !== session || appStore.getState().offlineMode) return;
+      const urls = ids.slice(start, start + 8).flatMap((id) => (localArtUri(id) ? [] : [coverUrl(session, id, 0)]));
+      // A failed batch only means those covers load on demand.
+      if (urls.length) await Image.prefetch(urls, 'disk').catch(() => false);
+    }
+  } finally {
+    prefetching = false;
+  }
 }
 
 /** Retry failed downloads twice, then leave the fish placeholder visible. */

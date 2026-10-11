@@ -188,7 +188,11 @@ test('a failed save stops new work and waits for all workers before rejecting', 
     release();
     assert.equal(await result, failure);
     assert.deepEqual(saved, ['0', '1', '2', '3']);
-    assert.ok(libraryStore.getState().songs.every((song) => song.lyricsStatus === 'unchecked'));
+    // Saves that succeeded are published like their SQLite rows; the failed and unstarted songs stay unchecked.
+    assert.deepEqual(
+      libraryStore.getState().songs.map((song) => song.lyricsStatus),
+      ['unchecked', 'none', 'none', 'none', 'unchecked', 'unchecked'],
+    );
     assert.equal(appStore.getState().lastScanAt, null);
   } finally {
     release();
@@ -196,7 +200,7 @@ test('a failed save stops new work and waits for all workers before rejecting', 
   }
 });
 
-test('cancellation during a saved result prevents publishing or pruning', async () => {
+test('logging out during a saved result prevents publishing or pruning', async () => {
   const original = globalThis.fetch,
     song = songs[0]!,
     cached = songLyrics[song.id]!;
@@ -210,6 +214,7 @@ test('cancellation during a saved result prevents publishing or pruning', async 
       () => valid,
       async () => {
         valid = false;
+        sessionStore.setState({ session: null });
       },
     );
     assert.equal(libraryStore.getState().lyrics[song.id], cached);
@@ -346,6 +351,29 @@ test('scans check recently played songs first and publish results together', asy
     assert.ok(libraryStore.getState().songs.every((song) => song.lyricsStatus === 'none'));
   } finally {
     unsubscribe();
+    globalThis.fetch = original;
+  }
+});
+
+test('switching offline after a save still publishes that saved result', async () => {
+  const original = globalThis.fetch,
+    song = { ...songs[0]!, lyricsStatus: 'unchecked' as const };
+  libraryStore.getState().setLibrary({ songs: [song], albums, artists, lyrics: {} });
+  sessionStore.setState({ session });
+  try {
+    globalThis.fetch = async () => Response.json({ 'subsonic-response': { status: 'ok', lyricsList: {} } });
+    await scan(
+      session,
+      true,
+      () => !appStore.getState().offlineMode,
+      async () => {
+        appStore.setState({ offlineMode: true });
+      },
+    );
+    assert.equal(libraryStore.getState().bySong[song.id]!.lyricsStatus, 'none');
+    assert.equal(appStore.getState().lastScanAt, null);
+  } finally {
+    sessionStore.setState({ session: null });
     globalThis.fetch = original;
   }
 });

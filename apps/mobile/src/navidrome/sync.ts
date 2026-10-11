@@ -127,8 +127,10 @@ export async function scan(
   let failure: unknown,
     pending: LyricsResult[] = [];
   // Every lyrics change makes Library, Home and review remapping walk the whole library, so publish twice a second.
+  // Saved results stay true after going offline or cancelling; only a new session must not receive them.
   const flush = () => {
-    if (pending.length && online()) libraryStore.getState().setLyricsResults(pending);
+    if (pending.length && (valid() || sessionStore.getState().session === session))
+      libraryStore.getState().setLyricsResults(pending);
     pending = [];
     lastUpdate = Date.now();
     libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
@@ -158,8 +160,8 @@ export async function scan(
           if (!online() || stopped) break;
           if (!(status === 'error' && song.lyricsStatus === 'synced' && libraryStore.getState().lyrics[song.id])) {
             await save(song.id, status, lyrics);
-            if (!online() || stopped) break;
             pending.push({ songId: song.id, status, lyrics });
+            if (!online() || stopped) break;
           }
           completed++;
           if (Date.now() - lastUpdate >= 500) flush();

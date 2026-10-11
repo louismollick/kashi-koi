@@ -22,7 +22,7 @@ setDownloadRuntime(nativeDownloadRuntime);
 // Warm visible album covers on disk whenever a sync or lyrics scan settles.
 libraryStore.subscribe((state, previous) => {
   if (previous.progress && !state.progress)
-    prefetchCovers(getVisibleLibrary(getLibraryFilters()).albums.map((album) => album.coverArt));
+    void prefetchCovers(getVisibleLibrary(getLibraryFilters()).albums.map((album) => album.coverArt));
 });
 
 const navigationTheme = {
