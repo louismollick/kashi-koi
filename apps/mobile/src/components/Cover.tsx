@@ -26,7 +26,9 @@ function Artwork({ uri }: { uri: string }) {
     <Image
       key={attempt}
       source={{ uri }}
-      cachePolicy="disk"
+      // Memory first: grid cells remount while scrolling and must not re-read the disk each time.
+      cachePolicy="memory-disk"
+      recyclingKey={uri}
       contentFit="cover"
       onError={() => setFailed(true)}
       style={{ position: 'absolute', inset: 0 }}
@@ -34,7 +36,7 @@ function Artwork({ uri }: { uri: string }) {
   );
 }
 
-/** Disk-cached server artwork, with a harbor crop while absent or unavailable. */
+/** Memory- and disk-cached server artwork, with a harbor crop while absent or unavailable. */
 export function Cover({ song, size = 44 }: { song: { id: string; coverArt?: string }; size?: number }) {
   const session = sessionStore((state) => state.session),
     palette = paletteFor(song.id);
