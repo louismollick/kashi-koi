@@ -839,6 +839,7 @@ setAnalysisStore(appStore);
 setOfflineModeReader(() => appStore.getState().offlineMode);
 
 /** In offline mode, download changes invalidate memoized browsing; online they don't affect visibility. */
+export const getLibraryFilters = () => libraryFilters(appStore.getState());
 export function useLibraryFilters() {
   const filters = appStore(useShallow(libraryFilters));
   const entries = downloadStore((state) => (filters.downloadedOnly ? state.entries : null));

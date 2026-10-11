@@ -19,7 +19,7 @@ export function tint(color: string, amount: number) {
 }
 
 /** Rectangle path whose corners step inward `steps` times by `size` points. */
-function stepped(x0: number, y0: number, x1: number, y1: number, steps: number, size: number) {
+export function stepped(x0: number, y0: number, x1: number, y1: number, steps: number, size: number) {
   const cut = steps * size;
   let d = `M${x0 + cut} ${y0} H${x1 - cut}`;
   for (let i = 1; i <= steps; i++) d += ` V${y0 + i * size} H${x1 - (steps - i) * size}`;

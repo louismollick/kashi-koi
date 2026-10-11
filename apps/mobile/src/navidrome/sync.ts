@@ -13,7 +13,7 @@ import {
   type Session,
   type StructuredLyrics,
 } from './subsonic';
-import type { Library } from '@/store/libraryStore';
+import type { Library, LyricsResult } from '@/store/libraryStore';
 import type { LyricsStatus, Song, SongLyrics } from '@/types/domain';
 
 let running: Promise<void> | null = null;
@@ -104,7 +104,7 @@ export function syncLibrary(
   });
 }
 
-/** Four workers persist each result; errors stay retryable on the next sync. */
+/** Four workers persist each result and publish them in batches; errors stay retryable on the next sync. */
 export async function scan(
   session: Session,
   all: boolean,
@@ -116,13 +116,23 @@ export async function scan(
   const online = () => valid() && !appStore.getState().offlineMode;
   const targets = libraryStore
     .getState()
-    .songs.filter((song) => all || ['unchecked', 'error'].includes(song.lyricsStatus));
+    .songs.filter((song) => all || ['unchecked', 'error'].includes(song.lyricsStatus))
+    // Recently played first, so Home settles before the long tail.
+    .sort((a, b) => (b.played ?? 0) - (a.played ?? 0));
   let cursor = 0,
     completed = 0,
-    lastUpdate = 0,
+    lastUpdate = Date.now(),
     errors = 0,
     stopped = false;
-  let failure: unknown;
+  let failure: unknown,
+    pending: LyricsResult[] = [];
+  // Every lyrics change makes Library, Home and review remapping walk the whole library, so publish twice a second.
+  const flush = () => {
+    if (pending.length && online()) libraryStore.getState().setLyricsResults(pending);
+    pending = [];
+    lastUpdate = Date.now();
+    libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
+  };
   libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
   await Promise.allSettled(
     Array.from({ length: 4 }, async () => {
@@ -149,13 +159,10 @@ export async function scan(
           if (!(status === 'error' && song.lyricsStatus === 'synced' && libraryStore.getState().lyrics[song.id])) {
             await save(song.id, status, lyrics);
             if (!online() || stopped) break;
-            libraryStore.getState().setLyricsResult(song.id, status, lyrics);
+            pending.push({ songId: song.id, status, lyrics });
           }
           completed++;
-          if (Date.now() - lastUpdate >= 250 || completed === targets.length) {
-            lastUpdate = Date.now();
-            libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
-          }
+          if (Date.now() - lastUpdate >= 500) flush();
         }
       } catch (error) {
         if (!stopped) {
@@ -165,6 +172,7 @@ export async function scan(
       }
     }),
   );
+  flush();
   if (stopped) throw failure;
   if (online()) {
     appStore.setState({ lastScanAt: Date.now() });

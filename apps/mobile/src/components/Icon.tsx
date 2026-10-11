@@ -2,7 +2,7 @@ import Svg, { Path } from 'react-native-svg';
 import { colors } from '@/constants/theme';
 
 // Pixelarticons 2.4.1; filled play/pause and skip controls from 1.8.1, MIT. See assets/icons.
-// translate, play, musicFilled, homeFilled, down, trash, download and downloaded are hand-drawn on the same 24-unit pixel grid.
+// translate, play, musicFilled, homeFilled, down, trash, download, downloaded and fish are hand-drawn on the same 24-unit pixel grid.
 const icons = {
   down: ['M11 14h2v2h-2zM9 12h2v2H9zM13 12h2v2h-2zM7 10h2v2H7zM15 10h2v2h-2zM5 8h2v2H5zM17 8h2v2h-2z'],
   download: [
@@ -10,6 +10,9 @@ const icons = {
   ],
   downloaded: [
     'M5 8h2v2H5zM7 10h2v2H7zM9 12h2v2H9zM11 10h2v2h-2zM13 8h2v2h-2zM15 6h2v2h-2zM17 4h2v2h-2zM3 15h2v5H3zM19 15h2v5h-2zM3 20h18v2H3z',
+  ],
+  fish: [
+    'M9 5h8v2H9zM7 7h2v2H7zM17 7h2v2h-2zM5 9h2v6H5zM19 9h2v2h-2zM19 13h2v2h-2zM21 11h2v2h-2zM7 15h2v2H7zM17 15h2v2h-2zM9 17h8v2H9zM15 9h2v2h-2zM1 7h2v2H1zM1 9h4v2H1zM3 11h2v2H3zM1 13h4v2H1zM1 15h2v2H1z',
   ],
   trash: ['M9 2h6v2H9zM3 4h18v2H3zM5 6h2v14H5zM17 6h2v14h-2zM7 20h10v2H7zM9 9h2v8H9zM13 9h2v8h-2z'],
   refresh: [

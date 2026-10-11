@@ -15,6 +15,7 @@ export type Library = {
   translations?: Translations;
   analyses?: Record<string, SongAnalysis>;
 };
+export type LyricsResult = { songId: string; status: LyricsStatus; lyrics?: LyricsInput };
 export type Progress = { kind: 'sync' | 'scan'; completed: number; total: number };
 const empty: Library = { songs: [], albums: [], artists: [], lyrics: {} };
 const emptyLyrics = (songId: string): SongLyrics => withSentences({ songId, lines: [], timeline: [] });
@@ -37,6 +38,8 @@ export const libraryStore = create<
     applyTranslationsToSong: (songId: string, translations?: Translations) => void;
     setLibrary: (library: Library) => void;
     setLyricsResult: (songId: string, status: LyricsStatus, lyrics?: LyricsInput) => void;
+    /** Publish many scan results in one update, so subscribers walk the library once per batch. */
+    setLyricsResults: (results: LyricsResult[]) => void;
     markPlayed: (songId: string, at?: number) => void;
   }
 >((set, get) => ({
@@ -84,18 +87,21 @@ export const libraryStore = create<
       ),
     });
   },
-  setLyricsResult: (songId, status, lyrics) => {
-    const song = get().bySong[songId];
-    if (!song || (status === 'error' && song.lyricsStatus === 'synced' && get().lyrics[songId])) return;
-    const updated = { ...song, lyricsStatus: status };
-    const nextLyrics = { ...get().lyrics };
-    if (status === 'none') delete nextLyrics[songId];
-    else if (lyrics) nextLyrics[songId] = applySongTranslations(lyrics, get().translations, get().analyses, true);
-    set({
-      songs: get().songs.map((song) => (song.id === songId ? updated : song)),
-      bySong: { ...get().bySong, [songId]: updated },
-      lyrics: nextLyrics,
-    });
+  setLyricsResult: (songId, status, lyrics) => get().setLyricsResults([{ songId, status, lyrics }]),
+  setLyricsResults: (results) => {
+    const state = get(),
+      bySong = { ...state.bySong },
+      lyrics = { ...state.lyrics };
+    let changed = false;
+    for (const { songId, status, lyrics: input } of results) {
+      const song = bySong[songId];
+      if (!song || (status === 'error' && song.lyricsStatus === 'synced' && lyrics[songId])) continue;
+      bySong[songId] = { ...song, lyricsStatus: status };
+      if (status === 'none') delete lyrics[songId];
+      else if (input) lyrics[songId] = applySongTranslations(input, state.translations, state.analyses, true);
+      changed = true;
+    }
+    if (changed) set({ songs: state.songs.map((song) => bySong[song.id] ?? song), bySong, lyrics });
   },
   markPlayed: (songId, at = Date.now()) => {
     const song = get().bySong[songId];

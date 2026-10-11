@@ -316,3 +316,36 @@ test('sync preserves analyses accepted while SQLite replacement is pending', asy
     globalThis.fetch = original;
   }
 });
+
+test('scans check recently played songs first and publish results together', async () => {
+  const original = globalThis.fetch,
+    targets = [undefined, 30, 10, 20].map((played, index) => ({
+      ...songs[0]!,
+      id: String(index),
+      played,
+      lyricsStatus: 'unchecked' as const,
+    }));
+  libraryStore.getState().setLibrary({ songs: targets, albums, artists, lyrics: {} });
+  const saved: string[] = [];
+  let publications = 0;
+  const unsubscribe = libraryStore.subscribe((state, previous) => {
+    if (state.songs !== previous.songs) publications++;
+  });
+  try {
+    globalThis.fetch = async () => Response.json({ 'subsonic-response': { status: 'ok', lyricsList: {} } });
+    await scan(
+      session,
+      true,
+      () => true,
+      async (id) => {
+        saved.push(id);
+      },
+    );
+    assert.deepEqual(saved.slice(0, 3), ['1', '3', '2']);
+    assert.equal(publications, 1);
+    assert.ok(libraryStore.getState().songs.every((song) => song.lyricsStatus === 'none'));
+  } finally {
+    unsubscribe();
+    globalThis.fetch = original;
+  }
+});

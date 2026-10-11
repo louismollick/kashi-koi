@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, TextInput, View, useWindowDimensions } from 'react-native';
+import { Pressable, TextInput, View, useWindowDimensions } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
@@ -24,7 +25,12 @@ import { Icon } from '@/components/Icon';
 import { Button, Label, styles } from '@/components/ui';
 
 const segments = ['Albums', 'Artists', 'Songs'] as const;
-/** Virtualized grids and rows for the entire in-memory library. */
+/** Pin grid tiles to their column edge, so three fixed-size tiles keep 12pt gaps in equal columns. */
+const column = (index: number) => ({
+  alignItems: (['flex-start', 'center', 'flex-end'] as const)[index % 3],
+  marginBottom: 16,
+});
+/** Recycled grids and rows for the entire in-memory library. */
 export default function LibraryScreen() {
   const router = useRouter(),
     { width } = useWindowDimensions();
@@ -109,7 +115,7 @@ export default function LibraryScreen() {
     <View style={styles.page}>
       <Header />
       {segment === 'Songs' ? (
-        <FlatList
+        <FlashList
           key="songs"
           data={visible.songs}
           keyExtractor={(song) => song.id}
@@ -120,17 +126,16 @@ export default function LibraryScreen() {
           keyboardShouldPersistTaps="handled"
         />
       ) : segment === 'Albums' ? (
-        <FlatList
+        <FlashList
           key="albums"
           data={visible.albums}
           numColumns={3}
-          columnWrapperStyle={{ gap: 12 }}
           contentContainerStyle={{ padding: 16 }}
           ListHeaderComponent={header}
           ListEmptyComponent={empty}
           keyExtractor={(album) => album.id}
-          renderItem={({ item }) => (
-            <View style={{ marginBottom: 16 }}>
+          renderItem={({ item, index }) => (
+            <View style={column(index)}>
               <AlbumTile
                 album={item}
                 size={size}
@@ -141,34 +146,35 @@ export default function LibraryScreen() {
           )}
         />
       ) : (
-        <FlatList
+        <FlashList
           key="artists"
           data={visible.artists}
           numColumns={3}
-          columnWrapperStyle={{ gap: 12 }}
           contentContainerStyle={{ padding: 16 }}
           ListHeaderComponent={header}
           ListEmptyComponent={empty}
           keyExtractor={(artist) => artist.id}
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const albums = artistAlbums.get(item.id) ?? [];
             return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Open artist ${item.name}`}
-                onPress={() => router.push({ pathname: '/library/artist/[id]', params: { id: item.id } })}
-                onLongPress={() => router.push(downloadSheet({ kind: 'artist', id: item.id }))}
-                style={{ width: size, marginBottom: 16 }}
-              >
-                <View>
-                  <Cover song={albums[0] ?? item} size={size} />
-                  {!filters.hideUnsynced && !synced.artists.has(item.id) && <NoLyricsBadge />}
-                </View>
-                <Label numberOfLines={1} style={{ fontWeight: '700', marginTop: 6 }}>
-                  {item.name}
-                </Label>
-                <Label muted>{albums.length} albums</Label>
-              </Pressable>
+              <View style={column(index)}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open artist ${item.name}`}
+                  onPress={() => router.push({ pathname: '/library/artist/[id]', params: { id: item.id } })}
+                  onLongPress={() => router.push(downloadSheet({ kind: 'artist', id: item.id }))}
+                  style={{ width: size }}
+                >
+                  <View>
+                    <Cover song={albums[0] ?? item} size={size} />
+                    {!filters.hideUnsynced && !synced.artists.has(item.id) && <NoLyricsBadge />}
+                  </View>
+                  <Label numberOfLines={1} style={{ fontWeight: '700', marginTop: 6 }}>
+                    {item.name}
+                  </Label>
+                  <Label muted>{albums.length} albums</Label>
+                </Pressable>
+              </View>
             );
           }}
         />
