@@ -59,3 +59,33 @@ export function getRecentlyPlayed(filters: LibraryFilters, limit: number, source
     .sort((a, b) => b.played! - a.played!)
     .slice(0, limit);
 }
+
+/** Count items per key in one pass, so grid tiles don't each rescan the whole library. */
+export function countBy<T>(items: T[], key: (item: T) => string) {
+  const counts = new Map<string, number>();
+  for (const item of items) counts.set(key(item), (counts.get(key(item)) ?? 0) + 1);
+  return counts;
+}
+
+/** Group items per key in one pass, keeping their order. */
+export function groupBy<T>(items: T[], key: (item: T) => string) {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const group = groups.get(key(item));
+    if (group) group.push(item);
+    else groups.set(key(item), [item]);
+  }
+  return groups;
+}
+
+/** Album and artist ids with at least one synced song, for the cover badges. */
+export function syncedIds(source: Song[]) {
+  const albums = new Set<string>(),
+    artists = new Set<string>();
+  for (const song of source)
+    if (song.lyricsStatus === 'synced') {
+      albums.add(song.albumId);
+      artists.add(song.artistId);
+    }
+  return { albums, artists };
+}

@@ -1,20 +1,24 @@
+import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { getAlbumSongs, libraryStore } from '@/store/libraryStore';
-import { albumHasSyncedLyrics, getVisibleSongs } from '@/data/libraryVisibility';
-import { useLibraryFilters } from '@/store/appStore';
 import { Cover } from './Cover';
 import { NoLyricsBadge } from './NoLyricsBadge';
 import { Label } from './ui';
 import type { Album } from '@/types/domain';
 
-/** Shared album tile for the Library and an artist's album grid. */
-export function AlbumTile({ album, size }: { album: Album; size: number }) {
+/** Shared album tile for the Library and an artist's album grid. Parents compute `count` and `noLyrics` once per list. */
+export const AlbumTile = memo(function AlbumTile({
+  album,
+  size,
+  count,
+  noLyrics,
+}: {
+  album: Album;
+  size: number;
+  count: number;
+  noLyrics: boolean;
+}) {
   const router = useRouter();
-  libraryStore((state) => state.songs);
-  libraryStore((state) => state.lyrics);
-  const filters = useLibraryFilters();
-  const count = getVisibleSongs(getAlbumSongs(album.id), filters).length;
   return (
     <Pressable
       accessibilityRole="button"
@@ -24,7 +28,7 @@ export function AlbumTile({ album, size }: { album: Album; size: number }) {
     >
       <View>
         <Cover song={album} size={size} />
-        {!filters.hideUnsynced && !albumHasSyncedLyrics(album.id) && <NoLyricsBadge />}
+        {noLyrics && <NoLyricsBadge />}
       </View>
       <Label numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', marginTop: 6 }}>
         {album.title}
@@ -37,4 +41,4 @@ export function AlbumTile({ album, size }: { album: Album; size: number }) {
       </Label>
     </Pressable>
   );
-}
+});
