@@ -19,6 +19,7 @@ import { NoLyricsBadge } from '@/components/NoLyricsBadge';
 import { SongRow } from '@/components/SongRow';
 import { HiddenSongsRow } from '@/components/HiddenSongsRow';
 import { Cover } from '@/components/Cover';
+import { downloadSheet } from '@/components/DownloadButton';
 import { Icon } from '@/components/Icon';
 import { Button, Label, styles } from '@/components/ui';
 
@@ -156,6 +157,7 @@ export default function LibraryScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Open artist ${item.name}`}
                 onPress={() => router.push({ pathname: '/library/artist/[id]', params: { id: item.id } })}
+                onLongPress={() => router.push(downloadSheet({ kind: 'artist', id: item.id }))}
                 style={{ width: size, marginBottom: 16 }}
               >
                 <View>

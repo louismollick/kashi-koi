@@ -4,6 +4,8 @@ import { colors } from '@/constants/theme';
 import { getAlbum } from '@/store/libraryStore';
 import { appStore, useLibraryFilters } from '@/store/appStore';
 import { Cover } from './Cover';
+import { downloadSheet } from './DownloadButton';
+import { useIsDownloaded } from '@/downloads';
 import { Icon } from './Icon';
 import { Label, styles } from './ui';
 import type { Song } from '@/types/domain';
@@ -11,7 +13,8 @@ import type { Song } from '@/types/domain';
 /** Play a song from the Library's cover rows or an album's numbered list. */
 export function SongRow({ song, number }: { song: Song; number?: number }) {
   const router = useRouter();
-  const filters = useLibraryFilters();
+  const filters = useLibraryFilters(),
+    downloaded = useIsDownloaded(song.id);
   const duration = `${Math.floor(song.duration / 60)}:${String(Math.floor(song.duration) % 60).padStart(2, '0')}`;
   return (
     <Pressable
@@ -21,6 +24,7 @@ export function SongRow({ song, number }: { song: Song; number?: number }) {
         router.push('/player');
         appStore.getState().startSong(song.id);
       }}
+      onLongPress={() => router.push(downloadSheet({ kind: 'song', id: song.id }))}
       style={({ pressed }) => [
         styles.row,
         {
@@ -47,6 +51,7 @@ export function SongRow({ song, number }: { song: Song; number?: number }) {
           {!filters.hideUnsynced && !(song.lyricsStatus === 'synced') && (
             <Icon name="micOff" color={colors.muted} size={16} accessibilityLabel="No synced lyrics" />
           )}
+          {downloaded && <Icon name="downloaded" color={colors.green} size={14} accessibilityLabel="Downloaded" />}
         </View>
         {number === undefined && (
           <Label muted numberOfLines={1} style={{ fontSize: 13 }}>

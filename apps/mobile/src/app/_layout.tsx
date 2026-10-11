@@ -2,6 +2,8 @@ import { AppState, useWindowDimensions } from 'react-native';
 import Japanese from '../../modules/kashi-japanese';
 import { setTranslator, pauseTranslations, prepareTranslation, setTranslationForeground } from '@/japanese/translate';
 import { saveTranslations } from '@/navidrome/db';
+import { setDownloadRuntime } from '@/downloads/queue';
+import { nativeDownloadRuntime } from '@/downloads/native';
 import { libraryStore } from '@/store/libraryStore';
 import Storage from 'expo-sqlite/kv-store';
 import { appStore, hydrateAppState, setTransport } from '@/store/appStore';
@@ -14,6 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import { colors } from '@/constants/theme';
 
 setTranslator(Japanese, saveTranslations);
+setDownloadRuntime(nativeDownloadRuntime);
 
 const navigationTheme = {
   ...DarkTheme,
@@ -116,6 +119,14 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="breakdown"
+            options={{
+              presentation: 'transparentModal',
+              animation: 'slide_from_bottom',
+              contentStyle: { backgroundColor: 'transparent' },
+            }}
+          />
+          <Stack.Screen
+            name="download"
             options={{
               presentation: 'transparentModal',
               animation: 'slide_from_bottom',

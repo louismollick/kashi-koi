@@ -3,7 +3,7 @@ import type { appStore as AppStore } from '@/store/appStore';
 import { getLyrics, getSong, libraryStore } from '@/store/libraryStore';
 import { timelineTexts } from '@/lyrics/sentences';
 import { fetchAnalysis, requestAnalysis } from './client';
-import { resetBreakdowns } from './breakdowns';
+import { resetBreakdowns, flushBreakdowns } from './breakdowns';
 
 const defaults = {
   fetch: ((...args) => globalThis.fetch(...args)) as typeof fetch,
@@ -76,6 +76,7 @@ async function accept(analysis: SongAnalysis, valid: () => boolean) {
 
 /** Four workers fetch missing analyses, with newly prioritized songs ahead of the backlog. */
 export function prioritizeAnalyses(ids: string[]) {
+  if (appStore.getState().offlineMode) return Promise.resolve();
   queue = [...new Set([...ids, ...queue])];
   if (running) return running;
   const base = analysisServerUrl(),
@@ -84,7 +85,7 @@ export function prioritizeAnalyses(ids: string[]) {
     queue = [];
     return Promise.resolve();
   }
-  const valid = () => version === generation && base === analysisServerUrl();
+  const valid = () => version === generation && base === analysisServerUrl() && !appStore.getState().offlineMode;
   const fetcher = runtime.fetch;
   running = Promise.all(
     Array.from({ length: 4 }, async () => {
@@ -133,11 +134,15 @@ export function analyzeSong(songId: string, { force = false }: { force?: boolean
   const song = getSong(songId),
     lyrics = getLyrics(songId),
     version = generation;
-  if (!base || !token || !song || !lyrics.timeline.length) return Promise.resolve();
+  if (appStore.getState().offlineMode || !base || !token || !song || !lyrics.timeline.length) return Promise.resolve();
   const hash = lyrics.fingerprint,
     previous = libraryStore.getState().analyses[lyrics.fingerprint],
     service = runtime;
-  const valid = () => version === generation && base === analysisServerUrl() && getLyrics(songId).fingerprint === hash;
+  const valid = () =>
+    version === generation &&
+    base === analysisServerUrl() &&
+    !appStore.getState().offlineMode &&
+    getLyrics(songId).fingerprint === hash;
   const update = (request?: { status: 'requesting' | 'queued' | 'running' | 'failed'; error?: string }) => {
     if (!valid()) return;
     const analysisRequests = { ...appStore.getState().analysisRequests };
@@ -206,5 +211,6 @@ export async function cancelAnalyses() {
   resetBreakdowns();
   queue = [];
   await Promise.allSettled([running, ...requests.values(), tokenWrites]);
+  await flushBreakdowns();
   appStore.setState({ analysisRequests: {} });
 }

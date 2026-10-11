@@ -58,6 +58,14 @@ _Avoid_: Sync, index
 Re-fetching the song, album and artist list from Navidrome into the phone's copy of the library. It checks lyrics only for songs never scanned; a full Lyrics scan is separate.
 _Avoid_: Refresh, import
 
+**Download**:
+A song's audio and cover art pinned on the phone, alongside whatever song analysis and breakdowns the server already has for it. Only songs with synced Japanese lyrics can be downloaded. Downloading an album, an artist or the library downloads each of its eligible songs.
+_Avoid_: Cache (reserve for the evictable copies kept while browsing), save, sync
+
+**Offline mode**:
+A setting that limits the app to downloaded songs and stops all network work. Downloaded files are used whenever they exist, online or not.
+_Avoid_: Airplane mode, local mode
+
 ### Modes
 
 **Quiz toggle**:

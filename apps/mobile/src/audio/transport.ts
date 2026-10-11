@@ -1,3 +1,4 @@
+import { localAudioUri, localArtUri } from '@/downloads/store';
 import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync } from 'expo-audio';
 import { appStore, setTransport } from '@/store/appStore';
 import { hasTranslations, libraryStore } from '@/store/libraryStore';
@@ -13,6 +14,8 @@ export async function setupTransport(valid = () => true) {
   if (!valid()) return () => {};
   const player = createAudioPlayer(null, { updateInterval: 200, keepAudioSessionActive: true });
   let song: Song | null = null,
+    sourceUri: string | null = null,
+    failed = false,
     submitted = false,
     finished = false,
     awaitingStart = false,
@@ -22,6 +25,7 @@ export async function setupTransport(valid = () => true) {
     startMs = 0,
     revision = 0;
   const fail = (error: unknown) => {
+    failed = true;
     wantsPlay = false;
     appStore.setState({
       loading: false,
@@ -90,7 +94,7 @@ export async function setupTransport(valid = () => true) {
         at = Date.now();
       libraryStore.getState().markPlayed(song.id, at);
       void savePlayed(song.id, at).catch(() => appStore.setState({ playbackError: 'Could not save Recently played' }));
-      if (session)
+      if (session && !appStore.getState().offlineMode)
         void request(session, 'scrobble', { id: song.id, submission: true, time: at }).catch(() =>
           appStore.setState({ playbackError: 'Could not scrobble this song' }),
         );
@@ -101,41 +105,70 @@ export async function setupTransport(valid = () => true) {
       else appStore.getState().nextSong();
     }
   });
-  const detach = setTransport({
-    load: (next, offset = 0) => {
-      const session = sessionStore.getState().session;
-      if (!session) return;
-      ++revision;
+  const transportLoad = (next: Song, offset = 0) => {
+    const session = sessionStore.getState().session;
+    const local = localAudioUri(next.id);
+    if (appStore.getState().offlineMode && !local) {
+      song = null;
+      awaitingStart = false;
       player.pause();
-      wantsPlay = false;
-      pausePending = false;
-      seeking = false;
-      startMs = offset;
-      song = next;
-      submitted = false;
-      finished = false;
-      awaitingStart = true;
-      try {
-        player.replace({ uri: mediaUrl(session, 'stream', next.id) });
-        player.setActiveForLockScreen(
-          true,
-          {
-            title: next.title,
-            artist: next.artist,
-            albumTitle: next.album,
-            artworkUrl: next.coverArt ? mediaUrl(session, 'getCoverArt', next.coverArt, 600) : undefined,
-          },
-          { showSeekBackward: false, showSeekForward: false },
+      fail('Song is not downloaded');
+      return;
+    }
+    if (!local && !session) {
+      fail('No account is connected');
+      return;
+    }
+    ++revision;
+    player.pause();
+    wantsPlay = false;
+    pausePending = false;
+    seeking = false;
+    startMs = offset;
+    song = next;
+    failed = false;
+    submitted = false;
+    finished = false;
+    awaitingStart = true;
+    try {
+      sourceUri = local ?? mediaUrl(session!, 'stream', next.id);
+      player.replace({ uri: sourceUri });
+      player.setActiveForLockScreen(
+        true,
+        {
+          title: next.title,
+          artist: next.artist,
+          albumTitle: next.album,
+          artworkUrl: next.coverArt
+            ? (localArtUri(next.coverArt) ??
+              (session && !appStore.getState().offlineMode
+                ? mediaUrl(session, 'getCoverArt', next.coverArt, 600)
+                : undefined))
+            : undefined,
+        },
+        { showSeekBackward: false, showSeekForward: false },
+      );
+      if (session && !appStore.getState().offlineMode && !appStore.getState().clipPlayback)
+        void request(session, 'scrobble', { id: next.id, submission: false }).catch(() =>
+          appStore.setState({ playbackError: 'Could not announce this song to the server' }),
         );
-        if (!appStore.getState().clipPlayback)
-          void request(session, 'scrobble', { id: next.id, submission: false }).catch(() =>
-            appStore.setState({ playbackError: 'Could not announce this song to the server' }),
-          );
-      } catch (error) {
-        fail(error);
-      }
-    },
+    } catch (error) {
+      fail(error);
+    }
+  };
+  const detach = setTransport({
+    load: transportLoad,
     play: () => {
+      // Leaving offline mode released an undownloaded song; reload it where it stopped.
+      if (!song) {
+        const { songId, positionMs, clipPlayback } = appStore.getState(),
+          id = clipPlayback?.songId ?? songId,
+          current = id ? libraryStore.getState().bySong[id] : undefined;
+        if (!current) return;
+        appStore.setState({ loading: true, playbackError: null });
+        transportLoad(current, clipPlayback?.positionMs ?? positionMs);
+      }
+      if (!song || failed) return;
       wantsPlay = true;
       pausePending = false;
       try {
@@ -151,7 +184,30 @@ export async function setupTransport(valid = () => true) {
     },
     seek,
   });
+  // Switching offline must release a streaming AVPlayer item, including its buffered network work.
+  const unsubscribeOffline = appStore.subscribe((state, previous) => {
+    if (!state.offlineMode || previous.offlineMode || !song) return;
+    const local = localAudioUri(song.id);
+    if (local && local === sourceUri) return;
+    if (local) {
+      const current = song,
+        playing = state.playing;
+      appStore.setState({ loading: true, playbackError: null });
+      // Reload at the current clip or song position without announcing anything to Navidrome.
+      transportLoad(current, state.clipPlayback?.positionMs ?? state.positionMs);
+      wantsPlay = playing;
+    } else {
+      ++revision;
+      song = null;
+      awaitingStart = false;
+      player.pause();
+      player.replace(null);
+      player.clearLockScreenControls();
+      fail('Song is not downloaded');
+    }
+  });
   return () => {
+    unsubscribeOffline();
     ++revision;
     wantsPlay = false;
     song = null;

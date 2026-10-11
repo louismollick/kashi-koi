@@ -1,15 +1,17 @@
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { IconButton, Label, styles } from './ui';
+import { appStore } from '@/store/appStore';
+import { IconButton, Label, Tag, styles } from './ui';
 import type { ReactNode } from 'react';
 
 /** Logo band on the three tabs; its safe-area background matches the chrome. */
 export function Header() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const offline = appStore((state) => state.offlineMode);
   return (
     <View style={{ paddingTop: insets.top, backgroundColor: colors.header }}>
       <View style={[styles.row, { height: 60, paddingLeft: 8, paddingRight: 12, justifyContent: 'space-between' }]}>
@@ -20,6 +22,16 @@ export function Header() {
           style={{ width: 210, height: 60 }}
           accessibilityLabel="Kashi-Koi!"
         />
+        {offline && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Offline mode, open settings"
+            onPress={() => router.push('/settings')}
+            style={{ marginLeft: 'auto', marginRight: 4 }}
+          >
+            <Tag fill={colors.slate}>OFFLINE</Tag>
+          </Pressable>
+        )}
         <IconButton
           plain
           name="settings"

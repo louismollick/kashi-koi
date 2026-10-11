@@ -1,3 +1,4 @@
+import { isOfflineMode } from '@/data/offlineMode';
 import { getLineText, getLyrics, libraryStore, type Translations } from '@/store/libraryStore';
 import { alignReading, isJapanese } from './text';
 
@@ -21,7 +22,8 @@ let running: Promise<void> | null = null,
   persisting: Promise<void> | null = null,
   generation = 0,
   active = false,
-  foreground = true;
+  foreground = true,
+  background = false;
 let priority: string[] = [],
   failed = new Set<string>(),
   queue: string[] = [],
@@ -62,6 +64,7 @@ libraryStore.subscribe((state, previous) => {
 
 /** Playback's song and remaining queue go ahead of the library backlog. */
 export function prioritizeTranslations(ids: string[]) {
+  if (isOfflineMode()) return;
   priority = [...new Set([...ids, ...priority])];
   queueDirty = true;
   if (active) void work();
@@ -82,7 +85,7 @@ function work() {
   const version = generation,
     service = translator,
     persist = save;
-  const valid = () => active && version === generation;
+  const valid = () => active && version === generation && !isOfflineMode();
   queueDirty = true;
   running = (async () => {
     let completed = 0;
@@ -142,7 +145,7 @@ function work() {
 
 /** Retry skipped batches after launch, a scan, or a return to the foreground. */
 export async function resumeTranslations() {
-  if (!foreground) return;
+  if ((!foreground && !background) || isOfflineMode()) return;
   active = true;
   failed.clear();
   queueDirty = true;
@@ -177,6 +180,7 @@ export async function pauseTranslations(reset = false) {
 }
 
 export async function prepareTranslation() {
+  if (isOfflineMode()) return translator.translationStatus();
   const version = generation;
   const status = await translator.prepareTranslation();
   if (version === generation) {
@@ -196,8 +200,47 @@ export function translationHint(id: string) {
       : 'No translations yet';
 }
 
-/** Scans may finish in the background, but only the foreground can start translation. */
+/** Pause outside the foreground unless downloads hold a granted iOS processing task. */
 export function setTranslationForeground(value: boolean) {
   foreground = value;
-  return value ? resumeTranslations() : pauseTranslations();
+  return value || background ? resumeTranslations() : pauseTranslations();
+}
+
+/** A granted download task permits translation until it drains, expires or is cancelled. */
+export function setTranslationBackground(value: boolean) {
+  background = value;
+  if (!foreground) return value ? resumeTranslations() : pauseTranslations();
+  return Promise.resolve();
+}
+
+/** Keep a download pending until its installed on-device fallback has saved, or cancellation stops it. */
+export async function ensureSongTranslation(songId: string, signal: AbortSignal) {
+  if (signal.aborted || isOfflineMode()) throw new Error('Download cancelled');
+  failed.delete(songId);
+  prioritizeTranslations([songId]);
+  if (libraryStore.getState().translationStatus === null) {
+    const status = await translator.translationStatus();
+    libraryStore.setState({ translationStatus: status });
+  }
+  if (!needsTranslation(songId) || libraryStore.getState().translationStatus !== 'installed') return;
+  if (signal.aborted || isOfflineMode()) throw new Error('Download cancelled');
+  await new Promise<void>((resolve, reject) => {
+    let unsubscribe = () => {};
+    const finish = (error?: Error) => {
+      unsubscribe();
+      signal.removeEventListener('abort', abort);
+      if (error) reject(error);
+      else resolve();
+    };
+    const abort = () => finish(new Error('Download cancelled'));
+    const check = () => {
+      if (signal.aborted) abort();
+      else if (!needsTranslation(songId)) finish();
+      else if (failed.has(songId)) finish(new Error(libraryStore.getState().translationError ?? 'Translation failed'));
+    };
+    unsubscribe = libraryStore.subscribe(check);
+    signal.addEventListener('abort', abort, { once: true });
+    check();
+    if (!signal.aborted && (foreground || background) && !active) void resumeTranslations();
+  });
 }

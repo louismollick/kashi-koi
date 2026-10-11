@@ -39,9 +39,10 @@ export async function fetchAnalysis(
   base: string,
   fp: string,
   fetcher: typeof fetch = fetch,
+  signal?: AbortSignal,
 ): Promise<FetchAnalysisResult> {
   const response = await fetcher(`${base.trim().replace(/\/+$/, '')}/v1/analyses/${encodeURIComponent(fp)}`, {
-    signal: AbortSignal.timeout(30_000),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
   });
   if (response.status === 404) return { status: 404 };
   if (response.status === 200) return { status: 200, analysis: readAnalysis(await response.json(), fp) };
@@ -99,11 +100,12 @@ export async function fetchBreakdown(
   sentenceText: string,
   translation: string,
   fetcher: typeof fetch = fetch,
+  signal?: AbortSignal,
 ): Promise<FetchBreakdownResult> {
   const response = await fetcher(
     `${base.trim().replace(/\/+$/, '')}/v1/analyses/${encodeURIComponent(fp)}/breakdowns/${start}`,
     {
-      signal: AbortSignal.timeout(30_000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
     },
   );
   if (response.status === 404) return { status: 404 };

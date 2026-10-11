@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Cover } from './Cover';
+import { downloadSheet } from './DownloadButton';
 import { NoLyricsBadge } from './NoLyricsBadge';
 import { Label } from './ui';
 import type { Album } from '@/types/domain';
@@ -24,6 +25,7 @@ export const AlbumTile = memo(function AlbumTile({
       accessibilityRole="button"
       accessibilityLabel={`Open album ${album.title}`}
       onPress={() => router.push({ pathname: '/library/album/[id]', params: { id: album.id } })}
+      onLongPress={() => router.push(downloadSheet({ kind: 'album', id: album.id }))}
       style={({ pressed }) => ({ width: size, opacity: pressed ? 0.7 : 1 })}
     >
       <View>

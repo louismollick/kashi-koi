@@ -5,6 +5,7 @@ import { getAlbum, getAlbumSongs, libraryStore } from '@/store/libraryStore';
 import { countedFilters, getVisibleSongs } from '@/data/libraryVisibility';
 import { appStore, useLibraryFilters } from '@/store/appStore';
 import { Cover } from '@/components/Cover';
+import { DownloadButton } from '@/components/DownloadButton';
 import { ScreenHeader } from '@/components/Header';
 import { Icon } from '@/components/Icon';
 import { SongRow } from '@/components/SongRow';
@@ -37,7 +38,7 @@ export default function AlbumDetailScreen() {
   };
   return (
     <View style={styles.page}>
-      <ScreenHeader />
+      <ScreenHeader right={<DownloadButton target={{ kind: 'album', id: album.id }} />} />
       <FlatList
         data={tracks}
         keyExtractor={(song) => song.id}

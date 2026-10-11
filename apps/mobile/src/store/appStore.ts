@@ -1,13 +1,18 @@
+import { setOfflineModeReader } from '@/data/offlineMode';
+import { useMemo } from 'react';
+import { downloadStore, localAudioUri } from '@/downloads/store';
 import { prefetchBreakdown, resetBreakdowns } from '@/analysis/breakdowns';
 import { remapReview } from '@/lyrics/review';
 import {
   prioritizeAnalyses,
+  cancelAnalyses,
+  fetchLibraryAnalyses,
   analyzeSong,
   analysisServerUrl,
   saveAnalysisToken,
   setAnalysisStore,
 } from '@/analysis/fetcher';
-import { prioritizeTranslations } from '@/japanese/translate';
+import { prioritizeTranslations, pauseTranslations, resumeTranslations } from '@/japanese/translate';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { currentOccurrence } from '@/navidrome/lyrics';
 import { create } from 'zustand';
@@ -91,6 +96,11 @@ function clearClipTimer() {
 function playSong(id: string) {
   clearAnswerWait(true);
   clearClipTimer();
+  if (appStore.getState().offlineMode && !localAudioUri(id)) {
+    transport.pause();
+    appStore.setState({ loading: false, playing: false, playbackError: 'Song is not downloaded' });
+    return;
+  }
   appStore.setState({ clipPlayback: null, clipReview: null, loading: true });
   prioritizeTranslations([id, ...(appStore.getState().playbackQueue ?? [])]);
   void prioritizeAnalyses([id, ...(appStore.getState().playbackQueue ?? [])]);
@@ -110,6 +120,8 @@ function playReviewClip() {
   const occurrence = item && reviewClip(item);
   if (item && occurrence) state.playClip(item.songId, occurrence.startMs, occurrence.endMs);
 }
+
+let offlineTransition = Promise.resolve();
 
 const dayMs = 24 * 60 * 60 * 1000;
 
@@ -156,6 +168,8 @@ type AppState = {
   lastSyncAt: number | null;
   lastScanAt: number | null;
   playing: boolean;
+  offlineMode: boolean;
+  setOfflineMode: (enabled: boolean) => void;
   hideSongsWithoutSyncedLyrics: boolean;
   hideSongsWithoutJapanese: boolean;
   playbackQueue: string[] | null;
@@ -222,6 +236,7 @@ type AppState = {
 
 /** Share the same filter mapping between queue actions and component selectors. */
 const libraryFilters = (state: AppState): LibraryFilters => ({
+  downloadedOnly: state.offlineMode,
   hideUnsynced: state.hideSongsWithoutSyncedLyrics,
   hideNonJapanese: state.hideSongsWithoutJapanese,
 });
@@ -274,6 +289,21 @@ export const appStore = create<AppState>()(
         if (!enabled) prioritizeTranslations([songId]);
       },
       translationPrompted: false,
+      offlineMode: false,
+      setOfflineMode: (offlineMode) => {
+        set({ offlineMode });
+        offlineTransition = offlineTransition
+          .catch(() => {})
+          .then(async () => {
+            if (get().offlineMode) {
+              const { cancelSync } = await import('@/navidrome/sync');
+              await Promise.all([cancelSync(), cancelAnalyses(), pauseTranslations()]);
+            } else {
+              void resumeTranslations();
+              void fetchLibraryAnalyses();
+            }
+          });
+      },
       hideSongsWithoutSyncedLyrics: true,
       hideSongsWithoutJapanese: true,
       playbackQueue: null,
@@ -441,6 +471,11 @@ export const appStore = create<AppState>()(
         get().setPlaying(true);
       },
       playClip: (songId, startMs, endMs) => {
+        if (get().offlineMode && !localAudioUri(songId)) {
+          transport.pause();
+          set({ loading: false, playing: false, playbackError: 'Song is not downloaded' });
+          return;
+        }
         const song = getSong(songId);
         if (!song || startMs < 0 || endMs <= startMs) return;
         clearAnswerWait();
@@ -781,6 +816,7 @@ export const appStore = create<AppState>()(
         return { ...current, ...saved, reviewList, run: current.run, clipReview: current.clipReview };
       },
       partialize: (state) => ({
+        offlineMode: state.offlineMode,
         analysisServerUrl: state.analysisServerUrl,
         answerTime: state.answerTime,
         reviewList: state.reviewList,
@@ -800,10 +836,13 @@ export const appStore = create<AppState>()(
 );
 
 setAnalysisStore(appStore);
+setOfflineModeReader(() => appStore.getState().offlineMode);
 
-/** Subscribe only to library visibility settings. */
+/** In offline mode, download changes invalidate memoized browsing; online they don't affect visibility. */
 export function useLibraryFilters() {
-  return appStore(useShallow(libraryFilters));
+  const filters = appStore(useShallow(libraryFilters));
+  const entries = downloadStore((state) => (filters.downloadedOnly ? state.entries : null));
+  return useMemo(() => ({ ...filters, downloadEntries: entries }), [filters, entries]);
 }
 
 /** Native storage is injected at boot so store imports stay safe in plain Node. */

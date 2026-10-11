@@ -1,3 +1,4 @@
+import { useAvailableReviewList } from '@/data/reviewVisibility';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -105,7 +106,7 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
 export default function ReviewScreen() {
   const router = useRouter();
   libraryStore((state) => state.lyrics);
-  const reviewList = appStore((state) => state.reviewList);
+  const reviewList = useAvailableReviewList();
   const now = useNow();
   const due = dueSentences(reviewList, now);
   const fresh = reviewList.filter((line) => line.kind === 'new');

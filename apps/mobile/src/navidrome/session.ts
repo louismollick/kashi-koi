@@ -47,7 +47,8 @@ export async function loadSession() {
 export async function logout() {
   sessionStore.setState({ session: null, ready: true, error: null });
   const { cancelSync } = await import('./sync');
-  await Promise.all([cancelSync(), pauseTranslations(true), cancelAnalyses()]);
+  const { deleteAllDownloads } = await import('@/downloads/queue');
+  await Promise.all([cancelSync(), pauseTranslations(true), cancelAnalyses(), deleteAllDownloads()]);
   const { clearLibrary } = await import('./db');
   await clearLibrary();
   await saveAnalysisToken('');
