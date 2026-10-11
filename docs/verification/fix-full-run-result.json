@@ -18,10 +18,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 1\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 1\"",
-            "label=\"Jump to line 1\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 1\"", "label=\"Jump to line 1\""],
           "refLabel": "Jump to line 1",
           "resolution": {
             "source": "runtime",
@@ -70,10 +67,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 2\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 2\"",
-            "label=\"Jump to line 2\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 2\"", "label=\"Jump to line 2\""],
           "refLabel": "Jump to line 2",
           "resolution": {
             "source": "runtime",
@@ -122,10 +116,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 3\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 3\"",
-            "label=\"Jump to line 3\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 3\"", "label=\"Jump to line 3\""],
           "refLabel": "Jump to line 3",
           "resolution": {
             "source": "runtime",
@@ -174,10 +165,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 4\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 4\"",
-            "label=\"Jump to line 4\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 4\"", "label=\"Jump to line 4\""],
           "refLabel": "Jump to line 4",
           "resolution": {
             "source": "runtime",
@@ -226,10 +214,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 5\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 5\"",
-            "label=\"Jump to line 5\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 5\"", "label=\"Jump to line 5\""],
           "refLabel": "Jump to line 5",
           "resolution": {
             "source": "runtime",
@@ -252,10 +237,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Goodbye never suited us\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Goodbye never suited us\"",
-            "label=\"Goodbye never suited us\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Goodbye never suited us\"", "label=\"Goodbye never suited us\""],
           "refLabel": "Goodbye never suited us",
           "resolution": {
             "source": "runtime",
@@ -278,10 +260,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 6\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 6\"",
-            "label=\"Jump to line 6\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 6\"", "label=\"Jump to line 6\""],
           "refLabel": "Jump to line 6",
           "resolution": {
             "source": "runtime",
@@ -330,10 +309,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 7\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 7\"",
-            "label=\"Jump to line 7\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 7\"", "label=\"Jump to line 7\""],
           "refLabel": "Jump to line 7",
           "resolution": {
             "source": "runtime",
@@ -382,10 +358,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 8\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 8\"",
-            "label=\"Jump to line 8\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 8\"", "label=\"Jump to line 8\""],
           "refLabel": "Jump to line 8",
           "resolution": {
             "source": "runtime",
@@ -434,10 +407,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 9\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 9\"",
-            "label=\"Jump to line 9\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 9\"", "label=\"Jump to line 9\""],
           "refLabel": "Jump to line 9",
           "resolution": {
             "source": "runtime",
@@ -486,10 +456,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 10\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 10\"",
-            "label=\"Jump to line 10\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 10\"", "label=\"Jump to line 10\""],
           "refLabel": "Jump to line 10",
           "resolution": {
             "source": "runtime",
@@ -538,10 +505,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 11\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 11\"",
-            "label=\"Jump to line 11\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 11\"", "label=\"Jump to line 11\""],
           "refLabel": "Jump to line 11",
           "resolution": {
             "source": "runtime",
@@ -590,10 +554,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 12\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 12\"",
-            "label=\"Jump to line 12\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 12\"", "label=\"Jump to line 12\""],
           "refLabel": "Jump to line 12",
           "resolution": {
             "source": "runtime",
@@ -642,10 +603,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 13\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 13\"",
-            "label=\"Jump to line 13\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 13\"", "label=\"Jump to line 13\""],
           "refLabel": "Jump to line 13",
           "resolution": {
             "source": "runtime",
@@ -694,10 +652,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Jump to line 14\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Jump to line 14\"",
-            "label=\"Jump to line 14\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Jump to line 14\"", "label=\"Jump to line 14\""],
           "refLabel": "Jump to line 14",
           "resolution": {
             "source": "runtime",
@@ -720,10 +675,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"The dawn bus keeps going\"",
-          "selectorChain": [
-            "role=\"button\" label=\"The dawn bus keeps going\"",
-            "label=\"The dawn bus keeps going\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"The dawn bus keeps going\"", "label=\"The dawn bus keeps going\""],
           "refLabel": "The dawn bus keeps going",
           "resolution": {
             "source": "runtime",

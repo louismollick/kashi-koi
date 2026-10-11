@@ -18,10 +18,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"The dawn bus keeps going\"",
-          "selectorChain": [
-            "role=\"button\" label=\"The dawn bus keeps going\"",
-            "label=\"The dawn bus keeps going\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"The dawn bus keeps going\"", "label=\"The dawn bus keeps going\""],
           "refLabel": "The dawn bus keeps going",
           "resolution": {
             "source": "runtime",
@@ -44,10 +41,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Pause\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Pause\"",
-            "label=\"Pause\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Pause\"", "label=\"Pause\""],
           "refLabel": "Pause",
           "resolution": {
             "source": "runtime",

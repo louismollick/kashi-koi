@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Kashi-Koi round 8: calmer explain sheet</title>
+    <style>
+    :root {
+      --bg: #000;
+      --track: #3e3d5b;
+      --text: #fff;
+      --muted: #9a9cb8;
+      --lavender: #b4a6e6;
+      --combo: #ffc93c;
+      --panel: #1e2033;
+      --hl: #6fb8ff;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #0b0b10;
+      color: var(--text);
+      font:
+        15px / 1.4 -apple-system,
+        BlinkMacSystemFont,
+        "Hiragino Sans",
+        sans-serif;
+      padding: 32px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+    .intro {
+      color: var(--muted);
+      max-width: 900px;
+    }
+    .row {
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      align-items: flex-start;
+    }
+    .col {
+      width: 390px;
+    }
+    .col h3 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .col p.why {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 10px;
+      min-height: 72px;
+    }
+    .phone {
+      width: 390px;
+      height: 1100px;
+      background: var(--bg);
+      border-radius: 44px;
+      border: 2px solid #2a2a35;
+      overflow: hidden;
+      position: relative;
+    }
+    .shade {
+      height: 120px;
+      background: #090a16;
+      border-bottom: 2px solid var(--track);
+    }
+    .x {
+      margin: 12px 18px 0;
+      width: 40px;
+      height: 40px;
+      background: var(--panel);
+      border: 2px solid #4b4d6a;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+    }
+    .body {
+      padding: 14px 20px 30px;
+    }
+    ruby rt {
+      font-size: 9px;
+      color: #d9d6ea;
+    }
+    .sent {
+      font-size: 21px;
+      line-height: 1.75;
+    }
+    .ck {
+      border-bottom: 2px solid #3a3a52;
+      padding-bottom: 1px;
+      margin-right: 2px;
+    }
+    .ck.on {
+      border-bottom-color: var(--hl);
+      color: var(--hl);
+    }
+    .trans {
+      font-size: 16px;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+    .trans .on {
+      color: var(--hl);
+    }
+    .rule {
+      height: 1px;
+      background: var(--track);
+      margin: 18px 0 14px;
+    }
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+    }
+    table.words {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table.words td {
+      padding: 4px 0;
+      vertical-align: baseline;
+    }
+    table.words td.j {
+      font-size: 16px;
+      width: 26%;
+    }
+    table.words td.r {
+      color: var(--muted);
+      font-size: 12px;
+      width: 26%;
+    }
+    table.words td.e {
+      font-size: 14px;
+    }
+    .gh {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .gh .j {
+      font-size: 19px;
+      font-weight: 700;
+    }
+    .gh .e {
+      font-size: 15px;
+      text-align: right;
+    }
+    .gh.on .j {
+      color: var(--hl);
+    }
+    .rail {
+      margin: 6px 0 0 4px;
+      border-left: 2px solid var(--track);
+      padding-left: 14px;
+    }
+    .step {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+      padding: 2px 0;
+    }
+    .step .j {
+      font-size: 16px;
+    }
+    .step .e {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: right;
+    }
+    .add {
+      color: var(--combo);
+      font-weight: 700;
+    }
+    .gram {
+      color: var(--lavender);
+      font-size: 14px;
+      margin-top: 6px;
+      line-height: 1.45;
+    }
+    .tap {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      border-radius: 17px;
+      border: 2px solid var(--hl);
+      background: #6fb8ff33;
+    }
+    /* current, approximated */
+    .cmap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 12px;
+    }
+    .cmap div {
+      border-top: 3px solid;
+      padding-top: 2px;
+    }
+    .cmap .j {
+      font-size: 18px;
+    }
+    .cmap .e {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Round 8: calmer explain sheet</h1>
+    <p class="intro">
+      Same sentence as your screenshot. Left: today. Middle: proposal at rest. Right: the same sheet after tapping
+      掠めるけど.
+    </p>
+    <div class="row">
+      <div class="col">
+        <h3>Today</h3>
+        <p class="why">
+          9 chunks in 7 repeating colors, a rainbow translation, and the same gloss up to three times. Every chunk gets
+          a full section.
+        </p>
+        <div class="phone">
+          <div class="shade"></div>
+          <div class="x">✕</div>
+          <div class="body">
+            <div class="cmap">
+              <div style="border-color:#6fb8ff">
+                <span class="j"
+                  ><ruby>尖<rt>とが</rt></ruby>った</span
+                ><br><span class="e">sharp, pointed</span>
+              </div>
+              <div style="border-color:#6ee0a8">
+                <span class="j"
+                  ><ruby>残像<rt>ざんぞう</rt></ruby>が</span
+                ><br><span class="e">afterimage</span>
+              </div>
+              <div style="border-color:#ffa45c">
+                <span class="j"
+                  ><ruby>脳裏<rt>のうり</rt></ruby>を</span
+                ><br><span class="e">mind, memory</span>
+              </div>
+              <div style="border-color:#ff85b8">
+                <span class="j"
+                  ><ruby>掠<rt>かす</rt></ruby>める</span
+                ><br><span class="e">to graze, to flit through</span>
+              </div>
+              <div style="border-color:#d4e157"><span class="j">けど</span><br><span class="e">though, but</span></div>
+              <div style="border-color:#ff6b6b">
+                <span class="j"
+                  ><ruby>越<rt>こ</rt></ruby>えて</span
+                ><br><span class="e">get past and…</span>
+              </div>
+              <div style="border-color:#d7b899">
+                <span class="j">いける</span><br><span class="e">can go (potential)</span>
+              </div>
+              <div style="border-color:#6fb8ff">
+                <span class="j">だろ</span><br><span class="e">right? (casual)</span>
+              </div>
+            </div>
+            <p class="trans" style="font-size:17px; margin-top:16px">
+              <span style="color:#d4e157">Though</span>
+              a <span style="color:#6fb8ff">sharp</span> afterimage <span style="color:#ff85b8">flits through</span>
+              <span style="color:#ffa45c">my mind</span>, we can <span style="color:#ff6b6b">get past it</span>,
+              <span style="color:#6fb8ff">right?</span>
+            </p>
+            <div class="rule"></div>
+            <div class="gh">
+              <span class="j" style="color:#6fb8ff"
+                ><ruby>尖<rt>とが</rt></ruby>った</span
+              ><span class="e">sharp, pointed</span>
+            </div>
+            <div class="rail">
+              <div class="step">
+                <span class="j"
+                  ><ruby>尖<rt>とが</rt></ruby>る</span
+                ><span class="e">to be sharp or pointed</span>
+              </div>
+              <div class="step">
+                <span class="j"
+                  ><ruby>尖<rt>とが</rt></ruby><span class="add">った</span></span
+                ><span class="e" style="color:#fff">sharp, pointed</span>
+              </div>
+            </div>
+            <p class="gram">
+              This past form describes 残像 as having a sharp quality, rather than placing it in the past.
+            </p>
+            <div class="rule"></div>
+            <div class="gh">
+              <span class="j" style="color:#6ee0a8"
+                ><ruby>残像<rt>ざんぞう</rt></ruby>が</span
+              ><span class="e">afterimage</span>
+            </div>
+            <p class="gram">が marks the afterimage as the subject of 掠める.</p>
+            <div class="rule"></div>
+            <div class="gh">
+              <span class="j" style="color:#ffa45c"
+                ><ruby>脳裏<rt>のうり</rt></ruby>を</span
+              ><span class="e">mind, memory</span>
+            </div>
+            <p class="gram">…and 6 more sections like these</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h3>Proposal</h3>
+        <p class="why">
+          Sentence with quiet chunk underlines, plain translation. Plain words go in one short list. Only the 3 chunks
+          with grammar get a ladder. Readings once, no repeated glosses, one accent color for what each step added.
+        </p>
+        <div class="phone">
+          <div class="shade"></div>
+          <div class="x">✕</div>
+          <div class="body">
+            <p class="sent">
+              <span class="ck"
+                ><ruby>尖<rt>とが</rt></ruby>った</span
+              ><span class="ck"
+                ><ruby>残像<rt>ざんぞう</rt></ruby>が</span
+              ><span class="ck"
+                ><ruby>脳裏<rt>のうり</rt></ruby>を</span
+              ><span class="ck"
+                ><ruby>掠<rt>かす</rt></ruby>めるけど</span
+              ><br>
+              <span class="ck"
+                ><ruby>越<rt>こ</rt></ruby>えていけるだろ</span
+              >
+            </p>
+            <p class="trans">Though a sharp afterimage flits through my mind, we can get past it, right?</p>
+            <div class="rule"></div>
+            <div class="label">WORDS</div>
+            <table class="words">
+              <tr>
+                <td class="j">残像</td>
+                <td class="r">ざんぞう</td>
+                <td class="e">afterimage</td>
+              </tr>
+              <tr>
+                <td class="j">脳裏</td>
+                <td class="r">のうり</td>
+                <td class="e">the back of the mind</td>
+              </tr>
+            </table>
+            <div class="rule"></div>
+            <div class="label">GRAMMAR</div>
+            <div class="gh">
+              <span class="j"
+                ><ruby>尖<rt>とが</rt></ruby>った</span
+              ><span class="e">sharp</span>
+            </div>
+            <div class="rail">
+              <div class="step"><span class="j">尖る</span><span class="e">to be pointed</span></div>
+              <div class="step">
+                <span class="j">尖<span class="add">った</span></span><span class="e">pointed (describing a noun)</span>
+              </div>
+            </div>
+            <p class="gram">A past form before a noun often describes a state, not a past event.</p>
+
+            <div class="gh">
+              <span class="j"
+                ><ruby>掠<rt>かす</rt></ruby>めるけど</span
+              ><span class="e">though it flits through</span>
+            </div>
+            <div class="rail">
+              <div class="step"><span class="j">掠める</span><span class="e">to graze, flit through</span></div>
+              <div class="step">
+                <span class="j">掠める<span class="add">けど</span></span><span class="e">…though</span>
+              </div>
+            </div>
+            <p class="gram">けど links two clauses with a contrast, like “though”.</p>
+
+            <div class="gh">
+              <span class="j"
+                ><ruby>越<rt>こ</rt></ruby>えていけるだろ</span
+              ><span class="e">we can get past it, right?</span>
+            </div>
+            <div class="rail">
+              <div class="step"><span class="j">越える</span><span class="e">to get past</span></div>
+              <div class="step">
+                <span class="j">越え<span class="add">ていく</span></span><span class="e">to go on past</span>
+              </div>
+              <div class="step">
+                <span class="j">越えてい<span class="add">ける</span></span><span class="e">can go on past</span>
+              </div>
+              <div class="step">
+                <span class="j">越えていける<span class="add">だろ</span></span><span class="e">…right?</span>
+              </div>
+            </div>
+            <p class="gram">いける is the potential of いく. だろ is a casual だろう asking for agreement.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <h3>Proposal · tapped 掠めるけど</h3>
+        <p class="why">
+          Tapping a chunk in the sentence lights it and its English in one color and scrolls to its ladder. Tap again to
+          clear. The color only appears when you ask for it.
+        </p>
+        <div class="phone">
+          <div class="shade"></div>
+          <div class="x">✕</div>
+          <div class="body">
+            <p class="sent">
+              <span class="ck"
+                ><ruby>尖<rt>とが</rt></ruby>った</span
+              ><span class="ck"
+                ><ruby>残像<rt>ざんぞう</rt></ruby>が</span
+              ><span class="ck"
+                ><ruby>脳裏<rt>のうり</rt></ruby>を</span
+              ><span class="ck on"
+                ><ruby>掠<rt>かす</rt></ruby>めるけど</span
+              ><br>
+              <span class="ck"
+                ><ruby>越<rt>こ</rt></ruby>えていけるだろ</span
+              >
+            </p>
+            <p class="trans">
+              <span class="on">Though</span>
+              a sharp afterimage <span class="on">flits through</span> my mind, we can get past it, right?
+            </p>
+            <div class="rule"></div>
+            <div class="label">GRAMMAR</div>
+            <div class="gh on">
+              <span class="j"
+                ><ruby>掠<rt>かす</rt></ruby>めるけど</span
+              ><span class="e">though it flits through</span>
+            </div>
+            <div class="rail" style="border-left-color: var(--hl)">
+              <div class="step"><span class="j">掠める</span><span class="e">to graze, flit through</span></div>
+              <div class="step">
+                <span class="j">掠める<span class="add">けど</span></span><span class="e">…though</span>
+              </div>
+            </div>
+            <p class="gram">けど links two clauses with a contrast, like “though”.</p>
+            <div class="gh">
+              <span class="j"
+                ><ruby>越<rt>こ</rt></ruby>えていけるだろ</span
+              ><span class="e">we can get past it, right?</span>
+            </div>
+            <div class="rail">
+              <div class="step"><span class="j">越える</span><span class="e">to get past</span></div>
+              <div class="step">
+                <span class="j">越え<span class="add">ていく</span></span><span class="e">to go on past</span>
+              </div>
+              <div class="step">
+                <span class="j">越えてい<span class="add">ける</span></span><span class="e">can go on past</span>
+              </div>
+              <div class="step">
+                <span class="j">越えていける<span class="add">だろ</span></span><span class="e">…right?</span>
+              </div>
+            </div>
+            <p class="gram">いける is the potential of いく. だろ is a casual だろう asking for agreement.</p>
+          </div>
+          <div class="tap" style="left: 270px; top: 186px"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

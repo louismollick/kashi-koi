@@ -1,0 +1,15 @@
+.git
+node_modules
+**/node_modules
+**/data
+**/.env
+**/.env.*
+**/*.log
+apps/mobile
+mockups
+assets
+docs
+build
+dist
+.expo
+.DS_Store

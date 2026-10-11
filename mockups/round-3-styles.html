@@ -1,423 +1,1251 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Round 3: visual styles</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Dela+Gothic+One&family=Hachi+Maru+Pop&family=Klee+One:wght@400;600&family=Mochiy+Pop+One&family=Nunito:wght@700;900&family=Yusei+Magic&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<style>
-  .phone { border-color: #333; }
-  .phone .status { position: relative; z-index: 2; }
-  .scr { position: relative; z-index: 1; }
-  .ck { display: inline-block; width: 16px; height: 16px; flex: none; }
+  <head>
+    <meta charset="utf-8">
+    <title>Round 3: visual styles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+      href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Dela+Gothic+One&family=Hachi+Maru+Pop&family=Klee+One:wght@400;600&family=Mochiy+Pop+One&family=Nunito:wght@700;900&family=Yusei+Magic&family=Zen+Maru+Gothic:wght@500;700&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="style.css">
+    <style>
+    .phone {
+      border-color: #333;
+    }
+    .phone .status {
+      position: relative;
+      z-index: 2;
+    }
+    .scr {
+      position: relative;
+      z-index: 1;
+    }
+    .ck {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      flex: none;
+    }
 
-  /* ---------- 1 skribbl ---------- */
-  .sk { background: #2f5fd0; font-family: "Nunito", "Zen Maru Gothic", sans-serif; color: #111; }
-  .sk .status { color: #fff; }
-  .sk .doodle { position: absolute; inset: 0; color: rgba(255,255,255,.13); font-size: 26px; line-height: 1.7; word-spacing: 14px; overflow: hidden; padding: 6px; letter-spacing: 6px; }
-  .sk .pan { background: #fff; border-radius: 6px; padding: 8px 10px; margin-bottom: 7px; }
-  .sk .top { display: flex; align-items: center; gap: 8px; font-weight: 900; }
-  .sk .clock { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #111; display: flex; align-items: center; justify-content: center; font-size: 13px; background: #fff; }
-  .sk .hint { font-family: "Yusei Magic"; font-size: 19px; text-align: center; letter-spacing: 1px; }
-  .sk .hint rt { color: #666; font-size: 9px; }
-  .sk .ppl { display: flex; gap: 6px; }
-  .sk .p { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 900; }
-  .sk .p.me { background: #e8f7d8; }
-  .sk .av { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #111; position: relative; flex: none; }
-  .sk .av::before, .sk .av::after { content: ""; position: absolute; top: 8px; width: 4px; height: 5px; background: #111; border-radius: 2px; }
-  .sk .av::before { left: 6px; } .sk .av::after { right: 6px; }
-  .sk .ch { background: #fff; border-radius: 6px; padding: 10px; font-weight: 800; font-size: 13px; margin-bottom: 6px; border: 2px solid #fff; box-shadow: 0 3px 0 #1b3f99; }
-  .sk .ch.hit { background: #56ce27; color: #fff; border-color: #56ce27; }
-  .sk .chat { background: #fff; border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: 700; margin-top: auto; margin-bottom: 14px; }
-  .sk .chat div { padding: 2px 0; }
-  .sk .chat .g { color: #3aa012; } .sk .chat .r { color: #c43; } .sk .chat .b { color: #2f5fd0; }
-  .sk .row2 { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 2px dashed #ddd; font-size: 12px; font-family: "Yusei Magic"; }
-  .sk .box { width: 18px; height: 18px; border: 2.5px solid #111; border-radius: 4px; transform: rotate(-4deg); display: flex; align-items: center; justify-content: center; font-size: 13px; color: #3aa012; font-family: "Nunito"; font-weight: 900; }
-  .sk .btnk { background: #56ce27; color: #fff; font-weight: 900; text-align: center; padding: 11px; border-radius: 6px; box-shadow: 0 3px 0 #2f8a0d; }
+    /* ---------- 1 skribbl ---------- */
+    .sk {
+      background: #2f5fd0;
+      font-family: "Nunito", "Zen Maru Gothic", sans-serif;
+      color: #111;
+    }
+    .sk .status {
+      color: #fff;
+    }
+    .sk .doodle {
+      position: absolute;
+      inset: 0;
+      color: rgba(255, 255, 255, 0.13);
+      font-size: 26px;
+      line-height: 1.7;
+      word-spacing: 14px;
+      overflow: hidden;
+      padding: 6px;
+      letter-spacing: 6px;
+    }
+    .sk .pan {
+      background: #fff;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 7px;
+    }
+    .sk .top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 900;
+    }
+    .sk .clock {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 3px solid #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      background: #fff;
+    }
+    .sk .hint {
+      font-family: "Yusei Magic";
+      font-size: 19px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .sk .hint rt {
+      color: #666;
+      font-size: 9px;
+    }
+    .sk .ppl {
+      display: flex;
+      gap: 6px;
+    }
+    .sk .p {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .sk .p.me {
+      background: #e8f7d8;
+    }
+    .sk .av {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid #111;
+      position: relative;
+      flex: none;
+    }
+    .sk .av::before,
+    .sk .av::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      width: 4px;
+      height: 5px;
+      background: #111;
+      border-radius: 2px;
+    }
+    .sk .av::before {
+      left: 6px;
+    }
+    .sk .av::after {
+      right: 6px;
+    }
+    .sk .ch {
+      background: #fff;
+      border-radius: 6px;
+      padding: 10px;
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 6px;
+      border: 2px solid #fff;
+      box-shadow: 0 3px 0 #1b3f99;
+    }
+    .sk .ch.hit {
+      background: #56ce27;
+      color: #fff;
+      border-color: #56ce27;
+    }
+    .sk .chat {
+      background: #fff;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: auto;
+      margin-bottom: 14px;
+    }
+    .sk .chat div {
+      padding: 2px 0;
+    }
+    .sk .chat .g {
+      color: #3aa012;
+    }
+    .sk .chat .r {
+      color: #c43;
+    }
+    .sk .chat .b {
+      color: #2f5fd0;
+    }
+    .sk .row2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 2px dashed #ddd;
+      font-size: 12px;
+      font-family: "Yusei Magic";
+    }
+    .sk .box {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid #111;
+      border-radius: 4px;
+      transform: rotate(-4deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #3aa012;
+      font-family: "Nunito";
+      font-weight: 900;
+    }
+    .sk .btnk {
+      background: #56ce27;
+      color: #fff;
+      font-weight: 900;
+      text-align: center;
+      padding: 11px;
+      border-radius: 6px;
+      box-shadow: 0 3px 0 #2f8a0d;
+    }
 
-  /* ---------- 2 taiko ---------- */
-  .tk { background: linear-gradient(#f2541b 0 34%, #f5e3c1 34%); font-family: "Mochiy Pop One", sans-serif; color: #2b1407; }
-  .tk .status { color: #fff; }
-  .tk .seig { position: absolute; left: 0; right: 0; top: 34%; bottom: 0; background-image: radial-gradient(circle at 50% 100%, transparent 9px, rgba(200,120,60,.18) 10px 11px, transparent 12px 15px, rgba(200,120,60,.18) 16px 17px, transparent 18px); background-size: 34px 17px; }
-  .tk .ol { color: #fff; -webkit-text-stroke: 5px #2b1407; paint-order: stroke fill; }
-  .tk .lane { height: 58px; background: #3a1a0f; border-top: 3px solid #1a0a05; border-bottom: 3px solid #1a0a05; position: relative; margin: 0 -16px; }
-  .tk .hitc { position: absolute; left: 14px; top: 6px; width: 40px; height: 40px; border-radius: 50%; border: 3px solid #c9b79c; box-shadow: inset 0 0 0 6px #3a1a0f, inset 0 0 0 9px #7a6450; }
-  .tk .note { position: absolute; top: 9px; width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px #1a0a05; }
-  .tk .note.r { background: #ec3b22; } .tk .note.b { background: #48b4d8; }
-  .tk .roll { position: absolute; top: 12px; height: 28px; background: #fbd23a; border: 3px solid #fff; border-radius: 16px; box-shadow: 0 0 0 2px #1a0a05; font-size: 10px; color: #2b1407; display: flex; align-items: center; padding-left: 8px; white-space: nowrap; overflow: hidden; }
-  .tk .don { width: 66px; height: 66px; border-radius: 50%; background: #ec3b22; border: 4px solid #2b1407; position: relative; flex: none; box-shadow: inset 0 -6px 0 rgba(0,0,0,.15); }
-  .tk .don::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: #f8f0dc; }
-  .tk .don i { position: absolute; top: 25px; width: 7px; height: 10px; background: #2b1407; border-radius: 4px; z-index: 1; }
-  .tk .don b { position: absolute; top: 38px; left: 26px; width: 14px; height: 7px; border-radius: 0 0 8px 8px; background: #c22; z-index: 1; }
-  .tk .don em { position: absolute; top: 34px; width: 9px; height: 5px; border-radius: 50%; background: #ff9aa8; z-index: 1; }
-  .tk .ch { border: 4px solid #2b1407; border-radius: 30px; padding: 10px 14px; font-size: 12px; margin-bottom: 7px; color: #fff; box-shadow: 0 4px 0 #2b1407; }
-  .tk .ch.r { background: #ec3b22; } .tk .ch.b { background: #48b4d8; } .tk .ch.y { background: #f5b823; color: #2b1407; }
-  .tk .judge { font-size: 30px; color: #ffd400; -webkit-text-stroke: 5px #b0170b; paint-order: stroke fill; }
-  .tk .gauge { height: 14px; border: 3px solid #2b1407; background: #6b3a20; border-radius: 3px; position: relative; }
-  .tk .gauge i { position: absolute; inset: 0 20% 0 0; background: repeating-linear-gradient(90deg, #ffd400 0 8px, #ffb000 8px 10px); }
-  .tk .gauge::after { content: "魂"; position: absolute; right: -4px; top: -10px; font-size: 18px; color: #ec3b22; -webkit-text-stroke: 3px #fff; paint-order: stroke fill; }
-  .tk .res { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 14px; }
-  .tk .lrow { display: flex; gap: 8px; align-items: center; background: #fff7e6; border: 3px solid #2b1407; border-radius: 10px; padding: 7px 8px; font-size: 11px; margin-bottom: 6px; }
-  .tk .tg { width: 34px; height: 20px; border-radius: 12px; background: #c9b79c; border: 2px solid #2b1407; position: relative; flex: none; }
-  .tk .tg::after { content: ""; position: absolute; left: 1px; top: 1px; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 1px solid #2b1407; }
-  .tk .tg.on { background: #ec3b22; } .tk .tg.on::after { left: 15px; }
+    /* ---------- 2 taiko ---------- */
+    .tk {
+      background: linear-gradient(#f2541b 0 34%, #f5e3c1 34%);
+      font-family: "Mochiy Pop One", sans-serif;
+      color: #2b1407;
+    }
+    .tk .status {
+      color: #fff;
+    }
+    .tk .seig {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 34%;
+      bottom: 0;
+      background-image: radial-gradient(
+        circle at 50% 100%,
+        transparent 9px,
+        rgba(200, 120, 60, 0.18) 10px 11px,
+        transparent 12px 15px,
+        rgba(200, 120, 60, 0.18) 16px 17px,
+        transparent 18px
+      );
+      background-size: 34px 17px;
+    }
+    .tk .ol {
+      color: #fff;
+      -webkit-text-stroke: 5px #2b1407;
+      paint-order: stroke fill;
+    }
+    .tk .lane {
+      height: 58px;
+      background: #3a1a0f;
+      border-top: 3px solid #1a0a05;
+      border-bottom: 3px solid #1a0a05;
+      position: relative;
+      margin: 0 -16px;
+    }
+    .tk .hitc {
+      position: absolute;
+      left: 14px;
+      top: 6px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 3px solid #c9b79c;
+      box-shadow:
+        inset 0 0 0 6px #3a1a0f,
+        inset 0 0 0 9px #7a6450;
+    }
+    .tk .note {
+      position: absolute;
+      top: 9px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px #1a0a05;
+    }
+    .tk .note.r {
+      background: #ec3b22;
+    }
+    .tk .note.b {
+      background: #48b4d8;
+    }
+    .tk .roll {
+      position: absolute;
+      top: 12px;
+      height: 28px;
+      background: #fbd23a;
+      border: 3px solid #fff;
+      border-radius: 16px;
+      box-shadow: 0 0 0 2px #1a0a05;
+      font-size: 10px;
+      color: #2b1407;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .tk .don {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      background: #ec3b22;
+      border: 4px solid #2b1407;
+      position: relative;
+      flex: none;
+      box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.15);
+    }
+    .tk .don::before {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      background: #f8f0dc;
+    }
+    .tk .don i {
+      position: absolute;
+      top: 25px;
+      width: 7px;
+      height: 10px;
+      background: #2b1407;
+      border-radius: 4px;
+      z-index: 1;
+    }
+    .tk .don b {
+      position: absolute;
+      top: 38px;
+      left: 26px;
+      width: 14px;
+      height: 7px;
+      border-radius: 0 0 8px 8px;
+      background: #c22;
+      z-index: 1;
+    }
+    .tk .don em {
+      position: absolute;
+      top: 34px;
+      width: 9px;
+      height: 5px;
+      border-radius: 50%;
+      background: #ff9aa8;
+      z-index: 1;
+    }
+    .tk .ch {
+      border: 4px solid #2b1407;
+      border-radius: 30px;
+      padding: 10px 14px;
+      font-size: 12px;
+      margin-bottom: 7px;
+      color: #fff;
+      box-shadow: 0 4px 0 #2b1407;
+    }
+    .tk .ch.r {
+      background: #ec3b22;
+    }
+    .tk .ch.b {
+      background: #48b4d8;
+    }
+    .tk .ch.y {
+      background: #f5b823;
+      color: #2b1407;
+    }
+    .tk .judge {
+      font-size: 30px;
+      color: #ffd400;
+      -webkit-text-stroke: 5px #b0170b;
+      paint-order: stroke fill;
+    }
+    .tk .gauge {
+      height: 14px;
+      border: 3px solid #2b1407;
+      background: #6b3a20;
+      border-radius: 3px;
+      position: relative;
+    }
+    .tk .gauge i {
+      position: absolute;
+      inset: 0 20% 0 0;
+      background: repeating-linear-gradient(90deg, #ffd400 0 8px, #ffb000 8px 10px);
+    }
+    .tk .gauge::after {
+      content: "魂";
+      position: absolute;
+      right: -4px;
+      top: -10px;
+      font-size: 18px;
+      color: #ec3b22;
+      -webkit-text-stroke: 3px #fff;
+      paint-order: stroke fill;
+    }
+    .tk .res {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 2px 10px;
+      font-size: 14px;
+    }
+    .tk .lrow {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #fff7e6;
+      border: 3px solid #2b1407;
+      border-radius: 10px;
+      padding: 7px 8px;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    .tk .tg {
+      width: 34px;
+      height: 20px;
+      border-radius: 12px;
+      background: #c9b79c;
+      border: 2px solid #2b1407;
+      position: relative;
+      flex: none;
+    }
+    .tk .tg::after {
+      content: "";
+      position: absolute;
+      left: 1px;
+      top: 1px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1px solid #2b1407;
+    }
+    .tk .tg.on {
+      background: #ec3b22;
+    }
+    .tk .tg.on::after {
+      left: 15px;
+    }
 
-  /* ---------- 3 jrpg ---------- */
-  .rpg { background: #0b0b1e; font-family: "DotGothic16", monospace; color: #fff; image-rendering: pixelated; }
-  .rpg .win { border: 3px solid #fff; box-shadow: 0 0 0 3px #0b0b1e, 0 0 0 6px #6c6cff; background: #10104a; padding: 8px 10px; margin: 6px 3px 10px; }
-  .rpg .field { height: 170px; position: relative; background: linear-gradient(#1b1b55 0 60%, #2a4a2a 60%); border: 3px solid #fff; margin: 4px 3px 10px; }
-  .rpg .px { position: absolute; width: 7px; height: 7px; }
-  .rpg .hp { height: 8px; background: #400; border: 2px solid #fff; }
-  .rpg .hp i { display: block; height: 100%; background: #3f3; }
-  .rpg .menu div { padding: 4px 0 4px 16px; position: relative; font-size: 12px; }
-  .rpg .menu .cur::before { content: "▶"; position: absolute; left: 0; animation: blink 1s steps(2) infinite; }
-  .rpg .dmg { position: absolute; color: #ff4; font-size: 22px; text-shadow: 2px 2px 0 #a00; }
-  @keyframes blink { 50% { opacity: 0; } }
-  .rpg .q div { padding: 3px 0; font-size: 12px; }
+    /* ---------- 3 jrpg ---------- */
+    .rpg {
+      background: #0b0b1e;
+      font-family: "DotGothic16", monospace;
+      color: #fff;
+      image-rendering: pixelated;
+    }
+    .rpg .win {
+      border: 3px solid #fff;
+      box-shadow:
+        0 0 0 3px #0b0b1e,
+        0 0 0 6px #6c6cff;
+      background: #10104a;
+      padding: 8px 10px;
+      margin: 6px 3px 10px;
+    }
+    .rpg .field {
+      height: 170px;
+      position: relative;
+      background: linear-gradient(#1b1b55 0 60%, #2a4a2a 60%);
+      border: 3px solid #fff;
+      margin: 4px 3px 10px;
+    }
+    .rpg .px {
+      position: absolute;
+      width: 7px;
+      height: 7px;
+    }
+    .rpg .hp {
+      height: 8px;
+      background: #400;
+      border: 2px solid #fff;
+    }
+    .rpg .hp i {
+      display: block;
+      height: 100%;
+      background: #3f3;
+    }
+    .rpg .menu div {
+      padding: 4px 0 4px 16px;
+      position: relative;
+      font-size: 12px;
+    }
+    .rpg .menu .cur::before {
+      content: "▶";
+      position: absolute;
+      left: 0;
+      animation: blink 1s steps(2) infinite;
+    }
+    .rpg .dmg {
+      position: absolute;
+      color: #ff4;
+      font-size: 22px;
+      text-shadow: 2px 2px 0 #a00;
+    }
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+    .rpg .q div {
+      padding: 3px 0;
+      font-size: 12px;
+    }
 
-  /* ---------- 4 manga ---------- */
-  .mg { background: #fff; color: #000; font-family: "Klee One", serif; }
-  .mg .status { color: #000; }
-  .mg .panel { border: 3px solid #000; position: relative; overflow: hidden; margin-bottom: 6px; background: #fff; }
-  .mg .tone { background-image: radial-gradient(#000 1px, transparent 1.3px); background-size: 5px 5px; }
-  .mg .speed { position: absolute; inset: -40px; background: repeating-conic-gradient(from 0deg at 50% 50%, #000 0deg 1.6deg, transparent 1.6deg 7deg); }
-  .mg .speed::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, #fff 28%, transparent 58%); }
-  .mg .sfx { font-family: "Dela Gothic One"; position: absolute; color: #fff; -webkit-text-stroke: 4px #000; paint-order: stroke fill; transform: rotate(-12deg); }
-  .mg .bub { border: 2.5px solid #000; border-radius: 50%/45%; padding: 10px 14px; text-align: center; font-size: 12px; font-weight: 600; background: #fff; position: relative; margin-bottom: 7px; }
-  .mg .bub.hit { background: #000; color: #fff; }
-  .mg .stamp { position: absolute; font-family: "Dela Gothic One"; color: #d40000; border: 3px solid #d40000; padding: 0 6px; transform: rotate(14deg); font-size: 18px; background: rgba(255,255,255,.85); }
-  .mg .chk { width: 16px; height: 16px; border: 2.5px solid #000; flex: none; display: flex; align-items: center; justify-content: center; font-family: "Dela Gothic One"; font-size: 12px; }
+    /* ---------- 4 manga ---------- */
+    .mg {
+      background: #fff;
+      color: #000;
+      font-family: "Klee One", serif;
+    }
+    .mg .status {
+      color: #000;
+    }
+    .mg .panel {
+      border: 3px solid #000;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 6px;
+      background: #fff;
+    }
+    .mg .tone {
+      background-image: radial-gradient(#000 1px, transparent 1.3px);
+      background-size: 5px 5px;
+    }
+    .mg .speed {
+      position: absolute;
+      inset: -40px;
+      background: repeating-conic-gradient(from 0deg at 50% 50%, #000 0deg 1.6deg, transparent 1.6deg 7deg);
+    }
+    .mg .speed::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, #fff 28%, transparent 58%);
+    }
+    .mg .sfx {
+      font-family: "Dela Gothic One";
+      position: absolute;
+      color: #fff;
+      -webkit-text-stroke: 4px #000;
+      paint-order: stroke fill;
+      transform: rotate(-12deg);
+    }
+    .mg .bub {
+      border: 2.5px solid #000;
+      border-radius: 50% / 45%;
+      padding: 10px 14px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      background: #fff;
+      position: relative;
+      margin-bottom: 7px;
+    }
+    .mg .bub.hit {
+      background: #000;
+      color: #fff;
+    }
+    .mg .stamp {
+      position: absolute;
+      font-family: "Dela Gothic One";
+      color: #d40000;
+      border: 3px solid #d40000;
+      padding: 0 6px;
+      transform: rotate(14deg);
+      font-size: 18px;
+      background: rgba(255, 255, 255, 0.85);
+    }
+    .mg .chk {
+      width: 16px;
+      height: 16px;
+      border: 2.5px solid #000;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Dela Gothic One";
+      font-size: 12px;
+    }
 
-  /* ---------- 5 lofi ---------- */
-  .lofi { background: linear-gradient(#2a1b4d, #6b3f7a 55%, #e0866b); font-family: "Zen Maru Gothic", sans-serif; color: #fff4ea; }
-  .lofi .win { position: relative; height: 150px; margin: 4px 0 12px; border: 8px solid #3b2516; border-radius: 4px; background: linear-gradient(#1b2050, #4b3a7a); overflow: hidden; }
-  .lofi .win::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(105deg, rgba(255,255,255,.18) 0 1px, transparent 1px 9px); }
-  .lofi .win::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 6px; background: #3b2516; }
-  .lofi .city { position: absolute; bottom: 0; left: 0; right: 0; height: 46px; background: linear-gradient(90deg, #120f2a 0 12%, transparent 12% 15%, #120f2a 15% 30%, transparent 30% 33%, #120f2a 33% 52%, transparent 52% 55%, #120f2a 55% 78%, transparent 78% 80%, #120f2a 80%); }
-  .lofi .lit { position: absolute; width: 4px; height: 4px; background: #ffd27a; box-shadow: 0 0 6px #ffb84d; }
-  .lofi .note { color: #3a2a1f; padding: 9px 11px; font-size: 12px; margin-bottom: 7px; box-shadow: 2px 3px 0 rgba(0,0,0,.25); font-family: "Klee One"; font-weight: 600; }
-  .lofi .tape { height: 22px; border-radius: 4px; background: #241733; display: flex; align-items: center; gap: 8px; padding: 0 8px; font-size: 10px; }
-  .lofi .reel { width: 12px; height: 12px; border-radius: 50%; border: 3px dotted #fff4ea; }
-  .lofi .paper { background: #fbf6ea; color: #3a2a1f; padding: 10px 12px; background-image: repeating-linear-gradient(transparent 0 23px, #cfd8ef 23px 24px); line-height: 24px; font-family: "Klee One"; font-size: 12px; }
+    /* ---------- 5 lofi ---------- */
+    .lofi {
+      background: linear-gradient(#2a1b4d, #6b3f7a 55%, #e0866b);
+      font-family: "Zen Maru Gothic", sans-serif;
+      color: #fff4ea;
+    }
+    .lofi .win {
+      position: relative;
+      height: 150px;
+      margin: 4px 0 12px;
+      border: 8px solid #3b2516;
+      border-radius: 4px;
+      background: linear-gradient(#1b2050, #4b3a7a);
+      overflow: hidden;
+    }
+    .lofi .win::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(105deg, rgba(255, 255, 255, 0.18) 0 1px, transparent 1px 9px);
+    }
+    .lofi .win::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      background: #3b2516;
+    }
+    .lofi .city {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 46px;
+      background: linear-gradient(
+        90deg,
+        #120f2a 0 12%,
+        transparent 12% 15%,
+        #120f2a 15% 30%,
+        transparent 30% 33%,
+        #120f2a 33% 52%,
+        transparent 52% 55%,
+        #120f2a 55% 78%,
+        transparent 78% 80%,
+        #120f2a 80%
+      );
+    }
+    .lofi .lit {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #ffd27a;
+      box-shadow: 0 0 6px #ffb84d;
+    }
+    .lofi .note {
+      color: #3a2a1f;
+      padding: 9px 11px;
+      font-size: 12px;
+      margin-bottom: 7px;
+      box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
+      font-family: "Klee One";
+      font-weight: 600;
+    }
+    .lofi .tape {
+      height: 22px;
+      border-radius: 4px;
+      background: #241733;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 8px;
+      font-size: 10px;
+    }
+    .lofi .reel {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 3px dotted #fff4ea;
+    }
+    .lofi .paper {
+      background: #fbf6ea;
+      color: #3a2a1f;
+      padding: 10px 12px;
+      background-image: repeating-linear-gradient(transparent 0 23px, #cfd8ef 23px 24px);
+      line-height: 24px;
+      font-family: "Klee One";
+      font-size: 12px;
+    }
 
-  /* ---------- 6 purikura ---------- */
-  .puri { background: linear-gradient(135deg, #ffd1ec, #c9b8ff 50%, #b8f1ff); font-family: "Hachi Maru Pop", sans-serif; color: #5a2a6a; }
-  .puri .status { color: #5a2a6a; }
-  .puri .sp { position: absolute; color: #fff; text-shadow: 0 0 6px #ff7bd5; }
-  .puri .frame { background: #fff; border-radius: 18px; padding: 10px; box-shadow: 0 0 0 4px #ff7bd5, 0 6px 0 4px #b84aa0; margin: 4px 2px 12px; }
-  .puri .stk { background: #fff; border-radius: 22px; padding: 9px 12px; font-size: 11.5px; margin-bottom: 9px; border: 3px solid #fff; box-shadow: 0 0 0 2px #ff7bd5, 3px 4px 0 2px rgba(184,74,160,.5); }
-  .puri .stk.hit { background: #ff7bd5; color: #fff; }
-  .puri .heart { color: #ff4fa8; }
-  .puri .strip { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .puri .strip div { background: #fff; border-radius: 10px; padding: 6px; font-size: 10px; border: 2px dashed #ff7bd5; }
+    /* ---------- 6 purikura ---------- */
+    .puri {
+      background: linear-gradient(135deg, #ffd1ec, #c9b8ff 50%, #b8f1ff);
+      font-family: "Hachi Maru Pop", sans-serif;
+      color: #5a2a6a;
+    }
+    .puri .status {
+      color: #5a2a6a;
+    }
+    .puri .sp {
+      position: absolute;
+      color: #fff;
+      text-shadow: 0 0 6px #ff7bd5;
+    }
+    .puri .frame {
+      background: #fff;
+      border-radius: 18px;
+      padding: 10px;
+      box-shadow:
+        0 0 0 4px #ff7bd5,
+        0 6px 0 4px #b84aa0;
+      margin: 4px 2px 12px;
+    }
+    .puri .stk {
+      background: #fff;
+      border-radius: 22px;
+      padding: 9px 12px;
+      font-size: 11.5px;
+      margin-bottom: 9px;
+      border: 3px solid #fff;
+      box-shadow:
+        0 0 0 2px #ff7bd5,
+        3px 4px 0 2px rgba(184, 74, 160, 0.5);
+    }
+    .puri .stk.hit {
+      background: #ff7bd5;
+      color: #fff;
+    }
+    .puri .heart {
+      color: #ff4fa8;
+    }
+    .puri .strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .puri .strip div {
+      background: #fff;
+      border-radius: 10px;
+      padding: 6px;
+      font-size: 10px;
+      border: 2px dashed #ff7bd5;
+    }
 
-  .sname { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
-</style>
-</head>
-<body>
+    .sname {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Round 3: visual styles</h1>
+    <div class="m" style="max-width:900px">
+      Six directions for the game screens, all showing the same two moments:
+      <b style="color:#fff">Meaning Match in progress</b>
+      (line 4 is being sung, you pick its meaning) and the
+      <b style="color:#fff">results screen</b>, where you choose which missed lines go to review. Walk mode would follow
+      the same style, but calmer.
+    </div>
+    <nav>
+      <a href="round-3-loop.html">← Round 3 loop</a>
+      <a href="#s1">1 · Doodle</a>
+      <a href="#s2">2 · Matsuri Drum</a>
+      <a href="#s3">3 · Pixel JRPG</a>
+      <a href="#s4">4 · Manga</a>
+      <a href="#s5">5 · Lo-fi Room</a>
+      <a href="#s6">6 · Purikura</a>
+    </nav>
 
-<h1>Round 3: visual styles</h1>
-<div class="m" style="max-width:900px">Six directions for the game screens, all showing the same two moments: <b style="color:#fff">Meaning Match in progress</b> (line 4 is being sung, you pick its meaning) and the <b style="color:#fff">results screen</b>, where you choose which missed lines go to review. Walk mode would follow the same style, but calmer.</div>
-<nav>
-  <a href="round-3-loop.html">← Round 3 loop</a>
-  <a href="#s1">1 · Doodle</a>
-  <a href="#s2">2 · Matsuri Drum</a>
-  <a href="#s3">3 · Pixel JRPG</a>
-  <a href="#s4">4 · Manga</a>
-  <a href="#s5">5 · Lo-fi Room</a>
-  <a href="#s6">6 · Purikura</a>
-</nav>
-
-<!-- ============ 1 SKRIBBL ============ -->
-<section id="s1">
-  <div class="head"><span class="tag">1</span><h2>Doodle (skribbl.io)</h2></div>
-  <div class="pitch">Blue doodle wallpaper, white panels, marker font, googly-eyed blob avatars. Your opponent is a ghost of your previous best run; later, friends' runs. Guesses scroll by in the chat log like skribbl.</div>
-  <div class="row">
-    <figure>
-      <div class="phone sk">
-        <div class="doodle">✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡</div>
-        <div class="status"><span>21:15</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="pan top"><div class="clock">3</div><div style="flex:1">夜明けのバス<div style="font-size:10px;color:#666">line 4 / 14</div></div><div style="font-size:12px">×5</div></div>
-          <div class="pan hint"><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</div>
-          <div class="ppl" style="margin-bottom:8px">
-            <div class="pan p me"><div class="av" style="background:#ffcf3f"></div><div>you<br><span style="color:#3aa012">1,840</span></div></div>
-            <div class="pan p"><div class="av" style="background:#c9c9ff;opacity:.6"></div><div style="color:#888">best run<br>1,610</div></div>
-          </div>
-          <div class="ch">I meant to get off at the next stop</div>
-          <div class="ch hit">Counting the fading town lights ✓</div>
-          <div class="ch">Unsaid words sleep in my chest</div>
-          <div class="chat"><div class="g">you got it! +300</div><div class="b">best run got it at 1.9s</div><div class="r">line 3: you missed it</div></div>
-        </div>
+    <!-- ============ 1 SKRIBBL ============ -->
+    <section id="s1">
+      <div class="head">
+        <span class="tag">1</span>
+        <h2>Doodle (skribbl.io)</h2>
       </div>
-      <figcaption><b>Play.</b> The line is the "hint" at the top. The clock counts down to the end of the line.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone sk">
-        <div class="doodle">✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡</div>
-        <div class="status"><span>21:19</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="pan" style="text-align:center;padding:12px"><div style="font-weight:900;font-size:13px">夜明けのバス</div><div style="font-family:'Yusei Magic';font-size:40px;line-height:1.1;color:#2f5fd0">A</div><div style="font-size:11px;font-weight:800">12/14 · new best! (was B)</div></div>
-          <div class="pan">
-            <div style="font-weight:900;font-size:12px;margin-bottom:4px">Missed lines: add to review?</div>
-            <div class="row2"><div class="box">✓</div>言えなかった言葉が 胸の奥で眠ってる</div>
-            <div class="row2"><div class="box"></div>ガラス越しに 君が笑った気がした</div>
-            <div style="font-size:10px;color:#888;padding-top:5px;font-family:Nunito">Unchecked = you knew it and just tapped wrong.</div>
-          </div>
-          <div class="btnk" style="margin-top:auto;margin-bottom:14px">Next song ▸</div>
-        </div>
+      <div class="pitch">
+        Blue doodle wallpaper, white panels, marker font, googly-eyed blob avatars. Your opponent is a ghost of your
+        previous best run; later, friends' runs. Guesses scroll by in the chat log like skribbl.
       </div>
-      <figcaption><b>Results.</b> Tick the lines you actually didn't get. The rest are forgiven.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Vibe</dt><dd>Party game, scrappy, friendly. Very lo-fi.</dd>
-      <dt>Good</dt><dd class="plus">Ghost opponent makes solo runs feel social; becomes real friends later</dd><dd class="plus">Cheap to build: flat panels, no art assets</dd>
-      <dt>Risk</dt><dd class="minus">Little that's Japanese about it; the marker font does the work</dd>
-    </dl>
-  </div>
-</section>
+      <div class="row">
+        <figure>
+          <div class="phone sk">
+            <div class="doodle">
+              ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁
+              ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡
+            </div>
+            <div class="status"><span>21:15</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="pan top">
+                <div class="clock">3</div>
+                <div style="flex:1">
+                  夜明けのバス
+                  <div style="font-size:10px;color:#666">line 4 / 14</div>
+                </div>
+                <div style="font-size:12px">×5</div>
+              </div>
+              <div class="pan hint">
+                <ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby
+                >りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた
+              </div>
+              <div class="ppl" style="margin-bottom:8px">
+                <div class="pan p me">
+                  <div class="av" style="background:#ffcf3f"></div>
+                  <div>you<br><span style="color:#3aa012">1,840</span></div>
+                </div>
+                <div class="pan p">
+                  <div class="av" style="background:#c9c9ff;opacity:.6"></div>
+                  <div style="color:#888">best run<br>1,610</div>
+                </div>
+              </div>
+              <div class="ch">I meant to get off at the next stop</div>
+              <div class="ch hit">Counting the fading town lights ✓</div>
+              <div class="ch">Unsaid words sleep in my chest</div>
+              <div class="chat">
+                <div class="g">you got it! +300</div>
+                <div class="b">best run got it at 1.9s</div>
+                <div class="r">line 3: you missed it</div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <b>Play.</b>
+            The line is the "hint" at the top. The clock counts down to the end of the line.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="phone sk">
+            <div class="doodle">
+              ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁
+              ♡ ✎ ☆ ♪ ✿ ☁ ♡ ✎ ☆ ♪ ✿ ☁ ♡
+            </div>
+            <div class="status"><span>21:19</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="pan" style="text-align:center;padding:12px">
+                <div style="font-weight:900;font-size:13px">夜明けのバス</div>
+                <div style="font-family:'Yusei Magic';font-size:40px;line-height:1.1;color:#2f5fd0">A</div>
+                <div style="font-size:11px;font-weight:800">12/14 · new best! (was B)</div>
+              </div>
+              <div class="pan">
+                <div style="font-weight:900;font-size:12px;margin-bottom:4px">Missed lines: add to review?</div>
+                <div class="row2">
+                  <div class="box">✓</div>
+                  言えなかった言葉が 胸の奥で眠ってる
+                </div>
+                <div class="row2">
+                  <div class="box"></div>
+                  ガラス越しに 君が笑った気がした
+                </div>
+                <div style="font-size:10px;color:#888;padding-top:5px;font-family:Nunito">
+                  Unchecked = you knew it and just tapped wrong.
+                </div>
+              </div>
+              <div class="btnk" style="margin-top:auto;margin-bottom:14px">Next song ▸</div>
+            </div>
+          </div>
+          <figcaption><b>Results.</b> Tick the lines you actually didn't get. The rest are forgiven.</figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Vibe</dt>
+          <dd>Party game, scrappy, friendly. Very lo-fi.</dd>
+          <dt>Good</dt>
+          <dd class="plus">Ghost opponent makes solo runs feel social; becomes real friends later</dd>
+          <dd class="plus">Cheap to build: flat panels, no art assets</dd>
+          <dt>Risk</dt>
+          <dd class="minus">Little that's Japanese about it; the marker font does the work</dd>
+        </dl>
+      </div>
+    </section>
 
-<!-- ============ 2 TAIKO ============ -->
-<section id="s2">
-  <div class="head"><span class="tag">2</span><h2>Matsuri Drum (Taiko)</h2></div>
-  <div class="pitch">Festival orange, wave-pattern floor, chunky outlined text, a drum mascot. Each lyric line is a note sliding into the hit circle; when it lands, the line is being sung. Answers are red, blue, and yellow drum buttons. Judgements use Taiko's 良 / 可 / 不可.</div>
-  <div class="row">
-    <figure>
-      <div class="phone tk">
-        <div class="seig"></div>
-        <div class="status"><span>21:15</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:2px 0 8px"><div><div class="ol" style="font-size:13px">夜明けのバス</div><div class="gauge" style="width:150px;margin-top:6px"><i></i></div></div><div style="text-align:right"><div class="ol" style="font-size:26px;line-height:1">12</div><div class="ol" style="font-size:10px">コンボ</div></div></div>
-          <div class="lane">
-            <div class="hitc"></div>
-            <div class="roll" style="left:18px;width:250px">遠ざかる街の灯りを ひとつずつ…</div>
-            <div class="note b" style="left:282px"></div>
+    <!-- ============ 2 TAIKO ============ -->
+    <section id="s2">
+      <div class="head">
+        <span class="tag">2</span>
+        <h2>Matsuri Drum (Taiko)</h2>
+      </div>
+      <div class="pitch">
+        Festival orange, wave-pattern floor, chunky outlined text, a drum mascot. Each lyric line is a note sliding into
+        the hit circle; when it lands, the line is being sung. Answers are red, blue, and yellow drum buttons.
+        Judgements use Taiko's 良 / 可 / 不可.
+      </div>
+      <div class="row">
+        <figure>
+          <div class="phone tk">
+            <div class="seig"></div>
+            <div class="status"><span>21:15</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:2px 0 8px">
+                <div>
+                  <div class="ol" style="font-size:13px">夜明けのバス</div>
+                  <div class="gauge" style="width:150px;margin-top:6px"><i></i></div>
+                </div>
+                <div style="text-align:right">
+                  <div class="ol" style="font-size:26px;line-height:1">12</div>
+                  <div class="ol" style="font-size:10px">コンボ</div>
+                </div>
+              </div>
+              <div class="lane">
+                <div class="hitc"></div>
+                <div class="roll" style="left:18px;width:250px">遠ざかる街の灯りを ひとつずつ…</div>
+                <div class="note b" style="left:282px"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px">
+                <div class="don">
+                  <i style="left:16px"></i><i style="right:16px"></i><em style="left:8px"></em
+                  ><em style="right:8px"></em><b></b>
+                </div>
+                <div>
+                  <div class="judge">良</div>
+                  <div style="font-size:10px">last line · +300</div>
+                </div>
+              </div>
+              <div class="ch r">I meant to get off at the next stop</div>
+              <div class="ch b">Counting the fading town lights</div>
+              <div class="ch y">Unsaid words sleep in my chest</div>
+            </div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px"><div class="don"><i style="left:16px"></i><i style="right:16px"></i><em style="left:8px"></em><em style="right:8px"></em><b></b></div><div><div class="judge">良</div><div style="font-size:10px">last line · +300</div></div></div>
-          <div class="ch r">I meant to get off at the next stop</div>
-          <div class="ch b">Counting the fading town lights</div>
-          <div class="ch y">Unsaid words sleep in my chest</div>
-        </div>
+          <figcaption>
+            <b>Play.</b>
+            The yellow drumroll bar is the current line, and its length is how long it's sung. Answer before it leaves
+            the circle.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="phone tk">
+            <div class="seig"></div>
+            <div class="status"><span>21:19</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="text-align:center;padding:4px 0 10px">
+                <div class="ol" style="font-size:16px">夜明けのバス</div>
+                <div class="ol" style="font-size:44px;line-height:1.1">👑 A</div>
+              </div>
+              <div class="res ol" style="margin:14px 0 10px;font-size:16px">
+                <span>良</span><span>11</span><span>可</span><span>1</span><span>不可</span><span>2 · max combo 9</span>
+              </div>
+              <div style="font-size:12px;margin:6px 0">Send to review?</div>
+              <div class="lrow">
+                <div class="tg on"></div>
+                言えなかった言葉が 胸の奥で眠ってる
+              </div>
+              <div class="lrow">
+                <div class="tg"></div>
+                ガラス越しに 君が笑った気がした
+              </div>
+              <div class="ch r" style="margin-top:auto;margin-bottom:14px;text-align:center">もう一回! (again)</div>
+            </div>
+          </div>
+          <figcaption><b>Results.</b> Crown for a new best. Toggles pick the lines to send to review.</figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Vibe</dt>
+          <dd>Arcade at a summer festival. Loud, happy, very Japanese.</dd>
+          <dt>Good</dt>
+          <dd class="plus">The note lane makes timing obvious: you see the next line coming</dd>
+          <dd class="plus">良/可/不可 teaches a bit of Japanese for free</dd>
+          <dt>Risk</dt>
+          <dd class="minus">Busiest to build (lane animation, mascot art)</dd>
+          <dd class="minus">Easy to end up looking like a Taiko knockoff</dd>
+        </dl>
       </div>
-      <figcaption><b>Play.</b> The yellow drumroll bar is the current line, and its length is how long it's sung. Answer before it leaves the circle.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone tk">
-        <div class="seig"></div>
-        <div class="status"><span>21:19</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="text-align:center;padding:4px 0 10px"><div class="ol" style="font-size:16px">夜明けのバス</div><div class="ol" style="font-size:44px;line-height:1.1">👑 A</div></div>
-          <div class="res ol" style="margin:14px 0 10px;font-size:16px"><span>良</span><span>11</span><span>可</span><span>1</span><span>不可</span><span>2 · max combo 9</span></div>
-          <div style="font-size:12px;margin:6px 0">Send to review?</div>
-          <div class="lrow"><div class="tg on"></div>言えなかった言葉が 胸の奥で眠ってる</div>
-          <div class="lrow"><div class="tg"></div>ガラス越しに 君が笑った気がした</div>
-          <div class="ch r" style="margin-top:auto;margin-bottom:14px;text-align:center">もう一回! (again)</div>
-        </div>
-      </div>
-      <figcaption><b>Results.</b> Crown for a new best. Toggles pick the lines to send to review.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Vibe</dt><dd>Arcade at a summer festival. Loud, happy, very Japanese.</dd>
-      <dt>Good</dt><dd class="plus">The note lane makes timing obvious: you see the next line coming</dd><dd class="plus">良/可/不可 teaches a bit of Japanese for free</dd>
-      <dt>Risk</dt><dd class="minus">Busiest to build (lane animation, mascot art)</dd><dd class="minus">Easy to end up looking like a Taiko knockoff</dd>
-    </dl>
-  </div>
-</section>
+    </section>
 
-<!-- ============ 3 JRPG ============ -->
-<section id="s3">
-  <div class="head"><span class="tag">3</span><h2>Pixel JRPG</h2></div>
-  <div class="pitch">Each line is a monster. Pick the right meaning from the command menu to hit it before the line ends. A song is a dungeon, and your review list is the quest log. Uses the DotGothic16 pixel font, which covers kanji.</div>
-  <div class="row">
-    <figure>
-      <div class="phone rpg">
-        <div class="status"><span>21:15</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="field">
-            <div style="position:absolute;left:8px;top:6px;font-size:10px">夜明けのバス B1F · 4/14</div>
-            <div style="position:absolute;right:8px;top:6px;font-size:10px;color:#ff4">COMBO 5</div>
-            <div style="position:absolute;left:118px;top:58px"><div class="slime"><div style="width:7px;height:7px;box-shadow:21px 0px #1d4fa8,28px 0px #1d4fa8,35px 0px #1d4fa8,42px 0px #1d4fa8,14px 7px #1d4fa8,21px 7px #5fb0ff,28px 7px #5fb0ff,35px 7px #5fb0ff,42px 7px #5fb0ff,49px 7px #1d4fa8,7px 14px #1d4fa8,14px 14px #5fb0ff,21px 14px #5fb0ff,28px 14px #5fb0ff,35px 14px #5fb0ff,42px 14px #5fb0ff,49px 14px #5fb0ff,56px 14px #1d4fa8,0px 21px #1d4fa8,7px 21px #5fb0ff,14px 21px #5fb0ff,21px 21px #000,28px 21px #5fb0ff,35px 21px #5fb0ff,42px 21px #000,49px 21px #5fb0ff,56px 21px #5fb0ff,63px 21px #1d4fa8,0px 28px #1d4fa8,7px 28px #5fb0ff,14px 28px #5fb0ff,21px 28px #000,28px 28px #5fb0ff,35px 28px #5fb0ff,42px 28px #000,49px 28px #5fb0ff,56px 28px #5fb0ff,63px 28px #1d4fa8,0px 35px #1d4fa8,7px 35px #5fb0ff,14px 35px #5fb0ff,21px 35px #5fb0ff,28px 35px #5fb0ff,35px 35px #5fb0ff,42px 35px #5fb0ff,49px 35px #5fb0ff,56px 35px #5fb0ff,63px 35px #1d4fa8,0px 42px #1d4fa8,7px 42px #3a7fe0,14px 42px #3a7fe0,21px 42px #3a7fe0,28px 42px #3a7fe0,35px 42px #3a7fe0,42px 42px #3a7fe0,49px 42px #3a7fe0,56px 42px #3a7fe0,63px 42px #1d4fa8,7px 49px #1d4fa8,14px 49px #1d4fa8,21px 49px #1d4fa8,28px 49px #1d4fa8,35px 49px #1d4fa8,42px 49px #1d4fa8,49px 49px #1d4fa8,56px 49px #1d4fa8;transform:scale(1.4);transform-origin:top left"></div></div></div>
-            <div class="dmg" style="left:178px;top:38px">300!</div>
-            <div style="position:absolute;left:70px;right:70px;bottom:10px"><div style="font-size:9px">LINE HP</div><div class="hp"><i style="width:35%"></i></div></div>
-          </div>
-          <div class="win" style="font-size:14px;line-height:1.5">遠ざかる街の灯りを<br>ひとつずつ数えてた<span style="animation:blink 1s steps(2) infinite">▼</span></div>
-          <div class="win menu">
-            <div>I meant to get off at the next stop</div>
-            <div class="cur">Counting the fading town lights</div>
-            <div>Unsaid words sleep in my chest</div>
-          </div>
-        </div>
+    <!-- ============ 3 JRPG ============ -->
+    <section id="s3">
+      <div class="head">
+        <span class="tag">3</span>
+        <h2>Pixel JRPG</h2>
       </div>
-      <figcaption><b>Play.</b> The line's HP drains as it's sung. Hit it with the right meaning first.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone rpg">
-        <div class="status"><span>21:19</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="win" style="text-align:center;font-size:18px;color:#ff4">★ VICTORY ★</div>
-          <div class="win q">
-            <div>夜明けのバス cleared</div>
-            <div>Rank ......... A</div>
-            <div>Lines hit .... 12/14</div>
-            <div>EXP .......... +320</div>
-          </div>
-          <div class="win q">
-            <div style="color:#aaf">2 lines escaped. Add to quest log?</div>
-            <div>[x] 言えなかった言葉が 胸の奥で…</div>
-            <div>[ ] ガラス越しに 君が笑った…</div>
-          </div>
-          <div class="win menu" style="margin-top:auto;margin-bottom:14px"><div class="cur">Next dungeon</div><div>Retry</div></div>
-        </div>
+      <div class="pitch">
+        Each line is a monster. Pick the right meaning from the command menu to hit it before the line ends. A song is a
+        dungeon, and your review list is the quest log. Uses the DotGothic16 pixel font, which covers kanji.
       </div>
-      <figcaption><b>Results.</b> Escaped lines can go into the quest log (your review list).</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Vibe</dt><dd>Dragon Quest on a Game Boy. Nostalgic, funny, low effort to look good.</dd>
-      <dt>Good</dt><dd class="plus">Gives the meta layer a theme for free: dungeons, EXP, quest log</dd><dd class="plus">Pixel art hides how cheap the art is</dd>
-      <dt>Risk</dt><dd class="minus">Long English choices are cramped in pixel type</dd><dd class="minus">Combat theme sits oddly with sad ballads</dd>
-    </dl>
-  </div>
-</section>
+      <div class="row">
+        <figure>
+          <div class="phone rpg">
+            <div class="status"><span>21:15</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="field">
+                <div style="position:absolute;left:8px;top:6px;font-size:10px">夜明けのバス B1F · 4/14</div>
+                <div style="position:absolute;right:8px;top:6px;font-size:10px;color:#ff4">COMBO 5</div>
+                <div style="position:absolute;left:118px;top:58px">
+                  <div class="slime">
+                    <div
+                      style="width:7px;height:7px;box-shadow:21px 0px #1d4fa8,28px 0px #1d4fa8,35px 0px #1d4fa8,42px 0px #1d4fa8,14px 7px #1d4fa8,21px 7px #5fb0ff,28px 7px #5fb0ff,35px 7px #5fb0ff,42px 7px #5fb0ff,49px 7px #1d4fa8,7px 14px #1d4fa8,14px 14px #5fb0ff,21px 14px #5fb0ff,28px 14px #5fb0ff,35px 14px #5fb0ff,42px 14px #5fb0ff,49px 14px #5fb0ff,56px 14px #1d4fa8,0px 21px #1d4fa8,7px 21px #5fb0ff,14px 21px #5fb0ff,21px 21px #000,28px 21px #5fb0ff,35px 21px #5fb0ff,42px 21px #000,49px 21px #5fb0ff,56px 21px #5fb0ff,63px 21px #1d4fa8,0px 28px #1d4fa8,7px 28px #5fb0ff,14px 28px #5fb0ff,21px 28px #000,28px 28px #5fb0ff,35px 28px #5fb0ff,42px 28px #000,49px 28px #5fb0ff,56px 28px #5fb0ff,63px 28px #1d4fa8,0px 35px #1d4fa8,7px 35px #5fb0ff,14px 35px #5fb0ff,21px 35px #5fb0ff,28px 35px #5fb0ff,35px 35px #5fb0ff,42px 35px #5fb0ff,49px 35px #5fb0ff,56px 35px #5fb0ff,63px 35px #1d4fa8,0px 42px #1d4fa8,7px 42px #3a7fe0,14px 42px #3a7fe0,21px 42px #3a7fe0,28px 42px #3a7fe0,35px 42px #3a7fe0,42px 42px #3a7fe0,49px 42px #3a7fe0,56px 42px #3a7fe0,63px 42px #1d4fa8,7px 49px #1d4fa8,14px 49px #1d4fa8,21px 49px #1d4fa8,28px 49px #1d4fa8,35px 49px #1d4fa8,42px 49px #1d4fa8,49px 49px #1d4fa8,56px 49px #1d4fa8;transform:scale(1.4);transform-origin:top left"
+                    ></div>
+                  </div>
+                </div>
+                <div class="dmg" style="left:178px;top:38px">300!</div>
+                <div style="position:absolute;left:70px;right:70px;bottom:10px">
+                  <div style="font-size:9px">LINE HP</div>
+                  <div class="hp"><i style="width:35%"></i></div>
+                </div>
+              </div>
+              <div class="win" style="font-size:14px;line-height:1.5">
+                遠ざかる街の灯りを<br>ひとつずつ数えてた<span style="animation:blink 1s steps(2) infinite">▼</span>
+              </div>
+              <div class="win menu">
+                <div>I meant to get off at the next stop</div>
+                <div class="cur">Counting the fading town lights</div>
+                <div>Unsaid words sleep in my chest</div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>Play.</b> The line's HP drains as it's sung. Hit it with the right meaning first.</figcaption>
+        </figure>
+        <figure>
+          <div class="phone rpg">
+            <div class="status"><span>21:19</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="win" style="text-align:center;font-size:18px;color:#ff4">★ VICTORY ★</div>
+              <div class="win q">
+                <div>夜明けのバス cleared</div>
+                <div>Rank ......... A</div>
+                <div>Lines hit .... 12/14</div>
+                <div>EXP .......... +320</div>
+              </div>
+              <div class="win q">
+                <div style="color:#aaf">2 lines escaped. Add to quest log?</div>
+                <div>[x] 言えなかった言葉が 胸の奥で…</div>
+                <div>[ ] ガラス越しに 君が笑った…</div>
+              </div>
+              <div class="win menu" style="margin-top:auto;margin-bottom:14px">
+                <div class="cur">Next dungeon</div>
+                <div>Retry</div>
+              </div>
+            </div>
+          </div>
+          <figcaption><b>Results.</b> Escaped lines can go into the quest log (your review list).</figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Vibe</dt>
+          <dd>Dragon Quest on a Game Boy. Nostalgic, funny, low effort to look good.</dd>
+          <dt>Good</dt>
+          <dd class="plus">Gives the meta layer a theme for free: dungeons, EXP, quest log</dd>
+          <dd class="plus">Pixel art hides how cheap the art is</dd>
+          <dt>Risk</dt>
+          <dd class="minus">Long English choices are cramped in pixel type</dd>
+          <dd class="minus">Combat theme sits oddly with sad ballads</dd>
+        </dl>
+      </div>
+    </section>
 
-<!-- ============ 4 MANGA ============ -->
-<section id="s4">
-  <div class="head"><span class="tag">4</span><h2>Manga</h2></div>
-  <div class="pitch">Black ink on white paper. Screentone, speed lines, onomatopoeia. Answers are speech bubbles, a correct pick gets a red 正解 stamp, and hits make a big ドン. The game in black and white, closest to your usual taste but still playful.</div>
-  <div class="row">
-    <figure>
-      <div class="phone mg">
-        <div class="status"><span>21:15</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="panel tone" style="height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 8px"><span style="background:#fff;padding:0 4px;font-weight:600;font-size:12px">夜明けのバス · 4/14</span><span style="background:#fff;padding:0 4px;font-family:'Dela Gothic One';font-size:13px">×5</span></div>
-          <div class="panel" style="height:178px">
-            <div class="speed"></div>
-            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:17px;font-weight:600;line-height:1.7"><span style="background:#fff;padding:2px 6px"><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</span></div>
-            <div class="sfx" style="right:10px;top:8px;font-size:30px">ドン!</div>
-          </div>
-          <div style="position:relative">
-            <div class="bub">I meant to get off at the next stop</div>
-            <div class="bub hit">Counting the fading town lights</div>
-            <div class="stamp" style="right:4px;top:44px">正解</div>
-            <div class="bub">Unsaid words sleep in my chest</div>
-          </div>
-          <div style="height:6px;border:2.5px solid #000;margin-top:2px"><div style="width:58%;height:100%;background:#000"></div></div>
-        </div>
+    <!-- ============ 4 MANGA ============ -->
+    <section id="s4">
+      <div class="head">
+        <span class="tag">4</span>
+        <h2>Manga</h2>
       </div>
-      <figcaption><b>Play.</b> The center panel holds the sung line. The ink bar is how much of it is left.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone mg">
-        <div class="status"><span>21:19</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:6px">
-            <div class="panel" style="height:120px"><div class="speed"></div><div class="sfx" style="left:30px;top:20px;font-size:64px;transform:rotate(-8deg)">A</div></div>
-            <div class="panel tone" style="height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center"><span style="background:#fff;padding:2px 5px;font-weight:600;font-size:12px">12/14</span><span style="background:#fff;padding:2px 5px;font-size:10px;margin-top:4px">best: B</span></div>
-          </div>
-          <div class="panel" style="padding:8px">
-            <div style="font-weight:600;font-size:12px;margin-bottom:6px">Which ones did you really not get?</div>
-            <div style="display:flex;gap:8px;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid #000"><div class="chk">✓</div>言えなかった言葉が 胸の奥で眠ってる</div>
-            <div style="display:flex;gap:8px;align-items:center;font-size:12px;padding:5px 0"><div class="chk"></div>ガラス越しに 君が笑った気がした</div>
-          </div>
-          <div class="panel" style="margin-top:auto;margin-bottom:14px;padding:10px;text-align:center;font-family:'Dela Gothic One';background:#000;color:#fff">次へ ▶ next song</div>
-        </div>
+      <div class="pitch">
+        Black ink on white paper. Screentone, speed lines, onomatopoeia. Answers are speech bubbles, a correct pick gets
+        a red 正解 stamp, and hits make a big ドン. The game in black and white, closest to your usual taste but still
+        playful.
       </div>
-      <figcaption><b>Results.</b> A manga page layout. The grade gets the speed lines.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Vibe</dt><dd>Shonen tension in monochrome. Anime-adjacent without being cute.</dd>
-      <dt>Good</dt><dd class="plus">Stays black and white, so it fits your dark-mode taste (an inverted version is easy)</dd><dd class="plus">Effects are pure CSS: tone, speed lines, stamps</dd>
-      <dt>Risk</dt><dd class="minus">White paper by default; the black-paper version needs testing</dd><dd class="minus">Can look busy around dense Japanese</dd>
-    </dl>
-  </div>
-</section>
+      <div class="row">
+        <figure>
+          <div class="phone mg">
+            <div class="status"><span>21:15</span><span>●●●</span></div>
+            <div class="scr">
+              <div
+                class="panel tone"
+                style="height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 8px"
+              >
+                <span style="background:#fff;padding:0 4px;font-weight:600;font-size:12px">夜明けのバス · 4/14</span
+                ><span style="background:#fff;padding:0 4px;font-family:'Dela Gothic One';font-size:13px">×5</span>
+              </div>
+              <div class="panel" style="height:178px">
+                <div class="speed"></div>
+                <div
+                  style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:17px;font-weight:600;line-height:1.7"
+                >
+                  <span style="background:#fff;padding:2px 6px"
+                    ><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby
+                    >りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</span
+                  >
+                </div>
+                <div class="sfx" style="right:10px;top:8px;font-size:30px">ドン!</div>
+              </div>
+              <div style="position:relative">
+                <div class="bub">I meant to get off at the next stop</div>
+                <div class="bub hit">Counting the fading town lights</div>
+                <div class="stamp" style="right:4px;top:44px">正解</div>
+                <div class="bub">Unsaid words sleep in my chest</div>
+              </div>
+              <div style="height:6px;border:2.5px solid #000;margin-top:2px">
+                <div style="width:58%;height:100%;background:#000"></div>
+              </div>
+            </div>
+          </div>
+          <figcaption>
+            <b>Play.</b>
+            The center panel holds the sung line. The ink bar is how much of it is left.
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="phone mg">
+            <div class="status"><span>21:19</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:6px">
+                <div class="panel" style="height:120px">
+                  <div class="speed"></div>
+                  <div class="sfx" style="left:30px;top:20px;font-size:64px;transform:rotate(-8deg)">A</div>
+                </div>
+                <div
+                  class="panel tone"
+                  style="height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center"
+                >
+                  <span style="background:#fff;padding:2px 5px;font-weight:600;font-size:12px">12/14</span
+                  ><span style="background:#fff;padding:2px 5px;font-size:10px;margin-top:4px">best: B</span>
+                </div>
+              </div>
+              <div class="panel" style="padding:8px">
+                <div style="font-weight:600;font-size:12px;margin-bottom:6px">Which ones did you really not get?</div>
+                <div
+                  style="display:flex;gap:8px;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid #000"
+                >
+                  <div class="chk">✓</div>
+                  言えなかった言葉が 胸の奥で眠ってる
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;font-size:12px;padding:5px 0">
+                  <div class="chk"></div>
+                  ガラス越しに 君が笑った気がした
+                </div>
+              </div>
+              <div
+                class="panel"
+                style="margin-top:auto;margin-bottom:14px;padding:10px;text-align:center;font-family:'Dela Gothic One';background:#000;color:#fff"
+              >
+                次へ ▶ next song
+              </div>
+            </div>
+          </div>
+          <figcaption><b>Results.</b> A manga page layout. The grade gets the speed lines.</figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Vibe</dt>
+          <dd>Shonen tension in monochrome. Anime-adjacent without being cute.</dd>
+          <dt>Good</dt>
+          <dd class="plus">Stays black and white, so it fits your dark-mode taste (an inverted version is easy)</dd>
+          <dd class="plus">Effects are pure CSS: tone, speed lines, stamps</dd>
+          <dt>Risk</dt>
+          <dd class="minus">White paper by default; the black-paper version needs testing</dd>
+          <dd class="minus">Can look busy around dense Japanese</dd>
+        </dl>
+      </div>
+    </section>
 
-<!-- ============ 5 LOFI ============ -->
-<section id="s5">
-  <div class="head"><span class="tag">5</span><h2>Lo-fi Room</h2></div>
-  <div class="pitch">The "lofi hip hop radio" anime-girl room. Dusk window with rain, city lights, a cassette for the timer, sticky notes for answers. Calmer game feel; probably the best match for Walk mode, and soft enough for Sit.</div>
-  <div class="row">
-    <figure>
-      <div class="phone lofi">
-        <div class="status"><span>21:15</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="win"><div class="city"></div><div class="lit" style="left:30px;bottom:22px"></div><div class="lit" style="left:92px;bottom:30px"></div><div class="lit" style="left:180px;bottom:14px"></div><div class="lit" style="left:210px;bottom:34px"></div>
-            <div style="position:absolute;left:10px;top:8px;font-size:11px;opacity:.8">夜明けのバス · 4/14</div><div style="position:absolute;right:12px;top:8px;font-size:11px">☕ ×5</div></div>
-          <div style="font-size:16px;line-height:1.7;text-align:center;margin-bottom:10px;font-weight:700"><ruby>遠<rt style="color:#ffd9c7">とお</rt></ruby>ざかる<ruby>街<rt style="color:#ffd9c7">まち</rt></ruby>の<ruby>灯<rt style="color:#ffd9c7">あか</rt></ruby>りを<br>ひとつずつ<ruby>数<rt style="color:#ffd9c7">かぞ</rt></ruby>えてた</div>
-          <div class="note" style="background:#ffe9a8;transform:rotate(-1.5deg)">I meant to get off at the next stop</div>
-          <div class="note" style="background:#c8f0d8;transform:rotate(1deg);outline:3px solid #fff4ea">Counting the fading town lights ✓</div>
-          <div class="note" style="background:#ffd0dc;transform:rotate(-.5deg)">Unsaid words sleep in my chest</div>
-          <div class="tape" style="margin-top:auto;margin-bottom:14px"><div class="reel"></div><div style="flex:1;height:4px;background:#5a4470"><div style="width:58%;height:100%;background:#fff4ea"></div></div><div class="reel"></div></div>
-        </div>
+    <!-- ============ 5 LOFI ============ -->
+    <section id="s5">
+      <div class="head">
+        <span class="tag">5</span>
+        <h2>Lo-fi Room</h2>
       </div>
-      <figcaption><b>Play.</b> Sticky notes for answers. The cassette tape runs down with the line.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone lofi">
-        <div class="status"><span>21:19</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="text-align:center;padding:16px 0 10px"><div style="font-size:12px;opacity:.8">夜明けのバス</div><div style="font-size:46px;font-weight:700;line-height:1.1">A</div><div style="font-size:11px">12 of 14 lines · new best</div></div>
-          <div class="paper">
-            <div style="font-weight:600">study later?</div>
-            <div>☑ 言えなかった言葉が 胸の奥で眠ってる</div>
-            <div>☐ ガラス越しに 君が笑った気がした</div>
+      <div class="pitch">
+        The "lofi hip hop radio" anime-girl room. Dusk window with rain, city lights, a cassette for the timer, sticky
+        notes for answers. Calmer game feel; probably the best match for Walk mode, and soft enough for Sit.
+      </div>
+      <div class="row">
+        <figure>
+          <div class="phone lofi">
+            <div class="status"><span>21:15</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="win">
+                <div class="city"></div>
+                <div class="lit" style="left:30px;bottom:22px"></div>
+                <div class="lit" style="left:92px;bottom:30px"></div>
+                <div class="lit" style="left:180px;bottom:14px"></div>
+                <div class="lit" style="left:210px;bottom:34px"></div>
+                <div style="position:absolute;left:10px;top:8px;font-size:11px;opacity:.8">夜明けのバス · 4/14</div>
+                <div style="position:absolute;right:12px;top:8px;font-size:11px">☕ ×5</div>
+              </div>
+              <div style="font-size:16px;line-height:1.7;text-align:center;margin-bottom:10px;font-weight:700">
+                <ruby>遠<rt style="color:#ffd9c7">とお</rt></ruby>ざかる<ruby
+                  >街<rt style="color:#ffd9c7">まち</rt></ruby
+                >の<ruby>灯<rt style="color:#ffd9c7">あか</rt></ruby>りを<br>ひとつずつ<ruby
+                  >数<rt style="color:#ffd9c7">かぞ</rt></ruby
+                >えてた
+              </div>
+              <div class="note" style="background:#ffe9a8;transform:rotate(-1.5deg)">
+                I meant to get off at the next stop
+              </div>
+              <div class="note" style="background:#c8f0d8;transform:rotate(1deg);outline:3px solid #fff4ea">
+                Counting the fading town lights ✓
+              </div>
+              <div class="note" style="background:#ffd0dc;transform:rotate(-.5deg)">Unsaid words sleep in my chest</div>
+              <div class="tape" style="margin-top:auto;margin-bottom:14px">
+                <div class="reel"></div>
+                <div style="flex:1;height:4px;background:#5a4470">
+                  <div style="width:58%;height:100%;background:#fff4ea"></div>
+                </div>
+                <div class="reel"></div>
+              </div>
+            </div>
           </div>
-          <div class="note" style="background:#fff4ea;text-align:center;margin-top:auto;margin-bottom:14px">next song ▸</div>
-        </div>
-      </div>
-      <figcaption><b>Results.</b> A notebook page. Tick the lines to study later.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Vibe</dt><dd>Cozy, rainy, nighttime study. Least "game", most "chill".</dd>
-      <dt>Good</dt><dd class="plus">Works for both modes; Walk mode could just be the room with the lyrics</dd><dd class="plus">Room could change with time of day or the song's album art colors</dd>
-      <dt>Risk</dt><dd class="minus">Rhythm-game energy is low; combo feedback feels out of place</dd>
-    </dl>
-  </div>
-</section>
-
-<!-- ============ 6 PURIKURA ============ -->
-<section id="s6">
-  <div class="head"><span class="tag">6</span><h2>Purikura</h2></div>
-  <div class="pitch">Photo-booth stickers. Pastel holographic gradient, sparkles, a round hand-drawn font (Hachi Maru Pop), sticker-outlined buttons. Results look like a printed sticker sheet. The most "kawaii" option.</div>
-  <div class="row">
-    <figure>
-      <div class="phone puri">
-        <span class="sp" style="left:20px;top:70px">✦</span><span class="sp" style="right:24px;top:120px;font-size:20px">✧</span><span class="sp" style="left:240px;top:330px">✦</span><span class="sp" style="left:14px;top:420px;font-size:18px">♡</span>
-        <div class="status"><span>21:15</span><span>●●●</span></div>
-        <div class="scr">
-          <div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 4px 0"><span>夜明けのバス 4/14</span><span class="heart">♥×5</span></div>
-          <div class="frame" style="text-align:center;font-size:16px;line-height:1.8"><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた<div style="height:6px;background:#ffe3f4;border-radius:4px;margin-top:6px"><div style="width:58%;height:100%;background:#ff7bd5;border-radius:4px"></div></div></div>
-          <div class="stk">I meant to get off at the next stop</div>
-          <div class="stk hit">Counting the fading town lights ♡</div>
-          <div class="stk">Unsaid words sleep in my chest</div>
-          <div style="text-align:center;font-size:20px;color:#ff4fa8;margin-top:6px;text-shadow:2px 2px 0 #fff">かんぺき!</div>
-        </div>
-      </div>
-      <figcaption><b>Play.</b> Answers are stickers. Hits pop with sparkles and a cheer.</figcaption>
-    </figure>
-    <figure>
-      <div class="phone puri">
-        <span class="sp" style="left:24px;top:90px;font-size:22px">✧</span><span class="sp" style="right:20px;top:60px">✦</span>
-        <div class="status"><span>21:19</span><span>●●●</span></div>
-        <div class="scr">
-          <div class="frame" style="text-align:center"><div style="font-size:12px">夜明けのバス</div><div style="font-size:42px;color:#ff4fa8;line-height:1.1">A ♡</div><div style="font-size:11px">12/14 · new best</div></div>
-          <div style="font-size:12px;margin:0 4px 6px">Add to review? tap to pick</div>
-          <div class="strip">
-            <div style="background:#ffe3f4;border-style:solid">✓ 言えなかった言葉が 胸の奥で眠ってる</div>
-            <div>ガラス越しに 君が笑った気がした</div>
+          <figcaption><b>Play.</b> Sticky notes for answers. The cassette tape runs down with the line.</figcaption>
+        </figure>
+        <figure>
+          <div class="phone lofi">
+            <div class="status"><span>21:19</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="text-align:center;padding:16px 0 10px">
+                <div style="font-size:12px;opacity:.8">夜明けのバス</div>
+                <div style="font-size:46px;font-weight:700;line-height:1.1">A</div>
+                <div style="font-size:11px">12 of 14 lines · new best</div>
+              </div>
+              <div class="paper">
+                <div style="font-weight:600">study later?</div>
+                <div>☑ 言えなかった言葉が 胸の奥で眠ってる</div>
+                <div>☐ ガラス越しに 君が笑った気がした</div>
+              </div>
+              <div class="note" style="background:#fff4ea;text-align:center;margin-top:auto;margin-bottom:14px">
+                next song ▸
+              </div>
+            </div>
           </div>
-          <div class="stk hit" style="text-align:center;margin-top:auto;margin-bottom:14px">つぎ ▸ next</div>
-        </div>
+          <figcaption><b>Results.</b> A notebook page. Tick the lines to study later.</figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Vibe</dt>
+          <dd>Cozy, rainy, nighttime study. Least "game", most "chill".</dd>
+          <dt>Good</dt>
+          <dd class="plus">Works for both modes; Walk mode could just be the room with the lyrics</dd>
+          <dd class="plus">Room could change with time of day or the song's album art colors</dd>
+          <dt>Risk</dt>
+          <dd class="minus">Rhythm-game energy is low; combo feedback feels out of place</dd>
+        </dl>
       </div>
-      <figcaption><b>Results.</b> Missed lines as stickers. Tap one to put it in review.</figcaption>
-    </figure>
-    <dl class="notes">
-      <dt>Vibe</dt><dd>Y2K Harajuku. Cute, loud, unserious.</dd>
-      <dt>Good</dt><dd class="plus">Very distinctive; nothing else looks like this</dd><dd class="plus">Sticker metaphor could extend to collecting lines</dd>
-      <dt>Risk</dt><dd class="minus">The furthest from your taste; can wear thin</dd>
-    </dl>
-  </div>
-</section>
+    </section>
 
-</body>
+    <!-- ============ 6 PURIKURA ============ -->
+    <section id="s6">
+      <div class="head">
+        <span class="tag">6</span>
+        <h2>Purikura</h2>
+      </div>
+      <div class="pitch">
+        Photo-booth stickers. Pastel holographic gradient, sparkles, a round hand-drawn font (Hachi Maru Pop),
+        sticker-outlined buttons. Results look like a printed sticker sheet. The most "kawaii" option.
+      </div>
+      <div class="row">
+        <figure>
+          <div class="phone puri">
+            <span class="sp" style="left:20px;top:70px">✦</span
+            ><span class="sp" style="right:24px;top:120px;font-size:20px">✧</span
+            ><span class="sp" style="left:240px;top:330px">✦</span
+            ><span class="sp" style="left:14px;top:420px;font-size:18px">♡</span>
+            <div class="status"><span>21:15</span><span>●●●</span></div>
+            <div class="scr">
+              <div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 4px 0">
+                <span>夜明けのバス 4/14</span><span class="heart">♥×5</span>
+              </div>
+              <div class="frame" style="text-align:center;font-size:16px;line-height:1.8">
+                <ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby
+                >りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた
+                <div style="height:6px;background:#ffe3f4;border-radius:4px;margin-top:6px">
+                  <div style="width:58%;height:100%;background:#ff7bd5;border-radius:4px"></div>
+                </div>
+              </div>
+              <div class="stk">I meant to get off at the next stop</div>
+              <div class="stk hit">Counting the fading town lights ♡</div>
+              <div class="stk">Unsaid words sleep in my chest</div>
+              <div style="text-align:center;font-size:20px;color:#ff4fa8;margin-top:6px;text-shadow:2px 2px 0 #fff">
+                かんぺき!
+              </div>
+            </div>
+          </div>
+          <figcaption><b>Play.</b> Answers are stickers. Hits pop with sparkles and a cheer.</figcaption>
+        </figure>
+        <figure>
+          <div class="phone puri">
+            <span class="sp" style="left:24px;top:90px;font-size:22px">✧</span
+            ><span class="sp" style="right:20px;top:60px">✦</span>
+            <div class="status"><span>21:19</span><span>●●●</span></div>
+            <div class="scr">
+              <div class="frame" style="text-align:center">
+                <div style="font-size:12px">夜明けのバス</div>
+                <div style="font-size:42px;color:#ff4fa8;line-height:1.1">A ♡</div>
+                <div style="font-size:11px">12/14 · new best</div>
+              </div>
+              <div style="font-size:12px;margin:0 4px 6px">Add to review? tap to pick</div>
+              <div class="strip">
+                <div style="background:#ffe3f4;border-style:solid">✓ 言えなかった言葉が 胸の奥で眠ってる</div>
+                <div>ガラス越しに 君が笑った気がした</div>
+              </div>
+              <div class="stk hit" style="text-align:center;margin-top:auto;margin-bottom:14px">つぎ ▸ next</div>
+            </div>
+          </div>
+          <figcaption><b>Results.</b> Missed lines as stickers. Tap one to put it in review.</figcaption>
+        </figure>
+        <dl class="notes">
+          <dt>Vibe</dt>
+          <dd>Y2K Harajuku. Cute, loud, unserious.</dd>
+          <dt>Good</dt>
+          <dd class="plus">Very distinctive; nothing else looks like this</dd>
+          <dd class="plus">Sticker metaphor could extend to collecting lines</dd>
+          <dt>Risk</dt>
+          <dd class="minus">The furthest from your taste; can wear thin</dd>
+        </dl>
+      </div>
+    </section>
+  </body>
 </html>

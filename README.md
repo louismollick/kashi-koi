@@ -4,22 +4,26 @@ An iOS music player for learning Japanese song lines from your Navidrome library
 
 ## Run
 
-Requires iOS 26 or later, Node, Xcode with an iOS 26+ SDK and Simulator runtime, CocoaPods and Navidrome 0.56+ with the OpenSubsonic `songLyrics` extension. Use HTTPS with a system-trusted certificate. An explicit `http://localhost:4533` URL works for local simulator development.
+Requires iOS 26 or later, Node 24, Xcode with an iOS 26+ SDK and Simulator runtime, CocoaPods and Navidrome 0.56+ with the OpenSubsonic `songLyrics` extension. Use HTTPS with a system-trusted certificate. An explicit `http://localhost:4533` URL works for local simulator development.
 
 ```sh
 npm ci
 npm run ios
 ```
 
-After the first native build, `npm start` starts Metro for the installed app. If port 8081 is occupied, use `npm run ios -- --port 8083`. Native dependency or plugin changes require `npx expo prebuild --platform ios` followed by another native build.
+After the first native build, `npm start` starts Metro for the installed app. If port 8081 is occupied, use `npm run ios -- --port 8083`. Native dependency or plugin changes require `cd apps/mobile && npx expo prebuild --platform ios` followed by another native build.
 
 ```sh
 npm run typecheck
 npm test
-python3 scripts/process-sprites.py
+npm run sprites
 ```
 
-Sprite processing requires Pillow. Generated strips and metadata are included in `assets/sprites/`.
+Sprite processing requires Pillow. Generated strips and metadata are included in `apps/mobile/assets/sprites/`.
+
+The Expo app, local native module and app tests live in `apps/mobile/`. Run workspace checks from the repository root. SideStore builds use `scripts/build-sidestore-ipa.sh`; `assets/sidestore-icon.png` remains as a compatibility copy for installed sources.
+
+`packages/shared/` exports lyric ordering, fingerprints, analysis schemas and the Subsonic client as `@kashi-koi/shared`. Its exports point directly to TypeScript source, which Metro and `tsx` consume without a separate build. The client takes caller-created token and salt values; mobile keeps `expo-crypto`. `getLyricsBySongId` supports an optional `enhanced: true` parameter for future server callers. Mobile keeps its existing request without that parameter.
 
 ## Install builds
 
@@ -37,8 +41,16 @@ It lists the latest `main` build plus one app per PR labeled `ios-build`. PR app
 - Results shows missed Lines and their translations. Review groups due, new and due-later Lines by song; edit one to study a different Line of its song or remove it. A right answer schedules a Line one day out and doubles the gap each time; a wrong answer makes it due again. Review Lyrics plays each translated due Line's clip in the quiz layout, keeps each first answer, and moves on 0.8 seconds after you answer. Its play button resumes a paused clip or replays a finished one.
 - Settings offers Sync library, Rescan lyrics and Log out. Sync library retries unchecked and failed songs. Rescan lyrics checks every song. Log out clears local account, library and learning state.
 
+Song analyses are fetched and cached when `EXPO_PUBLIC_KASHI_SERVER_URL` is set. They group lines into sentences and supply contextual translations for learning. Without an analysis, each Japanese line is its own sentence and Apple translations remain the fallback. The store supports a saved server URL override and an admin token in SecureStore; their Settings controls and the Analyse button are part of the next UI step.
+
 Translations and furigana are cached by Japanese text and survive Rescan lyrics. Apple translates each Line without the rest of the song; translations and dictionary readings can miss what is sung. The Simulator uses `EN: <Japanese text>` translations with the native furigana tokenizer. Real translations and language downloads require a phone.
 
 Playback does not resume after relaunch. Playlists and offline downloads are deferred. Node tests use translated fixtures and an injected translator, without loading native modules.
 
 See `docs/translations-plan.md`, `docs/navidrome-plan.md` and `docs/implementation-report.md` for the implementation and simulator QA evidence.
+
+## Analysis API
+
+- `GET /v1/analyses/:fingerprint` is public and returns `200` with the analysis, `202 {status:"queued"|"running"}` for an active job, `202 {status:"failed", error}` for a failed job newer than the stored analysis or with no stored analysis, and `404` when neither exists. An older failed job leaves the stored analysis available. Responses disable caching.
+- `POST /v1/analyses` requires `Authorization: Bearer $KASHI_ADMIN_TOKEN` and a JSON body `{title, artist?, lines, force?}`. It returns `200` with an existing analysis unless `force` is true, otherwise `202 {fingerprint, status}` after enqueueing. Queued and running jobs are deduplicated.
+- `GET /health` returns `200 {status:"ok"}`.

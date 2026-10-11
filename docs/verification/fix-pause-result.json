@@ -18,10 +18,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Play\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Play\"",
-            "label=\"Play\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Play\"", "label=\"Play\""],
           "refLabel": "Play",
           "resolution": {
             "source": "runtime",
@@ -70,10 +67,7 @@
           "referenceHeight": 874,
           "targetKind": "selector",
           "selector": "label=\"Pause\"",
-          "selectorChain": [
-            "role=\"button\" label=\"Pause\"",
-            "label=\"Pause\""
-          ],
+          "selectorChain": ["role=\"button\" label=\"Pause\"", "label=\"Pause\""],
           "refLabel": "Pause",
           "resolution": {
             "source": "runtime",

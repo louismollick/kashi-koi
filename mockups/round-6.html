@@ -1,570 +1,3151 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Round 6: layout languages</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Baloo+2:wght@700;800&family=Bangers&family=Dela+Gothic+One&family=Fredoka:wght@600;700&family=Gochi+Hand&family=Kiwi+Maru:wght@500&family=Lilita+One&family=M+PLUS+Rounded+1c:wght@800&family=Mochiy+Pop+One&family=Nunito:wght@900&family=Patrick+Hand&family=Potta+One&family=Yusei+Magic&family=Zen+Kaku+Gothic+New:wght@900&family=Zen+Maru+Gothic:wght@900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<style>
-/* =============== shared structure (no look) =============== */
-.P { font-size: 13px; border-color: #333; }
-.P .bg, .P .deco { position: absolute; inset: 0; pointer-events: none; }
-.P .status, .P .scr { position: relative; z-index: 2; }
-.P .scr { padding: 0 14px; display: flex; flex-direction: column; }
-.P .top { display: flex; align-items: center; justify-content: space-between; height: 40px; flex: none; }
-.P .back { font-size: 20px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
-.P .qt { display: flex; align-items: center; gap: 7px; }
-.P .qt i { display: block; width: 34px; height: 20px; border-radius: 12px; background: #ccc; position: relative; }
-.P .qt i::after { content: ""; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
-.P .qt.on i::after { left: 17px; }
-.P .cta { display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin: 8px 0 12px; flex: none; }
-.P .cta-n { font-size: 38px; line-height: 1; }
-.P .cta-t b { display: block; font-size: 22px; line-height: 1.05; font-weight: 400; }
-.P .cta-t span { font-size: 11px; }
-.P .cta-go { margin-left: auto; font-size: 20px; }
-.P .subrow { display: flex; gap: 8px; margin-bottom: 10px; flex: none; }
-.P .chip { flex: 1; text-align: center; padding: 7px 4px; font-size: 12px; }
-.P .search { padding: 7px 10px; font-size: 12px; margin-bottom: 9px; flex: none; }
-.P .seg { display: flex; gap: 5px; margin-bottom: 10px; font-size: 11px; flex: none; }
-.P .seg span { padding: 3px 7px; }
-.P .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.P .alb { position: relative; }
-.P .alb .cov { aspect-ratio: 1; }
-.P .an { font-size: 11px; margin-top: 3px; white-space: nowrap; overflow: hidden; }
-.P .aa { font-size: 10px; opacity: .75; }
-.P .mini { display: flex; align-items: center; gap: 8px; margin-top: auto; padding: 6px 8px; font-size: 11px; line-height: 1.2; flex: none; }
-.P .mini .cov { width: 32px; height: 32px; flex: none; }
-.P .mini small { opacity: .7; }
-.P .mb { margin-left: auto; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex: none; }
-.P .tabs2 { display: flex; justify-content: space-around; align-items: center; padding: 9px 0 16px; font-size: 11px; margin: 8px -14px 0; flex: none; }
-.P .nowc { display: flex; gap: 10px; align-items: center; margin: 2px 0 12px; flex: none; }
-.P .nowc .cov { width: 54px; height: 54px; flex: none; }
-.P .tt { font-size: 17px; line-height: 1.2; }
-.P .ta { font-size: 11px; }
-.P .lyrics { flex: 1; font-size: 14px; line-height: 1.55; overflow: hidden; }
-.P .lyrics p { margin-bottom: 10px; opacity: .55; }
-.P .lyrics p.cur { opacity: 1; font-size: 18px; }
-.P .lyrics rt { font-size: 9px; }
-.P .mk { color: #ffb800; font-size: 10px; }
-.P .prog { height: 6px; margin: 6px 0 12px; flex: none; }
-.P .prog i { display: block; height: 100%; width: 32%; }
-.P .trans { display: flex; justify-content: center; align-items: center; gap: 18px; margin-bottom: 12px; flex: none; }
-.P .tb { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex: none; }
-.P .tb.big { width: 48px; height: 48px; font-size: 16px; }
-.P .lost { height: 104px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 18px; flex: none; }
-.P .lost b { font-size: 30px; font-weight: 400; line-height: 1.1; }
-.P .lost small { font-size: 11px; margin-top: 6px; }
-.P .qhead { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex: none; }
-.P .qhead .cov { width: 36px; height: 36px; flex: none; }
-.P .ttl { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; padding: 2px 0 2px 2px; }
-.P .ttl .tt { font-size: 15px; }
-.P .lane { display: flex; gap: 3px; height: 12px; margin: 6px 0 12px; flex: none; }
-.P .lane i { position: relative; overflow: hidden; }
-.P .line { padding: 12px; text-align: center; font-size: 18px; line-height: 1.75; flex: none; position: relative; }
-.P .line rt { font-size: 9px; }
-.P .mid { display: flex; align-items: center; gap: 10px; height: 80px; margin: 8px 0; flex: none; padding: 0 4px; }
-.P .combo b { display: block; font-size: 32px; line-height: 1; font-weight: 400; }
-.P .combo span { font-size: 10px; }
-.P .judge { margin-left: auto; font-size: 24px; transform: rotate(-7deg); }
-.P .ans { padding: 10px 14px; font-size: 14px; line-height: 1.25; margin-bottom: 10px; position: relative; flex: none; }
-.P .ans.dim { opacity: .5; }
-.P .ans.hit::after { content: "✓"; position: absolute; right: -8px; top: -12px; width: 26px; height: 26px; border-radius: 50%; background: var(--hit); color: var(--line); border: 3px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 14px; transform: none; font-family: sans-serif; }
-.c1 { background: linear-gradient(135deg, #3a1d5c, #c2410c 70%, #fbbf24); }
-.c2 { background: linear-gradient(135deg, #0f3d3e, #4ade80); }
-.c3 { background: linear-gradient(135deg, #1e3a8a, #93c5fd); }
-
-/* chibi */
-.chibi { position: relative; width: 58px; height: 74px; flex: none; transform-origin: 50% 100%; animation: dance .38s ease-in-out infinite alternate; }
-@keyframes dance { from { transform: rotate(-9deg); } to { transform: rotate(9deg) translateY(-7px); } }
-.chibi .hd { position: absolute; left: 6px; top: 6px; width: 46px; height: 42px; border-radius: 50% 50% 46% 46%; background: #ffe3cf; border: 3px solid var(--line); overflow: hidden; z-index: 2; }
-.chibi .hd::before { content: ""; position: absolute; left: -6px; right: -6px; top: -8px; height: 22px; background: var(--hair); border-radius: 0 0 45% 45%; }
-.chibi .e { position: absolute; top: 19px; width: 7px; height: 10px; background: #1a1a1a; border-radius: 50%; }
-.chibi .e::after { content: ""; position: absolute; left: 1px; top: 1px; width: 3px; height: 3px; background: #fff; border-radius: 50%; }
-.chibi .e.l { left: 11px; } .chibi .e.r { right: 11px; }
-.chibi .bl { position: absolute; top: 28px; width: 8px; height: 4px; background: #ff9ab0; border-radius: 50%; }
-.chibi .bl.l { left: 5px; } .chibi .bl.r { right: 5px; }
-.chibi .m { position: absolute; top: 29px; left: 17px; width: 7px; height: 5px; background: #d6334a; border-radius: 0 0 6px 6px; }
-.chibi .band { position: absolute; left: 1px; top: 1px; width: 56px; height: 32px; border: 4px solid var(--line); border-bottom: none; border-radius: 32px 32px 0 0; z-index: 3; box-sizing: border-box; }
-.chibi .cup { position: absolute; top: 20px; width: 12px; height: 18px; background: var(--a3); border: 3px solid var(--line); border-radius: 6px; z-index: 4; }
-.chibi .cup.l { left: -1px; } .chibi .cup.r { right: -1px; }
-.chibi .bd { position: absolute; left: 17px; top: 46px; width: 24px; height: 19px; background: var(--a1); border: 3px solid var(--line); border-radius: 9px 9px 6px 6px; z-index: 1; }
-.chibi .arm { position: absolute; top: 49px; width: 7px; height: 17px; background: #ffe3cf; border: 2.5px solid var(--line); border-radius: 5px; transform-origin: 50% 3px; }
-.chibi .arm.l { left: 16px; animation: wl .38s ease-in-out infinite alternate; }
-.chibi .arm.r { right: 16px; animation: wr .38s ease-in-out infinite alternate; }
-@keyframes wl { from { transform: rotate(120deg); } to { transform: rotate(165deg); } }
-@keyframes wr { from { transform: rotate(-165deg); } to { transform: rotate(-120deg); } }
-.chibi .lg { position: absolute; top: 63px; width: 7px; height: 10px; background: var(--line); border-radius: 3px; }
-.chibi .lg.l { left: 21px; } .chibi .lg.r { left: 30px; }
-
-/* =============== A · SHARD =============== */
-.A { --line:#000; --hair:#111; --a1:#ff2fa0; --a3:#29d3ff; --hit:#ffd400; background:#5a14e0; color:#fff; font-family:"Bangers","Dela Gothic One"; letter-spacing:.4px;
-  .bg { background: radial-gradient(rgba(255,255,255,.16) 1.5px, transparent 2px) 0 0/9px 9px, linear-gradient(165deg,#8a2bff,#4a10c0 55%,#ff2fa0); }
-  .d1 { inset:auto; right:-70px; top:120px; width:180px; height:420px; background:#000; transform:skewX(-20deg); opacity:.8; }
-  .d1::after { content:""; position:absolute; left:-60px; top:-70px; width:30px; height:600px; background:#fff; }
-  .logo { font-size:30px; -webkit-text-stroke:6px #000; paint-order:stroke fill; transform:rotate(-4deg); }
-  .qt { background:#000; padding:3px 9px; transform:skewX(-12deg); border:2px solid #fff; font-size:15px; }
-  .qt i { border-radius:0; background:#555; } .qt i::after { border-radius:0; } .qt.on i { background:#ffd400; }
-  .cta { background: radial-gradient(rgba(0,0,0,.2) 1.3px, transparent 1.7px) 0 0/6px 6px, #29d3ff; border:3px solid #000; box-shadow:6px 6px 0 #000; transform:skewX(-10deg) rotate(-2deg); color:#000; }
-  .cta-n, .cta-t b { color:#fff; -webkit-text-stroke:6px #000; paint-order:stroke fill; }
-  .cta-n { font-size:46px; } .cta-t b { font-size:28px; } .cta-t span { font-size:13px; }
-  .chip { background:#fff; color:#000; border:3px solid #000; transform:skewX(-10deg); box-shadow:4px 4px 0 #000; font-size:15px; }
-  .chip + .chip { background:#ffd400; }
-  .search { background:#000; border:2px solid #fff; transform:skewX(-10deg); font-size:14px; }
-  .seg span { background:#000; transform:skewX(-10deg); font-size:14px; } .seg span.on { background:#ffd400; color:#000; }
-  .alb .cov { border:3px solid #fff; box-shadow:4px 4px 0 #000; transform:rotate(-3deg); }
-  .alb:nth-child(2) .cov { transform:rotate(3deg); }
-  .an { font-size:14px; text-shadow:2px 2px 0 #000; } .aa { color:#ffd400; font-size:12px; opacity:1; }
-  .mini { background:#fff; color:#000; border:3px solid #000; transform:skewX(-8deg); box-shadow:4px 4px 0 #000; font-size:14px; }
-  .mb { background:#000; color:#fff; }
-  .tabs2 { background:#000; color:#999; font-size:15px; } .tabs2 .on { color:#000; background:#fff; transform:skewX(-12deg); padding:1px 10px; }
-  .back { color:#fff; }
-  .tt { font-size:24px; -webkit-text-stroke:5px #000; paint-order:stroke fill; } .ta { color:#ffd400; font-size:13px; }
-  .nowc .cov { border:3px solid #fff; transform:rotate(-4deg); box-shadow:4px 4px 0 #000; }
-  .lyrics { font-family:"Dela Gothic One"; }
-  .lyrics p { text-shadow:2px 2px 0 #000; opacity:.8; }
-  .lyrics p.cur { background:#ffd400; color:#000; -webkit-text-stroke:0; padding:8px 10px; transform:skewX(-6deg); box-shadow:5px 5px 0 #000; }
-  .prog { background:#000; transform:skewX(-20deg); } .prog i { background:#29d3ff; }
-  .tb { background:#fff; color:#000; border:3px solid #000; transform:skewX(-10deg); box-shadow:3px 3px 0 #000; }
-  .lost { background: radial-gradient(rgba(0,0,0,.22) 1.4px, transparent 1.8px) 0 0/7px 7px, #ff2fa0; border:4px solid #000; box-shadow:7px 7px 0 #000; transform:skewX(-10deg) rotate(-2deg); }
-  .lost b { font-size:44px; -webkit-text-stroke:6px #000; paint-order:stroke fill; } .lost small { font-size:13px; color:#000; }
-  .qhead .cov { border:2px solid #fff; } .ttl .tt { font-size:20px; }
-  .lane i { background:#000; border:2px solid #fff; transform:skewX(-20deg); }
-  .lane i.ok { background:#29d3ff; } .lane i.no { background:#ff2fa0; } .lane i.cur { background:linear-gradient(90deg,#ffd400 58%,#000 58%); }
-  .line { background:#fff; color:#000; border:4px solid #000; box-shadow:6px 6px 0 #000; transform:skewX(-5deg); font-family:"Dela Gothic One"; }
-  .combo b { font-size:42px; color:#ffd400; -webkit-text-stroke:6px #000; paint-order:stroke fill; }
-  .combo span { font-size:15px; -webkit-text-stroke:3px #000; paint-order:stroke fill; }
-  .judge { font-size:36px; color:#29d3ff; -webkit-text-stroke:6px #000; paint-order:stroke fill; transform:rotate(-10deg); }
-  .ans { border:3px solid #000; box-shadow:5px 5px 0 #000; transform:skewX(-9deg); font-size:18px; color:#000; background:#fff; }
-  .ans.hit { background: radial-gradient(rgba(0,0,0,.18) 1.3px, transparent 1.7px) 0 0/6px 6px, #ffd400; }
-}
-
-/* =============== B · SCRAPBOOK =============== */
-.B { --line:#6b4a2b; --hair:#6b4a2b; --a1:#f4a7b9; --a3:#9cc27a; --hit:#9cc27a; background:#f6e7c8; color:#5a3d22; font-family:"Patrick Hand","Kiwi Maru";
-  .bg { background-image: radial-gradient(rgba(160,120,70,.16) 5px, transparent 6px), radial-gradient(rgba(160,120,70,.16) 2.5px, transparent 3px), radial-gradient(rgba(160,120,70,.16) 2.5px, transparent 3px); background-size: 52px 52px; background-position: 0 0, -9px -10px, 9px -10px; }
-  .status { color:#6b4a2b; }
-  .logo { font-family:"Kiwi Maru"; font-size:18px; background:#f2b632; border:2.5px solid #6b4a2b; border-radius:9px; padding:2px 10px; }
-  .qt { background:#fff8ea; border:2.5px solid #6b4a2b; border-radius:10px; padding:3px 8px; font-size:15px; }
-  .qt i { background:#e2cfac; border:2px solid #6b4a2b; } .qt i::after { background:#6b4a2b; top:1px; left:1px; } .qt.on i { background:#9cc27a; } .qt.on i::after { left:15px; }
-  .cta { background:#fffdf6; border:2.5px solid #6b4a2b; border-radius:5px; box-shadow:3px 4px 0 rgba(107,74,43,.25); transform:rotate(-1.5deg); margin-top:14px; }
-  .cta::before { content:""; position:absolute; top:-9px; left:50%; width:15px; height:15px; border-radius:50%; background:#e85a5a; border:2px solid #6b4a2b; }
-  .cta { position:relative; }
-  .cta-n { font-family:"Kiwi Maru"; color:#e8823a; font-size:40px; } .cta-t b { font-size:24px; } .cta-t span { font-size:14px; }
-  .cta-go { background:#f2b632; border:2.5px solid #6b4a2b; border-radius:9px; width:42px; height:42px; display:flex; align-items:center; justify-content:center; }
-  .chip { background:#fff8ea; border:2px solid #6b4a2b; border-radius:8px; font-size:15px; }
-  .search { background:#fff; border:2px solid #6b4a2b; border-radius:14px; font-size:15px; }
-  .seg span { font-size:15px; border-bottom:3px solid transparent; } .seg span.on { border-bottom-color:#f2b632; }
-  .alb { background:#fff; padding:5px 5px 3px; border:1.5px solid #d6c3a0; box-shadow:2px 3px 0 rgba(107,74,43,.2); transform:rotate(-2.5deg); }
-  .alb:nth-child(2) { transform:rotate(2deg); }
-  .alb::before { content:""; position:absolute; top:-6px; left:calc(50% - 5px); width:10px; height:10px; border-radius:50%; background:#5aa6e8; border:1.5px solid #6b4a2b; z-index:1; }
-  .alb:nth-child(2)::before { background:#f2b632; } .alb:nth-child(3)::before { background:#b07ad9; }
-  .an { font-family:"Kiwi Maru"; font-size:12px; } .aa { font-size:12px; }
-  .mini { background:#fff8ea; border:2.5px solid #6b4a2b; border-radius:10px; font-size:14px; }
-  .mb { background:#f2b632; border:2px solid #6b4a2b; border-radius:8px; }
-  .tabs2 { background:#f2b632; border-top:2.5px solid #6b4a2b; font-size:15px; } .tabs2 .on { text-decoration:underline wavy; }
-  .nowc .cov { border:5px solid #fff; box-shadow:2px 3px 0 rgba(107,74,43,.25); transform:rotate(-3deg); }
-  .tt { font-family:"Kiwi Maru"; font-size:18px; } .ta { font-size:14px; }
-  .lyrics { font-family:"Kiwi Maru"; }
-  .lyrics p.cur { background:repeating-linear-gradient(45deg, rgba(244,167,185,.6) 0 7px, rgba(244,167,185,.38) 7px 14px); padding:6px 8px; transform:rotate(-1deg); }
-  .prog { background:#e6d4b2; border-radius:4px; } .prog i { background:#e8823a; border-radius:4px; }
-  .tb { background:#fff8ea; border:2px solid #6b4a2b; border-radius:10px; } .tb.big { background:#f2b632; }
-  .lost { background:#f2b632; border:3px solid #6b4a2b; border-radius:14px; box-shadow:0 4px 0 #6b4a2b; }
-  .lost b { font-family:"Kiwi Maru"; font-size:28px; } .lost small { font-size:14px; }
-  .lane i { background:#fff; border:1.5px solid #6b4a2b; border-radius:3px; }
-  .lane i.ok { background:#9cc27a; } .lane i.no { background:#e85a5a; } .lane i.cur { background:linear-gradient(90deg,#f2b632 58%,#fff 58%); }
-  .line { background:#fff; border:1.5px solid #d6c3a0; padding:14px 12px 18px; box-shadow:2px 3px 0 rgba(107,74,43,.2); transform:rotate(-1deg); font-family:"Kiwi Maru"; }
-  .line::before { content:""; position:absolute; top:-7px; left:calc(50% - 7px); width:14px; height:14px; border-radius:50%; background:#e85a5a; border:2px solid #6b4a2b; }
-  .combo b { font-family:"Kiwi Maru"; color:#e8823a; } .combo span { font-size:13px; }
-  .judge { font-family:"Kiwi Maru"; color:#e85a5a; font-size:22px; }
-  .ans { background:#fffdf6; border:2px solid #6b4a2b; border-radius:5px; font-size:17px; box-shadow:2px 3px 0 rgba(107,74,43,.25); }
-  .ans:nth-of-type(odd) { transform:rotate(-.8deg); } .ans.hit { background:#e7f3d6; }
-}
-
-/* =============== C · COZY IDLE =============== */
-.C { --line:#8a5a3c; --hair:#8a5a3c; --a1:#ff9f6b; --a3:#6fd0e8; --hit:#6cc24a; background:#e8c08f; color:#6b4430; font-family:"Fredoka","M PLUS Rounded 1c";
-  .bg { background: repeating-linear-gradient(0deg, #e8c08f 0 30px, #d9ad78 30px 32px), #e8c08f; }
-  &.home .bg { background: linear-gradient(#bfe8ff 0 70px, #6fd0e8 70px 112px, #fff 112px 115px, #f6dfb0 115px 210px, transparent 210px), repeating-linear-gradient(0deg, #e8c08f 0 30px, #d9ad78 30px 32px); }
-  &.home .top { margin-bottom:96px; }
-  &.home .search { display:none; }
-  .homechibi { display:block !important; position:absolute; left:120px; top:92px; z-index:3; }
-  .status { color:#40607a; }
-  .logo, .qt { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:16px; padding:3px 11px; font-weight:700; }
-  .qt i { background:#e8d8bf; border:2px solid #8a5a3c; } .qt i::after { background:#8a5a3c; top:1px; left:1px; } .qt.on i { background:#6cc24a; } .qt.on i::after { left:15px; }
-  .cta { background:#6cc24a; border:3px solid #3f7f2a; border-radius:16px; box-shadow:0 5px 0 #3f7f2a, inset 0 3px 0 rgba(255,255,255,.35); color:#fff; }
-  .cta-n, .cta-t b { font-family:"M PLUS Rounded 1c"; -webkit-text-stroke:5px #2f6a1e; paint-order:stroke fill; }
-  .chip { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:12px; box-shadow:0 3px 0 #8a5a3c; font-weight:700; }
-  .seg span { background:#fff8ea; border:2px solid #8a5a3c; border-radius:10px; font-weight:700; } .seg span.on { background:#ffd56b; }
-  .alb { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:12px; padding:5px; }
-  .alb .cov { border-radius:8px; } .an { font-weight:700; }
-  .mini { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:14px; box-shadow:0 3px 0 #8a5a3c; }
-  .mb { background:#ffd56b; border:2px solid #8a5a3c; border-radius:50%; }
-  .tabs2 { gap:6px; padding:8px 8px 16px; } .tabs2 span { flex:1; text-align:center; background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:12px; padding:7px 0; box-shadow:0 3px 0 #8a5a3c; font-weight:700; }
-  .tabs2 .on { background:#ffd56b; }
-  .back { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:50%; }
-  .nowc { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:16px; padding:8px; }
-  .nowc .cov { border-radius:10px; } .tt { font-weight:700; }
-  .lyrics { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:16px; padding:12px; font-family:"M PLUS Rounded 1c"; }
-  .prog { background:#fff8ea; border:2px solid #8a5a3c; border-radius:6px; height:10px; } .prog i { background:#6cc24a; }
-  .tb { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:50%; box-shadow:0 3px 0 #8a5a3c; }
-  .lost { background:#ff9f6b; border:3px solid #b25f2e; border-radius:20px; box-shadow:0 6px 0 #b25f2e, inset 0 3px 0 rgba(255,255,255,.4); color:#fff; }
-  .lost b { font-family:"M PLUS Rounded 1c"; -webkit-text-stroke:5px #b25f2e; paint-order:stroke fill; }
-  .lane i { background:#fff8ea; border:2px solid #8a5a3c; border-radius:6px; }
-  .lane i.ok { background:#6cc24a; } .lane i.no { background:#ff7a6b; } .lane i.cur { background:linear-gradient(90deg,#ffd56b 58%,#fff8ea 58%); }
-  .qhead .cov { border-radius:8px; border:2px solid #8a5a3c; } .ttl .tt { font-weight:700; }
-  .line { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:16px; font-family:"M PLUS Rounded 1c"; }
-  .combo b { color:#fff; -webkit-text-stroke:5px #8a5a3c; paint-order:stroke fill; font-family:"M PLUS Rounded 1c"; } .combo span { font-weight:700; }
-  .judge { color:#ffd56b; -webkit-text-stroke:5px #8a5a3c; paint-order:stroke fill; font-family:"M PLUS Rounded 1c"; }
-  .ans { background:#fff8ea; border:2.5px solid #8a5a3c; border-radius:14px; box-shadow:0 4px 0 #8a5a3c; font-weight:600; font-size:15px; }
-  .ans.hit { background:#dff3cf; }
-}
-
-/* =============== D · CONFETTI SKETCH =============== */
-.D { --line:#333; --hair:#333; --a1:#d9457a; --a3:#3a5fcf; --hit:#ffd43b; background:#fff; color:#333; font-family:"Gochi Hand","Yusei Magic";
-  .conf { position:absolute; width:9px; height:5px; z-index:1; }
-  .logo { font-family:"Yusei Magic"; font-size:28px; color:#d33; text-shadow:2px 2px 0 #333; transform:rotate(-3deg); }
-  .qt { border:2.5px solid #333; border-radius:4px 10px 5px 9px; padding:3px 8px; background:#fff; font-size:16px; }
-  .qt i { background:#eee; border:2px solid #333; } .qt i::after { background:#333; top:1px; left:1px; } .qt.on i { background:#ffd43b; } .qt.on i::after { left:15px; }
-  .cta { background:#d9457a; color:#fff; transform:skewX(-8deg); box-shadow:inset 0 0 0 3px rgba(255,255,255,.55), 4px 4px 0 #333; }
-  .cta-n, .cta-t b { font-family:"Yusei Magic"; } .cta-t b { font-size:26px; } .cta-t span { font-size:14px; }
-  .chip { background:#3a5fcf; color:#fff; transform:skewX(-8deg); box-shadow:inset 0 0 0 2px rgba(255,255,255,.5); font-size:16px; }
-  .chip + .chip { background:#6b4fc8; }
-  .search { border:2.5px solid #333; border-radius:6px 12px 5px 10px; font-size:16px; background:#fff; }
-  .seg span { font-size:16px; } .seg span.on { background:linear-gradient(transparent 55%, #ffd43b 55%); }
-  .alb .cov { border:2.5px solid #333; border-radius:3px 9px 4px 8px; }
-  .an { font-family:"Yusei Magic"; } .aa { font-size:13px; }
-  .mini { border:2.5px solid #333; border-radius:6px 12px 5px 10px; background:#fff; font-size:15px; }
-  .mb { border:2.5px solid #333; border-radius:45% 55% 50% 50%; }
-  .tabs2 { border-top:2.5px solid #333; background:#fff; font-size:17px; } .tabs2 .on { color:#d33; }
-  .tt { font-family:"Yusei Magic"; font-size:20px; } .ta { font-size:14px; }
-  .nowc .cov { border:2.5px solid #333; border-radius:4px 10px 5px 9px; }
-  .lyrics { font-family:"Yusei Magic"; background:#fff; }
-  .lyrics p.cur { background:linear-gradient(transparent 50%, #ffd43b 50%); font-size:20px; }
-  .prog { border:2px solid #333; border-radius:4px; height:9px; background:#fff; } .prog i { background:#d9457a; }
-  .tb { border:2.5px solid #333; border-radius:45% 55% 50% 50%; background:#fff; }
-  .lost { background:#d9457a; color:#fff; transform:skewX(-8deg); box-shadow:inset 0 0 0 4px rgba(255,255,255,.55), 5px 5px 0 #333; }
-  .lost b { font-family:"Yusei Magic"; font-size:34px; } .lost small { font-size:15px; }
-  .lane i { border:2px solid #333; border-radius:3px 6px 3px 5px; background:#fff; }
-  .lane i.ok { background:#3a5fcf; } .lane i.no { background:#d9457a; } .lane i.cur { background:linear-gradient(90deg,#ffd43b 58%,#fff 58%); }
-  .qhead .cov { border:2px solid #333; } .ttl .tt { font-family:"Yusei Magic"; }
-  .line { border:2.5px solid #333; border-radius:6px 14px 6px 12px; font-family:"Yusei Magic"; background:#fff; }
-  .mid { background:repeating-conic-gradient(from 0deg at 12% 55%, #fff1a6 0 9deg, #fff 9deg 18deg); border-radius:6px; }
-  .combo b { font-family:"Yusei Magic"; color:#d33; font-size:36px; } .combo span { font-size:15px; }
-  .judge { font-family:"Yusei Magic"; color:#3a5fcf; font-size:26px; }
-  .ans { color:#fff; transform:skewX(-8deg); box-shadow:inset 0 0 0 3px rgba(255,255,255,.5), 4px 4px 0 #333; font-size:18px; background:#6b4fc8; }
-  .ans:nth-of-type(1) { background:#d9457a; } .ans.hit { background:#3a5fcf; }
-}
-
-/* =============== E · GACHA NOTEBOOK =============== */
-.E { --line:#26307a; --hair:#f3c08f; --a1:#ff4f9a; --a3:#3fd0ff; --hit:#ffe14d; background:#f7f9ff; color:#26307a; font-family:"Nunito","Mochiy Pop One";
-  .bg { background-image: linear-gradient(rgba(63,120,255,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(63,120,255,.14) 1px, transparent 1px); background-size:14px 14px; }
-  .d1 { inset:auto; left:3px; top:70px; bottom:70px; width:10px; background:radial-gradient(circle, #f7f9ff 2.5px, #26307a 3px 4.5px, transparent 5px) 0 0/10px 24px; }
-  .logo, .cta-t b, .combo b, .judge, .lost b { font-family:"Mochiy Pop One"; color:#ff4f9a; -webkit-text-stroke:5px #fff; paint-order:stroke fill; filter: drop-shadow(1.5px 0 0 #26307a) drop-shadow(-1.5px 0 0 #26307a) drop-shadow(0 1.5px 0 #26307a) drop-shadow(0 -1.5px 0 #26307a) drop-shadow(2px 3px 0 #26307a); }
-  .logo { font-size:22px; transform:rotate(-4deg); }
-  .qt { background:linear-gradient(#fff,#e3e9ff); border:2.5px solid #26307a; border-radius:14px; padding:3px 8px; }
-  .qt i { background:#c9d0f0; border:2px solid #26307a; } .qt i::after { top:1px; left:1px; } .qt.on i { background:linear-gradient(#ff8cc0,#ff3d8b); } .qt.on i::after { left:15px; }
-  .cta { position:relative; background:linear-gradient(135deg,#c8f5ff,#ffd6ea); border:3px solid #26307a; border-radius:18px; box-shadow:0 4px 0 #26307a, inset 0 2px 0 #fff; transform:rotate(-3deg); margin-top:14px; }
-  .cta::after { content:"✦"; position:absolute; right:-8px; top:-18px; font-size:26px; color:#ffe14d; -webkit-text-stroke:2px #26307a; }
-  .cta-n { font-family:"Mochiy Pop One"; } .cta-t b { font-size:26px; } .cta-t span { font-weight:900; }
-  .chip { background:linear-gradient(#fff,#dfe6ff); border:2.5px solid #26307a; border-radius:20px; box-shadow:0 3px 0 #26307a; }
-  .search { background:#fff; border:2.5px solid #26307a; border-radius:20px; }
-  .seg span { border-radius:12px; } .seg span.on { background:#26307a; color:#fff; }
-  .alb { background:#fff; border:2.5px solid #26307a; border-radius:12px; padding:4px; box-shadow:0 3px 0 #26307a; }
-  .alb .cov { border-radius:8px; }
-  .alb:first-child::after { content:"NEW"; position:absolute; top:-9px; right:-6px; background:#ff4f9a; color:#fff; font-size:9px; padding:1px 6px; border-radius:8px; border:2px solid #26307a; }
-  .mini { background:linear-gradient(#fff,#e9eeff); border:2.5px solid #26307a; border-radius:20px; }
-  .mb { background:linear-gradient(#ff8cc0,#ff3d8b); color:#fff; border:2px solid #26307a; border-radius:50%; }
-  .tabs2 { background:linear-gradient(#3a46a8,#26307a); margin:8px -4px 12px; border-radius:22px; color:#c9d0ff; padding:8px 0; box-shadow:inset 0 2px 0 rgba(255,255,255,.3); }
-  .tabs2 .on { background:#fff; color:#26307a; border-radius:14px; padding:2px 10px; }
-  .back { background:linear-gradient(#fff,#dfe6ff); border:2.5px solid #26307a; border-radius:50%; }
-  .nowc .cov { border:2.5px solid #26307a; border-radius:12px; } .tt { font-family:"Mochiy Pop One"; }
-  .lyrics { font-family:"Mochiy Pop One"; }
-  .lyrics p.cur { background:#fff; border:2.5px solid #26307a; border-radius:14px; padding:8px 10px; box-shadow:0 3px 0 #26307a; }
-  .prog { background:#fff; border:2px solid #26307a; border-radius:6px; height:10px; } .prog i { background:linear-gradient(90deg,#3fd0ff,#ff4f9a); }
-  .tb { background:linear-gradient(#fff,#dfe6ff); border:2.5px solid #26307a; border-radius:50%; }
-  .lost { background:linear-gradient(#ff8cc0,#ff3d8b); border:3px solid #26307a; border-radius:26px; box-shadow:0 5px 0 #26307a, inset 0 3px 0 rgba(255,255,255,.5); color:#fff; }
-  .lost b { color:#fff; font-size:32px; }
-  .lane i { background:#fff; border:2px solid #26307a; border-radius:6px; }
-  .lane i.ok { background:#3fd0ff; } .lane i.no { background:#ff4f9a; } .lane i.cur { background:linear-gradient(90deg,#ffe14d 58%,#fff 58%); }
-  .qhead .cov { border:2px solid #26307a; border-radius:8px; } .ttl .tt { font-family:"Mochiy Pop One"; }
-  .line { background:#fff; border:3px solid #26307a; border-radius:18px; font-family:"Mochiy Pop One"; box-shadow:0 4px 0 #26307a; }
-  .combo b { font-size:34px; } .combo span { font-weight:900; }
-  .judge { color:#ffe14d; font-size:26px; }
-  .ans { border:2.5px solid #26307a; border-radius:22px; box-shadow:0 4px 0 #26307a, inset 0 2px 0 rgba(255,255,255,.7); font-size:15px; background:linear-gradient(#ffd6ea,#ffb3d3); }
-  .ans:nth-of-type(3) { background:linear-gradient(#d4f6ff,#9fe8ff); } .ans.hit { background:linear-gradient(#fff6c2,#ffe14d); }
-}
-
-/* =============== F · PUZZLE LITE =============== */
-.F { --line:#2b3a6b; --hair:#2ec4c4; --a1:#ff4f9a; --a3:#2ec4c4; --hit:#ffd23f; background:#dfe6ff; color:#2b3a6b; font-family:"Baloo 2","Zen Maru Gothic";
-  .bg { background:repeating-linear-gradient(-45deg, rgba(255,255,255,.5) 0 16px, transparent 16px 32px); }
-  .logo { background:#2ec4c4; color:#fff; font-weight:800; font-size:21px; padding:0 22px 0 16px; margin-left:-14px; clip-path:polygon(0 0,100% 0,86% 100%,0 100%); text-shadow:2px 2px 0 #1b7f86; }
-  .qt { background:#fff; border:2px solid #b9c3e6; border-radius:10px; padding:2px 8px; font-weight:800; }
-  .qt i { background:#cfd6ee; } .qt.on i { background:#ff4f9a; }
-  .cta { position:relative; background:#fff; border:3px solid #ff4f9a; border-radius:12px; box-shadow:0 4px 0 rgba(43,58,107,.15); padding-bottom:16px; }
-  .cta::after { content:"▶ Play mix"; position:absolute; right:-3px; bottom:-3px; background:#ff4f9a; color:#fff; font-size:11px; font-weight:800; padding:2px 12px 1px 18px; clip-path:polygon(14% 0,100% 0,100% 100%,0 100%); border-radius:0 0 10px 0; }
-  .cta-go { display:none; } .cta-n { color:#ff4f9a; font-weight:800; } .cta-t b { font-weight:800; }
-  .chip { background:#fff; border:2px solid #b9c3e6; border-radius:10px; font-weight:800; }
-  .search { background:#fff; border:2px solid #b9c3e6; border-radius:10px; }
-  .seg span { font-weight:800; } .seg span.on { background:#2ec4c4; color:#fff; border-radius:8px; }
-  .grid { grid-template-columns:1fr; gap:6px; }
-  .alb { display:flex; align-items:center; gap:8px; background:#f4f6ff; border:2px solid #b9c3e6; border-radius:10px; padding:4px 8px; }
-  .alb .cov { width:30px; height:30px; aspect-ratio:auto; border-radius:6px; flex:none; }
-  .an { margin:0; font-weight:800; font-size:13px; } .aa { font-size:11px; }
-  .alb::after { margin-left:auto; color:#ffd23f; font-weight:800; -webkit-text-stroke:3px #2b3a6b; paint-order:stroke fill; font-size:14px; }
-  .alb:nth-child(1)::after { content:"★ A"; } .alb:nth-child(2)::after { content:"★ S"; } .alb:nth-child(3)::after { content:"★ -"; }
-  .mini { background:#fff; border:2px solid #b9c3e6; border-radius:12px; }
-  .mb { background:#ff4f9a; color:#fff; border-radius:8px; }
-  .tabs2 { background:#2b3a6b; color:#9fb0e0; font-weight:800; } .tabs2 .on { color:#fff; }
-  .back { background:#fff; border:2px solid #b9c3e6; border-radius:8px; }
-  .nowc .cov { border-radius:8px; } .tt { font-weight:800; }
-  .lyrics p { background:#f4f6ff; border:2px solid #b9c3e6; border-radius:10px; padding:5px 10px; opacity:1; color:#8a94bb; margin-bottom:7px; }
-  .lyrics p.cur { border:3px solid #ff4f9a; color:#2b3a6b; background:#fff; }
-  .prog { background:#fff; border-radius:4px; } .prog i { background:#2ec4c4; border-radius:4px; }
-  .tb { background:#fff; border:2px solid #b9c3e6; border-radius:10px; } .tb.big { background:#2ec4c4; color:#fff; border-color:#2ec4c4; }
-  .lost { background:#ff4f9a; color:#fff; border-radius:16px; clip-path:polygon(0 0,92% 0,100% 22%,100% 100%,8% 100%,0 78%); text-shadow:3px 3px 0 #b82d6c; }
-  .lost b { font-weight:800; font-size:34px; }
-  .lane i { background:#fff; border-radius:4px; }
-  .lane i.ok { background:#2ec4c4; } .lane i.no { background:#ff4f9a; } .lane i.cur { background:linear-gradient(90deg,#ffd23f 58%,#fff 58%); }
-  .qhead .cov { border-radius:6px; } .ttl .tt { font-weight:800; }
-  .line { background:#fff; border:2px solid #b9c3e6; border-radius:12px; padding-top:24px; }
-  .line::before { content:"LINE 4 / 14"; position:absolute; left:-2px; top:-2px; background:#2ec4c4; color:#fff; font-size:10px; font-weight:800; line-height:1.6; padding:0 16px 0 9px; clip-path:polygon(0 0,100% 0,84% 100%,0 100%); border-radius:12px 0 0 0; }
-  .combo b { color:#ffd23f; -webkit-text-stroke:5px #2b3a6b; paint-order:stroke fill; font-weight:800; } .combo span { font-weight:800; }
-  .judge { color:#fff; -webkit-text-stroke:5px #ff4f9a; paint-order:stroke fill; font-weight:800; }
-  .ans { background:#f4f6ff; border:2px solid #b9c3e6; border-radius:10px; font-weight:800; font-size:15px; }
-  .ans.hit { border:3px solid #ff4f9a; background:#fff; }
-}
-
-/* =============== G · SUNBURST ARCADE =============== */
-.G { --line:#10224a; --hair:#10224a; --a1:#ff5fae; --a3:#8af0b0; --hit:#2fe07a; background:#33b7ff; color:#10224a; font-family:"Fredoka","Mochiy Pop One";
-  .bg { background:repeating-conic-gradient(from 0deg at 50% 32%, #33b7ff 0 7.5deg, #5cc8ff 7.5deg 15deg); }
-  .d1 { inset:auto; left:0; right:0; top:40px; height:42px; background:#10224a; border-top:3px solid #fff; border-bottom:3px solid #fff; }
-  .status { color:#fff; }
-  .logo { font-family:"Mochiy Pop One"; color:#ffe14d; font-size:20px; }
-  .qt { color:#fff; font-family:"Mochiy Pop One"; font-size:12px; } .qt i { border:2.5px solid #fff; background:#334a78; } .qt i::after { top:1px; left:1px; } .qt.on i { background:#ffe14d; } .qt.on i::after { left:15px; background:#10224a; }
-  .back { color:#fff; }
-  .cta { margin-top:16px; background:#ff5fae; border:3.5px solid #10224a; border-radius:12px; box-shadow:0 6px 0 #10224a; color:#10224a; }
-  .cta-n, .cta-t b { font-family:"Mochiy Pop One"; color:#fff; -webkit-text-stroke:6px #10224a; paint-order:stroke fill; } .cta-t span { font-weight:700; }
-  .chip { background:#fff; border:3px solid #10224a; border-radius:10px; box-shadow:0 4px 0 #10224a; font-weight:700; } .chip + .chip { background:#ffe14d; }
-  .search { background:#fff; border:3px solid #10224a; border-radius:10px; font-weight:600; }
-  .seg span { background:#fff; border:2.5px solid #10224a; border-radius:8px; font-weight:700; } .seg span.on { background:#ffe14d; }
-  .alb { background:#fff; border:3px solid #10224a; border-radius:10px; padding:4px; box-shadow:0 4px 0 #10224a; } .alb .cov { border-radius:5px; } .an { font-weight:700; }
-  .mini { background:#fff; border:3px solid #10224a; border-radius:12px; box-shadow:0 4px 0 #10224a; font-weight:600; }
-  .mb { background:#ffe14d; border:2.5px solid #10224a; border-radius:50%; }
-  .tabs2 { background:#10224a; color:#7fa6d6; border-top:3px solid #fff; font-family:"Mochiy Pop One"; } .tabs2 .on { color:#ffe14d; }
-  .nowc { margin-top:14px; } .nowc .cov { border:3px solid #10224a; border-radius:10px; }
-  .tt { font-family:"Mochiy Pop One"; color:#fff; -webkit-text-stroke:5px #10224a; paint-order:stroke fill; } .ta { color:#fff; font-weight:700; }
-  .lyrics { font-family:"Mochiy Pop One"; }
-  .lyrics p { color:#fff; text-shadow:2px 2px 0 #10224a; opacity:.9; }
-  .lyrics p.cur { background:#fff; color:#10224a; -webkit-text-stroke:0; border:3.5px solid #10224a; border-radius:14px; box-shadow:0 5px 0 #10224a; padding:8px 10px; }
-  .prog { background:#fff; border:2.5px solid #10224a; border-radius:5px; height:12px; } .prog i { background:#ff5fae; }
-  .tb { background:#fff; border:3px solid #10224a; border-radius:50%; box-shadow:0 3px 0 #10224a; }
-  .lost { background:#ff5fae; border:4px solid #10224a; border-radius:18px; box-shadow:0 7px 0 #10224a; }
-  .lost b { font-family:"Mochiy Pop One"; color:#fff; -webkit-text-stroke:6px #10224a; paint-order:stroke fill; } .lost small { font-weight:700; }
-  .qhead { margin-top:10px; } .qhead .cov { border:3px solid #10224a; border-radius:8px; }
-  .ttl .tt { color:#fff; } .ttl .ta { color:#fff; }
-  .lane i { background:#fff; border:2.5px solid #10224a; border-radius:3px; }
-  .lane i.ok { background:#2fe07a; } .lane i.no { background:#ff5f5f; } .lane i.cur { background:linear-gradient(90deg,#ffe14d 58%,#fff 58%); }
-  .line { background:#fff; border:3.5px solid #10224a; border-radius:14px; box-shadow:0 5px 0 #10224a; font-family:"Mochiy Pop One"; }
-  .combo b, .judge { font-family:"Mochiy Pop One"; -webkit-text-stroke:6px #10224a; paint-order:stroke fill; } .combo b { color:#fff; } .judge { color:#ffe14d; }
-  .combo span { color:#fff; font-family:"Mochiy Pop One"; -webkit-text-stroke:4px #10224a; paint-order:stroke fill; }
-  .ans { border:3.5px solid #10224a; border-radius:12px; box-shadow:0 5px 0 #10224a; font-weight:600; font-size:15px; background:#ff9fd0; }
-  .ans:nth-of-type(3) { background:#8af0b0; } .ans.hit { background:#ffe14d; }
-}
-
-/* =============== H · RISO ZINE =============== */
-.H { --line:#0078bf; --hair:#0078bf; --a1:#ff48b0; --a3:#ff48b0; --hit:#ff48b0; background:#f4efe6; color:#0078bf; font-family:"Archivo Black","Zen Kaku Gothic New";
-  .bg { background-image:radial-gradient(rgba(0,0,0,.07) 1px, transparent 1px); background-size:4px 4px; }
-  .d1 { inset:auto; right:-70px; top:50px; width:230px; height:230px; border-radius:50%; background:radial-gradient(#ff48b0 2.3px, transparent 2.7px) 0 0/7px 7px; opacity:.55; }
-  .status { color:#0078bf; }
-  .logo { font-size:26px; letter-spacing:1px; text-shadow:3px 2px 0 rgba(255,72,176,.85); }
-  .qt { border:2.5px solid #0078bf; padding:3px 8px; font-size:12px; box-shadow:3px 3px 0 #ff48b0; background:#f4efe6; }
-  .qt i { border-radius:0; background:#cfd9e6; } .qt i::after { border-radius:0; } .qt.on i { background:#ff48b0; }
-  .cta { background:#ff48b0; color:#f4efe6; box-shadow:5px 4px 0 #0078bf; transform:rotate(-1.5deg); }
-  .cta-n { font-size:46px; } .cta-t b { font-size:24px; text-transform:uppercase; } .cta-t span { font-family:"Zen Kaku Gothic New"; }
-  .chip { border:2.5px solid #0078bf; box-shadow:3px 3px 0 #ff48b0; font-size:11px; text-transform:uppercase; background:#f4efe6; }
-  .search { border:2.5px solid #0078bf; background:#f4efe6; font-family:"Zen Kaku Gothic New"; }
-  .seg span { text-transform:uppercase; font-size:10px; } .seg span.on { background:#0078bf; color:#f4efe6; }
-  .alb .cov { filter:grayscale(1) contrast(1.3); box-shadow:4px 3px 0 #ff48b0; position:relative; }
-  .alb .cov::after { content:""; position:absolute; inset:0; background:#0078bf; mix-blend-mode:screen; }
-  .an { font-family:"Zen Kaku Gothic New"; } .aa { font-family:"Zen Kaku Gothic New"; }
-  .mini { border:2.5px solid #0078bf; box-shadow:4px 3px 0 #ff48b0; background:#f4efe6; font-family:"Zen Kaku Gothic New"; }
-  .mb { background:#0078bf; color:#f4efe6; }
-  .tabs2 { border-top:3px solid #0078bf; text-transform:uppercase; background:#f4efe6; font-size:10px; } .tabs2 .on { color:#ff48b0; }
-  .tt { font-family:"Zen Kaku Gothic New"; font-size:20px; text-shadow:2px 2px 0 rgba(255,72,176,.8); } .ta { font-family:"Zen Kaku Gothic New"; }
-  .nowc .cov { filter:grayscale(1) contrast(1.3); box-shadow:4px 3px 0 #ff48b0; }
-  .lyrics { font-family:"Zen Kaku Gothic New"; }
-  .lyrics p.cur { font-size:21px; text-shadow:3px 2px 0 rgba(255,72,176,.8); }
-  .prog { background:#d6dde6; } .prog i { background:#ff48b0; }
-  .tb { border:2.5px solid #0078bf; box-shadow:3px 3px 0 #ff48b0; background:#f4efe6; }
-  .lost { background:#ff48b0; color:#f4efe6; box-shadow:7px 6px 0 #0078bf; transform:rotate(-1.5deg); }
-  .lost b { font-size:38px; } .lost small { font-family:"Zen Kaku Gothic New"; text-transform:uppercase; }
-  .lane i { background:#d6dde6; } .lane i.ok { background:#0078bf; } .lane i.no { background:#ff48b0; } .lane i.cur { background:linear-gradient(90deg,#ff48b0 58%,#d6dde6 58%); opacity:.7; }
-  .qhead .cov { filter:grayscale(1); } .ttl .tt { font-size:16px; }
-  .line { border:3px solid #0078bf; box-shadow:5px 4px 0 #ff48b0; font-family:"Zen Kaku Gothic New"; background:#f4efe6; }
-  .combo b { font-size:44px; text-shadow:3px 2px 0 rgba(255,72,176,.85); } .combo span { font-size:11px; }
-  .judge { color:#ff48b0; border:3px solid #ff48b0; border-radius:50%; padding:10px 6px; font-size:16px; transform:rotate(-14deg); }
-  .ans { border:2.5px solid #0078bf; font-family:"Zen Kaku Gothic New"; font-size:15px; background:#f4efe6; box-shadow:3px 3px 0 rgba(0,120,191,.35); }
-  .ans.hit { background:#ff48b0; color:#f4efe6; border-color:#ff48b0; box-shadow:4px 4px 0 #0078bf; }
-}
-
-/* =============== I · STICKER BRUTAL =============== */
-.I { --line:#111; --hair:#111; --a1:#2f6bff; --a3:#ff4040; --hit:#20c060; background:#ffe14d; color:#111; font-family:"Lilita One","Potta One";
-  .d1 { inset:auto; left:-30px; right:-30px; top:84px; height:18px; background:repeating-linear-gradient(-45deg,#111 0 12px,#ffe14d 12px 24px); transform:rotate(-3deg); border-top:3px solid #111; border-bottom:3px solid #111; }
-  &.home .top { margin-bottom:24px; }
-  .logo { background:#111; color:#ffe14d; padding:1px 10px; transform:rotate(-3deg); font-size:22px; }
-  .qt { background:#fff; border:3px solid #111; box-shadow:3px 3px 0 #111; padding:2px 8px; }
-  .qt i { border-radius:0; background:#ddd; border:2px solid #111; } .qt i::after { border-radius:0; background:#111; top:1px; left:1px; } .qt.on i { background:#20c060; } .qt.on i::after { left:15px; }
-  .cta { background:#2f6bff; color:#fff; border:3px solid #111; box-shadow:6px 6px 0 #111; }
-  .cta-n, .cta-t b { font-family:"Potta One"; -webkit-text-stroke:5px #111; paint-order:stroke fill; } .cta-t b { font-size:24px; }
-  .chip { background:#fff; border:3px solid #111; box-shadow:4px 4px 0 #111; font-size:13px; } .chip + .chip { background:#ff4040; color:#fff; transform:rotate(2deg); }
-  .search { background:#fff; border:3px solid #111; }
-  .seg span { border:2.5px solid #111; background:#fff; } .seg span.on { background:#111; color:#ffe14d; }
-  .alb .cov { border:3px solid #111; box-shadow:4px 4px 0 #111; }
-  .alb:first-child::after { content:"NEW!"; position:absolute; top:-10px; right:-8px; background:#ff4040; color:#fff; border:2.5px solid #111; border-radius:50%; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:10px; transform:rotate(14deg); }
-  .mini { background:#fff; border:3px solid #111; box-shadow:4px 4px 0 #111; }
-  .mb { background:#111; color:#ffe14d; }
-  .tabs2 { background:#111; color:#888; } .tabs2 .on { color:#ffe14d; }
-  .back { background:#fff; border:3px solid #111; box-shadow:3px 3px 0 #111; }
-  &.listen .top, &.quiz .top { margin-bottom:22px; }
-  .nowc .cov { border:3px solid #111; box-shadow:4px 4px 0 #111; } .tt { font-family:"Potta One"; }
-  .lyrics { font-family:"Potta One"; }
-  .lyrics p.cur { background:#fff; border:3px solid #111; box-shadow:5px 5px 0 #111; padding:8px 10px; transform:rotate(-1deg); }
-  .prog { background:#fff; border:2.5px solid #111; height:12px; } .prog i { background:#2f6bff; }
-  .tb { background:#fff; border:3px solid #111; box-shadow:3px 3px 0 #111; } .tb.big { background:#2f6bff; color:#fff; }
-  .lost { background:#ff4040; color:#fff; border:4px solid #111; box-shadow:7px 7px 0 #111; transform:rotate(-2deg); }
-  .lost b { font-family:"Potta One"; -webkit-text-stroke:6px #111; paint-order:stroke fill; font-size:34px; }
-  .lane i { background:#fff; border:2.5px solid #111; } .lane i.ok { background:#20c060; } .lane i.no { background:#ff4040; } .lane i.cur { background:linear-gradient(90deg,#2f6bff 58%,#fff 58%); }
-  .qhead .cov { border:2.5px solid #111; } .ttl .tt { font-family:"Potta One"; }
-  .line { background:#fff; border:3.5px solid #111; box-shadow:6px 6px 0 #111; font-family:"Potta One"; }
-  .combo b, .judge { color:#fff; -webkit-text-stroke:6px #111; paint-order:stroke fill; font-family:"Potta One"; } .judge { color:#2f6bff; }
-  .ans { border:3px solid #111; box-shadow:5px 5px 0 #111; font-size:16px; background:#fff; }
-  .ans:nth-of-type(3) { background:#ff4040; color:#fff; } .ans.hit { background:#2f6bff; color:#fff; }
-}
-.homechibi { display:none; }
-
-/* modal (G only) */
-.modal { position:absolute; inset:0; background:rgba(16,34,74,.6); z-index:5; display:flex; align-items:center; justify-content:center; padding:24px; }
-.modal .box { background:#fff; border:3.5px solid #10224a; border-radius:18px; box-shadow:0 6px 0 #10224a; padding:16px; color:#10224a; font-family:"Fredoka","Mochiy Pop One"; }
-.modal h3 { font-family:"Mochiy Pop One"; font-weight:400; font-size:18px; margin-bottom:6px; }
-.modal .b2 { display:flex; gap:8px; margin-top:14px; }
-.modal .b2 div { flex:1; text-align:center; padding:10px 0; border:3px solid #10224a; border-radius:12px; box-shadow:0 4px 0 #10224a; font-weight:700; }
-</style>
-</head>
-<body>
-
-<h1>Round 6: layout languages</h1>
-<div class="m" style="max-width:920px">Same three screens nine times. What changes: background, button shape, borders, type and decoration. What stays: big poppy type, loud color, nothing too serious. Color is per layout for now; we'll pick a palette after the layout.<br>
-<b style="color:#fff">Screens:</b> 1 Home (big review button, then a normal library) · 2 Player with Quiz off (lyrics, one LOST IT button) · 3 Player with Quiz on (the game). The <b style="color:#fff">QUIZ</b> toggle is in the top-right corner of every screen. "KASHI!" is a placeholder name.</div>
-<nav id="nav"></nav>
-<div id="out"></div>
-
-<template id="t-home">
-<div class="phone P home">
-  <div class="bg"></div><div class="deco d1"></div>
-  <div class="status"><span>21:00</span><span>●●●</span></div>
-  <div class="homechibi"><div class="chibi"><div class="band"></div><div class="cup l"></div><div class="cup r"></div><div class="hd"><div class="e l"></div><div class="e r"></div><div class="bl l"></div><div class="bl r"></div><div class="m"></div></div><div class="arm l"></div><div class="arm r"></div><div class="bd"></div><div class="lg l"></div><div class="lg r"></div></div></div>
-  <div class="scr">
-    <div class="top"><div class="logo">KASHI!</div><div class="qt on"><span>QUIZ</span><i></i></div></div>
-    <div class="cta"><div class="cta-n">12</div><div class="cta-t"><b>REVIEW</b><span>lines due · play the mix</span></div><div class="cta-go">▶</div></div>
-    <div class="subrow"><div class="chip">Clip review</div><div class="chip">Sort 5 marks</div></div>
-    <div class="search">⌕ Search your library</div>
-    <div class="seg"><span class="on">Albums</span><span>Artists</span><span>Songs</span><span>Playlists</span></div>
-    <div class="grid">
-      <div class="alb"><div class="cov c1"></div><div class="an">環状線</div><div class="aa">ミナミ</div></div>
-      <div class="alb"><div class="cov c2"></div><div class="an">硝子の街</div><div class="aa">ミナミ</div></div>
-      <div class="alb"><div class="cov c3"></div><div class="an">深海</div><div class="aa">深海少女</div></div>
-    </div>
-    <div class="mini"><div class="cov c1"></div><div>夜明けのバス<br><small>ミナミ</small></div><div class="mb">⏸</div></div>
-    <div class="tabs2"><span class="on">Home</span><span>Library</span><span>Search</span><span>Me</span></div>
-  </div>
-</div>
-</template>
-
-<template id="t-listen">
-<div class="phone P listen">
-  <div class="bg"></div><div class="deco d1"></div>
-  <div class="status"><span>8:31</span><span>●●●</span></div>
-  <div class="scr">
-    <div class="top"><div class="back">⌄</div><div class="qt"><span>QUIZ</span><i></i></div></div>
-    <div class="nowc"><div class="cov c1"></div><div><div class="tt">夜明けのバス</div><div class="ta">ミナミ · 環状線</div></div></div>
-    <div class="lyrics">
-      <p>窓に映る君の面影</p>
-      <p>言えなかった言葉が 胸の奥で眠ってる <span class="mk">●</span></p>
-      <p class="cur"><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</p>
-      <p>「さよなら」なんて 似合わないよ</p>
-    </div>
-    <div class="prog"><i></i></div>
-    <div class="trans"><div class="tb">⏮</div><div class="tb big">⏸</div><div class="tb">⏭</div></div>
-    <div class="lost"><b>LOST IT</b><small>marks this moment</small></div>
-  </div>
-</div>
-</template>
-
-<template id="t-quiz">
-<div class="phone P quiz">
-  <div class="bg"></div><div class="deco d1"></div>
-  <div class="status"><span>21:15</span><span>●●●</span></div>
-  <div class="scr">
-    <div class="top"><div class="back">⌄</div><div class="qt on"><span>QUIZ</span><i></i></div></div>
-    <div class="qhead"><div class="cov c1"></div><div class="ttl"><div class="tt">夜明けのバス</div><div class="ta">ミナミ · 4/14</div></div><div class="tb">⏮</div><div class="tb">⏸</div><div class="tb">⏭</div></div>
-    <div class="lane"><i class="ok" style="flex:4"></i><i class="ok" style="flex:3"></i><i class="no" style="flex:5"></i><i class="cur" style="flex:6"></i><i style="flex:3"></i><i style="flex:5"></i><i style="flex:4"></i></div>
-    <div class="line"><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた</div>
-    <div class="mid">
-      <div class="chibi"><div class="band"></div><div class="cup l"></div><div class="cup r"></div><div class="hd"><div class="e l"></div><div class="e r"></div><div class="bl l"></div><div class="bl r"></div><div class="m"></div></div><div class="arm l"></div><div class="arm r"></div><div class="bd"></div><div class="lg l"></div><div class="lg r"></div></div>
-      <div class="combo"><b>12</b><span>COMBO</span></div>
-      <div class="judge">NICE!</div>
-    </div>
-    <div class="ans dim">I meant to get off at the next stop</div>
-    <div class="ans hit">Counting the fading town lights</div>
-    <div class="ans dim">Unsaid words sleep in my chest</div>
-  </div>
-</div>
-</template>
-
-<script>
-const L = [
-  ['A', 'Shard', 'Persona-style, from your Volcano Prince ref. Slanted shards, skewed panels, halftone dots, hard black drop shadows, comic italic type.', 'Bangers + Dela Gothic One', 'purple · cyan · yellow · black'],
-  ['B', 'Scrapbook', 'Neko Atsume. Cream paper, paw pattern, thin brown hand-drawn lines, polaroids with push pins, washi tape on the current line.', 'Patrick Hand + Kiwi Maru', 'cream · mustard · brown'],
-  ['C', 'Cozy Idle', 'Cat-café idle game. A little scene on Home where the chibi lives, wood-plank floor (straight lines), cream panels, a big green 3D button, chunky tab buttons.', 'Fredoka + M PLUS Rounded 1c', 'sky · sand · wood · green'],
-  ['D', 'Confetti Sketch', 'Neko no Roomba. White paper with confetti, flat skewed color blocks, wobbly hand-drawn borders, marker highlights, a ray burst behind the combo.', 'Gochi Hand + Yusei Magic', 'white · raspberry · cobalt · violet'],
-  ['E', 'Gacha Notebook', 'The gacha home ref. Graph paper with spiral binding, layered sticker text, glossy gradient pills, a capsule nav bar, NEW badges.', 'Nunito + Mochiy Pop One', 'navy · pink · cyan · yellow'],
-  ['F', 'Puzzle Lite', 'Miku Logic Paint. Pale diagonal stripes, a teal header tab with a cut corner, light list rows with a pink selection, star ranks per album.', 'Baloo 2 + Zen Maru Gothic', 'periwinkle · teal · pink'],
-  ['G', 'Sunburst Arcade', 'Round 4 with straighter lines: a sunburst background, a hard navy band across the top, squarer corners, solid drop shadows. Your favorite font pair.', 'Fredoka + Mochiy Pop One', 'Ramune'],
-  ['H', 'Riso Zine', 'Two-ink risograph print. Paper grain, pink and blue overprint with slightly misaligned shadows, halftone blob, a stamped judgement. Lo-fi and punky.', 'Archivo Black + Zen Kaku Gothic New', 'paper · fluoro pink · blue'],
-  ['I', 'Sticker Brutal', 'Yuzu as neo-brutalism. Hazard stripe, no rounding, thick black borders, solid offset shadows, tilted stickers.', 'Lilita One + Potta One', 'Yuzu'],
-];
-const out = document.getElementById('out'), nav = document.getElementById('nav');
-const tpl = id => document.getElementById(id).content;
-let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-for (const [k, name, desc, fonts, colors] of L) {
-  nav.insertAdjacentHTML('beforeend', `<a href="#l${k}">${k} · ${name}</a>`);
-  const sec = document.createElement('section'); sec.id = 'l' + k;
-  sec.innerHTML = `<div class="head"><span class="tag">${k}</span><h2>${name}</h2></div><div class="pitch">${desc}</div><div class="loop"><b>Type</b> ${fonts} · <b>Color</b> ${colors}</div>`;
-  const row = document.createElement('div'); row.className = 'row';
-  for (const [t, cap] of [['t-home', 'Home'], ['t-listen', 'Quiz off'], ['t-quiz', 'Quiz on']]) {
-    const fig = document.createElement('figure');
-    const node = tpl(t).cloneNode(true);
-    const ph = node.querySelector('.phone'); ph.classList.add(k);
-    if (k === 'D') for (let i = 0; i < 26; i++) {
-      const c = document.createElement('div'); c.className = 'conf';
-      c.style.cssText = `left:${rnd() * 280}px;top:${rnd() * 590}px;transform:rotate(${rnd() * 180}deg);background:${['#d9457a', '#3a5fcf', '#ffd43b', '#6b4fc8', '#3ec97a'][i % 5]}`;
-      ph.appendChild(c);
+  <head>
+    <meta charset="utf-8">
+    <title>Round 6: layout languages</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Baloo+2:wght@700;800&family=Bangers&family=Dela+Gothic+One&family=Fredoka:wght@600;700&family=Gochi+Hand&family=Kiwi+Maru:wght@500&family=Lilita+One&family=M+PLUS+Rounded+1c:wght@800&family=Mochiy+Pop+One&family=Nunito:wght@900&family=Patrick+Hand&family=Potta+One&family=Yusei+Magic&family=Zen+Kaku+Gothic+New:wght@900&family=Zen+Maru+Gothic:wght@900&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="style.css">
+    <style>
+    /* =============== shared structure (no look) =============== */
+    .P {
+      font-size: 13px;
+      border-color: #333;
     }
-    fig.appendChild(node);
-    fig.insertAdjacentHTML('beforeend', `<figcaption><b>${cap}</b></figcaption>`);
-    row.appendChild(fig);
-  }
-  if (k === 'G') {
-    const fig = document.createElement('figure');
-    const node = tpl('t-quiz').cloneNode(true);
-    const ph = node.querySelector('.phone'); ph.classList.add('G');
-    ph.insertAdjacentHTML('beforeend', `<div class="modal"><div class="box"><h3>Turn off Quiz?</h3><div style="font-size:13px">You're in the review mix. It'll keep playing as a normal playlist, and today's remaining due lines stay due.</div><div class="b2"><div>Cancel</div><div style="background:#ffe14d">Turn off</div></div></div></div>`);
-    fig.appendChild(node);
-    fig.insertAdjacentHTML('beforeend', `<figcaption><b>Toggle during review mix</b>: confirm first.</figcaption>`);
-    row.appendChild(fig);
-  }
-  sec.appendChild(row); out.appendChild(sec);
-}
-</script>
+    .P .bg,
+    .P .deco {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .P .status,
+    .P .scr {
+      position: relative;
+      z-index: 2;
+    }
+    .P .scr {
+      padding: 0 14px;
+      display: flex;
+      flex-direction: column;
+    }
+    .P .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 40px;
+      flex: none;
+    }
+    .P .back {
+      font-size: 20px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .P .qt {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .P .qt i {
+      display: block;
+      width: 34px;
+      height: 20px;
+      border-radius: 12px;
+      background: #ccc;
+      position: relative;
+    }
+    .P .qt i::after {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .P .qt.on i::after {
+      left: 17px;
+    }
+    .P .cta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      margin: 8px 0 12px;
+      flex: none;
+    }
+    .P .cta-n {
+      font-size: 38px;
+      line-height: 1;
+    }
+    .P .cta-t b {
+      display: block;
+      font-size: 22px;
+      line-height: 1.05;
+      font-weight: 400;
+    }
+    .P .cta-t span {
+      font-size: 11px;
+    }
+    .P .cta-go {
+      margin-left: auto;
+      font-size: 20px;
+    }
+    .P .subrow {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex: none;
+    }
+    .P .chip {
+      flex: 1;
+      text-align: center;
+      padding: 7px 4px;
+      font-size: 12px;
+    }
+    .P .search {
+      padding: 7px 10px;
+      font-size: 12px;
+      margin-bottom: 9px;
+      flex: none;
+    }
+    .P .seg {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      flex: none;
+    }
+    .P .seg span {
+      padding: 3px 7px;
+    }
+    .P .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .P .alb {
+      position: relative;
+    }
+    .P .alb .cov {
+      aspect-ratio: 1;
+    }
+    .P .an {
+      font-size: 11px;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .P .aa {
+      font-size: 10px;
+      opacity: 0.75;
+    }
+    .P .mini {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+      padding: 6px 8px;
+      font-size: 11px;
+      line-height: 1.2;
+      flex: none;
+    }
+    .P .mini .cov {
+      width: 32px;
+      height: 32px;
+      flex: none;
+    }
+    .P .mini small {
+      opacity: 0.7;
+    }
+    .P .mb {
+      margin-left: auto;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+    .P .tabs2 {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 9px 0 16px;
+      font-size: 11px;
+      margin: 8px -14px 0;
+      flex: none;
+    }
+    .P .nowc {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 2px 0 12px;
+      flex: none;
+    }
+    .P .nowc .cov {
+      width: 54px;
+      height: 54px;
+      flex: none;
+    }
+    .P .tt {
+      font-size: 17px;
+      line-height: 1.2;
+    }
+    .P .ta {
+      font-size: 11px;
+    }
+    .P .lyrics {
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.55;
+      overflow: hidden;
+    }
+    .P .lyrics p {
+      margin-bottom: 10px;
+      opacity: 0.55;
+    }
+    .P .lyrics p.cur {
+      opacity: 1;
+      font-size: 18px;
+    }
+    .P .lyrics rt {
+      font-size: 9px;
+    }
+    .P .mk {
+      color: #ffb800;
+      font-size: 10px;
+    }
+    .P .prog {
+      height: 6px;
+      margin: 6px 0 12px;
+      flex: none;
+    }
+    .P .prog i {
+      display: block;
+      height: 100%;
+      width: 32%;
+    }
+    .P .trans {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 12px;
+      flex: none;
+    }
+    .P .tb {
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex: none;
+    }
+    .P .tb.big {
+      width: 48px;
+      height: 48px;
+      font-size: 16px;
+    }
+    .P .lost {
+      height: 104px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      flex: none;
+    }
+    .P .lost b {
+      font-size: 30px;
+      font-weight: 400;
+      line-height: 1.1;
+    }
+    .P .lost small {
+      font-size: 11px;
+      margin-top: 6px;
+    }
+    .P .qhead {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      flex: none;
+    }
+    .P .qhead .cov {
+      width: 36px;
+      height: 36px;
+      flex: none;
+    }
+    .P .ttl {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 2px 0 2px 2px;
+    }
+    .P .ttl .tt {
+      font-size: 15px;
+    }
+    .P .lane {
+      display: flex;
+      gap: 3px;
+      height: 12px;
+      margin: 6px 0 12px;
+      flex: none;
+    }
+    .P .lane i {
+      position: relative;
+      overflow: hidden;
+    }
+    .P .line {
+      padding: 12px;
+      text-align: center;
+      font-size: 18px;
+      line-height: 1.75;
+      flex: none;
+      position: relative;
+    }
+    .P .line rt {
+      font-size: 9px;
+    }
+    .P .mid {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 80px;
+      margin: 8px 0;
+      flex: none;
+      padding: 0 4px;
+    }
+    .P .combo b {
+      display: block;
+      font-size: 32px;
+      line-height: 1;
+      font-weight: 400;
+    }
+    .P .combo span {
+      font-size: 10px;
+    }
+    .P .judge {
+      margin-left: auto;
+      font-size: 24px;
+      transform: rotate(-7deg);
+    }
+    .P .ans {
+      padding: 10px 14px;
+      font-size: 14px;
+      line-height: 1.25;
+      margin-bottom: 10px;
+      position: relative;
+      flex: none;
+    }
+    .P .ans.dim {
+      opacity: 0.5;
+    }
+    .P .ans.hit::after {
+      content: "✓";
+      position: absolute;
+      right: -8px;
+      top: -12px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--hit);
+      color: var(--line);
+      border: 3px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transform: none;
+      font-family: sans-serif;
+    }
+    .c1 {
+      background: linear-gradient(135deg, #3a1d5c, #c2410c 70%, #fbbf24);
+    }
+    .c2 {
+      background: linear-gradient(135deg, #0f3d3e, #4ade80);
+    }
+    .c3 {
+      background: linear-gradient(135deg, #1e3a8a, #93c5fd);
+    }
 
-</body>
+    /* chibi */
+    .chibi {
+      position: relative;
+      width: 58px;
+      height: 74px;
+      flex: none;
+      transform-origin: 50% 100%;
+      animation: dance 0.38s ease-in-out infinite alternate;
+    }
+    @keyframes dance {
+      from {
+        transform: rotate(-9deg);
+      }
+      to {
+        transform: rotate(9deg) translateY(-7px);
+      }
+    }
+    .chibi .hd {
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      width: 46px;
+      height: 42px;
+      border-radius: 50% 50% 46% 46%;
+      background: #ffe3cf;
+      border: 3px solid var(--line);
+      overflow: hidden;
+      z-index: 2;
+    }
+    .chibi .hd::before {
+      content: "";
+      position: absolute;
+      left: -6px;
+      right: -6px;
+      top: -8px;
+      height: 22px;
+      background: var(--hair);
+      border-radius: 0 0 45% 45%;
+    }
+    .chibi .e {
+      position: absolute;
+      top: 19px;
+      width: 7px;
+      height: 10px;
+      background: #1a1a1a;
+      border-radius: 50%;
+    }
+    .chibi .e::after {
+      content: "";
+      position: absolute;
+      left: 1px;
+      top: 1px;
+      width: 3px;
+      height: 3px;
+      background: #fff;
+      border-radius: 50%;
+    }
+    .chibi .e.l {
+      left: 11px;
+    }
+    .chibi .e.r {
+      right: 11px;
+    }
+    .chibi .bl {
+      position: absolute;
+      top: 28px;
+      width: 8px;
+      height: 4px;
+      background: #ff9ab0;
+      border-radius: 50%;
+    }
+    .chibi .bl.l {
+      left: 5px;
+    }
+    .chibi .bl.r {
+      right: 5px;
+    }
+    .chibi .m {
+      position: absolute;
+      top: 29px;
+      left: 17px;
+      width: 7px;
+      height: 5px;
+      background: #d6334a;
+      border-radius: 0 0 6px 6px;
+    }
+    .chibi .band {
+      position: absolute;
+      left: 1px;
+      top: 1px;
+      width: 56px;
+      height: 32px;
+      border: 4px solid var(--line);
+      border-bottom: none;
+      border-radius: 32px 32px 0 0;
+      z-index: 3;
+      box-sizing: border-box;
+    }
+    .chibi .cup {
+      position: absolute;
+      top: 20px;
+      width: 12px;
+      height: 18px;
+      background: var(--a3);
+      border: 3px solid var(--line);
+      border-radius: 6px;
+      z-index: 4;
+    }
+    .chibi .cup.l {
+      left: -1px;
+    }
+    .chibi .cup.r {
+      right: -1px;
+    }
+    .chibi .bd {
+      position: absolute;
+      left: 17px;
+      top: 46px;
+      width: 24px;
+      height: 19px;
+      background: var(--a1);
+      border: 3px solid var(--line);
+      border-radius: 9px 9px 6px 6px;
+      z-index: 1;
+    }
+    .chibi .arm {
+      position: absolute;
+      top: 49px;
+      width: 7px;
+      height: 17px;
+      background: #ffe3cf;
+      border: 2.5px solid var(--line);
+      border-radius: 5px;
+      transform-origin: 50% 3px;
+    }
+    .chibi .arm.l {
+      left: 16px;
+      animation: wl 0.38s ease-in-out infinite alternate;
+    }
+    .chibi .arm.r {
+      right: 16px;
+      animation: wr 0.38s ease-in-out infinite alternate;
+    }
+    @keyframes wl {
+      from {
+        transform: rotate(120deg);
+      }
+      to {
+        transform: rotate(165deg);
+      }
+    }
+    @keyframes wr {
+      from {
+        transform: rotate(-165deg);
+      }
+      to {
+        transform: rotate(-120deg);
+      }
+    }
+    .chibi .lg {
+      position: absolute;
+      top: 63px;
+      width: 7px;
+      height: 10px;
+      background: var(--line);
+      border-radius: 3px;
+    }
+    .chibi .lg.l {
+      left: 21px;
+    }
+    .chibi .lg.r {
+      left: 30px;
+    }
+
+    /* =============== A · SHARD =============== */
+    .A {
+      --line: #000;
+      --hair: #111;
+      --a1: #ff2fa0;
+      --a3: #29d3ff;
+      --hit: #ffd400;
+      background: #5a14e0;
+      color: #fff;
+      font-family: "Bangers", "Dela Gothic One";
+      letter-spacing: 0.4px;
+      .bg {
+        background:
+          radial-gradient(rgba(255, 255, 255, 0.16) 1.5px, transparent 2px) 0 0 / 9px 9px,
+          linear-gradient(165deg, #8a2bff, #4a10c0 55%, #ff2fa0);
+      }
+      .d1 {
+        inset: auto;
+        right: -70px;
+        top: 120px;
+        width: 180px;
+        height: 420px;
+        background: #000;
+        transform: skewX(-20deg);
+        opacity: 0.8;
+      }
+      .d1::after {
+        content: "";
+        position: absolute;
+        left: -60px;
+        top: -70px;
+        width: 30px;
+        height: 600px;
+        background: #fff;
+      }
+      .logo {
+        font-size: 30px;
+        -webkit-text-stroke: 6px #000;
+        paint-order: stroke fill;
+        transform: rotate(-4deg);
+      }
+      .qt {
+        background: #000;
+        padding: 3px 9px;
+        transform: skewX(-12deg);
+        border: 2px solid #fff;
+        font-size: 15px;
+      }
+      .qt i {
+        border-radius: 0;
+        background: #555;
+      }
+      .qt i::after {
+        border-radius: 0;
+      }
+      .qt.on i {
+        background: #ffd400;
+      }
+      .cta {
+        background:
+          radial-gradient(rgba(0, 0, 0, 0.2) 1.3px, transparent 1.7px) 0 0 / 6px 6px,
+          #29d3ff;
+        border: 3px solid #000;
+        box-shadow: 6px 6px 0 #000;
+        transform: skewX(-10deg) rotate(-2deg);
+        color: #000;
+      }
+      .cta-n,
+      .cta-t b {
+        color: #fff;
+        -webkit-text-stroke: 6px #000;
+        paint-order: stroke fill;
+      }
+      .cta-n {
+        font-size: 46px;
+      }
+      .cta-t b {
+        font-size: 28px;
+      }
+      .cta-t span {
+        font-size: 13px;
+      }
+      .chip {
+        background: #fff;
+        color: #000;
+        border: 3px solid #000;
+        transform: skewX(-10deg);
+        box-shadow: 4px 4px 0 #000;
+        font-size: 15px;
+      }
+      .chip + .chip {
+        background: #ffd400;
+      }
+      .search {
+        background: #000;
+        border: 2px solid #fff;
+        transform: skewX(-10deg);
+        font-size: 14px;
+      }
+      .seg span {
+        background: #000;
+        transform: skewX(-10deg);
+        font-size: 14px;
+      }
+      .seg span.on {
+        background: #ffd400;
+        color: #000;
+      }
+      .alb .cov {
+        border: 3px solid #fff;
+        box-shadow: 4px 4px 0 #000;
+        transform: rotate(-3deg);
+      }
+      .alb:nth-child(2) .cov {
+        transform: rotate(3deg);
+      }
+      .an {
+        font-size: 14px;
+        text-shadow: 2px 2px 0 #000;
+      }
+      .aa {
+        color: #ffd400;
+        font-size: 12px;
+        opacity: 1;
+      }
+      .mini {
+        background: #fff;
+        color: #000;
+        border: 3px solid #000;
+        transform: skewX(-8deg);
+        box-shadow: 4px 4px 0 #000;
+        font-size: 14px;
+      }
+      .mb {
+        background: #000;
+        color: #fff;
+      }
+      .tabs2 {
+        background: #000;
+        color: #999;
+        font-size: 15px;
+      }
+      .tabs2 .on {
+        color: #000;
+        background: #fff;
+        transform: skewX(-12deg);
+        padding: 1px 10px;
+      }
+      .back {
+        color: #fff;
+      }
+      .tt {
+        font-size: 24px;
+        -webkit-text-stroke: 5px #000;
+        paint-order: stroke fill;
+      }
+      .ta {
+        color: #ffd400;
+        font-size: 13px;
+      }
+      .nowc .cov {
+        border: 3px solid #fff;
+        transform: rotate(-4deg);
+        box-shadow: 4px 4px 0 #000;
+      }
+      .lyrics {
+        font-family: "Dela Gothic One";
+      }
+      .lyrics p {
+        text-shadow: 2px 2px 0 #000;
+        opacity: 0.8;
+      }
+      .lyrics p.cur {
+        background: #ffd400;
+        color: #000;
+        -webkit-text-stroke: 0;
+        padding: 8px 10px;
+        transform: skewX(-6deg);
+        box-shadow: 5px 5px 0 #000;
+      }
+      .prog {
+        background: #000;
+        transform: skewX(-20deg);
+      }
+      .prog i {
+        background: #29d3ff;
+      }
+      .tb {
+        background: #fff;
+        color: #000;
+        border: 3px solid #000;
+        transform: skewX(-10deg);
+        box-shadow: 3px 3px 0 #000;
+      }
+      .lost {
+        background:
+          radial-gradient(rgba(0, 0, 0, 0.22) 1.4px, transparent 1.8px) 0 0 / 7px 7px,
+          #ff2fa0;
+        border: 4px solid #000;
+        box-shadow: 7px 7px 0 #000;
+        transform: skewX(-10deg) rotate(-2deg);
+      }
+      .lost b {
+        font-size: 44px;
+        -webkit-text-stroke: 6px #000;
+        paint-order: stroke fill;
+      }
+      .lost small {
+        font-size: 13px;
+        color: #000;
+      }
+      .qhead .cov {
+        border: 2px solid #fff;
+      }
+      .ttl .tt {
+        font-size: 20px;
+      }
+      .lane i {
+        background: #000;
+        border: 2px solid #fff;
+        transform: skewX(-20deg);
+      }
+      .lane i.ok {
+        background: #29d3ff;
+      }
+      .lane i.no {
+        background: #ff2fa0;
+      }
+      .lane i.cur {
+        background: linear-gradient(90deg, #ffd400 58%, #000 58%);
+      }
+      .line {
+        background: #fff;
+        color: #000;
+        border: 4px solid #000;
+        box-shadow: 6px 6px 0 #000;
+        transform: skewX(-5deg);
+        font-family: "Dela Gothic One";
+      }
+      .combo b {
+        font-size: 42px;
+        color: #ffd400;
+        -webkit-text-stroke: 6px #000;
+        paint-order: stroke fill;
+      }
+      .combo span {
+        font-size: 15px;
+        -webkit-text-stroke: 3px #000;
+        paint-order: stroke fill;
+      }
+      .judge {
+        font-size: 36px;
+        color: #29d3ff;
+        -webkit-text-stroke: 6px #000;
+        paint-order: stroke fill;
+        transform: rotate(-10deg);
+      }
+      .ans {
+        border: 3px solid #000;
+        box-shadow: 5px 5px 0 #000;
+        transform: skewX(-9deg);
+        font-size: 18px;
+        color: #000;
+        background: #fff;
+      }
+      .ans.hit {
+        background:
+          radial-gradient(rgba(0, 0, 0, 0.18) 1.3px, transparent 1.7px) 0 0 / 6px 6px,
+          #ffd400;
+      }
+    }
+
+    /* =============== B · SCRAPBOOK =============== */
+    .B {
+      --line: #6b4a2b;
+      --hair: #6b4a2b;
+      --a1: #f4a7b9;
+      --a3: #9cc27a;
+      --hit: #9cc27a;
+      background: #f6e7c8;
+      color: #5a3d22;
+      font-family: "Patrick Hand", "Kiwi Maru";
+      .bg {
+        background-image:
+          radial-gradient(rgba(160, 120, 70, 0.16) 5px, transparent 6px),
+          radial-gradient(rgba(160, 120, 70, 0.16) 2.5px, transparent 3px),
+          radial-gradient(rgba(160, 120, 70, 0.16) 2.5px, transparent 3px);
+        background-size: 52px 52px;
+        background-position:
+          0 0,
+          -9px -10px,
+          9px -10px;
+      }
+      .status {
+        color: #6b4a2b;
+      }
+      .logo {
+        font-family: "Kiwi Maru";
+        font-size: 18px;
+        background: #f2b632;
+        border: 2.5px solid #6b4a2b;
+        border-radius: 9px;
+        padding: 2px 10px;
+      }
+      .qt {
+        background: #fff8ea;
+        border: 2.5px solid #6b4a2b;
+        border-radius: 10px;
+        padding: 3px 8px;
+        font-size: 15px;
+      }
+      .qt i {
+        background: #e2cfac;
+        border: 2px solid #6b4a2b;
+      }
+      .qt i::after {
+        background: #6b4a2b;
+        top: 1px;
+        left: 1px;
+      }
+      .qt.on i {
+        background: #9cc27a;
+      }
+      .qt.on i::after {
+        left: 15px;
+      }
+      .cta {
+        background: #fffdf6;
+        border: 2.5px solid #6b4a2b;
+        border-radius: 5px;
+        box-shadow: 3px 4px 0 rgba(107, 74, 43, 0.25);
+        transform: rotate(-1.5deg);
+        margin-top: 14px;
+      }
+      .cta::before {
+        content: "";
+        position: absolute;
+        top: -9px;
+        left: 50%;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: #e85a5a;
+        border: 2px solid #6b4a2b;
+      }
+      .cta {
+        position: relative;
+      }
+      .cta-n {
+        font-family: "Kiwi Maru";
+        color: #e8823a;
+        font-size: 40px;
+      }
+      .cta-t b {
+        font-size: 24px;
+      }
+      .cta-t span {
+        font-size: 14px;
+      }
+      .cta-go {
+        background: #f2b632;
+        border: 2.5px solid #6b4a2b;
+        border-radius: 9px;
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .chip {
+        background: #fff8ea;
+        border: 2px solid #6b4a2b;
+        border-radius: 8px;
+        font-size: 15px;
+      }
+      .search {
+        background: #fff;
+        border: 2px solid #6b4a2b;
+        border-radius: 14px;
+        font-size: 15px;
+      }
+      .seg span {
+        font-size: 15px;
+        border-bottom: 3px solid transparent;
+      }
+      .seg span.on {
+        border-bottom-color: #f2b632;
+      }
+      .alb {
+        background: #fff;
+        padding: 5px 5px 3px;
+        border: 1.5px solid #d6c3a0;
+        box-shadow: 2px 3px 0 rgba(107, 74, 43, 0.2);
+        transform: rotate(-2.5deg);
+      }
+      .alb:nth-child(2) {
+        transform: rotate(2deg);
+      }
+      .alb::before {
+        content: "";
+        position: absolute;
+        top: -6px;
+        left: calc(50% - 5px);
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #5aa6e8;
+        border: 1.5px solid #6b4a2b;
+        z-index: 1;
+      }
+      .alb:nth-child(2)::before {
+        background: #f2b632;
+      }
+      .alb:nth-child(3)::before {
+        background: #b07ad9;
+      }
+      .an {
+        font-family: "Kiwi Maru";
+        font-size: 12px;
+      }
+      .aa {
+        font-size: 12px;
+      }
+      .mini {
+        background: #fff8ea;
+        border: 2.5px solid #6b4a2b;
+        border-radius: 10px;
+        font-size: 14px;
+      }
+      .mb {
+        background: #f2b632;
+        border: 2px solid #6b4a2b;
+        border-radius: 8px;
+      }
+      .tabs2 {
+        background: #f2b632;
+        border-top: 2.5px solid #6b4a2b;
+        font-size: 15px;
+      }
+      .tabs2 .on {
+        text-decoration: underline wavy;
+      }
+      .nowc .cov {
+        border: 5px solid #fff;
+        box-shadow: 2px 3px 0 rgba(107, 74, 43, 0.25);
+        transform: rotate(-3deg);
+      }
+      .tt {
+        font-family: "Kiwi Maru";
+        font-size: 18px;
+      }
+      .ta {
+        font-size: 14px;
+      }
+      .lyrics {
+        font-family: "Kiwi Maru";
+      }
+      .lyrics p.cur {
+        background: repeating-linear-gradient(
+          45deg,
+          rgba(244, 167, 185, 0.6) 0 7px,
+          rgba(244, 167, 185, 0.38) 7px 14px
+        );
+        padding: 6px 8px;
+        transform: rotate(-1deg);
+      }
+      .prog {
+        background: #e6d4b2;
+        border-radius: 4px;
+      }
+      .prog i {
+        background: #e8823a;
+        border-radius: 4px;
+      }
+      .tb {
+        background: #fff8ea;
+        border: 2px solid #6b4a2b;
+        border-radius: 10px;
+      }
+      .tb.big {
+        background: #f2b632;
+      }
+      .lost {
+        background: #f2b632;
+        border: 3px solid #6b4a2b;
+        border-radius: 14px;
+        box-shadow: 0 4px 0 #6b4a2b;
+      }
+      .lost b {
+        font-family: "Kiwi Maru";
+        font-size: 28px;
+      }
+      .lost small {
+        font-size: 14px;
+      }
+      .lane i {
+        background: #fff;
+        border: 1.5px solid #6b4a2b;
+        border-radius: 3px;
+      }
+      .lane i.ok {
+        background: #9cc27a;
+      }
+      .lane i.no {
+        background: #e85a5a;
+      }
+      .lane i.cur {
+        background: linear-gradient(90deg, #f2b632 58%, #fff 58%);
+      }
+      .line {
+        background: #fff;
+        border: 1.5px solid #d6c3a0;
+        padding: 14px 12px 18px;
+        box-shadow: 2px 3px 0 rgba(107, 74, 43, 0.2);
+        transform: rotate(-1deg);
+        font-family: "Kiwi Maru";
+      }
+      .line::before {
+        content: "";
+        position: absolute;
+        top: -7px;
+        left: calc(50% - 7px);
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #e85a5a;
+        border: 2px solid #6b4a2b;
+      }
+      .combo b {
+        font-family: "Kiwi Maru";
+        color: #e8823a;
+      }
+      .combo span {
+        font-size: 13px;
+      }
+      .judge {
+        font-family: "Kiwi Maru";
+        color: #e85a5a;
+        font-size: 22px;
+      }
+      .ans {
+        background: #fffdf6;
+        border: 2px solid #6b4a2b;
+        border-radius: 5px;
+        font-size: 17px;
+        box-shadow: 2px 3px 0 rgba(107, 74, 43, 0.25);
+      }
+      .ans:nth-of-type(odd) {
+        transform: rotate(-0.8deg);
+      }
+      .ans.hit {
+        background: #e7f3d6;
+      }
+    }
+
+    /* =============== C · COZY IDLE =============== */
+    .C {
+      --line: #8a5a3c;
+      --hair: #8a5a3c;
+      --a1: #ff9f6b;
+      --a3: #6fd0e8;
+      --hit: #6cc24a;
+      background: #e8c08f;
+      color: #6b4430;
+      font-family: "Fredoka", "M PLUS Rounded 1c";
+      .bg {
+        background: repeating-linear-gradient(0deg, #e8c08f 0 30px, #d9ad78 30px 32px), #e8c08f;
+      }
+      &.home .bg {
+        background:
+          linear-gradient(#bfe8ff 0 70px, #6fd0e8 70px 112px, #fff 112px 115px, #f6dfb0 115px 210px, transparent 210px),
+          repeating-linear-gradient(0deg, #e8c08f 0 30px, #d9ad78 30px 32px);
+      }
+      &.home .top {
+        margin-bottom: 96px;
+      }
+      &.home .search {
+        display: none;
+      }
+      .homechibi {
+        display: block !important;
+        position: absolute;
+        left: 120px;
+        top: 92px;
+        z-index: 3;
+      }
+      .status {
+        color: #40607a;
+      }
+      .logo,
+      .qt {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 16px;
+        padding: 3px 11px;
+        font-weight: 700;
+      }
+      .qt i {
+        background: #e8d8bf;
+        border: 2px solid #8a5a3c;
+      }
+      .qt i::after {
+        background: #8a5a3c;
+        top: 1px;
+        left: 1px;
+      }
+      .qt.on i {
+        background: #6cc24a;
+      }
+      .qt.on i::after {
+        left: 15px;
+      }
+      .cta {
+        background: #6cc24a;
+        border: 3px solid #3f7f2a;
+        border-radius: 16px;
+        box-shadow:
+          0 5px 0 #3f7f2a,
+          inset 0 3px 0 rgba(255, 255, 255, 0.35);
+        color: #fff;
+      }
+      .cta-n,
+      .cta-t b {
+        font-family: "M PLUS Rounded 1c";
+        -webkit-text-stroke: 5px #2f6a1e;
+        paint-order: stroke fill;
+      }
+      .chip {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 12px;
+        box-shadow: 0 3px 0 #8a5a3c;
+        font-weight: 700;
+      }
+      .seg span {
+        background: #fff8ea;
+        border: 2px solid #8a5a3c;
+        border-radius: 10px;
+        font-weight: 700;
+      }
+      .seg span.on {
+        background: #ffd56b;
+      }
+      .alb {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 12px;
+        padding: 5px;
+      }
+      .alb .cov {
+        border-radius: 8px;
+      }
+      .an {
+        font-weight: 700;
+      }
+      .mini {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 14px;
+        box-shadow: 0 3px 0 #8a5a3c;
+      }
+      .mb {
+        background: #ffd56b;
+        border: 2px solid #8a5a3c;
+        border-radius: 50%;
+      }
+      .tabs2 {
+        gap: 6px;
+        padding: 8px 8px 16px;
+      }
+      .tabs2 span {
+        flex: 1;
+        text-align: center;
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 12px;
+        padding: 7px 0;
+        box-shadow: 0 3px 0 #8a5a3c;
+        font-weight: 700;
+      }
+      .tabs2 .on {
+        background: #ffd56b;
+      }
+      .back {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 50%;
+      }
+      .nowc {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 16px;
+        padding: 8px;
+      }
+      .nowc .cov {
+        border-radius: 10px;
+      }
+      .tt {
+        font-weight: 700;
+      }
+      .lyrics {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 16px;
+        padding: 12px;
+        font-family: "M PLUS Rounded 1c";
+      }
+      .prog {
+        background: #fff8ea;
+        border: 2px solid #8a5a3c;
+        border-radius: 6px;
+        height: 10px;
+      }
+      .prog i {
+        background: #6cc24a;
+      }
+      .tb {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 50%;
+        box-shadow: 0 3px 0 #8a5a3c;
+      }
+      .lost {
+        background: #ff9f6b;
+        border: 3px solid #b25f2e;
+        border-radius: 20px;
+        box-shadow:
+          0 6px 0 #b25f2e,
+          inset 0 3px 0 rgba(255, 255, 255, 0.4);
+        color: #fff;
+      }
+      .lost b {
+        font-family: "M PLUS Rounded 1c";
+        -webkit-text-stroke: 5px #b25f2e;
+        paint-order: stroke fill;
+      }
+      .lane i {
+        background: #fff8ea;
+        border: 2px solid #8a5a3c;
+        border-radius: 6px;
+      }
+      .lane i.ok {
+        background: #6cc24a;
+      }
+      .lane i.no {
+        background: #ff7a6b;
+      }
+      .lane i.cur {
+        background: linear-gradient(90deg, #ffd56b 58%, #fff8ea 58%);
+      }
+      .qhead .cov {
+        border-radius: 8px;
+        border: 2px solid #8a5a3c;
+      }
+      .ttl .tt {
+        font-weight: 700;
+      }
+      .line {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 16px;
+        font-family: "M PLUS Rounded 1c";
+      }
+      .combo b {
+        color: #fff;
+        -webkit-text-stroke: 5px #8a5a3c;
+        paint-order: stroke fill;
+        font-family: "M PLUS Rounded 1c";
+      }
+      .combo span {
+        font-weight: 700;
+      }
+      .judge {
+        color: #ffd56b;
+        -webkit-text-stroke: 5px #8a5a3c;
+        paint-order: stroke fill;
+        font-family: "M PLUS Rounded 1c";
+      }
+      .ans {
+        background: #fff8ea;
+        border: 2.5px solid #8a5a3c;
+        border-radius: 14px;
+        box-shadow: 0 4px 0 #8a5a3c;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .ans.hit {
+        background: #dff3cf;
+      }
+    }
+
+    /* =============== D · CONFETTI SKETCH =============== */
+    .D {
+      --line: #333;
+      --hair: #333;
+      --a1: #d9457a;
+      --a3: #3a5fcf;
+      --hit: #ffd43b;
+      background: #fff;
+      color: #333;
+      font-family: "Gochi Hand", "Yusei Magic";
+      .conf {
+        position: absolute;
+        width: 9px;
+        height: 5px;
+        z-index: 1;
+      }
+      .logo {
+        font-family: "Yusei Magic";
+        font-size: 28px;
+        color: #d33;
+        text-shadow: 2px 2px 0 #333;
+        transform: rotate(-3deg);
+      }
+      .qt {
+        border: 2.5px solid #333;
+        border-radius: 4px 10px 5px 9px;
+        padding: 3px 8px;
+        background: #fff;
+        font-size: 16px;
+      }
+      .qt i {
+        background: #eee;
+        border: 2px solid #333;
+      }
+      .qt i::after {
+        background: #333;
+        top: 1px;
+        left: 1px;
+      }
+      .qt.on i {
+        background: #ffd43b;
+      }
+      .qt.on i::after {
+        left: 15px;
+      }
+      .cta {
+        background: #d9457a;
+        color: #fff;
+        transform: skewX(-8deg);
+        box-shadow:
+          inset 0 0 0 3px rgba(255, 255, 255, 0.55),
+          4px 4px 0 #333;
+      }
+      .cta-n,
+      .cta-t b {
+        font-family: "Yusei Magic";
+      }
+      .cta-t b {
+        font-size: 26px;
+      }
+      .cta-t span {
+        font-size: 14px;
+      }
+      .chip {
+        background: #3a5fcf;
+        color: #fff;
+        transform: skewX(-8deg);
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+        font-size: 16px;
+      }
+      .chip + .chip {
+        background: #6b4fc8;
+      }
+      .search {
+        border: 2.5px solid #333;
+        border-radius: 6px 12px 5px 10px;
+        font-size: 16px;
+        background: #fff;
+      }
+      .seg span {
+        font-size: 16px;
+      }
+      .seg span.on {
+        background: linear-gradient(transparent 55%, #ffd43b 55%);
+      }
+      .alb .cov {
+        border: 2.5px solid #333;
+        border-radius: 3px 9px 4px 8px;
+      }
+      .an {
+        font-family: "Yusei Magic";
+      }
+      .aa {
+        font-size: 13px;
+      }
+      .mini {
+        border: 2.5px solid #333;
+        border-radius: 6px 12px 5px 10px;
+        background: #fff;
+        font-size: 15px;
+      }
+      .mb {
+        border: 2.5px solid #333;
+        border-radius: 45% 55% 50% 50%;
+      }
+      .tabs2 {
+        border-top: 2.5px solid #333;
+        background: #fff;
+        font-size: 17px;
+      }
+      .tabs2 .on {
+        color: #d33;
+      }
+      .tt {
+        font-family: "Yusei Magic";
+        font-size: 20px;
+      }
+      .ta {
+        font-size: 14px;
+      }
+      .nowc .cov {
+        border: 2.5px solid #333;
+        border-radius: 4px 10px 5px 9px;
+      }
+      .lyrics {
+        font-family: "Yusei Magic";
+        background: #fff;
+      }
+      .lyrics p.cur {
+        background: linear-gradient(transparent 50%, #ffd43b 50%);
+        font-size: 20px;
+      }
+      .prog {
+        border: 2px solid #333;
+        border-radius: 4px;
+        height: 9px;
+        background: #fff;
+      }
+      .prog i {
+        background: #d9457a;
+      }
+      .tb {
+        border: 2.5px solid #333;
+        border-radius: 45% 55% 50% 50%;
+        background: #fff;
+      }
+      .lost {
+        background: #d9457a;
+        color: #fff;
+        transform: skewX(-8deg);
+        box-shadow:
+          inset 0 0 0 4px rgba(255, 255, 255, 0.55),
+          5px 5px 0 #333;
+      }
+      .lost b {
+        font-family: "Yusei Magic";
+        font-size: 34px;
+      }
+      .lost small {
+        font-size: 15px;
+      }
+      .lane i {
+        border: 2px solid #333;
+        border-radius: 3px 6px 3px 5px;
+        background: #fff;
+      }
+      .lane i.ok {
+        background: #3a5fcf;
+      }
+      .lane i.no {
+        background: #d9457a;
+      }
+      .lane i.cur {
+        background: linear-gradient(90deg, #ffd43b 58%, #fff 58%);
+      }
+      .qhead .cov {
+        border: 2px solid #333;
+      }
+      .ttl .tt {
+        font-family: "Yusei Magic";
+      }
+      .line {
+        border: 2.5px solid #333;
+        border-radius: 6px 14px 6px 12px;
+        font-family: "Yusei Magic";
+        background: #fff;
+      }
+      .mid {
+        background: repeating-conic-gradient(from 0deg at 12% 55%, #fff1a6 0 9deg, #fff 9deg 18deg);
+        border-radius: 6px;
+      }
+      .combo b {
+        font-family: "Yusei Magic";
+        color: #d33;
+        font-size: 36px;
+      }
+      .combo span {
+        font-size: 15px;
+      }
+      .judge {
+        font-family: "Yusei Magic";
+        color: #3a5fcf;
+        font-size: 26px;
+      }
+      .ans {
+        color: #fff;
+        transform: skewX(-8deg);
+        box-shadow:
+          inset 0 0 0 3px rgba(255, 255, 255, 0.5),
+          4px 4px 0 #333;
+        font-size: 18px;
+        background: #6b4fc8;
+      }
+      .ans:nth-of-type(1) {
+        background: #d9457a;
+      }
+      .ans.hit {
+        background: #3a5fcf;
+      }
+    }
+
+    /* =============== E · GACHA NOTEBOOK =============== */
+    .E {
+      --line: #26307a;
+      --hair: #f3c08f;
+      --a1: #ff4f9a;
+      --a3: #3fd0ff;
+      --hit: #ffe14d;
+      background: #f7f9ff;
+      color: #26307a;
+      font-family: "Nunito", "Mochiy Pop One";
+      .bg {
+        background-image:
+          linear-gradient(rgba(63, 120, 255, 0.14) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(63, 120, 255, 0.14) 1px, transparent 1px);
+        background-size: 14px 14px;
+      }
+      .d1 {
+        inset: auto;
+        left: 3px;
+        top: 70px;
+        bottom: 70px;
+        width: 10px;
+        background: radial-gradient(circle, #f7f9ff 2.5px, #26307a 3px 4.5px, transparent 5px) 0 0 / 10px 24px;
+      }
+      .logo,
+      .cta-t b,
+      .combo b,
+      .judge,
+      .lost b {
+        font-family: "Mochiy Pop One";
+        color: #ff4f9a;
+        -webkit-text-stroke: 5px #fff;
+        paint-order: stroke fill;
+        filter: drop-shadow(1.5px 0 0 #26307a) drop-shadow(-1.5px 0 0 #26307a) drop-shadow(0 1.5px 0 #26307a)
+          drop-shadow(0 -1.5px 0 #26307a) drop-shadow(2px 3px 0 #26307a);
+      }
+      .logo {
+        font-size: 22px;
+        transform: rotate(-4deg);
+      }
+      .qt {
+        background: linear-gradient(#fff, #e3e9ff);
+        border: 2.5px solid #26307a;
+        border-radius: 14px;
+        padding: 3px 8px;
+      }
+      .qt i {
+        background: #c9d0f0;
+        border: 2px solid #26307a;
+      }
+      .qt i::after {
+        top: 1px;
+        left: 1px;
+      }
+      .qt.on i {
+        background: linear-gradient(#ff8cc0, #ff3d8b);
+      }
+      .qt.on i::after {
+        left: 15px;
+      }
+      .cta {
+        position: relative;
+        background: linear-gradient(135deg, #c8f5ff, #ffd6ea);
+        border: 3px solid #26307a;
+        border-radius: 18px;
+        box-shadow:
+          0 4px 0 #26307a,
+          inset 0 2px 0 #fff;
+        transform: rotate(-3deg);
+        margin-top: 14px;
+      }
+      .cta::after {
+        content: "✦";
+        position: absolute;
+        right: -8px;
+        top: -18px;
+        font-size: 26px;
+        color: #ffe14d;
+        -webkit-text-stroke: 2px #26307a;
+      }
+      .cta-n {
+        font-family: "Mochiy Pop One";
+      }
+      .cta-t b {
+        font-size: 26px;
+      }
+      .cta-t span {
+        font-weight: 900;
+      }
+      .chip {
+        background: linear-gradient(#fff, #dfe6ff);
+        border: 2.5px solid #26307a;
+        border-radius: 20px;
+        box-shadow: 0 3px 0 #26307a;
+      }
+      .search {
+        background: #fff;
+        border: 2.5px solid #26307a;
+        border-radius: 20px;
+      }
+      .seg span {
+        border-radius: 12px;
+      }
+      .seg span.on {
+        background: #26307a;
+        color: #fff;
+      }
+      .alb {
+        background: #fff;
+        border: 2.5px solid #26307a;
+        border-radius: 12px;
+        padding: 4px;
+        box-shadow: 0 3px 0 #26307a;
+      }
+      .alb .cov {
+        border-radius: 8px;
+      }
+      .alb:first-child::after {
+        content: "NEW";
+        position: absolute;
+        top: -9px;
+        right: -6px;
+        background: #ff4f9a;
+        color: #fff;
+        font-size: 9px;
+        padding: 1px 6px;
+        border-radius: 8px;
+        border: 2px solid #26307a;
+      }
+      .mini {
+        background: linear-gradient(#fff, #e9eeff);
+        border: 2.5px solid #26307a;
+        border-radius: 20px;
+      }
+      .mb {
+        background: linear-gradient(#ff8cc0, #ff3d8b);
+        color: #fff;
+        border: 2px solid #26307a;
+        border-radius: 50%;
+      }
+      .tabs2 {
+        background: linear-gradient(#3a46a8, #26307a);
+        margin: 8px -4px 12px;
+        border-radius: 22px;
+        color: #c9d0ff;
+        padding: 8px 0;
+        box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3);
+      }
+      .tabs2 .on {
+        background: #fff;
+        color: #26307a;
+        border-radius: 14px;
+        padding: 2px 10px;
+      }
+      .back {
+        background: linear-gradient(#fff, #dfe6ff);
+        border: 2.5px solid #26307a;
+        border-radius: 50%;
+      }
+      .nowc .cov {
+        border: 2.5px solid #26307a;
+        border-radius: 12px;
+      }
+      .tt {
+        font-family: "Mochiy Pop One";
+      }
+      .lyrics {
+        font-family: "Mochiy Pop One";
+      }
+      .lyrics p.cur {
+        background: #fff;
+        border: 2.5px solid #26307a;
+        border-radius: 14px;
+        padding: 8px 10px;
+        box-shadow: 0 3px 0 #26307a;
+      }
+      .prog {
+        background: #fff;
+        border: 2px solid #26307a;
+        border-radius: 6px;
+        height: 10px;
+      }
+      .prog i {
+        background: linear-gradient(90deg, #3fd0ff, #ff4f9a);
+      }
+      .tb {
+        background: linear-gradient(#fff, #dfe6ff);
+        border: 2.5px solid #26307a;
+        border-radius: 50%;
+      }
+      .lost {
+        background: linear-gradient(#ff8cc0, #ff3d8b);
+        border: 3px solid #26307a;
+        border-radius: 26px;
+        box-shadow:
+          0 5px 0 #26307a,
+          inset 0 3px 0 rgba(255, 255, 255, 0.5);
+        color: #fff;
+      }
+      .lost b {
+        color: #fff;
+        font-size: 32px;
+      }
+      .lane i {
+        background: #fff;
+        border: 2px solid #26307a;
+        border-radius: 6px;
+      }
+      .lane i.ok {
+        background: #3fd0ff;
+      }
+      .lane i.no {
+        background: #ff4f9a;
+      }
+      .lane i.cur {
+        background: linear-gradient(90deg, #ffe14d 58%, #fff 58%);
+      }
+      .qhead .cov {
+        border: 2px solid #26307a;
+        border-radius: 8px;
+      }
+      .ttl .tt {
+        font-family: "Mochiy Pop One";
+      }
+      .line {
+        background: #fff;
+        border: 3px solid #26307a;
+        border-radius: 18px;
+        font-family: "Mochiy Pop One";
+        box-shadow: 0 4px 0 #26307a;
+      }
+      .combo b {
+        font-size: 34px;
+      }
+      .combo span {
+        font-weight: 900;
+      }
+      .judge {
+        color: #ffe14d;
+        font-size: 26px;
+      }
+      .ans {
+        border: 2.5px solid #26307a;
+        border-radius: 22px;
+        box-shadow:
+          0 4px 0 #26307a,
+          inset 0 2px 0 rgba(255, 255, 255, 0.7);
+        font-size: 15px;
+        background: linear-gradient(#ffd6ea, #ffb3d3);
+      }
+      .ans:nth-of-type(3) {
+        background: linear-gradient(#d4f6ff, #9fe8ff);
+      }
+      .ans.hit {
+        background: linear-gradient(#fff6c2, #ffe14d);
+      }
+    }
+
+    /* =============== F · PUZZLE LITE =============== */
+    .F {
+      --line: #2b3a6b;
+      --hair: #2ec4c4;
+      --a1: #ff4f9a;
+      --a3: #2ec4c4;
+      --hit: #ffd23f;
+      background: #dfe6ff;
+      color: #2b3a6b;
+      font-family: "Baloo 2", "Zen Maru Gothic";
+      .bg {
+        background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.5) 0 16px, transparent 16px 32px);
+      }
+      .logo {
+        background: #2ec4c4;
+        color: #fff;
+        font-weight: 800;
+        font-size: 21px;
+        padding: 0 22px 0 16px;
+        margin-left: -14px;
+        clip-path: polygon(0 0, 100% 0, 86% 100%, 0 100%);
+        text-shadow: 2px 2px 0 #1b7f86;
+      }
+      .qt {
+        background: #fff;
+        border: 2px solid #b9c3e6;
+        border-radius: 10px;
+        padding: 2px 8px;
+        font-weight: 800;
+      }
+      .qt i {
+        background: #cfd6ee;
+      }
+      .qt.on i {
+        background: #ff4f9a;
+      }
+      .cta {
+        position: relative;
+        background: #fff;
+        border: 3px solid #ff4f9a;
+        border-radius: 12px;
+        box-shadow: 0 4px 0 rgba(43, 58, 107, 0.15);
+        padding-bottom: 16px;
+      }
+      .cta::after {
+        content: "▶ Play mix";
+        position: absolute;
+        right: -3px;
+        bottom: -3px;
+        background: #ff4f9a;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 2px 12px 1px 18px;
+        clip-path: polygon(14% 0, 100% 0, 100% 100%, 0 100%);
+        border-radius: 0 0 10px 0;
+      }
+      .cta-go {
+        display: none;
+      }
+      .cta-n {
+        color: #ff4f9a;
+        font-weight: 800;
+      }
+      .cta-t b {
+        font-weight: 800;
+      }
+      .chip {
+        background: #fff;
+        border: 2px solid #b9c3e6;
+        border-radius: 10px;
+        font-weight: 800;
+      }
+      .search {
+        background: #fff;
+        border: 2px solid #b9c3e6;
+        border-radius: 10px;
+      }
+      .seg span {
+        font-weight: 800;
+      }
+      .seg span.on {
+        background: #2ec4c4;
+        color: #fff;
+        border-radius: 8px;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .alb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f4f6ff;
+        border: 2px solid #b9c3e6;
+        border-radius: 10px;
+        padding: 4px 8px;
+      }
+      .alb .cov {
+        width: 30px;
+        height: 30px;
+        aspect-ratio: auto;
+        border-radius: 6px;
+        flex: none;
+      }
+      .an {
+        margin: 0;
+        font-weight: 800;
+        font-size: 13px;
+      }
+      .aa {
+        font-size: 11px;
+      }
+      .alb::after {
+        margin-left: auto;
+        color: #ffd23f;
+        font-weight: 800;
+        -webkit-text-stroke: 3px #2b3a6b;
+        paint-order: stroke fill;
+        font-size: 14px;
+      }
+      .alb:nth-child(1)::after {
+        content: "★ A";
+      }
+      .alb:nth-child(2)::after {
+        content: "★ S";
+      }
+      .alb:nth-child(3)::after {
+        content: "★ -";
+      }
+      .mini {
+        background: #fff;
+        border: 2px solid #b9c3e6;
+        border-radius: 12px;
+      }
+      .mb {
+        background: #ff4f9a;
+        color: #fff;
+        border-radius: 8px;
+      }
+      .tabs2 {
+        background: #2b3a6b;
+        color: #9fb0e0;
+        font-weight: 800;
+      }
+      .tabs2 .on {
+        color: #fff;
+      }
+      .back {
+        background: #fff;
+        border: 2px solid #b9c3e6;
+        border-radius: 8px;
+      }
+      .nowc .cov {
+        border-radius: 8px;
+      }
+      .tt {
+        font-weight: 800;
+      }
+      .lyrics p {
+        background: #f4f6ff;
+        border: 2px solid #b9c3e6;
+        border-radius: 10px;
+        padding: 5px 10px;
+        opacity: 1;
+        color: #8a94bb;
+        margin-bottom: 7px;
+      }
+      .lyrics p.cur {
+        border: 3px solid #ff4f9a;
+        color: #2b3a6b;
+        background: #fff;
+      }
+      .prog {
+        background: #fff;
+        border-radius: 4px;
+      }
+      .prog i {
+        background: #2ec4c4;
+        border-radius: 4px;
+      }
+      .tb {
+        background: #fff;
+        border: 2px solid #b9c3e6;
+        border-radius: 10px;
+      }
+      .tb.big {
+        background: #2ec4c4;
+        color: #fff;
+        border-color: #2ec4c4;
+      }
+      .lost {
+        background: #ff4f9a;
+        color: #fff;
+        border-radius: 16px;
+        clip-path: polygon(0 0, 92% 0, 100% 22%, 100% 100%, 8% 100%, 0 78%);
+        text-shadow: 3px 3px 0 #b82d6c;
+      }
+      .lost b {
+        font-weight: 800;
+        font-size: 34px;
+      }
+      .lane i {
+        background: #fff;
+        border-radius: 4px;
+      }
+      .lane i.ok {
+        background: #2ec4c4;
+      }
+      .lane i.no {
+        background: #ff4f9a;
+      }
+      .lane i.cur {
+        background: linear-gradient(90deg, #ffd23f 58%, #fff 58%);
+      }
+      .qhead .cov {
+        border-radius: 6px;
+      }
+      .ttl .tt {
+        font-weight: 800;
+      }
+      .line {
+        background: #fff;
+        border: 2px solid #b9c3e6;
+        border-radius: 12px;
+        padding-top: 24px;
+      }
+      .line::before {
+        content: "LINE 4 / 14";
+        position: absolute;
+        left: -2px;
+        top: -2px;
+        background: #2ec4c4;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.6;
+        padding: 0 16px 0 9px;
+        clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
+        border-radius: 12px 0 0 0;
+      }
+      .combo b {
+        color: #ffd23f;
+        -webkit-text-stroke: 5px #2b3a6b;
+        paint-order: stroke fill;
+        font-weight: 800;
+      }
+      .combo span {
+        font-weight: 800;
+      }
+      .judge {
+        color: #fff;
+        -webkit-text-stroke: 5px #ff4f9a;
+        paint-order: stroke fill;
+        font-weight: 800;
+      }
+      .ans {
+        background: #f4f6ff;
+        border: 2px solid #b9c3e6;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 15px;
+      }
+      .ans.hit {
+        border: 3px solid #ff4f9a;
+        background: #fff;
+      }
+    }
+
+    /* =============== G · SUNBURST ARCADE =============== */
+    .G {
+      --line: #10224a;
+      --hair: #10224a;
+      --a1: #ff5fae;
+      --a3: #8af0b0;
+      --hit: #2fe07a;
+      background: #33b7ff;
+      color: #10224a;
+      font-family: "Fredoka", "Mochiy Pop One";
+      .bg {
+        background: repeating-conic-gradient(from 0deg at 50% 32%, #33b7ff 0 7.5deg, #5cc8ff 7.5deg 15deg);
+      }
+      .d1 {
+        inset: auto;
+        left: 0;
+        right: 0;
+        top: 40px;
+        height: 42px;
+        background: #10224a;
+        border-top: 3px solid #fff;
+        border-bottom: 3px solid #fff;
+      }
+      .status {
+        color: #fff;
+      }
+      .logo {
+        font-family: "Mochiy Pop One";
+        color: #ffe14d;
+        font-size: 20px;
+      }
+      .qt {
+        color: #fff;
+        font-family: "Mochiy Pop One";
+        font-size: 12px;
+      }
+      .qt i {
+        border: 2.5px solid #fff;
+        background: #334a78;
+      }
+      .qt i::after {
+        top: 1px;
+        left: 1px;
+      }
+      .qt.on i {
+        background: #ffe14d;
+      }
+      .qt.on i::after {
+        left: 15px;
+        background: #10224a;
+      }
+      .back {
+        color: #fff;
+      }
+      .cta {
+        margin-top: 16px;
+        background: #ff5fae;
+        border: 3.5px solid #10224a;
+        border-radius: 12px;
+        box-shadow: 0 6px 0 #10224a;
+        color: #10224a;
+      }
+      .cta-n,
+      .cta-t b {
+        font-family: "Mochiy Pop One";
+        color: #fff;
+        -webkit-text-stroke: 6px #10224a;
+        paint-order: stroke fill;
+      }
+      .cta-t span {
+        font-weight: 700;
+      }
+      .chip {
+        background: #fff;
+        border: 3px solid #10224a;
+        border-radius: 10px;
+        box-shadow: 0 4px 0 #10224a;
+        font-weight: 700;
+      }
+      .chip + .chip {
+        background: #ffe14d;
+      }
+      .search {
+        background: #fff;
+        border: 3px solid #10224a;
+        border-radius: 10px;
+        font-weight: 600;
+      }
+      .seg span {
+        background: #fff;
+        border: 2.5px solid #10224a;
+        border-radius: 8px;
+        font-weight: 700;
+      }
+      .seg span.on {
+        background: #ffe14d;
+      }
+      .alb {
+        background: #fff;
+        border: 3px solid #10224a;
+        border-radius: 10px;
+        padding: 4px;
+        box-shadow: 0 4px 0 #10224a;
+      }
+      .alb .cov {
+        border-radius: 5px;
+      }
+      .an {
+        font-weight: 700;
+      }
+      .mini {
+        background: #fff;
+        border: 3px solid #10224a;
+        border-radius: 12px;
+        box-shadow: 0 4px 0 #10224a;
+        font-weight: 600;
+      }
+      .mb {
+        background: #ffe14d;
+        border: 2.5px solid #10224a;
+        border-radius: 50%;
+      }
+      .tabs2 {
+        background: #10224a;
+        color: #7fa6d6;
+        border-top: 3px solid #fff;
+        font-family: "Mochiy Pop One";
+      }
+      .tabs2 .on {
+        color: #ffe14d;
+      }
+      .nowc {
+        margin-top: 14px;
+      }
+      .nowc .cov {
+        border: 3px solid #10224a;
+        border-radius: 10px;
+      }
+      .tt {
+        font-family: "Mochiy Pop One";
+        color: #fff;
+        -webkit-text-stroke: 5px #10224a;
+        paint-order: stroke fill;
+      }
+      .ta {
+        color: #fff;
+        font-weight: 700;
+      }
+      .lyrics {
+        font-family: "Mochiy Pop One";
+      }
+      .lyrics p {
+        color: #fff;
+        text-shadow: 2px 2px 0 #10224a;
+        opacity: 0.9;
+      }
+      .lyrics p.cur {
+        background: #fff;
+        color: #10224a;
+        -webkit-text-stroke: 0;
+        border: 3.5px solid #10224a;
+        border-radius: 14px;
+        box-shadow: 0 5px 0 #10224a;
+        padding: 8px 10px;
+      }
+      .prog {
+        background: #fff;
+        border: 2.5px solid #10224a;
+        border-radius: 5px;
+        height: 12px;
+      }
+      .prog i {
+        background: #ff5fae;
+      }
+      .tb {
+        background: #fff;
+        border: 3px solid #10224a;
+        border-radius: 50%;
+        box-shadow: 0 3px 0 #10224a;
+      }
+      .lost {
+        background: #ff5fae;
+        border: 4px solid #10224a;
+        border-radius: 18px;
+        box-shadow: 0 7px 0 #10224a;
+      }
+      .lost b {
+        font-family: "Mochiy Pop One";
+        color: #fff;
+        -webkit-text-stroke: 6px #10224a;
+        paint-order: stroke fill;
+      }
+      .lost small {
+        font-weight: 700;
+      }
+      .qhead {
+        margin-top: 10px;
+      }
+      .qhead .cov {
+        border: 3px solid #10224a;
+        border-radius: 8px;
+      }
+      .ttl .tt {
+        color: #fff;
+      }
+      .ttl .ta {
+        color: #fff;
+      }
+      .lane i {
+        background: #fff;
+        border: 2.5px solid #10224a;
+        border-radius: 3px;
+      }
+      .lane i.ok {
+        background: #2fe07a;
+      }
+      .lane i.no {
+        background: #ff5f5f;
+      }
+      .lane i.cur {
+        background: linear-gradient(90deg, #ffe14d 58%, #fff 58%);
+      }
+      .line {
+        background: #fff;
+        border: 3.5px solid #10224a;
+        border-radius: 14px;
+        box-shadow: 0 5px 0 #10224a;
+        font-family: "Mochiy Pop One";
+      }
+      .combo b,
+      .judge {
+        font-family: "Mochiy Pop One";
+        -webkit-text-stroke: 6px #10224a;
+        paint-order: stroke fill;
+      }
+      .combo b {
+        color: #fff;
+      }
+      .judge {
+        color: #ffe14d;
+      }
+      .combo span {
+        color: #fff;
+        font-family: "Mochiy Pop One";
+        -webkit-text-stroke: 4px #10224a;
+        paint-order: stroke fill;
+      }
+      .ans {
+        border: 3.5px solid #10224a;
+        border-radius: 12px;
+        box-shadow: 0 5px 0 #10224a;
+        font-weight: 600;
+        font-size: 15px;
+        background: #ff9fd0;
+      }
+      .ans:nth-of-type(3) {
+        background: #8af0b0;
+      }
+      .ans.hit {
+        background: #ffe14d;
+      }
+    }
+
+    /* =============== H · RISO ZINE =============== */
+    .H {
+      --line: #0078bf;
+      --hair: #0078bf;
+      --a1: #ff48b0;
+      --a3: #ff48b0;
+      --hit: #ff48b0;
+      background: #f4efe6;
+      color: #0078bf;
+      font-family: "Archivo Black", "Zen Kaku Gothic New";
+      .bg {
+        background-image: radial-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+        background-size: 4px 4px;
+      }
+      .d1 {
+        inset: auto;
+        right: -70px;
+        top: 50px;
+        width: 230px;
+        height: 230px;
+        border-radius: 50%;
+        background: radial-gradient(#ff48b0 2.3px, transparent 2.7px) 0 0 / 7px 7px;
+        opacity: 0.55;
+      }
+      .status {
+        color: #0078bf;
+      }
+      .logo {
+        font-size: 26px;
+        letter-spacing: 1px;
+        text-shadow: 3px 2px 0 rgba(255, 72, 176, 0.85);
+      }
+      .qt {
+        border: 2.5px solid #0078bf;
+        padding: 3px 8px;
+        font-size: 12px;
+        box-shadow: 3px 3px 0 #ff48b0;
+        background: #f4efe6;
+      }
+      .qt i {
+        border-radius: 0;
+        background: #cfd9e6;
+      }
+      .qt i::after {
+        border-radius: 0;
+      }
+      .qt.on i {
+        background: #ff48b0;
+      }
+      .cta {
+        background: #ff48b0;
+        color: #f4efe6;
+        box-shadow: 5px 4px 0 #0078bf;
+        transform: rotate(-1.5deg);
+      }
+      .cta-n {
+        font-size: 46px;
+      }
+      .cta-t b {
+        font-size: 24px;
+        text-transform: uppercase;
+      }
+      .cta-t span {
+        font-family: "Zen Kaku Gothic New";
+      }
+      .chip {
+        border: 2.5px solid #0078bf;
+        box-shadow: 3px 3px 0 #ff48b0;
+        font-size: 11px;
+        text-transform: uppercase;
+        background: #f4efe6;
+      }
+      .search {
+        border: 2.5px solid #0078bf;
+        background: #f4efe6;
+        font-family: "Zen Kaku Gothic New";
+      }
+      .seg span {
+        text-transform: uppercase;
+        font-size: 10px;
+      }
+      .seg span.on {
+        background: #0078bf;
+        color: #f4efe6;
+      }
+      .alb .cov {
+        filter: grayscale(1) contrast(1.3);
+        box-shadow: 4px 3px 0 #ff48b0;
+        position: relative;
+      }
+      .alb .cov::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: #0078bf;
+        mix-blend-mode: screen;
+      }
+      .an {
+        font-family: "Zen Kaku Gothic New";
+      }
+      .aa {
+        font-family: "Zen Kaku Gothic New";
+      }
+      .mini {
+        border: 2.5px solid #0078bf;
+        box-shadow: 4px 3px 0 #ff48b0;
+        background: #f4efe6;
+        font-family: "Zen Kaku Gothic New";
+      }
+      .mb {
+        background: #0078bf;
+        color: #f4efe6;
+      }
+      .tabs2 {
+        border-top: 3px solid #0078bf;
+        text-transform: uppercase;
+        background: #f4efe6;
+        font-size: 10px;
+      }
+      .tabs2 .on {
+        color: #ff48b0;
+      }
+      .tt {
+        font-family: "Zen Kaku Gothic New";
+        font-size: 20px;
+        text-shadow: 2px 2px 0 rgba(255, 72, 176, 0.8);
+      }
+      .ta {
+        font-family: "Zen Kaku Gothic New";
+      }
+      .nowc .cov {
+        filter: grayscale(1) contrast(1.3);
+        box-shadow: 4px 3px 0 #ff48b0;
+      }
+      .lyrics {
+        font-family: "Zen Kaku Gothic New";
+      }
+      .lyrics p.cur {
+        font-size: 21px;
+        text-shadow: 3px 2px 0 rgba(255, 72, 176, 0.8);
+      }
+      .prog {
+        background: #d6dde6;
+      }
+      .prog i {
+        background: #ff48b0;
+      }
+      .tb {
+        border: 2.5px solid #0078bf;
+        box-shadow: 3px 3px 0 #ff48b0;
+        background: #f4efe6;
+      }
+      .lost {
+        background: #ff48b0;
+        color: #f4efe6;
+        box-shadow: 7px 6px 0 #0078bf;
+        transform: rotate(-1.5deg);
+      }
+      .lost b {
+        font-size: 38px;
+      }
+      .lost small {
+        font-family: "Zen Kaku Gothic New";
+        text-transform: uppercase;
+      }
+      .lane i {
+        background: #d6dde6;
+      }
+      .lane i.ok {
+        background: #0078bf;
+      }
+      .lane i.no {
+        background: #ff48b0;
+      }
+      .lane i.cur {
+        background: linear-gradient(90deg, #ff48b0 58%, #d6dde6 58%);
+        opacity: 0.7;
+      }
+      .qhead .cov {
+        filter: grayscale(1);
+      }
+      .ttl .tt {
+        font-size: 16px;
+      }
+      .line {
+        border: 3px solid #0078bf;
+        box-shadow: 5px 4px 0 #ff48b0;
+        font-family: "Zen Kaku Gothic New";
+        background: #f4efe6;
+      }
+      .combo b {
+        font-size: 44px;
+        text-shadow: 3px 2px 0 rgba(255, 72, 176, 0.85);
+      }
+      .combo span {
+        font-size: 11px;
+      }
+      .judge {
+        color: #ff48b0;
+        border: 3px solid #ff48b0;
+        border-radius: 50%;
+        padding: 10px 6px;
+        font-size: 16px;
+        transform: rotate(-14deg);
+      }
+      .ans {
+        border: 2.5px solid #0078bf;
+        font-family: "Zen Kaku Gothic New";
+        font-size: 15px;
+        background: #f4efe6;
+        box-shadow: 3px 3px 0 rgba(0, 120, 191, 0.35);
+      }
+      .ans.hit {
+        background: #ff48b0;
+        color: #f4efe6;
+        border-color: #ff48b0;
+        box-shadow: 4px 4px 0 #0078bf;
+      }
+    }
+
+    /* =============== I · STICKER BRUTAL =============== */
+    .I {
+      --line: #111;
+      --hair: #111;
+      --a1: #2f6bff;
+      --a3: #ff4040;
+      --hit: #20c060;
+      background: #ffe14d;
+      color: #111;
+      font-family: "Lilita One", "Potta One";
+      .d1 {
+        inset: auto;
+        left: -30px;
+        right: -30px;
+        top: 84px;
+        height: 18px;
+        background: repeating-linear-gradient(-45deg, #111 0 12px, #ffe14d 12px 24px);
+        transform: rotate(-3deg);
+        border-top: 3px solid #111;
+        border-bottom: 3px solid #111;
+      }
+      &.home .top {
+        margin-bottom: 24px;
+      }
+      .logo {
+        background: #111;
+        color: #ffe14d;
+        padding: 1px 10px;
+        transform: rotate(-3deg);
+        font-size: 22px;
+      }
+      .qt {
+        background: #fff;
+        border: 3px solid #111;
+        box-shadow: 3px 3px 0 #111;
+        padding: 2px 8px;
+      }
+      .qt i {
+        border-radius: 0;
+        background: #ddd;
+        border: 2px solid #111;
+      }
+      .qt i::after {
+        border-radius: 0;
+        background: #111;
+        top: 1px;
+        left: 1px;
+      }
+      .qt.on i {
+        background: #20c060;
+      }
+      .qt.on i::after {
+        left: 15px;
+      }
+      .cta {
+        background: #2f6bff;
+        color: #fff;
+        border: 3px solid #111;
+        box-shadow: 6px 6px 0 #111;
+      }
+      .cta-n,
+      .cta-t b {
+        font-family: "Potta One";
+        -webkit-text-stroke: 5px #111;
+        paint-order: stroke fill;
+      }
+      .cta-t b {
+        font-size: 24px;
+      }
+      .chip {
+        background: #fff;
+        border: 3px solid #111;
+        box-shadow: 4px 4px 0 #111;
+        font-size: 13px;
+      }
+      .chip + .chip {
+        background: #ff4040;
+        color: #fff;
+        transform: rotate(2deg);
+      }
+      .search {
+        background: #fff;
+        border: 3px solid #111;
+      }
+      .seg span {
+        border: 2.5px solid #111;
+        background: #fff;
+      }
+      .seg span.on {
+        background: #111;
+        color: #ffe14d;
+      }
+      .alb .cov {
+        border: 3px solid #111;
+        box-shadow: 4px 4px 0 #111;
+      }
+      .alb:first-child::after {
+        content: "NEW!";
+        position: absolute;
+        top: -10px;
+        right: -8px;
+        background: #ff4040;
+        color: #fff;
+        border: 2.5px solid #111;
+        border-radius: 50%;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        transform: rotate(14deg);
+      }
+      .mini {
+        background: #fff;
+        border: 3px solid #111;
+        box-shadow: 4px 4px 0 #111;
+      }
+      .mb {
+        background: #111;
+        color: #ffe14d;
+      }
+      .tabs2 {
+        background: #111;
+        color: #888;
+      }
+      .tabs2 .on {
+        color: #ffe14d;
+      }
+      .back {
+        background: #fff;
+        border: 3px solid #111;
+        box-shadow: 3px 3px 0 #111;
+      }
+      &.listen .top,
+      &.quiz .top {
+        margin-bottom: 22px;
+      }
+      .nowc .cov {
+        border: 3px solid #111;
+        box-shadow: 4px 4px 0 #111;
+      }
+      .tt {
+        font-family: "Potta One";
+      }
+      .lyrics {
+        font-family: "Potta One";
+      }
+      .lyrics p.cur {
+        background: #fff;
+        border: 3px solid #111;
+        box-shadow: 5px 5px 0 #111;
+        padding: 8px 10px;
+        transform: rotate(-1deg);
+      }
+      .prog {
+        background: #fff;
+        border: 2.5px solid #111;
+        height: 12px;
+      }
+      .prog i {
+        background: #2f6bff;
+      }
+      .tb {
+        background: #fff;
+        border: 3px solid #111;
+        box-shadow: 3px 3px 0 #111;
+      }
+      .tb.big {
+        background: #2f6bff;
+        color: #fff;
+      }
+      .lost {
+        background: #ff4040;
+        color: #fff;
+        border: 4px solid #111;
+        box-shadow: 7px 7px 0 #111;
+        transform: rotate(-2deg);
+      }
+      .lost b {
+        font-family: "Potta One";
+        -webkit-text-stroke: 6px #111;
+        paint-order: stroke fill;
+        font-size: 34px;
+      }
+      .lane i {
+        background: #fff;
+        border: 2.5px solid #111;
+      }
+      .lane i.ok {
+        background: #20c060;
+      }
+      .lane i.no {
+        background: #ff4040;
+      }
+      .lane i.cur {
+        background: linear-gradient(90deg, #2f6bff 58%, #fff 58%);
+      }
+      .qhead .cov {
+        border: 2.5px solid #111;
+      }
+      .ttl .tt {
+        font-family: "Potta One";
+      }
+      .line {
+        background: #fff;
+        border: 3.5px solid #111;
+        box-shadow: 6px 6px 0 #111;
+        font-family: "Potta One";
+      }
+      .combo b,
+      .judge {
+        color: #fff;
+        -webkit-text-stroke: 6px #111;
+        paint-order: stroke fill;
+        font-family: "Potta One";
+      }
+      .judge {
+        color: #2f6bff;
+      }
+      .ans {
+        border: 3px solid #111;
+        box-shadow: 5px 5px 0 #111;
+        font-size: 16px;
+        background: #fff;
+      }
+      .ans:nth-of-type(3) {
+        background: #ff4040;
+        color: #fff;
+      }
+      .ans.hit {
+        background: #2f6bff;
+        color: #fff;
+      }
+    }
+    .homechibi {
+      display: none;
+    }
+
+    /* modal (G only) */
+    .modal {
+      position: absolute;
+      inset: 0;
+      background: rgba(16, 34, 74, 0.6);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal .box {
+      background: #fff;
+      border: 3.5px solid #10224a;
+      border-radius: 18px;
+      box-shadow: 0 6px 0 #10224a;
+      padding: 16px;
+      color: #10224a;
+      font-family: "Fredoka", "Mochiy Pop One";
+    }
+    .modal h3 {
+      font-family: "Mochiy Pop One";
+      font-weight: 400;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .modal .b2 {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .modal .b2 div {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      border: 3px solid #10224a;
+      border-radius: 12px;
+      box-shadow: 0 4px 0 #10224a;
+      font-weight: 700;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Round 6: layout languages</h1>
+    <div class="m" style="max-width:920px">
+      Same three screens nine times. What changes: background, button shape, borders, type and decoration. What stays:
+      big poppy type, loud color, nothing too serious. Color is per layout for now; we'll pick a palette after the
+      layout.<br>
+      <b style="color:#fff">Screens:</b>
+      1 Home (big review button, then a normal library) · 2 Player with Quiz off (lyrics, one LOST IT button) · 3 Player
+      with Quiz on (the game). The <b style="color:#fff">QUIZ</b> toggle is in the top-right corner of every screen.
+      "KASHI!" is a placeholder name.
+    </div>
+    <nav id="nav"></nav>
+    <div id="out"></div>
+
+    <template id="t-home">
+      <div class="phone P home">
+        <div class="bg"></div>
+        <div class="deco d1"></div>
+        <div class="status"><span>21:00</span><span>●●●</span></div>
+        <div class="homechibi">
+          <div class="chibi">
+            <div class="band"></div>
+            <div class="cup l"></div>
+            <div class="cup r"></div>
+            <div class="hd">
+              <div class="e l"></div>
+              <div class="e r"></div>
+              <div class="bl l"></div>
+              <div class="bl r"></div>
+              <div class="m"></div>
+            </div>
+            <div class="arm l"></div>
+            <div class="arm r"></div>
+            <div class="bd"></div>
+            <div class="lg l"></div>
+            <div class="lg r"></div>
+          </div>
+        </div>
+        <div class="scr">
+          <div class="top">
+            <div class="logo">KASHI!</div>
+            <div class="qt on"><span>QUIZ</span><i></i></div>
+          </div>
+          <div class="cta">
+            <div class="cta-n">12</div>
+            <div class="cta-t"><b>REVIEW</b><span>lines due · play the mix</span></div>
+            <div class="cta-go">▶</div>
+          </div>
+          <div class="subrow">
+            <div class="chip">Clip review</div>
+            <div class="chip">Sort 5 marks</div>
+          </div>
+          <div class="search">⌕ Search your library</div>
+          <div class="seg">
+            <span class="on">Albums</span><span>Artists</span><span>Songs</span><span>Playlists</span>
+          </div>
+          <div class="grid">
+            <div class="alb">
+              <div class="cov c1"></div>
+              <div class="an">環状線</div>
+              <div class="aa">ミナミ</div>
+            </div>
+            <div class="alb">
+              <div class="cov c2"></div>
+              <div class="an">硝子の街</div>
+              <div class="aa">ミナミ</div>
+            </div>
+            <div class="alb">
+              <div class="cov c3"></div>
+              <div class="an">深海</div>
+              <div class="aa">深海少女</div>
+            </div>
+          </div>
+          <div class="mini">
+            <div class="cov c1"></div>
+            <div>夜明けのバス<br><small>ミナミ</small></div>
+            <div class="mb">⏸</div>
+          </div>
+          <div class="tabs2"><span class="on">Home</span><span>Library</span><span>Search</span><span>Me</span></div>
+        </div>
+      </div>
+    </template>
+
+    <template id="t-listen">
+      <div class="phone P listen">
+        <div class="bg"></div>
+        <div class="deco d1"></div>
+        <div class="status"><span>8:31</span><span>●●●</span></div>
+        <div class="scr">
+          <div class="top">
+            <div class="back">⌄</div>
+            <div class="qt"><span>QUIZ</span><i></i></div>
+          </div>
+          <div class="nowc">
+            <div class="cov c1"></div>
+            <div>
+              <div class="tt">夜明けのバス</div>
+              <div class="ta">ミナミ · 環状線</div>
+            </div>
+          </div>
+          <div class="lyrics">
+            <p>窓に映る君の面影</p>
+            <p>言えなかった言葉が 胸の奥で眠ってる <span class="mk">●</span></p>
+            <p class="cur">
+              <ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを
+              ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた
+            </p>
+            <p>「さよなら」なんて 似合わないよ</p>
+          </div>
+          <div class="prog"><i></i></div>
+          <div class="trans">
+            <div class="tb">⏮</div>
+            <div class="tb big">⏸</div>
+            <div class="tb">⏭</div>
+          </div>
+          <div class="lost"><b>LOST IT</b><small>marks this moment</small></div>
+        </div>
+      </div>
+    </template>
+
+    <template id="t-quiz">
+      <div class="phone P quiz">
+        <div class="bg"></div>
+        <div class="deco d1"></div>
+        <div class="status"><span>21:15</span><span>●●●</span></div>
+        <div class="scr">
+          <div class="top">
+            <div class="back">⌄</div>
+            <div class="qt on"><span>QUIZ</span><i></i></div>
+          </div>
+          <div class="qhead">
+            <div class="cov c1"></div>
+            <div class="ttl">
+              <div class="tt">夜明けのバス</div>
+              <div class="ta">ミナミ · 4/14</div>
+            </div>
+            <div class="tb">⏮</div>
+            <div class="tb">⏸</div>
+            <div class="tb">⏭</div>
+          </div>
+          <div class="lane">
+            <i class="ok" style="flex:4"></i><i class="ok" style="flex:3"></i><i class="no" style="flex:5"></i
+            ><i class="cur" style="flex:6"></i><i style="flex:3"></i><i style="flex:5"></i><i style="flex:4"></i>
+          </div>
+          <div class="line">
+            <ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby
+            >りを<br>ひとつずつ<ruby>数<rt>かぞ</rt></ruby>えてた
+          </div>
+          <div class="mid">
+            <div class="chibi">
+              <div class="band"></div>
+              <div class="cup l"></div>
+              <div class="cup r"></div>
+              <div class="hd">
+                <div class="e l"></div>
+                <div class="e r"></div>
+                <div class="bl l"></div>
+                <div class="bl r"></div>
+                <div class="m"></div>
+              </div>
+              <div class="arm l"></div>
+              <div class="arm r"></div>
+              <div class="bd"></div>
+              <div class="lg l"></div>
+              <div class="lg r"></div>
+            </div>
+            <div class="combo"><b>12</b><span>COMBO</span></div>
+            <div class="judge">NICE!</div>
+          </div>
+          <div class="ans dim">I meant to get off at the next stop</div>
+          <div class="ans hit">Counting the fading town lights</div>
+          <div class="ans dim">Unsaid words sleep in my chest</div>
+        </div>
+      </div>
+    </template>
+
+    <script>
+    const L = [
+      [
+        'A',
+        'Shard',
+        'Persona-style, from your Volcano Prince ref. Slanted shards, skewed panels, halftone dots, hard black drop shadows, comic italic type.',
+        'Bangers + Dela Gothic One',
+        'purple · cyan · yellow · black',
+      ],
+      [
+        'B',
+        'Scrapbook',
+        'Neko Atsume. Cream paper, paw pattern, thin brown hand-drawn lines, polaroids with push pins, washi tape on the current line.',
+        'Patrick Hand + Kiwi Maru',
+        'cream · mustard · brown',
+      ],
+      [
+        'C',
+        'Cozy Idle',
+        'Cat-café idle game. A little scene on Home where the chibi lives, wood-plank floor (straight lines), cream panels, a big green 3D button, chunky tab buttons.',
+        'Fredoka + M PLUS Rounded 1c',
+        'sky · sand · wood · green',
+      ],
+      [
+        'D',
+        'Confetti Sketch',
+        'Neko no Roomba. White paper with confetti, flat skewed color blocks, wobbly hand-drawn borders, marker highlights, a ray burst behind the combo.',
+        'Gochi Hand + Yusei Magic',
+        'white · raspberry · cobalt · violet',
+      ],
+      [
+        'E',
+        'Gacha Notebook',
+        'The gacha home ref. Graph paper with spiral binding, layered sticker text, glossy gradient pills, a capsule nav bar, NEW badges.',
+        'Nunito + Mochiy Pop One',
+        'navy · pink · cyan · yellow',
+      ],
+      [
+        'F',
+        'Puzzle Lite',
+        'Miku Logic Paint. Pale diagonal stripes, a teal header tab with a cut corner, light list rows with a pink selection, star ranks per album.',
+        'Baloo 2 + Zen Maru Gothic',
+        'periwinkle · teal · pink',
+      ],
+      [
+        'G',
+        'Sunburst Arcade',
+        'Round 4 with straighter lines: a sunburst background, a hard navy band across the top, squarer corners, solid drop shadows. Your favorite font pair.',
+        'Fredoka + Mochiy Pop One',
+        'Ramune',
+      ],
+      [
+        'H',
+        'Riso Zine',
+        'Two-ink risograph print. Paper grain, pink and blue overprint with slightly misaligned shadows, halftone blob, a stamped judgement. Lo-fi and punky.',
+        'Archivo Black + Zen Kaku Gothic New',
+        'paper · fluoro pink · blue',
+      ],
+      [
+        'I',
+        'Sticker Brutal',
+        'Yuzu as neo-brutalism. Hazard stripe, no rounding, thick black borders, solid offset shadows, tilted stickers.',
+        'Lilita One + Potta One',
+        'Yuzu',
+      ],
+    ];
+    const out = document.getElementById('out'),
+      nav = document.getElementById('nav');
+    const tpl = (id) => document.getElementById(id).content;
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (const [k, name, desc, fonts, colors] of L) {
+      nav.insertAdjacentHTML('beforeend', `<a href="#l${k}">${k} · ${name}</a>`);
+      const sec = document.createElement('section');
+      sec.id = 'l' + k;
+      sec.innerHTML = `<div class="head"><span class="tag">${k}</span><h2>${name}</h2></div><div class="pitch">${desc}</div><div class="loop"><b>Type</b> ${fonts} · <b>Color</b> ${colors}</div>`;
+      const row = document.createElement('div');
+      row.className = 'row';
+      for (const [t, cap] of [
+        ['t-home', 'Home'],
+        ['t-listen', 'Quiz off'],
+        ['t-quiz', 'Quiz on'],
+      ]) {
+        const fig = document.createElement('figure');
+        const node = tpl(t).cloneNode(true);
+        const ph = node.querySelector('.phone');
+        ph.classList.add(k);
+        if (k === 'D')
+          for (let i = 0; i < 26; i++) {
+            const c = document.createElement('div');
+            c.className = 'conf';
+            c.style.cssText = `left:${rnd() * 280}px;top:${rnd() * 590}px;transform:rotate(${rnd() * 180}deg);background:${['#d9457a', '#3a5fcf', '#ffd43b', '#6b4fc8', '#3ec97a'][i % 5]}`;
+            ph.appendChild(c);
+          }
+        fig.appendChild(node);
+        fig.insertAdjacentHTML('beforeend', `<figcaption><b>${cap}</b></figcaption>`);
+        row.appendChild(fig);
+      }
+      if (k === 'G') {
+        const fig = document.createElement('figure');
+        const node = tpl('t-quiz').cloneNode(true);
+        const ph = node.querySelector('.phone');
+        ph.classList.add('G');
+        ph.insertAdjacentHTML(
+          'beforeend',
+          `<div class="modal"><div class="box"><h3>Turn off Quiz?</h3><div style="font-size:13px">You're in the review mix. It'll keep playing as a normal playlist, and today's remaining due lines stay due.</div><div class="b2"><div>Cancel</div><div style="background:#ffe14d">Turn off</div></div></div></div>`,
+        );
+        fig.appendChild(node);
+        fig.insertAdjacentHTML('beforeend', `<figcaption><b>Toggle during review mix</b>: confirm first.</figcaption>`);
+        row.appendChild(fig);
+      }
+      sec.appendChild(row);
+      out.appendChild(sec);
+    }
+    </script>
+  </body>
 </html>

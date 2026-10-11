@@ -1,0 +1,79 @@
+import Svg, { Path } from 'react-native-svg';
+import { colors } from '@/constants/theme';
+
+// Pixelarticons 2.4.1; filled play/pause and skip controls from 1.8.1, MIT. See assets/icons.
+// translate, play, musicFilled, homeFilled, down and trash are hand-drawn on the same 24-unit pixel grid.
+const icons = {
+  down: ['M11 14h2v2h-2zM9 12h2v2H9zM13 12h2v2h-2zM7 10h2v2H7zM15 10h2v2h-2zM5 8h2v2H5zM17 8h2v2h-2z'],
+  trash: ['M9 2h6v2H9zM3 4h18v2H3zM5 6h2v14H5zM17 6h2v14h-2zM7 20h10v2H7zM9 9h2v8H9zM13 9h2v8h-2z'],
+  refresh: [
+    'M4 4h2v4h4v2H2V2h2zM6 2h12v2H6zM18 4h2v4h-2zM20 8h2v8h-2zM18 16h2v4h-2zM6 20h12v2H6zM4 16h2v4H4zM2 12h2v4H2z',
+  ],
+  translate: [
+    'M6 2h2v2H6zM2 4h12v2H2zM4 6h2v4H4zM10 6h2v4h-2zM6 10h4v2H6zM4 12h2v2H4zM10 12h2v2h-2zM2 14h2v2H2zM12 14h2v2h-2zM17 10h4v2h-4zM15 12h2v10h-2zM21 12h2v10h-2zM17 16h4v2h-4z',
+  ],
+  micOff: [
+    'M10 2h4v2h-4zM8 8h2v6H8zm2 6h4v2h-4zm4-10h2v6h-2zM4 10h2v6H4zm2 6h2v2H6zm2 2h8v2H8zm8-2h2v2h-2zm-2-2h2v2h-2zm-2-2h2v2h-2zm-2-2h2v2h-2z',
+    'M8 8h2v2H8zM6 6h2v2H6zM4 4h2v2H4zM2 2h2v2H2zm16 16h2v2h-2zm2 2h2v2h-2zm-2-10h2v4h-2zm-7 10h2v2h-2z',
+  ],
+  home: [
+    'M4 20h16v2H4zm16-10h2v10h-2zM2 10h2v10H2zm2-2h2v2H4zm2-2h2v2H6zm2-2h2v2H8zm2-2h4v2h-4zm4 2h2v2h-2zm2 2h2v2h-2zm2 2h2v2h-2zM8 14h2v6H8zm2-2h4v2h-4zm4 2h2v6h-2z',
+  ],
+  music: [
+    'M4 12h4v2H4zm-2 2h2v4H2zm2 4h4v2H4zM8 6h2v12H8zm10 0h2v12h-2zm-6 8h2v4h-2zm2-2h4v2h-4zm0 6h4v2h-4zM10 4h8v2h-8z',
+  ],
+  book: [
+    'M2 3h9v2H2zM0 19h11v2H0zM13 3h9v2h-9zm0 16h11v2H13zM11 5h2v18h-2zM0 5h2v14H0zm22 0h2v14h-2zm-7 2h5v2h-5zm0 4h5v2h-5zm0 4h2v2h-2z',
+  ],
+  play: ['M7 3h2v2h2v2h2v2h2v2h2v2h-2v2h-2v2h-2v2h-2v2H7z'],
+  musicFilled: ['M9 3h11v12h-2V7h-7v9H9z', 'M6 14h5v6H6v-1H5v-1H4v-2h1v-1h1z', 'M15 13h5v6h-5v-1h-1v-1h-1v-2h1v-1h1z'],
+  homeFilled: ['M11 2h2v2h2v2h2v2h2v2h2v2h-2v10h-5v-6h-4v6H5V12H3v-2h2V8h2V6h2V4h2z'],
+  pause: ['M10 4H5v16h5V4zm9 0h-5v16h5V4z'],
+  back: ['M8 13v-2h2v2H8Zm2-2V9h2v2h-2Zm0 4v-2h2v2h-2Zm2-6V7h2v2h-2Zm0 8v-2h2v2h-2Zm2-10V5h2v2h-2Zm0 12v-2h2v2h-2Z'],
+  next: ['M16 13v-2h-2v2h2Zm-2-2V9h-2v2h2Zm0 4v-2h-2v2h2Zm-2-6V7h-2v2h2Zm0 8v-2h-2v2h2ZM10 7V5H8v2h2Zm0 12v-2H8v2h2Z'],
+  close: [
+    'M7 19H5V17H7V19ZM19 19H17V17H19V19ZM9 15V17H7V15H9ZM17 17H15V15H17V17ZM11 15H9V13H11V15ZM15 15H13V13H15V15ZM13 13H11V11H13V13ZM11 11H9V9H11V11ZM15 11H13V9H15V11ZM9 9H7V7H9V9ZM17 9H15V7H17V9ZM7 7H5V5H7V7ZM19 7H17V5H19V7Z',
+  ],
+  edit: [
+    'M4 16H6V18H8V20H10V22H2V14H4V16ZM12 20H10V18H12V20ZM14 18H12V16H14V18ZM10 16H8V14H10V16ZM16 16H14V14H16V16ZM6 14H4V12H6V14ZM12 14H10V12H12V14ZM18 14H16V12H18V14ZM8 12H6V10H8V12ZM14 12H12V10H14V12ZM20 12H18V10H20V12ZM10 10H8V8H10V10ZM18 10H16V8H18V10ZM22 10H20V8H22V10ZM12 8H10V6H12V8ZM16 8H14V6H16V8ZM20 8H18V6H20V8ZM14 6H12V4H14V6ZM18 6H16V4H18V6ZM16 4H14V2H16V4Z',
+  ],
+  check: [
+    'M10 18H8v-2h2v2Zm-2-2H6v-2h2v2Zm4-2v2h-2v-2h2Zm-6 0H4v-2h2v2Zm8 0h-2v-2h2v2Zm2-2h-2v-2h2v2Zm2-2h-2V8h2v2Zm2-2h-2V6h2v2Z',
+  ],
+  search: [
+    'M22 22h-2v-2h2v2Zm-2-2h-2v-2h2v2Zm-6-2H6v-2h8v2Zm4 0h-2v-2h2v2ZM6 16H4v-2h2v2Zm10 0h-2v-2h2v2ZM4 14H2V6h2v8Zm14 0h-2V6h2v8ZM6 6H4V4h2v2Zm10 0h-2V4h2v2Zm-2-2H6V2h8v2Z',
+  ],
+  settings: [
+    'M4 20h3v-2h4v4h2v-4h4v2h-2v4H9v-4H7v2H2v-5h2v3Zm18 2h-5v-2h3v-3h2v5ZM6 11H2v2h4v4H4v-2H0V9h4V7h2v4Zm14-2h4v6h-4v2h-2v-4h4v-2h-4V7h2v2Zm-6 7h-4v-2h4v2Zm-4-2H8v-4h2v4Zm6 0h-2v-4h2v4Zm-2-4h-4V8h4v2ZM7 4H4v3H2V2h5v2Zm8 0h2V2h5v5h-2V4h-3v2h-4V2h-2v4H7V4h2V0h6v4Z',
+  ],
+  skipPrevious: ['M6 4h2v16H6V4zm12 0h-2v2h-2v3h-2v2h-2v2h2v3h2v2h2v2h2V4z'],
+  skipNext: ['M6 4h2v2h2v2h2v2h2v4h-2v2h-2v2H8v2H6V4zm12 0h-2v16h2V4z'],
+} as const;
+
+/** Typed pixel icons share the fill color of their surrounding control. */
+export function Icon({
+  name,
+  color = colors.text,
+  size = 24,
+  accessibilityLabel,
+}: {
+  name: keyof typeof icons;
+  color?: string;
+  size?: number;
+  accessibilityLabel?: string;
+}) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      accessible={!!accessibilityLabel}
+      accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel}
+    >
+      {icons[name].map((d, index) => (
+        <Path key={index} d={d} fill={color} />
+      ))}
+    </Svg>
+  );
+}

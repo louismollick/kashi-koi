@@ -1,7 +1,9 @@
 node_modules/
 .expo/
 /ios/
+/apps/mobile/ios/
 /android/
+/apps/mobile/android/
 dist/
 build/
 .DS_Store
@@ -12,3 +14,7 @@ build/
 
 expo-env.d.ts
 # @end expo-cli
+
+# Local analysis server database
+/data/
+/apps/server/data/

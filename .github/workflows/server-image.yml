@@ -1,0 +1,70 @@
+name: Server image
+
+# Pushes to main publish ghcr.io/louismollick/kashi-koi-server:main. A PR only checks that the
+# image builds, unless it has the `server-image` label: then it also publishes :pr-<number>
+# so the branch can run on the VPS before merging. Both also publish :sha-<short>.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - 'apps/server/**'
+      - 'packages/shared/**'
+      - 'package-lock.json'
+      - 'package.json'
+      - '.dockerignore'
+      - '.github/workflows/server-image.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/server/**'
+      - 'packages/shared/**'
+      - 'package-lock.json'
+      - 'package.json'
+      - '.dockerignore'
+      - '.github/workflows/server-image.yml'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  PUBLISH: >-
+    ${{ github.event_name == 'push' ||
+        (github.event.pull_request.head.repo.full_name == github.repository &&
+         contains(github.event.pull_request.labels.*.name, 'server-image')) }}
+
+jobs:
+  image:
+    # Other labels don't change anything, so they don't rebuild.
+    if: github.event.action != 'labeled' || github.event.label.name == 'server-image'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: env.PUBLISH == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Image tags
+        id: tags
+        env:
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          CHANNEL: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'main' }}
+        run: |
+          image=ghcr.io/louismollick/kashi-koi-server
+          echo "tags=$image:$CHANNEL,$image:sha-${COMMIT_SHA:0:7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ env.PUBLISH == 'true' }}
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
