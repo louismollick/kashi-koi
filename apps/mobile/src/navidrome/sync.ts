@@ -179,7 +179,10 @@ export const scanLyrics = ({ all = false }: { all?: boolean } = {}) =>
 export async function loadLibrary() {
   const { loadAll } = await import('./db');
   libraryStore.getState().setLibrary(await loadAll());
-  await (await import('@/downloads/queue')).loadDownloadState();
+  // Downloads are optional; a failure here must not keep the library or session from loading.
+  await (await import('@/downloads/queue')).loadDownloadState().catch(() => {
+    libraryStore.setState({ error: 'Could not load downloads' });
+  });
   await loadAnalysisToken();
   void fetchLibraryAnalyses();
 }

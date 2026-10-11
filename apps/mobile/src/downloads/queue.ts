@@ -29,6 +29,7 @@ const defaults = {
     kind: DownloadMedia,
     onProgress?: (fraction: number) => void,
   ) => Promise<number>,
+  detect: async (_uri: string): Promise<string | undefined> => undefined,
   move: unconfigured as (from: string, to: string) => Promise<void>,
   remove: unconfigured as (uri: string) => Promise<void>,
   exists: unconfigured as (uri: string) => Promise<boolean>,
@@ -169,7 +170,7 @@ function start() {
           if (!pair) break;
           const [id, entry] = pair,
             song = libraryStore.getState().bySong[id];
-          const fileName = `${assetName(id)}.${audioExtension(song?.suffix)}`;
+          let fileName = `${assetName(id)}.${audioExtension(song?.suffix)}`;
           const downloading: DownloadEntry = {
             ...entry,
             status: 'downloading',
@@ -179,8 +180,8 @@ function start() {
           };
           downloadStore.setState(({ entries }) => ({ entries: { ...entries, [id]: downloading } }));
           const root = downloadStore.getState().root!;
-          const destination = `${root}/audio/${fileName}`,
-            temp = `${destination}.part`;
+          let destination = `${root}/audio/${fileName}`;
+          const temp = `${destination}.part`;
           let renamed = false;
           try {
             await runtime.save(id, downloading);
@@ -190,6 +191,11 @@ function start() {
               report(id, Math.max(0, Math.min(fraction, 1)) * 0.7),
             );
             if (!valid()) break;
+            const format = await runtime.detect(temp);
+            if (format) {
+              fileName = `${assetName(id)}.${format}`;
+              destination = `${root}/audio/${fileName}`;
+            }
             report(id, 0.7);
             const coverIds = new Set([libraryStore.getState().byAlbum[song.albumId]?.coverArt, song.coverArt]);
             for (const coverId of coverIds) if (coverId && valid()) await cover(coverId, signal, valid);

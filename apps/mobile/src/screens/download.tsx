@@ -41,12 +41,12 @@ export default function DownloadScreen() {
       : done === eligible
         ? single
           ? 'Downloaded'
-          : `All ${eligible} songs downloaded`
+          : `All ${eligible} ${eligible === 1 ? 'song' : 'songs'} downloaded`
         : single
           ? failed
             ? 'Download failed'
             : 'Not downloaded'
-          : `${done} of ${eligible} songs downloaded${failed ? ` · ${failed} failed` : ''}`;
+          : `${done} of ${eligible} ${eligible === 1 ? 'song' : 'songs'} downloaded${failed ? ` · ${failed} failed` : ''}`;
   return (
     <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#090a1699' }}>
       <Pressable

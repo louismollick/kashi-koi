@@ -2,7 +2,7 @@ import { AppState } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
 import Downloads from '../../modules/kashi-downloads';
 import type { DownloadArt } from './store';
-import { validateMediaHeader, type DownloadMedia } from './validation';
+import { audioFormat, validateMediaHeader, type DownloadMedia } from './validation';
 import {
   loadDownloads,
   saveDownload,
@@ -55,6 +55,15 @@ export async function downloadFile(
   }
   return bytes;
 }
+/** Read the downloaded container from its first bytes; undefined keeps the song's suffix. */
+export async function detectAudio(uri: string) {
+  const handle = new File(uri).open();
+  try {
+    return audioFormat(handle.readBytes(16));
+  } finally {
+    handle.close();
+  }
+}
 export async function moveFile(from: string, to: string) {
   await new File(from).move(new File(to), { overwrite: true });
 }
@@ -97,6 +106,7 @@ export const nativeDownloadRuntime = {
   clear: clearDownloads,
   prepare: prepareFiles,
   download: downloadFile,
+  detect: detectAudio,
   move: moveFile,
   remove: deleteFile,
   exists: fileExists,
