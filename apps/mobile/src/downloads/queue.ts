@@ -44,11 +44,13 @@ const defaults = {
       lyrics = libraryStore.getState().lyrics[song.id];
     if (valid() && session.base && lyrics && !libraryStore.getState().analyses[lyrics.fingerprint]) {
       const result = await fetchAnalysis(session.base, lyrics.fingerprint, session.fetch, signal);
-      if (result.status === 200 && valid() && session.valid()) {
+      // Another request may have accepted a newer analysis while this GET was in flight.
+      const missing = () => !libraryStore.getState().analyses[lyrics.fingerprint];
+      if (result.status === 200 && valid() && session.valid() && missing()) {
         if (result.analysis.lines.length !== lyrics.timeline.length)
           throw new Error('Song analysis length does not match');
         await runtime.saveAnalysis(result.analysis);
-        if (valid() && session.valid()) libraryStore.getState().setAnalysis(result.analysis);
+        if (valid() && session.valid() && missing()) libraryStore.getState().setAnalysis(result.analysis);
       }
     }
     if (!valid()) return;

@@ -162,7 +162,8 @@ export async function setupTransport(valid = () => true) {
       // Leaving offline mode released an undownloaded song; reload it where it stopped.
       if (!song) {
         const { songId, positionMs, clipPlayback } = appStore.getState(),
-          current = songId ? libraryStore.getState().bySong[songId] : undefined;
+          id = clipPlayback?.songId ?? songId,
+          current = id ? libraryStore.getState().bySong[id] : undefined;
         if (!current) return;
         appStore.setState({ loading: true, playbackError: null });
         transportLoad(current, clipPlayback?.positionMs ?? positionMs);
