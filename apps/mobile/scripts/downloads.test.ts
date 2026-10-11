@@ -23,7 +23,7 @@ import {
 import { downloadStore, isDownloaded, localAudioUri, localArtUri, type DownloadEntries } from '../src/downloads/store';
 import { eligibleSongs } from '../src/downloads/targets';
 import { downloadSummary } from '../src/downloads/selectors';
-import { assetName, audioExtension } from '../src/downloads/files';
+import { assetName, audioExtension } from '../src/downloads/names';
 import { appStore, resetAppState, setTransport, hydrateAppState } from '../src/store/appStore';
 import { libraryStore, readyReviewLines, hasTranslations } from '../src/store/libraryStore';
 import { sessionStore } from '../src/navidrome/session';
@@ -185,7 +185,7 @@ function testRuntime() {
       files.delete(from);
     },
     prepareText: async () => {},
-    observe: async () => {},
+    observe: async () => true,
     begin: async (total: number) => {
       begins.push(total);
       return true;

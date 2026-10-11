@@ -838,10 +838,10 @@ export const appStore = create<AppState>()(
 setAnalysisStore(appStore);
 setOfflineModeReader(() => appStore.getState().offlineMode);
 
-/** Download changes invalidate memoized browsing without changing lyric filter settings. */
+/** In offline mode, download changes invalidate memoized browsing; online they don't affect visibility. */
 export function useLibraryFilters() {
   const filters = appStore(useShallow(libraryFilters));
-  const entries = downloadStore((state) => state.entries);
+  const entries = downloadStore((state) => (filters.downloadedOnly ? state.entries : null));
   return useMemo(() => ({ ...filters, downloadEntries: entries }), [filters, entries]);
 }
 

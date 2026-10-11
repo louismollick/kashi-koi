@@ -1,17 +1,84 @@
 import { prepareTranslation } from '@/japanese/translate';
 import { useState } from 'react';
-import { ScrollView, TextInput, View } from 'react-native';
+import { Alert, ScrollView, TextInput, View } from 'react-native';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
 import { refreshAlbumArt } from '@/store/artStore';
 import { sessionStore, logout } from '@/navidrome/session';
 import { syncLibrary, scanLyrics } from '@/navidrome/sync';
+import {
+  deleteAllDownloads,
+  queueDownloads,
+  retryFailedDownloads,
+  useDownloadProgress,
+  useDownloadStorage,
+  useDownloadSummary,
+} from '@/downloads';
 import { ScreenHeader } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { Button, Label, PixelToggle, SectionHeader, styles } from '@/components/ui';
 
 const date = (at: number | null) => (at ? new Date(at).toLocaleString() : 'never');
+const size = (bytes: number) =>
+  bytes >= 1e9 ? `${(bytes / 1e9).toFixed(1)} GB` : `${Math.max(1, Math.round(bytes / 1e6))} MB`;
+
+/** Offline mode, whole-library downloads and the pinned download storage. */
+function OfflineSection() {
+  const offline = appStore((state) => state.offlineMode);
+  const library = useDownloadSummary({ kind: 'library' }),
+    storage = useDownloadStorage(),
+    progress = useDownloadProgress();
+  const missing = library.eligible - library.done - library.pending;
+  return (
+    <>
+      <SectionHeader title="Offline" />
+      <View style={styles.row}>
+        <Label style={{ flex: 1 }}>Offline mode</Label>
+        <PixelToggle label="Offline mode" on={offline} onPress={() => appStore.getState().setOfflineMode(!offline)} />
+      </View>
+      <Label muted>
+        {storage.songs} of {library.eligible} songs downloaded{storage.bytes ? ` · ${size(storage.bytes)}` : ''}
+      </Label>
+      {progress && (
+        <Label>
+          Downloading… {progress.completed} / {progress.total}
+        </Label>
+      )}
+      {missing > 0 && (
+        <Button
+          label="Download library"
+          disabled={offline}
+          onPress={() => {
+            void queueDownloads({ kind: 'library' });
+          }}
+        >
+          <Label>
+            Download library ({missing} {missing === 1 ? 'song' : 'songs'})
+          </Label>
+        </Button>
+      )}
+      {library.failed > 0 && !progress && (
+        <Button label="Retry failed downloads" disabled={offline} onPress={() => void retryFailedDownloads()}>
+          <Label>Retry {library.failed} failed</Label>
+        </Button>
+      )}
+      {(storage.songs > 0 || library.pending > 0) && (
+        <Button
+          label="Delete downloads"
+          onPress={() =>
+            Alert.alert('Delete downloads?', 'Songs and artwork saved for offline use will be removed.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete', style: 'destructive', onPress: () => void deleteAllDownloads() },
+            ])
+          }
+        >
+          <Label style={{ color: colors.red }}>Delete downloads</Label>
+        </Button>
+      )}
+    </>
+  );
+}
 
 /** Framed single-line field that commits when editing ends, like Library search. */
 function Field({
@@ -170,6 +237,7 @@ export default function SettingsScreen() {
           <Label>Refresh album art</Label>
         </Button>
         {artMessage && <Label>{artMessage}</Label>}
+        <OfflineSection />
         <SectionHeader title="Lyrics scan" />
         <Button
           label="Rescan lyrics"

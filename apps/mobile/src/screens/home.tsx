@@ -1,3 +1,4 @@
+import { useAvailableReviewList } from '@/data/reviewVisibility';
 import { isDue, libraryStore } from '@/store/libraryStore';
 import { useNow } from '@/hooks/useNow';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
@@ -10,6 +11,7 @@ import { Header } from '@/components/Header';
 import { Mascot } from '@/components/Mascot';
 import { PixelFrame } from '@/components/PixelFrame';
 import { Cover } from '@/components/Cover';
+import { downloadSheet } from '@/components/DownloadButton';
 import { Icon } from '@/components/Icon';
 import { Label, SectionHeader, Tag, styles } from '@/components/ui';
 
@@ -21,7 +23,7 @@ export default function HomeScreen() {
   libraryStore((state) => state.lyrics);
   const ranks = appStore((state) => state.ranks);
   const filters = useLibraryFilters();
-  const reviewList = appStore((state) => state.reviewList);
+  const reviewList = useAvailableReviewList();
   const now = useNow();
   const count = reviewList.filter((line) => isDue(line, now)).length;
   const coverSize = (width - 56) / 3;
@@ -89,6 +91,7 @@ export default function HomeScreen() {
                   router.push('/player');
                   appStore.getState().startSong(song.id);
                 }}
+                onLongPress={() => router.push(downloadSheet({ kind: 'song', id: song.id }))}
               >
                 <Cover song={song} size={coverSize} />
                 {ranks[song.id] && (

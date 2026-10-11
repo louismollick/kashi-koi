@@ -6,6 +6,7 @@ import { useLibraryFilters } from '@/store/appStore';
 import { AlbumTile } from '@/components/AlbumTile';
 import { HiddenSongsRow } from '@/components/HiddenSongsRow';
 import { Cover } from '@/components/Cover';
+import { DownloadButton } from '@/components/DownloadButton';
 import { ScreenHeader } from '@/components/Header';
 import { Label, SectionHeader, styles } from '@/components/ui';
 
@@ -41,7 +42,7 @@ export default function ArtistDetailScreen() {
   const size = (width - 56) / 3;
   return (
     <View style={styles.page}>
-      <ScreenHeader />
+      <ScreenHeader right={<DownloadButton target={{ kind: 'artist', id: artist.id }} />} />
       <FlatList
         data={artistAlbums}
         numColumns={3}

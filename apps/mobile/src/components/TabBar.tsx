@@ -1,3 +1,4 @@
+import { useAvailableReviewList } from '@/data/reviewVisibility';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,7 +34,7 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
   const songId = appStore((state) => state.songId);
   const song = libraryStore((state) => (songId ? state.bySong[songId] : undefined));
   const playing = appStore((state) => state.playing);
-  const reviewList = appStore((state) => state.reviewList);
+  const reviewList = useAvailableReviewList();
   const now = useNow();
   const count = reviewList.filter((line) => isDue(line, now)).length;
   return (

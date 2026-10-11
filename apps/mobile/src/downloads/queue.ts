@@ -8,26 +8,23 @@ import { libraryStore } from '@/store/libraryStore';
 import { sessionStore } from '@/navidrome/session';
 import { mediaUrl } from '@/navidrome/subsonic';
 import type { Song } from '@/types/domain';
-import {
-  assetName,
-  audioExtension,
-  clearFiles,
-  deleteFile,
-  downloadFile,
-  fileExists,
-  moveFile,
-  prepareFiles,
-} from './files';
+import { assetName, audioExtension } from './names';
+import type { DownloadArt } from './store';
 import { downloadStore, type DownloadEntry, type DownloadTarget } from './store';
 import { eligibleSongs, targetSongs } from './targets';
 
+/** Files and the iOS task are native; `downloads/native.ts` provides them at boot. */
+const unconfigured = async (): Promise<never> => {
+  throw new Error('Downloads are not available');
+};
+
 const defaults = {
-  prepare: prepareFiles,
-  download: downloadFile,
-  move: moveFile,
-  remove: deleteFile,
-  exists: fileExists,
-  clearFiles,
+  prepare: unconfigured as () => Promise<{ root: string; art: DownloadArt }>,
+  download: unconfigured as (url: string, uri: string, signal: AbortSignal) => Promise<number>,
+  move: unconfigured as (from: string, to: string) => Promise<void>,
+  remove: unconfigured as (uri: string) => Promise<void>,
+  exists: unconfigured as (uri: string) => Promise<boolean>,
+  clearFiles: unconfigured as () => Promise<void>,
   load: async () => (await import('@/navidrome/db')).loadDownloads(),
   save: async (id: string, entry: DownloadEntry) => (await import('@/navidrome/db')).saveDownload(id, entry),
   delete: async (id: string) => (await import('@/navidrome/db')).deleteDownload(id),
@@ -57,29 +54,10 @@ const defaults = {
     if (!valid()) return;
     await cacheSongBreakdowns(song.id, valid, signal);
   },
-  begin: async (total: number, completed = 0) => {
-    const { AppState } = await import('react-native');
-    if (AppState.currentState !== 'active') return false;
-    const native = (await import('../../modules/kashi-downloads')).default;
-    return native.begin('Downloading songs', `${completed} of ${total}`, total);
-  },
-  progress: async (completed: number, total: number) =>
-    (await import('../../modules/kashi-downloads')).default.setProgress(completed, total, `${completed} of ${total}`),
-  end: async (success: boolean) => (await import('../../modules/kashi-downloads')).default.end(success),
-  observe: async () => {
-    const { AppState } = await import('react-native');
-    const native = (await import('../../modules/kashi-downloads')).default;
-    foreground = AppState.currentState === 'active';
-    native.addListener('onExpired', () => {
-      setBackground(false);
-      void cancelDownloads();
-    });
-    AppState.addEventListener('change', (state) => {
-      foreground = state === 'active';
-      if (foreground) void resumeDownloads();
-      else if (!background) void cancelDownloads();
-    });
-  },
+  begin: async (_total: number, _completed?: number) => false,
+  progress: async (_completed: number, _total: number) => {},
+  end: async (_success: boolean) => {},
+  observe: async (_onExpired: () => void, _onActive: (active: boolean) => void) => true,
 };
 /** Share the native task lifetime with the on-device translation worker. */
 function setBackground(value: boolean) {
@@ -353,7 +331,17 @@ export function loadDownloadState() {
       }
     }
     if (!observing) {
-      await runtime.observe();
+      foreground = await runtime.observe(
+        () => {
+          setBackground(false);
+          void cancelDownloads();
+        },
+        (active) => {
+          foreground = active;
+          if (active) void resumeDownloads();
+          else if (!background) void cancelDownloads();
+        },
+      );
       observing = true;
     }
     void start();
