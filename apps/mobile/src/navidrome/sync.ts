@@ -13,7 +13,7 @@ import {
   type Session,
   type StructuredLyrics,
 } from './subsonic';
-import type { Library } from '@/store/libraryStore';
+import type { Library, LyricsResult } from '@/store/libraryStore';
 import type { LyricsStatus, Song, SongLyrics } from '@/types/domain';
 
 let running: Promise<void> | null = null;
@@ -104,7 +104,7 @@ export function syncLibrary(
   });
 }
 
-/** Four workers persist each result; errors stay retryable on the next sync. */
+/** Four workers persist each result and publish them in batches; errors stay retryable on the next sync. */
 export async function scan(
   session: Session,
   all: boolean,
@@ -116,14 +116,27 @@ export async function scan(
   const online = () => valid() && !appStore.getState().offlineMode;
   const targets = libraryStore
     .getState()
-    .songs.filter((song) => all || ['unchecked', 'error'].includes(song.lyricsStatus));
+    .songs.filter((song) => all || ['unchecked', 'error'].includes(song.lyricsStatus))
+    // Recently played first, so Home settles before the long tail.
+    .sort((a, b) => (b.played ?? 0) - (a.played ?? 0));
   let cursor = 0,
     completed = 0,
-    lastUpdate = 0,
     errors = 0,
     stopped = false;
-  let failure: unknown;
+  let failure: unknown,
+    pending: LyricsResult[] = [];
+  // Every lyrics change makes Library, Home and review remapping walk the whole library, so publish twice a second.
+  // Saved results stay true after going offline or cancelling; only a new session must not receive them.
+  const flush = () => {
+    if (pending.length && (valid() || sessionStore.getState().session === session))
+      libraryStore.getState().setLyricsResults(pending);
+    pending = [];
+    if (libraryStore.getState().progress?.completed !== completed)
+      libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
+  };
   libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
+  // A timer, so saved results still appear while every worker waits on a slow request.
+  const timer = setInterval(flush, 500);
   await Promise.allSettled(
     Array.from({ length: 4 }, async () => {
       try {
@@ -148,14 +161,10 @@ export async function scan(
           if (!online() || stopped) break;
           if (!(status === 'error' && song.lyricsStatus === 'synced' && libraryStore.getState().lyrics[song.id])) {
             await save(song.id, status, lyrics);
+            pending.push({ songId: song.id, status, lyrics });
             if (!online() || stopped) break;
-            libraryStore.getState().setLyricsResult(song.id, status, lyrics);
           }
           completed++;
-          if (Date.now() - lastUpdate >= 250 || completed === targets.length) {
-            lastUpdate = Date.now();
-            libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
-          }
         }
       } catch (error) {
         if (!stopped) {
@@ -165,6 +174,8 @@ export async function scan(
       }
     }),
   );
+  clearInterval(timer);
+  flush();
   if (stopped) throw failure;
   if (online()) {
     appStore.setState({ lastScanAt: Date.now() });

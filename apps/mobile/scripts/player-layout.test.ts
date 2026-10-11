@@ -110,7 +110,8 @@ test('the actual quiz screen renders its musical gap before the first line witho
   appStore.getInitialState().loading = true;
   const loading = renderToStaticMarkup(React.createElement(PlayerScreen));
   assert.ok(loading.includes('Loading song'));
-  assert.ok(loading.includes('native-image'));
+  // The mini player's cover stays up, showing its fish without a session.
+  assert.ok(loading.includes('native-svg'));
   assert.ok(!loading.includes('Mascot'));
   assert.ok(!loading.includes('Play line'));
 });

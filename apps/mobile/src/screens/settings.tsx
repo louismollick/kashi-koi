@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Alert, ScrollView, TextInput, View } from 'react-native';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
+import { hasJapaneseLyrics } from '@/data/libraryVisibility';
 import { appStore } from '@/store/appStore';
 import { refreshAlbumArt } from '@/store/artStore';
 import { sessionStore, logout } from '@/navidrome/session';
@@ -139,8 +140,11 @@ export default function SettingsScreen() {
   const analysisServerUrl = appStore((state) => state.analysisServerUrl),
     analysisToken = appStore((state) => state.analysisToken),
     analyzed = libraryStore((state) => Object.values(state.lyrics).filter((lyrics) => lyrics.analysis).length);
+  libraryStore((state) => state.lyrics);
+  // Ready means synced Japanese lyrics, the same songs Download library counts.
   const session = sessionStore((state) => state.session),
-    ready = songs.filter((song) => song.lyricsStatus === 'synced').length;
+    synced = songs.filter((song) => song.lyricsStatus === 'synced').length,
+    ready = songs.filter((song) => hasJapaneseLyrics(song.id)).length;
   return (
     <View style={styles.page}>
       <ScreenHeader title="Settings" />
@@ -250,8 +254,8 @@ export default function SettingsScreen() {
           <Label>Rescan lyrics</Label>
         </Button>
         <Label>
-          {ready} songs ready to learn · {songs.filter((song) => song.lyricsStatus === 'none').length} without synced
-          lyrics
+          {ready} songs ready to learn · {synced - ready} not Japanese ·{' '}
+          {songs.filter((song) => song.lyricsStatus === 'none').length} without synced lyrics
         </Label>
         <Label muted>Last scan: {date(lastScan)}</Label>
         {progress && (

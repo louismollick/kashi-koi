@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
@@ -11,7 +12,7 @@ import { Label, styles } from './ui';
 import type { Song } from '@/types/domain';
 
 /** Play a song from the Library's cover rows or an album's numbered list. */
-export function SongRow({ song, number }: { song: Song; number?: number }) {
+export const SongRow = memo(function SongRow({ song, number }: { song: Song; number?: number }) {
   const router = useRouter();
   const filters = useLibraryFilters(),
     downloaded = useIsDownloaded(song.id);
@@ -64,4 +65,4 @@ export function SongRow({ song, number }: { song: Song; number?: number }) {
       </Label>
     </Pressable>
   );
-}
+});

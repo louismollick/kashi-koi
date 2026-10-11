@@ -6,7 +6,9 @@ import { setDownloadRuntime } from '@/downloads/queue';
 import { nativeDownloadRuntime } from '@/downloads/native';
 import { libraryStore } from '@/store/libraryStore';
 import Storage from 'expo-sqlite/kv-store';
-import { appStore, hydrateAppState, setTransport } from '@/store/appStore';
+import { appStore, getLibraryFilters, hydrateAppState, setTransport } from '@/store/appStore';
+import { getVisibleLibrary } from '@/data/libraryVisibility';
+import { prefetchCovers } from '@/components/Cover';
 import { setupTransport } from '@/audio/transport';
 import { loadLibrary, syncLibrary } from '@/navidrome/sync';
 import { useEffect, useState } from 'react';
@@ -17,6 +19,11 @@ import { colors } from '@/constants/theme';
 
 setTranslator(Japanese, saveTranslations);
 setDownloadRuntime(nativeDownloadRuntime);
+// Warm visible album covers on disk whenever a sync or lyrics scan settles.
+libraryStore.subscribe((state, previous) => {
+  if (previous.progress && !state.progress)
+    void prefetchCovers(getVisibleLibrary(getLibraryFilters()).albums.map((album) => album.coverArt));
+});
 
 const navigationTheme = {
   ...DarkTheme,
