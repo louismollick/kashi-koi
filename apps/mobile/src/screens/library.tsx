@@ -3,7 +3,14 @@ import { FlatList, Pressable, TextInput, View, useWindowDimensions } from 'react
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
-import { countBy, countedFilters, getVisibleLibrary, getVisibleSongs, groupBy, syncedIds } from '@/data/libraryVisibility';
+import {
+  countBy,
+  countedFilters,
+  getVisibleLibrary,
+  getVisibleSongs,
+  groupBy,
+  syncedIds,
+} from '@/data/libraryVisibility';
 import { useLibraryFilters } from '@/store/appStore';
 import { Header } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
