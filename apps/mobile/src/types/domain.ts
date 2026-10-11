@@ -35,6 +35,7 @@ export type Song = {
   disc?: number;
   year?: number;
   duration: number;
+  suffix?: string;
   coverArt?: string;
   played?: number;
   lyricsStatus: LyricsStatus;

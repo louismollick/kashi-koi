@@ -1,3 +1,5 @@
+import { downloadStore, localArtUri } from '@/downloads/store';
+import { appStore } from '@/store/appStore';
 import { useEffect, useState } from 'react';
 import { View, PixelRatio } from 'react-native';
 import { Image } from 'expo-image';
@@ -41,8 +43,14 @@ export function Cover({ song, size = 44 }: { song: { id: string; coverArt?: stri
   const session = sessionStore((state) => state.session),
     palette = paletteFor(song.id);
   const version = artStore((state) => state.version);
+  downloadStore((state) => state.art);
+  const offline = appStore((state) => state.offlineMode);
   const uri =
-    session && song.coverArt ? mediaUrl(session, 'getCoverArt', song.coverArt, size * PixelRatio.get()) : null;
+    (song.coverArt && localArtUri(song.coverArt)) ||
+    (!offline && session && song.coverArt
+      ? mediaUrl(session, 'getCoverArt', song.coverArt, size * PixelRatio.get())
+      : null);
+
   const inner = size - 4,
     height = inner * 2.3,
     width = (height * 1498) / 1050;

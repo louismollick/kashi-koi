@@ -27,10 +27,13 @@ export async function cancelSync() {
 function run(work: (session: Session, valid: () => boolean) => Promise<void>) {
   const session = sessionStore.getState().session,
     version = generation;
-  if (!session) return Promise.resolve();
+  if (!session || appStore.getState().offlineMode) return Promise.resolve();
   if (running) return running;
   libraryStore.setState({ error: null });
-  running = work(session, () => version === generation && sessionStore.getState().session === session)
+  running = work(
+    session,
+    () => version === generation && sessionStore.getState().session === session && !appStore.getState().offlineMode,
+  )
     .catch((error) => {
       libraryStore.setState({ error: error instanceof Error ? error.message : 'Library sync failed' });
     })
@@ -46,10 +49,11 @@ export function syncLibrary(
 ) {
   return run(async (session, valid) => {
     libraryStore.setState({ progress: { kind: 'sync', completed: 0, total: libraryStore.getState().songs.length } });
-    const entries = await searchAll<ServerSong>(session, 'song');
+    const entries = await searchAll<ServerSong>(session, 'song', valid);
     if (!valid()) return;
     libraryStore.setState({ progress: { kind: 'sync', completed: entries.length, total: entries.length } });
-    const albums = await searchAll<ServerAlbum>(session, 'album');
+    const albums = await searchAll<ServerAlbum>(session, 'album', valid);
+    if (!valid()) return;
     const response = await request<{ artists?: { index?: { artist?: ServerArtist[] }[] } }>(session, 'getArtists');
     if (!response.artists) throw new Error('Invalid artists response');
     if (!valid()) return;
@@ -65,6 +69,7 @@ export function syncLibrary(
       year: song.year,
       duration: song.duration ?? 0,
       coverArt: song.coverArt,
+      suffix: song.suffix,
       played: song.played ? Date.parse(song.played) || undefined : undefined,
       lyricsStatus: 'unchecked',
     }));
@@ -88,6 +93,8 @@ export function syncLibrary(
     if (!valid()) return;
     const { translations, analyses } = libraryStore.getState();
     libraryStore.getState().setLibrary({ ...library, translations, analyses });
+    await (await import('@/downloads/queue')).pruneDownloads();
+    if (!valid()) return;
     const ids = new Set(songs.map((song) => song.id));
     appStore.setState((state) => ({
       reviewList: state.reviewList.filter((item) => ids.has(item.songId)),
@@ -105,6 +112,8 @@ export async function scan(
   save: (songId: string, status: LyricsStatus, lyrics?: SongLyrics) => Promise<void> = async (...args) =>
     (await import('./db')).saveLyricsResult(...args),
 ) {
+  if (appStore.getState().offlineMode) return;
+  const online = () => valid() && !appStore.getState().offlineMode;
   const targets = libraryStore
     .getState()
     .songs.filter((song) => all || ['unchecked', 'error'].includes(song.lyricsStatus));
@@ -118,7 +127,7 @@ export async function scan(
   await Promise.allSettled(
     Array.from({ length: 4 }, async () => {
       try {
-        while (valid() && !stopped) {
+        while (online() && !stopped) {
           const song = targets[cursor++];
           if (!song) break;
           let status: LyricsStatus, lyrics: SongLyrics | undefined;
@@ -136,10 +145,10 @@ export async function scan(
             status = 'error';
             errors++;
           }
-          if (!valid() || stopped) break;
+          if (!online() || stopped) break;
           if (!(status === 'error' && song.lyricsStatus === 'synced' && libraryStore.getState().lyrics[song.id])) {
             await save(song.id, status, lyrics);
-            if (!valid() || stopped) break;
+            if (!online() || stopped) break;
             libraryStore.getState().setLyricsResult(song.id, status, lyrics);
           }
           completed++;
@@ -157,7 +166,7 @@ export async function scan(
     }),
   );
   if (stopped) throw failure;
-  if (valid()) {
+  if (online()) {
     appStore.setState({ lastScanAt: Date.now() });
     void resumeTranslations();
     void fetchLibraryAnalyses();
@@ -170,6 +179,7 @@ export const scanLyrics = ({ all = false }: { all?: boolean } = {}) =>
 export async function loadLibrary() {
   const { loadAll } = await import('./db');
   libraryStore.getState().setLibrary(await loadAll());
+  await (await import('@/downloads/queue')).loadDownloadState();
   await loadAnalysisToken();
   void fetchLibraryAnalyses();
 }

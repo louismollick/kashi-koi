@@ -1,8 +1,17 @@
+import { isOfflineMode } from './offlineMode';
+import { isDownloaded } from '@/downloads/store';
 import { isJapanese } from '@/japanese/text';
 import { getLineText, libraryStore } from '@/store/libraryStore';
 import type { Album, Artist, Song } from '@/types/domain';
 
-export type LibraryFilters = { hideUnsynced: boolean; hideNonJapanese: boolean };
+export type LibraryFilters = {
+  hideUnsynced: boolean;
+  hideNonJapanese: boolean;
+  downloadedOnly?: boolean;
+  /** Count lyric-hidden songs against the downloaded set without counting unavailable songs. */
+  countHiddenOnly?: boolean;
+};
+export const isSongAvailable = (songId: string) => !isOfflineMode() || isDownloaded(songId);
 
 /** Stop at the first Japanese line without allocating a filtered list. */
 export function hasJapaneseLyrics(songId: string) {
@@ -14,11 +23,16 @@ export function hasJapaneseLyrics(songId: string) {
 }
 
 /** Filters behind the "hidden" count: the active ones, or both when showing everything so the row can offer to hide again. */
-export const countedFilters = (filters: LibraryFilters): LibraryFilters =>
-  filters.hideUnsynced || filters.hideNonJapanese ? filters : { hideUnsynced: true, hideNonJapanese: true };
+export const countedFilters = (filters: LibraryFilters): LibraryFilters => ({
+  ...filters,
+  hideUnsynced: filters.hideUnsynced || !filters.hideNonJapanese,
+  hideNonJapanese: filters.hideNonJapanese || !filters.hideUnsynced,
+  countHiddenOnly: true,
+});
 
 /** Either enabled filter can hide a song. */
 export function isHiddenSong(song: Song, filters: LibraryFilters) {
+  if ((filters.downloadedOnly ?? isOfflineMode()) && !isDownloaded(song.id)) return !filters.countHiddenOnly;
   return (
     (filters.hideUnsynced && song.lyricsStatus !== 'synced') ||
     (filters.hideNonJapanese && (song.lyricsStatus !== 'synced' || !hasJapaneseLyrics(song.id)))

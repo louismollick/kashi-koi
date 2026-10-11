@@ -18,6 +18,7 @@ export type ServerSong = {
   discNumber?: number;
   year?: number;
   duration?: number;
+  suffix?: string;
   coverArt?: string;
   played?: string;
 };
@@ -124,9 +125,9 @@ export function loginError(error: unknown) {
 }
 
 /** A short page ends paging, including servers that omit an empty result. */
-export async function searchAll<T>(session: Session, kind: 'song' | 'album') {
+export async function searchAll<T>(session: Session, kind: 'song' | 'album', valid = () => true) {
   const result: T[] = [];
-  for (let offset = 0; ; offset += 500) {
+  for (let offset = 0; valid(); offset += 500) {
     const response = await request<{ searchResult3?: { song?: T[]; album?: T[] } }>(session, 'search3', {
       query: '',
       artistCount: 0,
@@ -138,4 +139,5 @@ export async function searchAll<T>(session: Session, kind: 'song' | 'album') {
     result.push(...page);
     if (page.length < 500) return result;
   }
+  return result;
 }

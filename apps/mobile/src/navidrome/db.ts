@@ -1,3 +1,5 @@
+import { type Breakdown, breakdownSchema } from '@kashi-koi/shared/breakdown';
+import type { DownloadEntries, DownloadEntry } from '@/downloads/store';
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { type SongAnalysis, songAnalysisSchema, validateAnalysis } from '@kashi-koi/shared/analysis';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
@@ -15,7 +17,7 @@ function writeTransaction(db: SQLiteDatabase, work: (tx: SQLiteDatabase) => Prom
 
 const database = openDatabaseAsync('navidrome.db').then(async (db) => {
   await db.execAsync(
-    'PRAGMA journal_mode = WAL; CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS albums (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS artists (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS lyrics (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS translations (text TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS analyses (fingerprint TEXT PRIMARY KEY, data TEXT NOT NULL);',
+    'PRAGMA journal_mode = WAL; CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS albums (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS artists (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS lyrics (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS translations (text TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS analyses (fingerprint TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS downloads (id TEXT PRIMARY KEY, status TEXT NOT NULL, file_name TEXT, bytes INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, error TEXT); CREATE TABLE IF NOT EXISTS breakdowns (fingerprint TEXT NOT NULL, start INTEGER NOT NULL, data TEXT NOT NULL, PRIMARY KEY (fingerprint, start));',
   );
   return db;
 });
@@ -143,6 +145,12 @@ export async function saveAnalysis(analysis: SongAnalysis) {
   if (!validated) throw new Error('Invalid song analysis');
   const db = await database;
   await writeTransaction(db, async (tx) => {
+    const previous = await tx.getFirstAsync<{ data: string }>(
+      'SELECT data FROM analyses WHERE fingerprint = ?',
+      validated.fingerprint,
+    );
+    if (previous && previous.data !== JSON.stringify(validated))
+      await tx.runAsync('DELETE FROM breakdowns WHERE fingerprint = ?', validated.fingerprint);
     await tx.runAsync(
       'INSERT OR REPLACE INTO analyses (fingerprint, data) VALUES (?, ?)',
       validated.fingerprint,
@@ -155,7 +163,92 @@ export async function clearLibrary() {
   const db = await database;
   await writeTransaction(db, (tx) =>
     tx.execAsync(
-      'DELETE FROM songs; DELETE FROM albums; DELETE FROM artists; DELETE FROM lyrics; DELETE FROM translations; DELETE FROM analyses;',
+      'DELETE FROM songs; DELETE FROM albums; DELETE FROM artists; DELETE FROM lyrics; DELETE FROM translations; DELETE FROM analyses; DELETE FROM breakdowns;',
     ),
   );
+}
+
+/** Per-song queue state survives process death, including interrupted transfers. */
+export async function loadDownloads(): Promise<DownloadEntries> {
+  const db = await database;
+  const rows = await db.getAllAsync<{
+    id: string;
+    status: DownloadEntry['status'];
+    file_name: string | null;
+    bytes: number | null;
+    created_at: number;
+    updated_at: number;
+    error: string | null;
+  }>('SELECT * FROM downloads');
+  return Object.fromEntries(
+    rows.map((row) => [
+      row.id,
+      {
+        status: row.status,
+        fileName: row.file_name ?? undefined,
+        bytes: row.bytes ?? undefined,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        error: row.error ?? undefined,
+      },
+    ]),
+  );
+}
+export async function saveDownload(id: string, entry: DownloadEntry) {
+  const db = await database;
+  await writeTransaction(db, async (tx) => {
+    await tx.runAsync(
+      'INSERT OR REPLACE INTO downloads (id, status, file_name, bytes, created_at, updated_at, error) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      id,
+      entry.status,
+      entry.fileName ?? null,
+      entry.bytes ?? null,
+      entry.createdAt,
+      entry.updatedAt,
+      entry.error ?? null,
+    );
+  });
+}
+export async function deleteDownload(id: string) {
+  const db = await database;
+  await writeTransaction(db, async (tx) => {
+    await tx.runAsync('DELETE FROM downloads WHERE id = ?', id);
+  });
+}
+export async function clearDownloads() {
+  const db = await database;
+  await writeTransaction(db, (tx) => tx.execAsync('DELETE FROM downloads;'));
+}
+
+/** Shared breakdowns are cached for every online read, not just downloaded songs. */
+export async function readBreakdown(fp: string, start: number): Promise<Breakdown | undefined> {
+  const row = await (await database).getFirstAsync<{ data: string }>(
+    'SELECT data FROM breakdowns WHERE fingerprint = ? AND start = ?',
+    fp,
+    start,
+  );
+  if (!row) return undefined;
+  try {
+    const value = breakdownSchema.safeParse(JSON.parse(row.data));
+    return value.success && value.data.fingerprint === fp && value.data.start === start ? value.data : undefined;
+  } catch {
+    return undefined;
+  }
+}
+export async function saveBreakdown(breakdown: Breakdown) {
+  const db = await database;
+  await writeTransaction(db, async (tx) => {
+    await tx.runAsync(
+      'INSERT OR REPLACE INTO breakdowns (fingerprint, start, data) VALUES (?, ?, ?)',
+      breakdown.fingerprint,
+      breakdown.start,
+      JSON.stringify(breakdown),
+    );
+  });
+}
+export async function deleteBreakdowns(fp: string) {
+  const db = await database;
+  await writeTransaction(db, async (tx) => {
+    await tx.runAsync('DELETE FROM breakdowns WHERE fingerprint = ?', fp);
+  });
 }

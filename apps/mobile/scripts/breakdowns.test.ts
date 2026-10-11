@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
+import type { Breakdown } from '@kashi-koi/shared/breakdown';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import {
   breakdownStore,
+  setBreakdownRuntime,
+  flushBreakdowns,
   breakdownTarget,
   canExplain,
   englishSpans,
@@ -15,6 +18,9 @@ import { getLyrics, libraryStore } from '../src/store/libraryStore';
 import { toSongLyrics } from '../src/navidrome/lyrics';
 import { songs, testQuiz } from './fixtures';
 
+const persisted = new Map<string, Breakdown>();
+const removed: string[] = [];
+const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
 const songId = songs[0]!.id;
 let sentenceId = '',
   key = '',
@@ -46,9 +52,21 @@ const deferred = () => {
   return { promise, resolve };
 };
 beforeEach(async () => {
+  setBreakdownRuntime({
+    read: async (fp, start) => persisted.get(`${fp}:${start}`),
+    save: async (value) => {
+      persisted.set(`${value.fingerprint}:${value.start}`, value);
+    },
+    remove: async (fp) => {
+      removed.push(fp);
+      for (const key of persisted.keys()) if (key.startsWith(`${fp}:`)) persisted.delete(key);
+    },
+  });
   await cancelAnalyses();
   await resetAppState();
   appStore.setState({ analysisServerUrl: 'https://analysis.test/api', analysisToken: '' });
+  persisted.clear();
+  removed.length = 0;
   const lyrics = toSongLyrics(
     songId,
     {
@@ -178,6 +196,7 @@ test('logout invalidates a pending GET before it can generate or publish', async
     },
   });
   const work = loadBreakdown(songId, sentenceId);
+  await tick();
   await cancelAnalyses();
   gate.resolve();
   await work;
@@ -234,6 +253,7 @@ test('prefetch needs a token, and a miss or lost mark shares the same quiet requ
   appStore.getState().addLostMark();
   appStore.getState().startClipReview();
   appStore.getState().answerClip('wrong');
+  await tick();
   assert.equal(calls, 1);
   const work = loadBreakdown(songId, sentenceId);
   gate.resolve();
@@ -294,6 +314,7 @@ test('replacement invalidates pending responses and reloads the same target once
     },
   });
   const stale = loadBreakdown(songId, sentenceId);
+  await tick();
   libraryStore.getState().setAnalysis({ ...analysis, title: 'Another reading' });
   assert.equal(breakdownStore.getState().states[key], undefined);
   const fresh = loadBreakdown(songId, sentenceId);
@@ -318,4 +339,77 @@ test('English spans assign repeated words to chunks in order and keep pieces apa
       { start: 10, end: 23, chunk: 0 },
     ],
   );
+});
+
+test('persisted breakdowns read through after transient reset, even offline with no server URL', async () => {
+  const data = response();
+  persisted.set(key, data);
+  appStore.setState({ offlineMode: true, analysisServerUrl: '' });
+  let calls = 0;
+  setAnalysisRuntime({
+    fetch: async () => {
+      calls++;
+      throw new Error('Offline must not fetch');
+    },
+  });
+  await loadBreakdown(songId, sentenceId);
+  assert.deepEqual(breakdownStore.getState().states[key], { status: 'ready', breakdown: data });
+  assert.equal(calls, 0);
+});
+
+test('online reads persist and replacement deletes the obsolete fingerprint before another read', async () => {
+  setAnalysisRuntime({ fetch: async () => Response.json(response()) });
+  await loadBreakdown(songId, sentenceId);
+  assert.deepEqual(persisted.get(key), response());
+  libraryStore.getState().setAnalysis({ ...analysis, title: 'Replacement' });
+  await flushBreakdowns();
+  assert.equal(persisted.has(key), false);
+  assert.ok(removed.includes(analysis.fingerprint));
+});
+
+test('download breakdown misses use GET only even with an owner token', async () => {
+  appStore.setState({ analysisToken: 'owner' });
+  const methods: string[] = [];
+  setAnalysisRuntime({
+    fetch: async (_url, init) => {
+      methods.push(init?.method ?? 'GET');
+      return new Response(null, { status: 404 });
+    },
+  });
+  await loadBreakdown(songId, sentenceId, { cachedOnly: true });
+  assert.deepEqual(methods, ['GET']);
+  assert.equal(breakdownStore.getState().states[key]?.status, 'missing');
+});
+
+test('identical analysis publication preserves persisted and transient breakdowns', async () => {
+  setAnalysisRuntime({ fetch: async () => Response.json(response()) });
+  await loadBreakdown(songId, sentenceId);
+  const before = breakdownStore.getState().states[key],
+    deletes = removed.length;
+  libraryStore.getState().setAnalysis(structuredClone(analysis));
+  await flushBreakdowns();
+  assert.deepEqual(persisted.get(key), response());
+  assert.equal(breakdownStore.getState().states[key], before);
+  assert.equal(removed.length, deletes);
+});
+
+test('download cancellation aborts breakdown GET and leaves the cache empty', async () => {
+  const started = deferred(),
+    controller = new AbortController();
+  let requestSignal: AbortSignal | null | undefined;
+  setAnalysisRuntime({
+    fetch: async (_url, init) => {
+      requestSignal = init?.signal;
+      started.resolve();
+      return new Promise<Response>((_resolve, reject) => {
+        requestSignal!.addEventListener('abort', () => reject(new Error('Aborted')), { once: true });
+      });
+    },
+  });
+  const pending = loadBreakdown(songId, sentenceId, { cachedOnly: true, signal: controller.signal });
+  await started.promise;
+  controller.abort();
+  await pending;
+  assert.equal(requestSignal?.aborted, true);
+  assert.equal(persisted.has(key), false);
 });

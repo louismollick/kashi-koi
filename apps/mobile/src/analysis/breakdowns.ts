@@ -1,9 +1,30 @@
-import type { Breakdown } from '@kashi-koi/shared/breakdown';
+import { validateBreakdown, type Breakdown } from '@kashi-koi/shared/breakdown';
 import { create } from 'zustand';
+import { isOfflineMode } from '@/data/offlineMode';
 import { timelineTexts } from '@/lyrics/sentences';
 import { getLyrics, libraryStore } from '@/store/libraryStore';
 import { analysisServerUrl, analysisSession } from './fetcher';
 import { fetchBreakdown, requestBreakdown } from './client';
+
+const defaults = {
+  read: async (fp: string, start: number) => (await import('@/navidrome/db')).readBreakdown(fp, start),
+  save: async (value: Breakdown) => (await import('@/navidrome/db')).saveBreakdown(value),
+  remove: async (fp: string) => (await import('@/navidrome/db')).deleteBreakdowns(fp),
+};
+let runtime = defaults;
+let pendingPersistence = Promise.resolve();
+
+/** Inject the unified SQLite cache for plain Node tests. */
+export function setBreakdownRuntime(overrides: Partial<typeof defaults> = {}) {
+  runtime = { ...defaults, ...overrides };
+}
+/** Order obsolete deletes after accepted writes and before later reads. */
+function persist(work: () => Promise<void>) {
+  const next = pendingPersistence.catch(() => {}).then(work);
+  pendingPersistence = next;
+  return next;
+}
+export const flushBreakdowns = () => pendingPersistence.catch(() => {});
 
 export type BreakdownTarget = { fingerprint: string; start: number; text: string; translation: string };
 export type BreakdownState =
@@ -46,32 +67,60 @@ export function resetBreakdowns() {
 }
 
 /** Read the shared cache, then generate only when the owner has configured a token. */
-export function loadBreakdown(songId: string | null | undefined, sentenceId: string | null | undefined): Promise<void> {
+export function loadBreakdown(
+  songId: string | null | undefined,
+  sentenceId: string | null | undefined,
+  { cachedOnly = false, signal }: { cachedOnly?: boolean; signal?: AbortSignal } = {},
+): Promise<void> {
   const target = breakdownTarget(songId, sentenceId),
     session = analysisSession();
-  if (!target || !session.base) return Promise.resolve();
-  if (server !== session.base) {
+  if (!target || signal?.aborted) return Promise.resolve();
+  if (session.base && server !== session.base) {
     resetBreakdowns();
     server = session.base;
   }
   const key = keyOf(target),
     version = generation;
   const existing = requests.get(key);
-  if (existing) return existing;
+  if (existing) {
+    if (!signal) return existing;
+    // A download can stop waiting for a request started by an open sentence.
+    return new Promise<void>((resolve) => {
+      const finish = () => {
+        signal.removeEventListener('abort', finish);
+        resolve();
+      };
+      signal.addEventListener('abort', finish, { once: true });
+      void existing.finally(finish);
+      if (signal.aborted) finish();
+    });
+  }
   const state = breakdownStore.getState().states[key];
   if (state?.status === 'ready') return Promise.resolve();
   const source = libraryStore.getState().analyses[target.fingerprint];
   const valid = () =>
+    !signal?.aborted &&
     version === generation &&
     session.valid() &&
-    libraryStore.getState().analyses[target.fingerprint] === source &&
+    JSON.stringify(libraryStore.getState().analyses[target.fingerprint]) === JSON.stringify(source) &&
     JSON.stringify(breakdownTarget(songId, sentenceId)) === JSON.stringify(target);
   const update = (state: BreakdownState) => {
     if (valid()) breakdownStore.setState(({ states }) => ({ states: { ...states, [key]: state } }));
   };
-  update({ status: 'loading' });
+  if (session.base || isOfflineMode()) update({ status: 'loading' });
   const work = (async () => {
     try {
+      await flushBreakdowns();
+      const cached = await runtime.read(target.fingerprint, target.start);
+      if (!valid()) return;
+      if (cached && !validateBreakdown({ chunks: cached.chunks }, target.text, target.translation).length) {
+        update({ status: 'ready', breakdown: cached });
+        return;
+      }
+      if (isOfflineMode() || !session.base) {
+        if (isOfflineMode()) update({ status: 'missing' });
+        return;
+      }
       let result = await fetchBreakdown(
         session.base,
         target.fingerprint,
@@ -79,9 +128,10 @@ export function loadBreakdown(songId: string | null | undefined, sentenceId: str
         target.text,
         target.translation,
         session.fetch,
+        signal,
       );
       if (!valid()) return;
-      if (result.status === 404 && session.token) {
+      if (result.status === 404 && session.token && !cachedOnly && !isOfflineMode()) {
         result = await requestBreakdown(
           session.base,
           session.token,
@@ -91,6 +141,14 @@ export function loadBreakdown(songId: string | null | undefined, sentenceId: str
           target.translation,
           session.fetch,
         );
+      }
+      if (isOfflineMode() || !valid()) return;
+      if (result.status === 200) {
+        const value = result.breakdown,
+          save = runtime.save;
+        await persist(async () => {
+          if (valid()) await save(value);
+        });
       }
       update(result.status === 200 ? { status: 'ready', breakdown: result.breakdown } : { status: 'missing' });
     } catch (error) {
@@ -109,7 +167,7 @@ export function loadBreakdown(songId: string | null | undefined, sentenceId: str
 
 /** Owner-only background requests share the same cache and never reject. */
 export function prefetchBreakdown(songId: string | null | undefined, sentenceId: string | null | undefined): void {
-  if (analysisSession().token) void loadBreakdown(songId, sentenceId);
+  if (!isOfflineMode() && analysisSession().token) void loadBreakdown(songId, sentenceId);
 }
 
 /**
@@ -132,7 +190,7 @@ export function englishSpans(translation: string, chunks: Breakdown['chunks']) {
 }
 
 export const canExplain = (songId: string | null | undefined) =>
-  !!getLyrics(songId ?? null).analysis && !!analysisServerUrl();
+  !!getLyrics(songId ?? null).analysis && (isOfflineMode() || !!analysisServerUrl());
 
 /** Subscribe to lyrics and the target's transient request state; loading is an explicit action. */
 export function useBreakdown(songId: string | null | undefined, sentenceId: string | null | undefined) {
@@ -145,11 +203,27 @@ export function useBreakdown(songId: string | null | undefined, sentenceId: stri
 // A replacement analysis deletes its server breakdowns. Drop those transient phone results too.
 libraryStore.subscribe((state, previous) => {
   if (state.analyses === previous.analyses) return;
-  const changed = Object.keys(previous.analyses).filter((fp) => state.analyses[fp] !== previous.analyses[fp]);
+  const changed = Object.keys(previous.analyses).filter(
+    (fp) =>
+      state.analyses[fp] !== previous.analyses[fp] &&
+      JSON.stringify(state.analyses[fp]) !== JSON.stringify(previous.analyses[fp]),
+  );
   if (!changed.length) return;
+  const remove = runtime.remove;
+  void persist(async () => {
+    for (const fp of changed) await remove(fp);
+  }).catch(() => {});
   const obsolete = (key: string) => changed.some((fp) => key.startsWith(`${fp}:`));
   for (const key of requests.keys()) if (obsolete(key)) requests.delete(key);
   breakdownStore.setState(({ states }) => ({
     states: Object.fromEntries(Object.entries(states).filter(([key]) => !obsolete(key))),
   }));
 });
+
+/** Download preparation only reads existing server explanations; 404 never generates one. */
+export async function cacheSongBreakdowns(songId: string, valid: () => boolean, signal?: AbortSignal) {
+  for (const sentence of getLyrics(songId).sentences) {
+    if (!valid() || isOfflineMode()) break;
+    await loadBreakdown(songId, sentence.id, { cachedOnly: true, signal });
+  }
+}

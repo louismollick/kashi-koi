@@ -13,6 +13,7 @@
       "expo-router",
       ["expo-audio", { "enableBackgroundPlayback": true }],
       "expo-sqlite",
+      "./modules/kashi-downloads/plugin",
       "expo-secure-store",
       ["expo-build-properties", { "ios": { "deploymentTarget": "26.0" } }]
     ],

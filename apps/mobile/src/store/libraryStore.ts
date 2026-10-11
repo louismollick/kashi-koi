@@ -1,3 +1,4 @@
+import { isSongAvailable } from '@/data/libraryVisibility';
 import { quizChoices } from '@/lyrics/choices';
 import { withSentences, type LyricsInput } from '@/lyrics/sentences';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
@@ -137,6 +138,7 @@ export const dueLines = (list: ReviewList, now = Date.now()) =>
 export const readyReviewLines = (list: ReviewList, now = Date.now()) =>
   list.filter(
     (item) =>
+      isSongAvailable(item.songId) &&
       isDue(item, now) &&
       hasTranslations(item.songId) &&
       getLyrics(item.songId).sentences.some((sentence) => sentence.id === item.sentenceId),
