@@ -222,11 +222,21 @@ libraryStore.subscribe((state, previous) => {
 
 /** Download preparation only reads existing server explanations; 404 never generates one. */
 export async function cacheSongBreakdowns(songId: string, valid: () => boolean, signal?: AbortSignal) {
-  for (const sentence of getLyrics(songId).sentences) {
+  const { fingerprint, sentences } = getLyrics(songId),
+    analysis = libraryStore.getState().analyses[fingerprint];
+  for (const sentence of sentences) {
     if (!valid() || isOfflineMode()) break;
     const target = breakdownTarget(songId, sentence.id);
     await loadBreakdown(songId, sentence.id, { cachedOnly: true, signal });
     const state = target && breakdownStore.getState().states[keyOf(target)];
     if (valid() && !signal?.aborted && state?.status === 'failed') throw new Error(state.error);
   }
+  // A replacement analysis has different sentences; leave the download retryable rather than half-cached.
+  const current = getLyrics(songId).fingerprint;
+  if (
+    valid() &&
+    !signal?.aborted &&
+    (current !== fingerprint || libraryStore.getState().analyses[current] !== analysis)
+  )
+    throw new Error('Song analysis changed during download');
 }
