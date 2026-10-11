@@ -3,7 +3,7 @@ import { FlatList, Pressable, TextInput, View, useWindowDimensions } from 'react
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
-import { countBy, countedFilters, getVisibleLibrary, groupBy, syncedIds } from '@/data/libraryVisibility';
+import { countBy, countedFilters, getVisibleLibrary, getVisibleSongs, groupBy, syncedIds } from '@/data/libraryVisibility';
 import { useLibraryFilters } from '@/store/appStore';
 import { Header } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
@@ -48,7 +48,8 @@ export default function LibraryScreen() {
     return {
       visible,
       hidden: getVisibleLibrary(countedFilters(filters), source),
-      albumCounts: countBy(visible.songs, (song) => song.albumId),
+      // Counts describe the whole album, not just the songs matching the search.
+      albumCounts: countBy(getVisibleSongs(songs, filters), (song) => song.albumId),
       artistAlbums: groupBy(visible.albums, (album) => album.artistId),
       synced: syncedIds(songs),
     };
