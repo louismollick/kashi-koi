@@ -15,22 +15,28 @@ import { artStore } from '@/store/artStore';
 export const coverUrl = (session: Session, coverArt: string, size: number) =>
   mediaUrl(session, 'getCoverArt', coverArt, size > 160 ? 600 : 360);
 
-let prefetching = false;
+let latest: (string | undefined)[] | null = null,
+  prefetching = false;
 /**
  * Warm the disk cache for grid and row covers after a sync, so the first scroll doesn't wait on the server.
- * Native prefetches can't be cancelled, so small batches stop once the session changes or the app goes offline.
+ * Native prefetches can't be cancelled, so small batches stop once the session changes, the app goes offline
+ * or a newer request arrives, which then runs instead.
  */
 export async function prefetchCovers(coverArts: (string | undefined)[]) {
-  const session = sessionStore.getState().session;
-  if (prefetching || !session) return;
+  latest = coverArts;
+  if (prefetching) return;
   prefetching = true;
-  const ids = [...new Set(coverArts)].filter((id): id is string => !!id);
   try {
-    for (let start = 0; start < ids.length; start += 8) {
-      if (sessionStore.getState().session !== session || appStore.getState().offlineMode) return;
-      const urls = ids.slice(start, start + 8).flatMap((id) => (localArtUri(id) ? [] : [coverUrl(session, id, 0)]));
-      // A failed batch only means those covers load on demand.
-      if (urls.length) await Image.prefetch(urls, 'disk').catch(() => false);
+    while (latest) {
+      const ids = [...new Set(latest)].filter((id): id is string => !!id),
+        session = sessionStore.getState().session;
+      latest = null;
+      for (let start = 0; session && start < ids.length; start += 8) {
+        if (latest || sessionStore.getState().session !== session || appStore.getState().offlineMode) break;
+        const urls = ids.slice(start, start + 8).flatMap((id) => (localArtUri(id) ? [] : [coverUrl(session, id, 0)]));
+        // A failed batch only means those covers load on demand.
+        if (urls.length) await Image.prefetch(urls, 'disk').catch(() => false);
+      }
     }
   } finally {
     prefetching = false;
