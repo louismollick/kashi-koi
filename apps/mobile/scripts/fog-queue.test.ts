@@ -206,8 +206,7 @@ for (const skip of ['seek', 'jump', 'waiting seek', 'song change', 'before quiz'
     const lyrics = getLyrics('dawn');
     appStore.setState({ answerTime: skip === 'waiting seek' || skip === 'song change' ? 3 : 0 });
     if (skip !== 'before quiz') appStore.getState().setQuizToggle(true);
-    if (skip === 'waiting seek' || skip === 'song change')
-      appStore.getState().updatePlayback(9000, 238000, true);
+    if (skip === 'waiting seek' || skip === 'song change') appStore.getState().updatePlayback(9000, 238000, true);
     if (skip === 'song change') appStore.getState().nextSong();
     else if (skip === 'jump') appStore.getState().jumpToLine(3);
     else if (skip === 'before quiz') {
@@ -245,7 +244,7 @@ test('turning quiz on after a sentence ended in listen mode does not score it', 
   libraryStore.setState({
     lyrics: {
       ...libraryStore.getState().lyrics,
-      dawn: { ...lyrics, timeline: lyrics.timeline.map((line, index) => index ? line : { ...line, endMs: 8000 }) },
+      dawn: { ...lyrics, timeline: lyrics.timeline.map((line, index) => (index ? line : { ...line, endMs: 8000 })) },
     },
   });
   appStore.setState({ answerTime: 0 });
@@ -271,7 +270,11 @@ for (const release of ['timeout', 'play', 'finish', 'zero'] as const)
     else if (release === 'play') appStore.getState().setPlaying(true);
     else finishSong();
     assert.deepEqual(appStore.getState().runEnd, {
-      songId: 'dawn', hits: 0, answered: 1, bestCombo: 0, perfect: false,
+      songId: 'dawn',
+      hits: 0,
+      answered: 1,
+      bestCombo: 0,
+      perfect: false,
     });
     assert.equal(appStore.getState().reviewList[0]?.sentenceId, sentence.id);
     assert.equal(appStore.getState().songId, 'glass');

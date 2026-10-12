@@ -656,7 +656,13 @@ export const appStore = create<AppState>()(
           if (state.answerTime === 0) scoreSentence(false, null);
           else {
             const until = state.answerTime === null ? null : Date.now() + state.answerTime * 1000;
-            set({ positionMs, durationMs, lineIndex: occurrence.end, playing: false, answerWait: { occurrence, until } });
+            set({
+              positionMs,
+              durationMs,
+              lineIndex: occurrence.end,
+              playing: false,
+              answerWait: { occurrence, until },
+            });
             transport.pause();
             if (state.answerTime !== null) scheduleAnswerRelease(state.answerTime * 1000);
             return;

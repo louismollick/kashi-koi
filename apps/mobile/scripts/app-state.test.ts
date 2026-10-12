@@ -1386,12 +1386,13 @@ for (const answerTime of [0, 3])
         t.mock.timers.tick(3000);
       }
       assert.deepEqual(appStore.getState().runEnd, {
-        songId: 'dawn', hits: 0, answered: 1, bestCombo: 0, perfect: false,
+        songId: 'dawn',
+        hits: 0,
+        answered: 1,
+        bestCombo: 0,
+        perfect: false,
       });
-      assert.equal(
-        appStore.getState().reviewList.find((item) => item.sentenceId === sentenceId)?.kind,
-        'due',
-      );
+      assert.equal(appStore.getState().reviewList.find((item) => item.sentenceId === sentenceId)?.kind, 'due');
       assert.equal(appStore.getState().songId, 'glass');
       assert.equal(appStore.getState().queueIndex, 1);
       status(237990, false, true);
