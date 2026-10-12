@@ -115,6 +115,14 @@ export default function RootLayout() {
               gestureResponseDistance: { bottom: height - 150 },
             }}
           />
+          <Stack.Screen
+            name="full-player"
+            options={{
+              animation: 'slide_from_bottom',
+              gestureDirection: 'vertical',
+              gestureResponseDistance: { bottom: height - 150 },
+            }}
+          />
           <Stack.Screen name="clip-review" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
           <Stack.Screen
             name="edit-line"
@@ -140,9 +148,15 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: 'transparent' },
             }}
           />
-          <Stack.Screen name="results" />
+          <Stack.Screen
+            name="song-menu"
+            options={{
+              presentation: 'transparentModal',
+              animation: 'slide_from_bottom',
+              contentStyle: { backgroundColor: 'transparent' },
+            }}
+          />
           <Stack.Screen name="settings" />
-          <Stack.Screen name="song-info" />
         </Stack.Protected>
       </Stack>
     </ThemeProvider>

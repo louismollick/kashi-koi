@@ -342,7 +342,7 @@ test('offline visibility, lyric hidden counts, album queue steps and review read
   try {
     appStore.getState().startAlbum('dawn');
     assert.equal(appStore.getState().songId, 'dawn');
-    appStore.setState({ playbackQueue: ['dawn', 'glass', 'rain'] });
+    appStore.setState({ queue: ['dawn', 'glass', 'rain'] });
     appStore.getState().nextSong();
     assert.equal(appStore.getState().songId, 'rain');
     appStore.getState().previousSong();

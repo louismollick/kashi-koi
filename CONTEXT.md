@@ -66,17 +66,21 @@ _Avoid_: Cache (reserve for the evictable copies kept while browsing), save, syn
 A setting that limits the app to downloaded songs and stops all network work. Downloaded files are used whenever they exist, online or not.
 _Avoid_: Airplane mode, local mode
 
+**Queue**:
+The songs that play after the current one: the list a song was started from, plus anything added with Play next or Add to queue. When the queue runs out, autoplay continues with a shuffle of the visible library.
+_Avoid_: Playlist, up next (that's the view, not the list)
+
 ### Modes
 
 **Quiz toggle**:
 The switch on the player that decides how songs play: quiz mode when on, listen mode when off.
 
 **Listen mode**:
-Playback with the quiz toggle off. A normal player whose only learning input is the lost mark. Nothing in listen mode counts toward a song being understood.
+Playback with the quiz toggle off. A normal player whose only learning input is the lost mark. Nothing in listen mode changes the fog map.
 _Avoid_: Walk mode, passive mode
 
 **Translations toggle**:
-A listen-mode switch that shows each line's translation and furigana. Off by default, so listening stays a test of what you understand.
+A listen-mode setting that shows each line's translation and furigana. On by default: anyone who wants to test themselves can look away, and the switch is for those who'd rather not see them at all.
 _Avoid_: Help mode, hints
 
 **Quiz mode**:
@@ -94,7 +98,7 @@ A sentence added to the review list by a lost mark that hasn't been confirmed ye
 _Avoid_: Unsorted mark, pending mark, new line
 
 **Review list**:
-The sentences the user has explicitly chosen to study, either from lost marks or from the results of a run. Each sentence comes back on a spaced schedule: each right answer doubles the gap, starting at one day, and a wrong answer makes it due again. In a song without a song analysis, each line is its own sentence.
+The sentences the user studies, added by lost marks and by misses in a run (each with undo). Each sentence comes back on a spaced schedule: each right answer doubles the gap, starting at one day, and a wrong answer makes it due again. In a song without a song analysis, each line is its own sentence.
 _Avoid_: Deck, queue, quest log
 
 **Due sentence**:
@@ -118,17 +122,17 @@ How long the song waits at the end of a sentence for an answer in quiz mode. No 
 _Avoid_: Timer, time limit
 
 **Run**:
-One play-through of a song (or of review sentences) in Meaning Match. A missed sentence goes onto the review list only if the user picks it on the results screen.
+A stretch of quiz mode within one play of a song. It can start or stop anywhere in the song, and nothing is lost by stopping: every answer counts toward the fog map the moment it's given, and a miss goes straight onto the review list with an undo.
 _Avoid_: Session, attempt
 
 **Combo**:
 The number of sentences answered correctly in a row within a run. A miss resets it to zero.
 _Avoid_: Streak (reserve for daily habits, if ever)
 
-**Rank**:
-A song's best run grade. Separate from, and never implies, understood.
-_Avoid_: Score, stars
+**Fog map**:
+A song's sentences shown as a strip of tiles, and the song's lasting progress as a percentage. Only tested answers (quiz mode and clip review) change it; listen mode never does. A tile clears in two passes: the first right answer thins the fog (half credit), and a right answer in a later run clears it. A miss on a cleared tile turns it red, which counts as uncleared until it's answered right again.
+_Avoid_: Progress bar, completion, mastery
 
-**Understood**:
-A song the user has manually marked as understood. It is a personal claim, not computed from anything.
-_Avoid_: Mastered, cleared, completed
+**Perfect run**:
+A song where every sentence was answered right within a single run, following the song as it plays. Clip review never earns one. Earned once and kept, whatever later runs do. Shown as a gold koi; a song without one shows the koi missing.
+_Avoid_: Rank, score, full combo, mastered

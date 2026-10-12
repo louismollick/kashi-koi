@@ -68,6 +68,8 @@ export default function LibraryScreen() {
       synced: syncedIds(songs),
     };
   }, [filters, source, songs, lyrics]);
+  // Playing from the Songs list queues the list as shown.
+  const queue = useMemo(() => visible.songs.map((song) => song.id), [visible.songs]);
   const kind = segment === 'Albums' ? 'albums' : segment === 'Artists' ? 'artists' : 'songs';
   const header = (
     <View style={{ gap: 16, paddingBottom: 16 }}>
@@ -122,7 +124,7 @@ export default function LibraryScreen() {
           contentContainerStyle={{ padding: 16 }}
           ListHeaderComponent={header}
           ListEmptyComponent={empty}
-          renderItem={({ item }) => <SongRow song={item} />}
+          renderItem={({ item }) => <SongRow song={item} queue={queue} />}
           keyboardShouldPersistTaps="handled"
         />
       ) : segment === 'Albums' ? (

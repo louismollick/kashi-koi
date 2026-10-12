@@ -2,8 +2,7 @@ import { canExplain } from '@/analysis/breakdowns';
 import { translationHint } from '@/japanese/translate';
 import { isJapanese } from '@/japanese/text';
 import { useEffect } from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { ActivityIndicator, Pressable, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import {
@@ -21,7 +20,70 @@ import { CenteredList, LyricRow } from '@/components/Lyrics';
 import { QuizColumn } from '@/components/QuizLayout';
 import { PlayerBar } from '@/components/PlayerBar';
 import { SongIntro } from '@/components/SongIntro';
+import { Koi } from '@/components/Fog';
+import { songMenu } from './song-menu';
 import { Button, IconButton, Label, PixelToggle, styles } from '@/components/ui';
+
+// Listen-mode toasts float just above REVIEW LATER.
+const floating = { position: 'absolute', left: 16, right: 16, bottom: '100%' } as const;
+
+/** Confirms a lost mark or a quiz miss going onto the review list, with a short window to undo it. */
+function AddedToast({ style }: { style?: ViewStyle }) {
+  return (
+    <PixelFrame style={style} fill={colors.slate} contentStyle={[styles.row, { paddingLeft: 12 }]}>
+      <Label style={{ flex: 1, fontSize: 13, color: colors.green }}>✓ Added to review</Label>
+      <Button
+        label="Undo added sentence"
+        contentStyle={{ minHeight: 40, paddingHorizontal: 12, paddingVertical: 8 }}
+        onPress={() => appStore.getState().undoLostMark()}
+      >
+        <Label style={{ fontSize: 12, color: colors.cream, fontWeight: '700' }}>UNDO</Label>
+      </Button>
+    </PixelFrame>
+  );
+}
+
+/** How the run went, shown over the next song for a few seconds after a quiz song ends. */
+function RunEndToast({ style }: { style?: ViewStyle }) {
+  const runEnd = appStore((state) => state.runEnd);
+  const title = libraryStore((state) => (runEnd ? state.bySong[runEnd.songId]?.title : undefined));
+  // Shown for 4s after the song ended, so a card nobody saw never appears later over another song.
+  const remaining = runEnd ? runEnd.at + 4000 - Date.now() : 0;
+  useEffect(() => {
+    if (!runEnd) return;
+    const timer = setTimeout(() => appStore.getState().dismissRunEnd(), Math.max(0, remaining));
+    return () => clearTimeout(timer);
+  }, [runEnd]);
+  if (!runEnd || remaining <= 0) return null;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Dismiss run summary"
+      onPress={() => appStore.getState().dismissRunEnd()}
+      style={style}
+    >
+      <PixelFrame
+        fill={runEnd.perfect ? colors.maroon : colors.slate}
+        border={runEnd.perfect ? colors.combo : undefined}
+        contentStyle={[styles.row, { padding: 12 }]}
+      >
+        {runEnd.perfect && <Koi perfect size={28} />}
+        <View style={{ flex: 1 }}>
+          <Label
+            numberOfLines={1}
+            style={{ fontSize: 13, fontWeight: '700', color: runEnd.perfect ? colors.combo : colors.text }}
+          >
+            {runEnd.perfect ? 'PERFECT RUN' : title}
+          </Label>
+          <Label muted numberOfLines={1} style={{ fontSize: 13 }}>
+            {runEnd.perfect && title ? `${title} · ` : ''}
+            {runEnd.hits}/{runEnd.answered} right · best combo {runEnd.bestCombo}
+          </Label>
+        </View>
+      </PixelFrame>
+    </Pressable>
+  );
+}
 
 /** ListenMode and QuizMode share one sheet: header toggles, lyrics or quiz column, and the PlayerBar. */
 export default function PlayerScreen() {
@@ -39,6 +101,7 @@ export default function PlayerScreen() {
   const reviewList = appStore((state) => state.reviewList);
   const addedId = appStore((state) => state.addedId);
   const addedExpiresAt = appStore((state) => state.addedExpiresAt);
+  const runEnd = appStore((state) => !!state.runEnd);
   const lyrics = libraryStore((state) => state.lyrics[songId ?? '']);
   const timeline = lyrics?.timeline ?? [];
   const lines = timeline.map((occurrence) => lyrics!.lines.find((line) => line.id === occurrence.lineId)!);
@@ -70,9 +133,6 @@ export default function PlayerScreen() {
     const timer = setTimeout(() => appStore.getState().dismissToast(), Math.max(0, addedExpiresAt - Date.now()));
     return () => clearTimeout(timer);
   }, [addedId, addedExpiresAt]);
-  useEffect(() => {
-    if (run.finished && quizToggle) router.replace('/results');
-  }, [run.finished, quizToggle, router]);
 
   if (!song)
     return (
@@ -91,18 +151,7 @@ export default function PlayerScreen() {
           quizToggle && occurrence ? `Sentence ${sentences.indexOf(occurrence) + 1} of ${sentences.length}` : undefined
         }
         right={
-          <View style={[styles.row, { gap: 12 }]}>
-            {!quizToggle && (
-              <IconButton
-                name="translate"
-                label="Translations"
-                selected={showTranslations}
-                fill={showTranslations ? colors.lavender : colors.panel}
-                border={showTranslations ? colors.lavender : colors.track}
-                color={showTranslations ? colors.bg : colors.muted}
-                onPress={() => appStore.getState().toggleTranslations()}
-              />
-            )}
+          <View style={[styles.row, { gap: 14 }]}>
             <View style={[styles.row, { gap: 6 }]}>
               <Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label>
               <PixelToggle
@@ -112,6 +161,7 @@ export default function PlayerScreen() {
                 onPress={() => appStore.getState().setQuizToggle(!quizToggle)}
               />
             </View>
+            <IconButton name="more" label="Song menu" onPress={() => router.push(songMenu(song.id))} />
           </View>
         }
       />
@@ -119,7 +169,7 @@ export default function PlayerScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Song info"
-          onPress={() => router.push({ pathname: '/song-info', params: { id: song.id } })}
+          onPress={() => router.push(songMenu(song.id))}
           style={[styles.row, { paddingHorizontal: 16, minHeight: 40 }]}
         >
           {request.status === 'failed' ? (
@@ -160,6 +210,7 @@ export default function PlayerScreen() {
           onAnswer={(choice) => appStore.getState().answer(choice)}
           onExplain={explainable && sentenceId ? () => explain(sentenceId) : undefined}
           onContinue={answerWait ? () => appStore.getState().continueAfterAnswer() : undefined}
+          toast={showToast ? <AddedToast /> : runEnd ? <RunEndToast /> : undefined}
         />
       ) : !lines.length ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -204,35 +255,9 @@ export default function PlayerScreen() {
                 );
               })}
             </CenteredList>
-            <Svg pointerEvents="none" width="100%" height="100%" style={{ position: 'absolute' }}>
-              <Defs>
-                <LinearGradient id="lyricFade" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0" stopColor={colors.bg} stopOpacity={1} />
-                  <Stop offset="0.12" stopColor={colors.bg} stopOpacity={0} />
-                  <Stop offset="0.88" stopColor={colors.bg} stopOpacity={0} />
-                  <Stop offset="1" stopColor={colors.bg} stopOpacity={1} />
-                </LinearGradient>
-              </Defs>
-              <Rect width="100%" height="100%" fill="url(#lyricFade)" />
-            </Svg>
           </View>
           <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 28 }}>
-            {showToast && (
-              <PixelFrame
-                style={{ position: 'absolute', left: 16, right: 16, bottom: '100%' }}
-                fill={colors.slate}
-                contentStyle={[styles.row, { paddingLeft: 12 }]}
-              >
-                <Label style={{ flex: 1, fontSize: 13, color: colors.green }}>✓ Added</Label>
-                <Button
-                  label="Undo added sentence"
-                  contentStyle={{ minHeight: 40, paddingHorizontal: 12, paddingVertical: 8 }}
-                  onPress={() => appStore.getState().undoLostMark()}
-                >
-                  <Label style={{ fontSize: 12, color: colors.cream, fontWeight: '700' }}>UNDO</Label>
-                </Button>
-              </PixelFrame>
-            )}
+            {showToast ? <AddedToast style={floating} /> : <RunEndToast style={floating} />}
             <View style={styles.row}>
               {explainable && sentenceId && (
                 <Button

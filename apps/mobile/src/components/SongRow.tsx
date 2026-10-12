@@ -5,14 +5,28 @@ import { colors } from '@/constants/theme';
 import { getAlbum } from '@/store/libraryStore';
 import { appStore, useLibraryFilters } from '@/store/appStore';
 import { Cover } from './Cover';
-import { downloadSheet } from './DownloadButton';
+import { FogBadge } from './Fog';
+import { songMenu } from '@/screens/song-menu';
 import { useIsDownloaded } from '@/downloads';
 import { Icon } from './Icon';
 import { Label, styles } from './ui';
 import type { Song } from '@/types/domain';
 
-/** Play a song from the Library's cover rows or an album's numbered list. */
-export const SongRow = memo(function SongRow({ song, number }: { song: Song; number?: number }) {
+/**
+ * A song in the Library, an album's numbered list or Up next. Tapping plays it with `queue` (stable ids, default just
+ * this song) as the queue, unless `onPress` overrides it. Long-press opens the song menu.
+ */
+export const SongRow = memo(function SongRow({
+  song,
+  number,
+  queue,
+  onPress,
+}: {
+  song: Song;
+  number?: number;
+  queue?: string[];
+  onPress?: () => void;
+}) {
   const router = useRouter();
   const filters = useLibraryFilters(),
     downloaded = useIsDownloaded(song.id);
@@ -21,11 +35,14 @@ export const SongRow = memo(function SongRow({ song, number }: { song: Song; num
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Play ${song.title}${song.lyricsStatus === 'synced' ? '' : ', no lyrics'}`}
-      onPress={() => {
-        router.push('/player');
-        appStore.getState().startSong(song.id);
-      }}
-      onLongPress={() => router.push(downloadSheet({ kind: 'song', id: song.id }))}
+      onPress={
+        onPress ??
+        (() => {
+          router.push('/player');
+          appStore.getState().startSong(song.id, queue);
+        })
+      }
+      onLongPress={() => router.push(songMenu(song.id))}
       style={({ pressed }) => [
         styles.row,
         {
@@ -60,9 +77,12 @@ export const SongRow = memo(function SongRow({ song, number }: { song: Song; num
           </Label>
         )}
       </View>
-      <Label muted style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>
-        {duration}
-      </Label>
+      <View style={{ alignItems: 'flex-end', gap: 2 }}>
+        <Label muted style={{ fontSize: 13, fontVariant: ['tabular-nums'] }}>
+          {duration}
+        </Label>
+        <FogBadge songId={song.id} compact />
+      </View>
     </Pressable>
   );
 });

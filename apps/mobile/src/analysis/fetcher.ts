@@ -119,9 +119,12 @@ export function prioritizeAnalyses(ids: string[]) {
 export function fetchLibraryAnalyses() {
   const state = appStore.getState();
   return prioritizeAnalyses(
-    [state.songId, ...(state.playbackQueue ?? []), ...libraryStore.getState().songs.map((song) => song.id)].filter(
-      (id): id is string => !!id,
-    ),
+    [
+      state.songId,
+      ...state.queue.slice(state.queueIndex + 1),
+      ...state.autoplay,
+      ...libraryStore.getState().songs.map((song) => song.id),
+    ].filter((id): id is string => !!id),
   );
 }
 
