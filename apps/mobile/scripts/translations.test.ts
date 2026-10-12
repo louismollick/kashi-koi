@@ -149,7 +149,8 @@ test('English lines skip answering, grading and lost marks', () => {
   assert.equal(appStore.getState().reviewList[0]!.sentenceId, '0:1');
   appStore.getState().moveReviewLine(appStore.getState().reviewList[0]!.id, '0:2');
   assert.equal(appStore.getState().reviewList[0]!.sentenceId, '0:1');
-  appStore.getState().sendToReview('0:2', true);
+  appStore.getState().jumpToLine(2);
+  appStore.getState().answer('wrong');
   assert.equal(appStore.getState().reviewList.length, 1);
   appStore.getState().jumpToLine(1);
   assert.equal(appStore.getState().run.choices['0:1'], choices);
@@ -227,7 +228,7 @@ test('queue persists unique Japanese texts and applies them across shared lines 
   assert.equal(getLineText(getLyrics('0').lines[0]!), '日');
 });
 
-test('playing song and album queue have priority over the library backlog', async () => {
+test('playing song and album queue have priority over the library backlog', async (t) => {
   libraryStore.getState().setLibrary(makeLibrary([['日'], ['月'], ['星']]));
   const batches: string[][] = [];
   setTranslator(
@@ -240,6 +241,7 @@ test('playing song and album queue have priority over the library backlog', asyn
     },
     async () => {},
   );
+  t.mock.method(Math, 'random', () => 0.99);
   appStore.getState().startSong('2');
   await setTranslationForeground(true);
   assert.deepEqual(batches, [['星'], ['日'], ['月']]);
@@ -346,9 +348,9 @@ test('failed translation or persistence skips a batch for this run and retries o
 test('translation settings persist and reset on logout', async () => {
   appStore.getState().toggleTranslations();
   appStore.setState({ translationPrompted: true });
-  assert.equal(appStore.getState().showTranslations, true);
-  appStore.setState(appStore.getInitialState(), true);
   assert.equal(appStore.getState().showTranslations, false);
+  appStore.setState(appStore.getInitialState(), true);
+  assert.equal(appStore.getState().showTranslations, true);
   assert.equal(appStore.getState().translationPrompted, false);
 });
 

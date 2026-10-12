@@ -1,7 +1,7 @@
 import { localAudioUri, localArtUri } from '@/downloads/store';
 import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync } from 'expo-audio';
-import { appStore, setTransport } from '@/store/appStore';
-import { hasTranslations, libraryStore } from '@/store/libraryStore';
+import { appStore, finishSong, setTransport } from '@/store/appStore';
+import { libraryStore } from '@/store/libraryStore';
 import { sessionStore } from '@/navidrome/session';
 import { mediaUrl, request } from '@/navidrome/subsonic';
 import { savePlayed } from '@/navidrome/db';
@@ -58,6 +58,7 @@ export async function setupTransport(valid = () => true) {
   const subscription = player.addListener('playbackStatusUpdate', (status) => {
     if (!status.playing) pausePending = false;
     if (!song) return;
+    const currentRevision = revision;
     if (status.error) {
       fail(status.error);
       return;
@@ -74,19 +75,19 @@ export async function setupTransport(valid = () => true) {
     if (status.playing && !wantsPlay && !pausePending && !seeking && !awaitingStart) {
       wantsPlay = true;
       appStore.getState().setPlaying(true);
-      // Releasing the last line completes the run and pauses again.
-      if (!wantsPlay) return;
+      // Releasing the last sentence can load another song; its first status owns playback.
+      if (!wantsPlay || revision !== currentRevision || awaitingStart) return;
     }
     const positionMs = status.currentTime * 1000,
       durationMs = (status.duration || song.duration) * 1000;
     const clip = appStore.getState().clipPlayback;
-    // Native EOF may arrive just short of duration; clips still need their refresh state.
-    const clipPositionMs = status.didJustFinish ? durationMs : positionMs;
+    // Native EOF may arrive just short of duration; score the final sentence at its end.
+    const playbackPositionMs = status.didJustFinish ? durationMs : positionMs;
     // Clip controls follow native pauses, while buffering and queued pause statuses keep the requested state.
     const clipPlaying = wantsPlay && (status.playing || status.isBuffering);
     appStore
       .getState()
-      .updatePlayback(clip ? clipPositionMs : positionMs, durationMs, clip ? clipPlaying : status.playing);
+      .updatePlayback(playbackPositionMs, durationMs, clip ? clipPlaying : status.playing);
     if (clip) return;
     if (!submitted && positionMs >= Math.min(durationMs / 2, 240000) && durationMs > 0) {
       submitted = true;
@@ -101,8 +102,7 @@ export async function setupTransport(valid = () => true) {
     }
     if (status.didJustFinish && !finished && !appStore.getState().answerWait) {
       finished = true;
-      if (appStore.getState().quizToggle && hasTranslations(song.id)) appStore.getState().completeRun();
-      else appStore.getState().nextSong();
+      finishSong();
     }
   });
   const transportLoad = (next: Song, offset = 0) => {

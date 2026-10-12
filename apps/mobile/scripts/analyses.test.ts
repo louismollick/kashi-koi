@@ -93,7 +93,7 @@ test('four reads run at once and playback plus queue lead the library', async ()
     },
     save: async () => {},
   });
-  appStore.setState({ songId: '6', playbackQueue: ['7', '5'] });
+  appStore.setState({ songId: '6', queue: ['7', '5'], queueIndex: -1 });
   const work = fetchLibraryAnalyses();
   assert.deepEqual(calls, ['6', '7', '5', '0']);
   // A new playing song jumps ahead of waiting library work.

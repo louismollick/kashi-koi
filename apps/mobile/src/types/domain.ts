@@ -1,7 +1,9 @@
 import type { Quiz } from '@kashi-koi/shared/analysis';
 
 export type { Decoy, Quiz } from '@kashi-koi/shared/analysis';
-export type Rank = 'S' | 'A' | 'B' | 'C';
+export type FogTile = 'fog' | 'half' | 'clear' | 'red';
+export type LineFog = { state: 'half'; run: string } | { state: 'clear' } | { state: 'red' };
+export type RunEnd = { songId: string; hits: number; answered: number; bestCombo: number; perfect: boolean };
 export type Combo = number;
 export type QuizToggle = boolean;
 export type ListenMode = 'listen';
@@ -60,17 +62,19 @@ export type NewLine = NewSentence;
 export type DueLine = DueSentence;
 export type LaterLine = LaterSentence;
 export type ClipReview = {
+  id: string;
   ids: string[];
   index: number;
   answers: Record<string, { choice: string; correct: boolean }>;
   choices: Record<string, Choice[]>;
   combo: Combo;
 };
-/** Each sentence keeps its first answer until the next run. */
+/** Each sentence keeps its first answer until the next run; null marks an unanswered miss. */
 export type Run = {
+  id: string;
   choices: Record<string, Choice[]>;
-  answers: Record<string, { choice: string; correct: boolean }>;
+  answers: Record<string, { choice: string | null; correct: boolean }>;
   combo: Combo;
   bestCombo: Combo;
-  finished: boolean;
+  perfect: boolean;
 };

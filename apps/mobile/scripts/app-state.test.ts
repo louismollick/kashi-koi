@@ -5,7 +5,14 @@ import { registerHooks } from 'node:module';
 import { withSentences } from '../src/lyrics/sentences';
 import { currentOccurrence } from '../src/navidrome/lyrics';
 import { sessionStore } from '../src/navidrome/session';
-import { appStore, getRunSummary, setTransport, hydrateAppState, resetAppState } from '../src/store/appStore';
+import {
+  appStore,
+  finishSong,
+  getRunSummary,
+  setTransport,
+  hydrateAppState,
+  resetAppState,
+} from '../src/store/appStore';
 import { albums, artists, firstSong, songs, songLyrics, fixtureLine, fixtureReviewList } from './fixtures';
 import {
   getAlbumSongs,
@@ -117,21 +124,24 @@ test('clip review is untimed and moves answered new lines onto the later schedul
   assert.equal(appStore.getState().reviewList.find((line) => line.id === 'new-rain')?.kind, 'due');
 });
 
-test('a full run finishes and only selected misses are sent to review', () => {
+test('a full run publishes feedback, adds misses immediately and advances', () => {
   appStore.getState().setQuizToggle(true);
   appStore.getState().jumpToLine(0);
   for (let index = 0; index < getLyrics(firstSong.id).lines.length; index++) {
     appStore.getState().answer(index === 0 ? 'wrong' : correctAnswer());
     appStore.getState().advanceLine();
   }
-  assert.equal(appStore.getState().run.finished, true);
-  assert.equal(Object.keys(appStore.getState().run.answers).length, 14);
-  const missed = getLyrics(firstSong.id).lines[0]!.id;
-  assert.ok(!appStore.getState().reviewList.some((line) => line.sentenceId === missed));
-  appStore.getState().sendToReview(missed, true);
-  assert.ok(appStore.getState().reviewList.some((line) => line.sentenceId === missed));
-  appStore.getState().sendToReview(missed, false);
-  assert.ok(!appStore.getState().reviewList.some((line) => line.sentenceId === missed));
+  assert.deepEqual(appStore.getState().runEnd, {
+    songId: firstSong.id,
+    hits: 13,
+    answered: 14,
+    bestCombo: 13,
+    perfect: false,
+  });
+  assert.deepEqual(appStore.getState().run.answers, {});
+  assert.ok(
+    appStore.getState().reviewList.some((line) => line.sentenceId === fixtureLine('dawn-0') && line.kind === 'due'),
+  );
 });
 
 test('an empty review list disables review entry points', () => {
@@ -230,33 +240,32 @@ test('undo has an absolute three-second window which cannot restart after leavin
   assert.ok(appStore.getState().reviewList.some((line) => line.id === id));
 });
 
-test('answering only the last line grades against the entire song and counts skipped lines as misses', () => {
+test('answering only the last sentence reports one answer without a perfect run', () => {
   appStore.getState().setQuizToggle(true);
-  appStore.getState().jumpToLine(getLyrics(firstSong.id).lines.length - 1);
+  appStore.getState().jumpToLine(getLyrics(firstSong.id).timeline.length - 1);
   appStore.getState().answer(correctAnswer());
   appStore.getState().advanceLine();
-  const summary = getRunSummary(firstSong, appStore.getState().run);
-  assert.equal(appStore.getState().run.finished, true);
-  assert.equal(summary.hits, 1);
-  assert.equal(summary.total, 14);
-  assert.equal(summary.rank, 'C');
-  assert.equal(summary.missed.length, 13);
-  appStore.getState().restartRun();
-  for (let index = 0; index < getLyrics(firstSong.id).lines.length; index++) {
-    appStore.getState().answer(correctAnswer());
-    appStore.getState().advanceLine();
-  }
-  assert.equal(getRunSummary(firstSong, appStore.getState().run).rank, 'S');
+  assert.deepEqual(appStore.getState().runEnd, {
+    songId: firstSong.id,
+    hits: 1,
+    answered: 1,
+    bestCombo: 1,
+    perfect: false,
+  });
+  assert.equal(appStore.getState().perfectRuns[firstSong.id], undefined);
 });
 
-test('result entry ids also survive moving and adding the original line again', () => {
-  appStore.getState().sendToReview(fixtureLine('dawn-0'), true);
-  const firstId = appStore.getState().reviewList.find((line) => line.sentenceId === fixtureLine('dawn-0'))!.id;
+test('miss entry ids survive moving and missing the original sentence again', () => {
+  appStore.getState().setQuizToggle(true);
+  appStore.getState().jumpToLine(0);
+  appStore.getState().answer('wrong');
+  const firstId = appStore.getState().addedId!;
   appStore.getState().moveReviewLine(firstId, fixtureLine('dawn-1'));
-  appStore.getState().sendToReview(fixtureLine('dawn-0'), true);
-  const secondId = appStore.getState().reviewList.find((line) => line.sentenceId === fixtureLine('dawn-0'))!.id;
+  appStore.getState().restartRun();
+  appStore.getState().answer('wrong');
+  const secondId = appStore.getState().addedId!;
   assert.notEqual(firstId, secondId);
-  appStore.getState().sendToReview(fixtureLine('dawn-0'), false);
+  appStore.getState().undoLostMark();
   assert.ok(appStore.getState().reviewList.some((line) => line.id === firstId));
   assert.ok(!appStore.getState().reviewList.some((line) => line.id === secondId));
 });
@@ -335,7 +344,7 @@ test('a no-lyrics song starts safely in listen and quiz modes with working trans
     appStore.getState().addLostMark();
     appStore.getState().advanceLine();
     assert.equal(appStore.getState().lineIndex, 0);
-    assert.equal(appStore.getState().run.finished, false);
+    assert.equal(appStore.getState().runEnd, null);
     assert.deepEqual(appStore.getState().run.answers, {});
     assert.deepEqual(appStore.getState().reviewList, before);
     appStore.getState().setPlaying(false);
@@ -443,42 +452,37 @@ test('search does not reveal a hidden-only match until hiding is turned off', ()
   assert.deepEqual(getVisibleLibrary({ hideUnsynced: false, hideNonJapanese: false }, source), source);
 });
 
-test('the default-on global setting toggles without interrupting the current hidden song', () => {
-  assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, true);
+test('the default-on filter preserves a current song hidden during playback', () => {
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
   appStore.setState({ hideSongsWithoutJapanese: false });
   const hiddenSong = songs[6]!;
-  appStore.getState().startSong(hiddenSong.id);
+  appStore.getState().startSong(hiddenSong.id, ['summer', hiddenSong.id, 'dawn']);
   appStore.getState().setPlaying(false);
   const before = appStore.getState();
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, true);
   assert.equal(appStore.getState().songId, hiddenSong.id);
   assert.equal(appStore.getState().playing, false);
   assert.equal(appStore.getState().run, before.run);
   appStore.getState().nextSong();
   assert.equal(appStore.getState().songId, 'dawn');
-  appStore.setState({ songId: hiddenSong.id });
   appStore.getState().previousSong();
   assert.equal(appStore.getState().songId, 'summer');
 });
 
-test('next and previous songs wrap while skipping hidden songs in library order', () => {
-  appStore.getState().startSong('summer');
+test('next and previous songs skip hidden entries without wrapping the queue', () => {
+  appStore.getState().startSong('dawn', ['dawn', songs[6]!.id, 'summer']);
   appStore.getState().nextSong();
+  assert.equal(appStore.getState().songId, 'summer');
+  appStore.getState().previousSong();
   assert.equal(appStore.getState().songId, 'dawn');
+  appStore.getState().jumpToLine(1);
   appStore.getState().previousSong();
-  assert.equal(appStore.getState().songId, 'summer');
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  appStore.setState({ hideSongsWithoutJapanese: false });
-  appStore.getState().nextSong();
-  assert.equal(appStore.getState().songId, songs[6]!.id);
-  appStore.getState().previousSong();
-  assert.equal(appStore.getState().songId, 'summer');
+  assert.equal(appStore.getState().songId, 'dawn');
+  assert.equal(appStore.getState().positionMs, 0);
 });
 
 test('Previous restarts the song after 3 s and goes to the previous song before that', () => {
-  appStore.getState().startSong('summer');
+  appStore.getState().startSong('summer', ['summer', 'dawn']);
   appStore.getState().nextSong();
   appStore.getState().setQuizToggle(true);
   appStore.getState().updatePlayback(5000, 238000, true);
@@ -493,31 +497,31 @@ test('Previous restarts the song after 3 s and goes to the previous song before 
 
 test('album Play and Shuffle build visible queues and skip songs hidden after starting', (t) => {
   t.mock.method(Math, 'random', () => 0);
-  for (const shuffle of [false, true]) {
-    appStore.getState().startAlbum('dawn', shuffle);
-    assert.deepEqual(appStore.getState().playbackQueue, ['dawn']);
-    appStore.getState().nextSong();
-    assert.equal(appStore.getState().songId, 'dawn');
-    appStore.getState().previousSong();
-    assert.equal(appStore.getState().songId, 'dawn');
-  }
+  appStore.getState().startAlbum('dawn');
+  assert.deepEqual(appStore.getState().queue, ['dawn']);
+  const autoplay = appStore.getState().autoplay[0];
+  appStore.getState().nextSong();
+  assert.equal(appStore.getState().songId, autoplay);
+  appStore.getState().previousSong();
+  assert.equal(appStore.getState().songId, 'dawn');
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
   appStore.setState({ hideSongsWithoutJapanese: false });
   appStore.getState().startAlbum('dawn');
   assert.deepEqual(
-    appStore.getState().playbackQueue,
+    appStore.getState().queue,
     getAlbumSongs('dawn').map((song) => song.id),
   );
   appStore.getState().nextSong();
   assert.equal(appStore.getState().songId, 'dawn-song-2');
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  const next = appStore.getState().autoplay[0];
   appStore.getState().nextSong();
-  assert.equal(appStore.getState().songId, 'dawn');
+  assert.equal(appStore.getState().songId, next);
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
   appStore.getState().startAlbum('dawn', true);
-  assert.deepEqual(appStore.getState().playbackQueue, ['dawn-song-2', 'dawn-song-3', 'dawn-song-4', 'dawn']);
+  assert.deepEqual(appStore.getState().queue, ['dawn-song-2', 'dawn-song-3', 'dawn-song-4', 'dawn']);
   appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  appStore.getState().previousSong();
+  appStore.getState().nextSong();
   assert.equal(appStore.getState().songId, 'dawn');
   const before = appStore.getState();
   appStore.getState().startAlbum('missing', true);
@@ -532,7 +536,7 @@ test('injected transport loads, pauses and seeks occurrences', () => {
     pause: () => calls.push('pause'),
     seek: (ms) => calls.push(`seek:${ms}`),
   });
-  appStore.getState().startSong('dawn');
+  appStore.getState().startSong('dawn', ['dawn', 'glass']);
   appStore.getState().jumpToLine(2);
   appStore.getState().setPlaying(false);
   assert.deepEqual(calls, ['load:dawn', 'play', 'seek:18000', 'pause']);
@@ -567,7 +571,8 @@ test('learning state survives hydration while playback stays transient, and rese
   appStore.getState().addLostMark();
   const mark = appStore.getState().reviewList.at(-1)!;
   appStore.setState({
-    ranks: { dawn: 'A' },
+    fog: { [fixtureLine('dawn-0')]: { state: 'clear' } },
+    perfectRuns: { dawn: true },
     lastSyncAt: 1234,
     hideSongsWithoutSyncedLyrics: false,
     hideSongsWithoutJapanese: false,
@@ -583,7 +588,8 @@ test('learning state survives hydration while playback stays transient, and rese
   values.set('learning-state', saved);
   await appStore.persist.rehydrate();
   assert.ok(appStore.getState().reviewList.some((item) => item.id === mark.id && item.sentenceId === mark.sentenceId));
-  assert.equal(appStore.getState().ranks.dawn, 'A');
+  assert.deepEqual(appStore.getState().fog[fixtureLine('dawn-0')], { state: 'clear' });
+  assert.equal(appStore.getState().perfectRuns.dawn, true);
   assert.equal(appStore.getState().showTranslations, true);
   assert.equal(appStore.getState().translationPrompted, true);
   assert.equal(appStore.getState().songId, null);
@@ -594,7 +600,7 @@ test('learning state survives hydration while playback stays transient, and rese
   assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, true);
   assert.equal(values.has('learning-state'), false);
   assert.deepEqual(appStore.getState().reviewList, []);
-  assert.equal(appStore.getState().showTranslations, false);
+  assert.equal(appStore.getState().showTranslations, true);
   assert.equal(appStore.getState().translationPrompted, false);
 });
 
@@ -692,7 +698,7 @@ test('starting clip review pauses music and autoplays the first occurrence', () 
   try {
     appStore.getState().startSong('glass');
     appStore.getState().setQuizToggle(true);
-    appStore.setState({ playbackQueue: ['glass', 'dawn'] });
+    appStore.setState({ queue: ['glass', 'dawn'] });
     const before = appStore.getState();
     calls.length = 0;
     appStore.getState().startClipReview();
@@ -705,7 +711,7 @@ test('starting clip review pauses music and autoplays the first occurrence', () 
     assert.equal(state.songId, 'glass');
     assert.equal(state.run, before.run);
     assert.equal(state.quizToggle, before.quizToggle);
-    assert.equal(state.playbackQueue, before.playbackQueue);
+    assert.equal(state.queue, before.queue);
   } finally {
     detach();
   }
@@ -731,7 +737,7 @@ test('clips pause at their end without advancing or changing the main learning s
   let nextCalls = 0;
   try {
     appStore.setState({
-      playbackQueue: ['dawn', 'glass'],
+      queue: ['dawn', 'glass'],
       nextSong: () => {
         nextCalls++;
       },
@@ -753,7 +759,7 @@ test('clips pause at their end without advancing or changing the main learning s
     assert.equal(after.quizToggle, before.quizToggle);
     assert.equal(after.mode, before.mode);
     assert.equal(after.run, before.run);
-    assert.equal(after.playbackQueue, before.playbackQueue);
+    assert.equal(after.queue, before.queue);
     assert.equal(nextCalls, 0);
     assert.equal(calls.at(-1), 'pause');
     assert.equal(calls.filter((call) => call === 'pause').length, 2);
@@ -964,7 +970,7 @@ test('answer replaces the deadline with exactly 800 ms of feedback', (t) => {
   }
 });
 
-test('timeout resumes unanswered, counts a miss, and preserves combo', (t) => {
+test('timeout resumes playback, records a miss, and resets combo', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   const { calls, detach } = pacingRun(5);
   try {
@@ -976,17 +982,19 @@ test('timeout resumes unanswered, counts a miss, and preserves combo', (t) => {
     t.mock.timers.tick(1);
     assert.equal(appStore.getState().playing, true);
     assert.equal(appStore.getState().answerWait, null);
-    assert.equal(appStore.getState().run.combo, 2);
-    assert.equal(appStore.getState().run.answers[fixtureLine('dawn-0')], undefined);
+    assert.equal(appStore.getState().run.combo, 0);
+    assert.deepEqual(appStore.getState().run.answers[fixtureLine('dawn-0')], { choice: null, correct: false });
     assert.ok(
       getRunSummary(firstSong, appStore.getState().run).missed.some((line) => line.id === fixtureLine('dawn-0')),
     );
+    const reviewList = appStore.getState().reviewList;
     assert.deepEqual(calls, ['pause', 'play']);
     stopFirstLine();
     assert.equal(appStore.getState().answerWait, null);
     appStore.getState().jumpToLine(0);
     stopFirstLine();
-    assert.equal(appStore.getState().answerWait?.occurrence.end, 0);
+    assert.equal(appStore.getState().answerWait, null);
+    assert.equal(appStore.getState().reviewList, reviewList);
     appStore.getState().setPlaying(false);
   } finally {
     detach();
@@ -1021,10 +1029,10 @@ for (const action of [
       if (action === 'next line') state.advanceLine();
       if (action === 'seek') state.seek(19000);
       if (action === 'lane') state.jumpToLine(2);
-      if (action === 'complete') state.completeRun();
+      if (action === 'complete') finishSong();
       if (action === 'clip') state.playClip('dawn', 0, 12000);
       assert.equal(appStore.getState().answerWait, null);
-      assert.equal(appStore.getState().playing, action !== 'complete');
+      assert.equal(appStore.getState().playing, true);
       if (action === 'play') {
         stopFirstLine();
         assert.equal(appStore.getState().answerWait, null);
@@ -1059,28 +1067,30 @@ for (const eof of ['before wait', 'during wait'] as const) {
           },
         });
         appStore.getState().jumpToLine(index);
+        appStore.setState({ queue: ['dawn', 'glass'], queueIndex: 0 });
         calls.length = 0;
         if (eof === 'during wait') appStore.getState().updatePlayback(238000, 238000, true);
         else appStore.setState({ playing: false });
         appStore.getState().updatePlayback(238000, 238000, false);
         assert.equal(appStore.getState().answerWait?.occurrence.end, index);
-        assert.equal(appStore.getState().run.finished, false);
+        assert.equal(appStore.getState().runEnd, null);
         assert.deepEqual(calls, ['pause']);
         if (release === 'answer') {
           appStore.getState().answer(correctAnswer());
           t.mock.timers.tick(799);
-          assert.equal(appStore.getState().run.finished, false);
+          assert.equal(appStore.getState().runEnd, null);
           t.mock.timers.tick(1);
         } else if (release === 'timeout') t.mock.timers.tick(3000);
         else appStore.getState().setPlaying(true);
         assert.equal(appStore.getState().answerWait, null);
-        assert.equal(appStore.getState().run.finished, true);
-        assert.equal(appStore.getState().playing, false);
-        assert.deepEqual(calls, ['pause', 'pause']);
-        appStore.getState().updatePlayback(238000, 238000, false);
-        assert.equal(appStore.getState().answerWait, null);
+        assert.deepEqual(appStore.getState().run.answers, {});
+        assert.equal(appStore.getState().playing, true);
+        assert.deepEqual(calls, ['pause', 'load:glass:0', 'play']);
+        assert.equal(appStore.getState().songId, 'glass');
+        assert.equal(appStore.getState().runEnd?.answered, 1);
+        assert.equal(appStore.getState().runEnd?.hits, release === 'answer' ? 1 : 0);
         t.mock.timers.tick(3000);
-        assert.deepEqual(calls, ['pause', 'pause']);
+        assert.deepEqual(calls, ['pause', 'load:glass:0', 'play']);
       } finally {
         detach();
       }
@@ -1152,9 +1162,9 @@ test('a wrong answer cancels a finite answer deadline and continue finishes the 
     appStore.getState().updatePlayback(timeline.at(-1)!.endMs, timeline.at(-1)!.endMs, true);
     appStore.getState().answer('wrong');
     t.mock.timers.tick(60000);
-    assert.equal(appStore.getState().run.finished, false);
+    assert.equal(appStore.getState().runEnd, null);
     appStore.getState().continueAfterAnswer();
-    assert.equal(appStore.getState().run.finished, true);
+    assert.deepEqual(appStore.getState().run.answers, {});
   } finally {
     detach();
   }
@@ -1316,11 +1326,12 @@ for (const eof of ['before wait', 'during wait'] as const) {
         });
         appStore.getState().jumpToLine(index);
         await Promise.resolve();
+        appStore.setState({ queue: ['dawn', 'glass'], queueIndex: 0 });
         calls.length = 0;
         if (eof === 'during wait') status(238000, true);
         status(238000, false, true);
         assert.equal(appStore.getState().answerWait?.occurrence.end, index);
-        assert.equal(appStore.getState().run.finished, false);
+        assert.equal(appStore.getState().runEnd, null);
         assert.deepEqual(calls, ['pause']);
         if (release === 'answer') {
           appStore.getState().answer(correctAnswer());
@@ -1331,14 +1342,66 @@ for (const eof of ['before wait', 'during wait'] as const) {
           status(238000, true);
         }
         assert.equal(appStore.getState().answerWait, null);
-        assert.equal(appStore.getState().run.finished, true);
-        assert.equal(appStore.getState().playing, false);
+        assert.deepEqual(appStore.getState().run.answers, {});
+        assert.equal(appStore.getState().playing, true);
+        assert.equal(appStore.getState().songId, 'glass');
+        assert.equal(appStore.getState().loading, true);
         assert.deepEqual(calls, ['pause', 'pause']);
+        status(0, false);
+        await Promise.resolve();
+        assert.equal(calls.at(-1), 'play');
+        assert.equal(appStore.getState().answerWait, null);
       } finally {
         detach();
       }
     });
 }
+
+for (const answerTime of [0, 3])
+  test(`native EOF short of duration counts the last unanswered miss with answer time ${answerTime}`, async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const { status, detach } = await nativePacingRun(t);
+    try {
+      const lyrics = getLyrics('dawn'),
+        index = lyrics.timeline.length - 1;
+      libraryStore.setState({
+        lyrics: {
+          ...libraryStore.getState().lyrics,
+          dawn: withSentences({
+            ...lyrics,
+            timeline: lyrics.timeline.map((occurrence, i) =>
+              i === index ? { ...occurrence, endMs: 238000 } : occurrence,
+            ),
+          }),
+        },
+      });
+      appStore.getState().jumpToLine(index);
+      await Promise.resolve();
+      const sentenceId = currentSentence('dawn', index)!.sentence.id;
+      appStore.setState({ answerTime, queue: ['dawn', 'glass'], queueIndex: 0 });
+      status(237990, false, true);
+      if (answerTime !== 0) {
+        assert.equal(appStore.getState().answerWait?.occurrence.end, index);
+        assert.equal(appStore.getState().runEnd, null);
+        t.mock.timers.tick(3000);
+      }
+      assert.deepEqual(appStore.getState().runEnd, {
+        songId: 'dawn', hits: 0, answered: 1, bestCombo: 0, perfect: false,
+      });
+      assert.equal(
+        appStore.getState().reviewList.find((item) => item.sentenceId === sentenceId)?.kind,
+        'due',
+      );
+      assert.equal(appStore.getState().songId, 'glass');
+      assert.equal(appStore.getState().queueIndex, 1);
+      status(237990, false, true);
+      t.mock.timers.tick(5000);
+      assert.equal(appStore.getState().songId, 'glass');
+      assert.equal(appStore.getState().queueIndex, 1);
+    } finally {
+      detach();
+    }
+  });
 
 for (const which of ['first', 'last'] as const)
   test(`refresh replays the stopped ${which} line, pauses its timer and stops again`, (t) => {
@@ -1355,7 +1418,7 @@ for (const which of ['first', 'last'] as const)
       appStore.getState().replayLine();
       assert.equal(appStore.getState().positionMs, occurrence.startMs);
       assert.equal(appStore.getState().answerWait, null);
-      assert.equal(appStore.getState().run.finished, false);
+      assert.equal(appStore.getState().runEnd, null);
       assert.equal(appStore.getState().playing, true);
       assert.deepEqual(calls, [`seek:${occurrence.startMs}`, 'play']);
       appStore.getState().updatePlayback(occurrence.startMs + 100, 238000, true);
@@ -1366,7 +1429,7 @@ for (const which of ['first', 'last'] as const)
       assert.equal(appStore.getState().playing, false);
       appStore.getState().advanceLine();
       assert.equal(appStore.getState().answerWait, null);
-      if (index === last) assert.equal(appStore.getState().run.finished, true);
+      if (index === last) assert.deepEqual(appStore.getState().run.answers, {});
       else assert.equal(appStore.getState().lineIndex, index + 1);
     } finally {
       detach();
@@ -1524,7 +1587,6 @@ test('native loaded status ends loading and clip EOF does not mark played, scrob
     );
     const played = t.mock.method(libraryStore.getState(), 'markPlayed', () => {});
     const next = t.mock.method(appStore.getState(), 'nextSong', () => {});
-    const complete = t.mock.method(appStore.getState(), 'completeRun', () => {});
     appStore.setState({
       reviewList: [{ id: 'end', songId: 'glass', sentenceId: fixtureLine('glass-0'), kind: 'due', misses: 1 }],
     });
@@ -1535,7 +1597,6 @@ test('native loaded status ends loading and clip EOF does not mark played, scrob
     assert.equal(fetches.mock.callCount(), 0);
     assert.equal(played.mock.callCount(), 0);
     assert.equal(next.mock.callCount(), 0);
-    assert.equal(complete.mock.callCount(), 0);
     assert.equal(appStore.getState().clipReview?.index, 0);
     assert.equal(appStore.getState().playing, false);
   } finally {
@@ -1947,21 +2008,21 @@ test('Japanese filtering skips non-Japanese songs in library and album queues', 
   });
   assert.equal(appStore.getState().hideSongsWithoutJapanese, true);
   appStore.setState({ hideSongsWithoutSyncedLyrics: false });
-  for (const playbackQueue of [null, source.map((song) => song.id)]) {
+  for (const queue of [[first.id], source.map((song) => song.id)]) {
     appStore.getState().startSong(first.id);
-    appStore.setState({ playbackQueue });
+    appStore.setState({ queue, queueIndex: 0 });
     appStore.getState().nextSong();
     assert.equal(appStore.getState().songId, last.id);
     appStore.getState().previousSong();
     assert.equal(appStore.getState().songId, first.id);
   }
   appStore.getState().startAlbum(first.albumId);
-  assert.deepEqual(appStore.getState().playbackQueue, [first.id, last.id]);
+  assert.deepEqual(appStore.getState().queue, [first.id, last.id]);
   appStore.getState().toggleHideSongsWithoutJapanese();
   assert.equal(appStore.getState().hideSongsWithoutJapanese, false);
   appStore.getState().startAlbum(first.albumId);
   assert.deepEqual(
-    appStore.getState().playbackQueue,
+    appStore.getState().queue,
     source.map((song) => song.id),
   );
   appStore.getState().nextSong();
@@ -1972,7 +2033,7 @@ test('Japanese filtering skips non-Japanese songs in library and album queues', 
   assert.equal(appStore.getState().playing, before.playing);
   appStore.getState().nextSong();
   assert.equal(appStore.getState().songId, last.id);
-  appStore.setState({ songId: english.id });
+  appStore.setState({ songId: english.id, queueIndex: 1 });
   appStore.getState().previousSong();
   assert.equal(appStore.getState().songId, first.id);
 });
@@ -2011,7 +2072,7 @@ test('native EOF preserves results for an analysis-only quiz', async (t) => {
     assert.equal(getLyrics('dawn').lines[0]!.translation, undefined);
     appStore.getState().answer('I floated a paper boat.');
     native.status(238000, false, true);
-    assert.equal(appStore.getState().run.finished, true);
+    assert.deepEqual(appStore.getState().run.answers, {});
     assert.equal(appStore.getState().songId, 'dawn');
   } finally {
     native.detach();

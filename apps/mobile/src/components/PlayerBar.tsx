@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Pressable, View, useWindowDimensions } from 'react-native';
+import { useMemo, useState } from 'react';
+import { PanResponder, Pressable, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { libraryStore } from '@/store/libraryStore';
@@ -9,7 +9,7 @@ import { Cover } from './Cover';
 import { Marquee } from './Marquee';
 import { IconButton, Label, styles } from './ui';
 
-const time = (ms: number) => {
+export const time = (ms: number) => {
   const seconds = Math.floor(ms / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 };
@@ -85,8 +85,8 @@ export function ProgressLine({
 }
 
 /**
- * Progress, song and play controls. Tapping the song opens its Song info.
- * Clip review shows clip progress, can't scrub, keeps only play and doesn't open Song info.
+ * Progress, song, play/pause and next under the song screen. Tapping or swiping up on the song opens the full player.
+ * Clip review shows clip progress, keeps only play and doesn't open the full player.
  */
 export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
   const insets = useSafeAreaInsets();
@@ -99,27 +99,31 @@ export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
   const playing = appStore((state) => state.playing && (clipReview || !state.clipPlayback));
   const position = appStore((state) => state.positionMs),
     duration = appStore((state) => state.durationMs);
+  // An upward swipe on the bar opens the full player; horizontal drags stay with the sheet.
+  const swipe = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, { dx, dy }) => !clipReview && dy < -8 && Math.abs(dy) > Math.abs(dx),
+        onPanResponderRelease: (_, { dy }) => {
+          if (dy < -24) router.push('/full-player');
+        },
+      }),
+    [clipReview, router],
+  );
   if (!song) return null;
   const ended = clipReview ? !!clip?.ended : waiting;
   const elapsed = clipReview && clip ? Math.max(0, clip.positionMs - clip.startMs) : position;
   const total = clipReview && clip ? clip.endMs - clip.startMs : duration;
+  const open = () => router.push('/full-player');
   return (
     <View style={{ backgroundColor: colors.panel, paddingBottom: Math.max(insets.bottom - 4, 14) }}>
-      {clipReview ? (
-        <ProgressLine progress={total ? elapsed / total : 0} />
-      ) : (
-        <ProgressLine
-          progress={total ? elapsed / total : 0}
-          total={total}
-          onSeek={(ms) => appStore.getState().seek(ms)}
-        />
-      )}
-      <View style={[styles.row, { paddingHorizontal: 16, paddingTop: 12 }]}>
+      <ProgressLine progress={total ? elapsed / total : 0} />
+      <View {...swipe.panHandlers} style={[styles.row, { paddingHorizontal: 16, paddingTop: 12 }]}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Song info for ${song.title}`}
+          accessibilityLabel={`Open full player for ${song.title}`}
           disabled={clipReview}
-          onPress={() => router.push({ pathname: '/song-info', params: { id: song.id } })}
+          onPress={open}
           style={({ pressed }) => [styles.row, { flex: 1, minWidth: 0, opacity: pressed ? 0.7 : 1 }]}
         >
           <Cover song={song} size={50} />
@@ -132,14 +136,6 @@ export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
             </Label>
           </View>
         </Pressable>
-        {!clipReview && (
-          <IconButton
-            name="skipPrevious"
-            size={46}
-            label="Previous song"
-            onPress={() => appStore.getState().skipBack()}
-          />
-        )}
         <IconButton
           name={playing ? 'pause' : ended ? 'refresh' : 'play'}
           fill={colors.coral}

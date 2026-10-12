@@ -12,8 +12,8 @@ const { renderToStaticMarkup } = require('react-dom/server') as {
   renderToStaticMarkup: (element: React.ReactElement) => string;
 };
 
-/** Load a real screen with native hosts and animation APIs replaced for Node. Song info always shows `dawn`. */
-async function loadScreen(screen: 'player' | 'song-info', presses = new Map<string, () => void>()) {
+/** Load a real screen with native hosts and animation APIs replaced for Node. Song menu always shows `dawn`. */
+async function loadScreen(screen: 'player' | 'song-menu', presses = new Map<string, () => void>()) {
   const key = Symbol.for('kashi-koi.test.react');
   const pressKey = Symbol.for('kashi-koi.test.presses');
   const globals = globalThis as typeof globalThis & {
@@ -30,7 +30,7 @@ async function loadScreen(screen: 'player' | 'song-info', presses = new Map<stri
   const mocks: Record<string, string> = {
     'react-native': `${host}
       module.exports = { View: host('native-view'), Text: host('native-text'), Pressable: host('native-button'), ScrollView: host('native-scroll'), ActivityIndicator: host('native-loading'), Modal: () => null,
-        StyleSheet: { create: styles => styles, flatten: style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean)), absoluteFill: {} }, PixelRatio: { get: () => 1 }, useWindowDimensions: () => ({ width: 390, height: 844 }) };`,
+        StyleSheet: { create: styles => styles, flatten: style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean)), absoluteFill: {} }, PixelRatio: { get: () => 1 }, useWindowDimensions: () => ({ width: 390, height: 844 }), PanResponder: { create: () => ({ panHandlers: {} }) } };`,
     'react-native-svg': `${host} module.exports = { __esModule: true, default: host('native-svg'), Path: host('native-path'), Defs: host('native-defs'), LinearGradient: host('native-gradient'), Rect: host('native-rect'), Stop: host('native-stop') };`,
     'react-native-reanimated': `${host} module.exports = { __esModule: true, default: { View: host('native-animated') }, useAnimatedStyle: () => ({}), useSharedValue: value => ({ value }), Easing: { linear: value => value }, withSpring: value => value, withTiming: value => value, withDelay: (_, value) => value, withRepeat: value => value, withSequence: value => value, cancelAnimation() {}, useReducedMotion: () => true };`,
     'react-native-safe-area-context': 'exports.useSafeAreaInsets = () => ({ top: 0, bottom: 0, left: 0, right: 0 });',
@@ -58,7 +58,7 @@ async function loadScreen(screen: 'player' | 'song-info', presses = new Map<stri
   };
   try {
     const module =
-      screen === 'player' ? await import('../src/screens/player') : await import('../src/screens/song-info');
+      screen === 'player' ? await import('../src/screens/player') : await import('../src/screens/song-menu');
     return { Screen: module.default, cleanup };
   } catch (error) {
     cleanup();
@@ -116,7 +116,7 @@ test('the actual quiz screen renders its musical gap before the first line witho
   assert.ok(!loading.includes('Play line'));
 });
 
-test('Song info Retry preserves the failed request force flag', async (t) => {
+test('Song menu Retry preserves the failed request force flag', async (t) => {
   await resetAppState();
   libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics });
   const calls: { songId: string; force: boolean | undefined }[] = [];
@@ -139,7 +139,7 @@ test('Song info Retry preserves the failed request force flag', async (t) => {
     await resetAppState();
   });
   const presses = new Map<string, () => void>();
-  const { Screen, cleanup } = await loadScreen('song-info', presses);
+  const { Screen, cleanup } = await loadScreen('song-menu', presses);
   t.after(cleanup);
   renderToStaticMarkup(React.createElement(Screen));
   assert.ok(presses.has('Retry analysis'));
@@ -147,7 +147,7 @@ test('Song info Retry preserves the failed request force flag', async (t) => {
   assert.deepEqual(calls, [{ songId: 'dawn', force: true }]);
 });
 
-test('Song info only offers source choices for analyzed songs and switches the player translations', async (t) => {
+test('Song menu only offers source choices for analyzed songs and switches the player translations', async (t) => {
   await resetAppState();
   libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics });
   appStore.setState({ songId: 'dawn', showTranslations: true, loading: false });
@@ -163,12 +163,12 @@ test('Song info only offers source choices for analyzed songs and switches the p
     await resetAppState();
   });
   const presses = new Map<string, () => void>();
-  const { Screen: SongInfo, cleanup } = await loadScreen('song-info', presses);
+  const { Screen: SongMenu, cleanup } = await loadScreen('song-menu', presses);
   t.after(cleanup);
   snapshot();
-  const withoutAnalysis = renderToStaticMarkup(React.createElement(SongInfo));
+  const withoutAnalysis = renderToStaticMarkup(React.createElement(SongMenu));
   assert.ok(!withoutAnalysis.includes('data-role="radio"'));
-  assert.ok(!presses.has('iOS (line by line)'));
+  assert.ok(!presses.has('Line by line'));
 
   const lyrics = songLyrics.dawn!;
   const analysis: SongAnalysis = {
@@ -188,9 +188,9 @@ test('Song info only offers source choices for analyzed songs and switches the p
   };
   libraryStore.getState().setAnalysis(analysis);
   snapshot();
-  const analyzedInfo = renderToStaticMarkup(React.createElement(SongInfo));
+  const analyzedInfo = renderToStaticMarkup(React.createElement(SongMenu));
   assert.ok(analyzedInfo.includes('data-label="Song analysis" data-role="radio" data-checked="true"'));
-  assert.ok(presses.has('iOS (line by line)'));
+  assert.ok(presses.has('Line by line'));
   const { Screen: Player, cleanup: cleanupPlayer } = await loadScreen('player', presses);
   t.after(cleanupPlayer);
   const analyzedPlayer = renderToStaticMarkup(React.createElement(Player));
@@ -198,13 +198,13 @@ test('Song info only offers source choices for analyzed songs and switches the p
   assert.ok(!analyzedPlayer.includes(lyrics.lines[0]!.translation!));
 
   const before = appStore.getState();
-  presses.get('iOS (line by line)')!();
+  presses.get('Line by line')!();
   assert.equal(appStore.getState().run, before.run);
   assert.equal(appStore.getState().reviewList, before.reviewList);
   assert.equal(libraryStore.getState().lyrics.dawn!.analysis?.title, analysis.title);
   snapshot();
-  const iosInfo = renderToStaticMarkup(React.createElement(SongInfo));
-  assert.ok(iosInfo.includes('data-label="iOS (line by line)" data-role="radio" data-checked="true"'));
+  const iosInfo = renderToStaticMarkup(React.createElement(SongMenu));
+  assert.ok(iosInfo.includes('data-label="Line by line" data-role="radio" data-checked="true"'));
   assert.ok(presses.has('Song analysis'));
   const iosPlayer = renderToStaticMarkup(React.createElement(Player));
   assert.ok(iosPlayer.includes(lyrics.lines[0]!.translation!));

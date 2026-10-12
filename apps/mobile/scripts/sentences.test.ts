@@ -286,7 +286,7 @@ test('choices and answers use sentence translations, score repeats once and sche
   );
 });
 
-test('lost marks and result selections on any line of a repeated sentence share one review entry', () => {
+test('lost marks and quiz misses on any line of a repeated sentence share one review entry', () => {
   installAnalysis();
   appStore.getState().jumpToLine(1);
   appStore.getState().addLostMark();
@@ -294,12 +294,15 @@ test('lost marks and result selections on any line of a repeated sentence share 
   assert.equal(first.sentenceId, chorusId);
   appStore.getState().jumpToLine(5);
   appStore.getState().addLostMark();
-  appStore.getState().sendToReview(chorusId, true);
-  assert.deepEqual(appStore.getState().reviewList, [first]);
-  appStore.getState().sendToReview(rawLyrics.lines[4]!.id, true);
+  appStore.getState().setQuizToggle(true);
+  appStore.getState().answer('wrong');
+  assert.equal(appStore.getState().reviewList[0]?.id, first.id);
+  appStore.getState().jumpToLine(6);
+  appStore.getState().answer('wrong');
   assert.equal(appStore.getState().reviewList.length, 2);
-  appStore.getState().sendToReview(rawLyrics.lines[4]!.id, false);
-  assert.deepEqual(appStore.getState().reviewList, [first]);
+  appStore.getState().undoLostMark();
+  assert.equal(appStore.getState().reviewList.length, 1);
+  assert.equal(appStore.getState().reviewList[0]?.id, first.id);
 });
 
 test('quiz waits at the exact last line end of a multi-line sentence and replays its first line', () => {

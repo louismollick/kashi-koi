@@ -31,7 +31,8 @@ export default function AlbumDetailScreen() {
       </View>
     );
   const allTracks = getAlbumSongs(album.id);
-  const tracks = getVisibleSongs(allTracks, filters);
+  const tracks = getVisibleSongs(allTracks, filters),
+    queue = tracks.map((song) => song.id);
   const startAlbum = (shuffle = false) => {
     router.push('/player');
     appStore.getState().startAlbum(album.id, shuffle);
@@ -43,7 +44,7 @@ export default function AlbumDetailScreen() {
         data={tracks}
         keyExtractor={(song) => song.id}
         contentContainerStyle={styles.content}
-        renderItem={({ item, index }) => <SongRow song={item} number={index + 1} />}
+        renderItem={({ item, index }) => <SongRow song={item} number={index + 1} queue={queue} />}
         ListHeaderComponent={
           <View style={{ gap: 16 }}>
             <View style={{ alignItems: 'center' }}>

@@ -11,9 +11,10 @@ import { Header } from '@/components/Header';
 import { Mascot } from '@/components/Mascot';
 import { PixelFrame } from '@/components/PixelFrame';
 import { Cover } from '@/components/Cover';
-import { downloadSheet } from '@/components/DownloadButton';
+import { FogBadge } from '@/components/Fog';
+import { songMenu } from './song-menu';
 import { Icon } from '@/components/Icon';
-import { Label, SectionHeader, Tag, styles } from '@/components/ui';
+import { Label, SectionHeader, styles } from '@/components/ui';
 
 /** Harbor hero scrolls away; its review card overlaps the dock's bottom edge. */
 export default function HomeScreen() {
@@ -21,12 +22,12 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   libraryStore((state) => state.songs);
   libraryStore((state) => state.lyrics);
-  const ranks = appStore((state) => state.ranks);
   const filters = useLibraryFilters();
   const reviewList = useAvailableReviewList();
   const now = useNow();
   const count = reviewList.filter((line) => isDue(line, now)).length;
-  const coverSize = (width - 56) / 3;
+  const coverSize = (width - 56) / 3,
+    recent = getRecentlyPlayed(filters, 6);
   return (
     <View style={styles.page}>
       <Header />
@@ -81,7 +82,7 @@ export default function HomeScreen() {
           </Pressable>
           <SectionHeader title="Recently played" />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {getRecentlyPlayed(filters, 6).map((song) => (
+            {recent.map((song) => (
               <Pressable
                 key={song.id}
                 style={{ width: coverSize }}
@@ -89,22 +90,24 @@ export default function HomeScreen() {
                 accessibilityLabel={`Play ${song.title}`}
                 onPress={() => {
                   router.push('/player');
-                  appStore.getState().startSong(song.id);
+                  appStore.getState().startSong(
+                    song.id,
+                    recent.map((song) => song.id),
+                  );
                 }}
-                onLongPress={() => router.push(downloadSheet({ kind: 'song', id: song.id }))}
+                onLongPress={() => router.push(songMenu(song.id))}
               >
                 <Cover song={song} size={coverSize} />
-                {ranks[song.id] && (
-                  <View style={{ position: 'absolute', right: 6, top: 6 }}>
-                    <Tag fill={colors.bg}>{ranks[song.id]}</Tag>
-                  </View>
-                )}
+
                 <Label numberOfLines={1} style={{ fontSize: 15, fontWeight: '700', marginTop: 6 }}>
                   {song.title}
                 </Label>
-                <Label muted numberOfLines={1} style={{ fontSize: 12 }}>
-                  {song.artist}
-                </Label>
+                <View style={[styles.row, { gap: 6 }]}>
+                  <Label muted numberOfLines={1} style={{ flex: 1, fontSize: 12 }}>
+                    {song.artist}
+                  </Label>
+                  <FogBadge songId={song.id} compact />
+                </View>
               </Pressable>
             ))}
           </View>

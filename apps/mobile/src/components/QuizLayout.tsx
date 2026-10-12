@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, Easing, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
@@ -123,7 +123,8 @@ function AnswerTimeBar({ until }: { until: number }) {
 /**
  * A fixed quiz column. `lines` is the current sentence (or a gap line with no choices); before the first sentence
  * an analysed song shows its intro instead. The sentence scrolls when it is long, so the answers and, after a miss,
- * EXPLAIN (`onExplain`) and CONTINUE (`onContinue`, when the song is held) always stay on screen.
+ * EXPLAIN (`onExplain`) and CONTINUE (`onContinue`, when the song is held) always stay on screen. `toast` sits just
+ * above the answers, so it never covers the sentence.
  */
 export function QuizColumn({
   lines,
@@ -139,6 +140,7 @@ export function QuizColumn({
   onExplain,
   onContinue,
   continueLabel = 'CONTINUE',
+  toast,
 }: {
   lines?: Line[];
   current?: number;
@@ -153,6 +155,7 @@ export function QuizColumn({
   onExplain?: () => void;
   onContinue?: () => void;
   continueLabel?: string;
+  toast?: ReactNode;
 }) {
   // `nice` is the recorded grade, so the miss actions follow scoring even if cached choices went stale.
   const missed = selected !== null && !nice;
@@ -174,6 +177,7 @@ export function QuizColumn({
       </ScrollView>
       {until != null && <AnswerTimeBar until={until} />}
       <ComboRow combo={combo} nice={nice} />
+      {toast && <View style={{ marginBottom: 12 }}>{toast}</View>}
       <Answers choices={choices} selected={selected} onAnswer={onAnswer} />
       {missed && (onExplain || onContinue) && (
         <View style={[styles.row, { marginTop: 12 }]}>
