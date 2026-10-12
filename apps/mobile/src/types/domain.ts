@@ -3,7 +3,15 @@ import type { Quiz } from '@kashi-koi/shared/analysis';
 export type { Decoy, Quiz } from '@kashi-koi/shared/analysis';
 export type FogTile = 'fog' | 'half' | 'clear' | 'red';
 export type LineFog = { state: 'half'; run: string } | { state: 'clear' } | { state: 'red' };
-export type RunEnd = { songId: string; hits: number; answered: number; bestCombo: number; perfect: boolean };
+/** A finished quiz song's summary; `at` is when it ended, so the card expires even if it was never on screen. */
+export type RunEnd = {
+  songId: string;
+  hits: number;
+  answered: number;
+  bestCombo: number;
+  perfect: boolean;
+  at: number;
+};
 export type Combo = number;
 export type QuizToggle = boolean;
 export type ListenMode = 'listen';

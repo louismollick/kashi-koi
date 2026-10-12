@@ -47,12 +47,14 @@ function AddedToast({ style }: { style?: ViewStyle }) {
 function RunEndToast({ style }: { style?: ViewStyle }) {
   const runEnd = appStore((state) => state.runEnd);
   const title = libraryStore((state) => (runEnd ? state.bySong[runEnd.songId]?.title : undefined));
+  // Shown for 4s after the song ended, so a card nobody saw never appears later over another song.
+  const remaining = runEnd ? runEnd.at + 4000 - Date.now() : 0;
   useEffect(() => {
     if (!runEnd) return;
-    const timer = setTimeout(() => appStore.getState().dismissRunEnd(), 4000);
+    const timer = setTimeout(() => appStore.getState().dismissRunEnd(), Math.max(0, remaining));
     return () => clearTimeout(timer);
   }, [runEnd]);
-  if (!runEnd) return null;
+  if (!runEnd || remaining <= 0) return null;
   return (
     <Pressable
       accessibilityRole="button"

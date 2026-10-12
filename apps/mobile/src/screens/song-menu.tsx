@@ -17,7 +17,10 @@ export const songMenu = (id: string) => ({
   params: { id },
 });
 
-/** One full-width action: label left, detail or control right. */
+/**
+ * One full-width row: label left, detail or control right. Without `onPress` it's a plain row, so VoiceOver reaches
+ * the control inside it.
+ */
 function Row({
   label,
   detail,
@@ -33,29 +36,28 @@ function Row({
   color?: string;
   children?: ReactNode;
 }) {
+  const row = [styles.row, { minHeight: 52, borderTopWidth: 1, borderTopColor: colors.track }],
+    content = (
+      <>
+        <Label style={{ flex: 1, fontSize: 16, color }}>{label}</Label>
+        {detail && (
+          <Label muted numberOfLines={1} style={{ fontSize: 14, maxWidth: '55%' }}>
+            {detail}
+          </Label>
+        )}
+        {children}
+      </>
+    );
+  if (!onPress) return <View style={[row, { opacity: disabled ? 0.45 : 1 }]}>{content}</View>;
   return (
     <Pressable
-      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityRole="button"
       accessibilityLabel={label}
-      disabled={disabled || !onPress}
+      disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.row,
-        {
-          minHeight: 52,
-          borderTopWidth: 1,
-          borderTopColor: colors.track,
-          opacity: disabled ? 0.45 : pressed ? 0.7 : 1,
-        },
-      ]}
+      style={({ pressed }) => [row, { opacity: disabled ? 0.45 : pressed ? 0.7 : 1 }]}
     >
-      <Label style={{ flex: 1, fontSize: 16, color }}>{label}</Label>
-      {detail && (
-        <Label muted numberOfLines={1} style={{ fontSize: 14, maxWidth: '55%' }}>
-          {detail}
-        </Label>
-      )}
-      {children}
+      {content}
     </Pressable>
   );
 }
@@ -159,7 +161,7 @@ export default function SongMenuScreen() {
               />
             ))}
           {synced && (
-            <Row label="Translations" onPress={() => appStore.getState().toggleTranslations()}>
+            <Row label="Translations">
               <PixelToggle
                 label="Translations"
                 on={showTranslations}

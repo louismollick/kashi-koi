@@ -6,6 +6,15 @@ import { getLyrics, libraryStore } from '../src/store/libraryStore';
 import type { LineFog } from '../src/types/domain';
 import { albums, artists, firstSong, songs, songLyrics } from './fixtures';
 
+import type { RunEnd } from '../src/types/domain';
+
+/** Run-end summaries carry a wall-clock `at`; compare the rest. */
+const withoutTime = (runEnd: RunEnd | null) => {
+  if (!runEnd) return runEnd;
+  const { at: _at, ...rest } = runEnd;
+  return rest;
+};
+
 beforeEach(async () => {
   setTransport({ load() {}, play() {}, pause() {}, seek() {} });
   await resetAppState();
@@ -84,7 +93,7 @@ test('a perfect run requires every distinct quiz sentence and remains earned aft
   assert.equal(songFog('dawn', appStore.getState().fog).percent, 50);
   const id = appStore.getState().run.id;
   finishSong();
-  assert.deepEqual(appStore.getState().runEnd, {
+  assert.deepEqual(withoutTime(appStore.getState().runEnd), {
     songId: 'dawn',
     hits: 14,
     answered: 14,
@@ -269,7 +278,7 @@ for (const release of ['timeout', 'play', 'finish', 'zero'] as const)
     if (release === 'timeout') t.mock.timers.tick(3000);
     else if (release === 'play') appStore.getState().setPlaying(true);
     else finishSong();
-    assert.deepEqual(appStore.getState().runEnd, {
+    assert.deepEqual(withoutTime(appStore.getState().runEnd), {
       songId: 'dawn',
       hits: 0,
       answered: 1,

@@ -37,6 +37,15 @@ import {
   isHiddenSong,
 } from '../src/data/libraryVisibility';
 
+import type { RunEnd } from '../src/types/domain';
+
+/** Run-end summaries carry a wall-clock `at`; compare the rest. */
+const withoutTime = (runEnd: RunEnd | null) => {
+  if (!runEnd) return runEnd;
+  const { at: _at, ...rest } = runEnd;
+  return rest;
+};
+
 // Existing state sequences choose a translation explicitly, independent of button order.
 const correctAnswer = () =>
   currentSentence(appStore.getState().songId, appStore.getState().lineIndex)?.sentence.translation ?? 'no translation';
@@ -131,7 +140,7 @@ test('a full run publishes feedback, adds misses immediately and advances', () =
     appStore.getState().answer(index === 0 ? 'wrong' : correctAnswer());
     appStore.getState().advanceLine();
   }
-  assert.deepEqual(appStore.getState().runEnd, {
+  assert.deepEqual(withoutTime(appStore.getState().runEnd), {
     songId: firstSong.id,
     hits: 13,
     answered: 14,
@@ -245,7 +254,7 @@ test('answering only the last sentence reports one answer without a perfect run'
   appStore.getState().jumpToLine(getLyrics(firstSong.id).timeline.length - 1);
   appStore.getState().answer(correctAnswer());
   appStore.getState().advanceLine();
-  assert.deepEqual(appStore.getState().runEnd, {
+  assert.deepEqual(withoutTime(appStore.getState().runEnd), {
     songId: firstSong.id,
     hits: 1,
     answered: 1,
@@ -1385,7 +1394,7 @@ for (const answerTime of [0, 3])
         assert.equal(appStore.getState().runEnd, null);
         t.mock.timers.tick(3000);
       }
-      assert.deepEqual(appStore.getState().runEnd, {
+      assert.deepEqual(withoutTime(appStore.getState().runEnd), {
         songId: 'dawn',
         hits: 0,
         answered: 1,

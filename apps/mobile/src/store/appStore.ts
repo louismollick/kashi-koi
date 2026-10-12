@@ -228,6 +228,7 @@ export function finishSong() {
         answered: answers.length,
         bestCombo: state.run.bestCombo,
         perfect: state.run.perfect,
+        at: Date.now(),
       },
     });
   state.nextSong();
@@ -432,13 +433,14 @@ export const appStore = create<AppState>()(
             (!list || (list.length === get().queue.length && list.every((id, index) => id === get().queue[index]))))
         )
           return;
-        const queue = [...(list ?? [songId])];
+        const queue = [...(list ?? [songId])],
+          queued = new Set(queue);
         set({
           queue,
           autoplay: shuffled(
             getVisibleSongs(libraryStore.getState().songs, libraryFilters(get()))
               .map((song) => song.id)
-              .filter((id) => !queue.includes(id)),
+              .filter((id) => !queued.has(id)),
           ),
         });
         playQueueSong(songId, queue.indexOf(songId));
@@ -536,7 +538,8 @@ export const appStore = create<AppState>()(
         let autoplay = state.autoplay.filter(playable);
         if (!autoplay.length) {
           const visible = getVisibleSongs(libraryStore.getState().songs, filters).map((song) => song.id),
-            unqueued = visible.filter((id) => !state.queue.includes(id));
+            queued = new Set(state.queue),
+            unqueued = visible.filter((id) => !queued.has(id));
           // Once the library has played, a fresh shuffle starts another cycle.
           autoplay = shuffled(unqueued.length ? unqueued : visible);
         }
