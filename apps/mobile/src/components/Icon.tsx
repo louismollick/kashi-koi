@@ -61,6 +61,10 @@ const icons = {
   settings: [
     'M4 20h3v-2h4v4h2v-4h4v2h-2v4H9v-4H7v2H2v-5h2v3Zm18 2h-5v-2h3v-3h2v5ZM6 11H2v2h4v4H4v-2H0V9h4V7h2v4Zm14-2h4v6h-4v2h-2v-4h4v-2h-4V7h2v2Zm-6 7h-4v-2h4v2Zm-4-2H8v-4h2v4Zm6 0h-2v-4h2v4Zm-2-4h-4V8h4v2ZM7 4H4v3H2V2h5v2Zm8 0h2V2h5v5h-2V4h-3v2h-4V2h-2v4H7V4h2V0h6v4Z',
   ],
+  drag: ['M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z'],
+  repeat: [
+    'M5 7h12v2H5zM5 9h2v4H5zM15 5h2v2h-2zM17 7h2v2h-2zM15 9h2v2h-2zM7 15h12v2H7zM17 11h2v4h-2zM7 13h2v2H7zM5 15h2v2H5zM7 17h2v2H7z',
+  ],
   skipPrevious: ['M6 4h2v16H6V4zm12 0h-2v2h-2v3h-2v2h-2v2h2v3h2v2h2v2h2V4z'],
   skipNext: ['M6 4h2v2h2v2h2v2h2v4h-2v2h-2v2H8v2H6V4zm12 0h-2v16h2V4z'],
 } as const;

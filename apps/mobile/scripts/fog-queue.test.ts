@@ -342,15 +342,99 @@ test('starting from a list retains its order and shuffles only visible unqueued 
 
 test('Play next inserts after the current index, Add to queue appends, and both remove autoplay entries', () => {
   appStore.setState({ autoplay: ['rain', 'dream', 'summer'] });
-  appStore.getState().playNext('rain');
+  appStore.getState().playNext(['rain']);
   assert.deepEqual(appStore.getState().queue, ['dawn', 'rain', 'glass']);
   assert.deepEqual(appStore.getState().autoplay, ['dream', 'summer']);
   const before = appStore.getState();
-  appStore.getState().playNext('dawn');
+  appStore.getState().playNext(['dawn']);
   assert.equal(appStore.getState(), before);
-  appStore.getState().addToQueue('dream');
+  appStore.getState().addToQueue(['dream']);
   assert.deepEqual(appStore.getState().queue, ['dawn', 'rain', 'glass', 'dream']);
   assert.deepEqual(appStore.getState().autoplay, ['summer']);
+});
+
+test('Play next and Add to queue take lists and move songs already upcoming instead of repeating them', () => {
+  appStore.setState({ queue: ['dawn', 'glass', 'rain'], queueIndex: 0, autoplay: ['dream', 'summer'] });
+  appStore.getState().playNext(['rain', 'dream', 'rain', 'missing']);
+  assert.deepEqual(appStore.getState().queue, ['dawn', 'rain', 'dream', 'glass']);
+  assert.deepEqual(appStore.getState().autoplay, ['summer']);
+  appStore.getState().addToQueue(['rain', 'dawn']);
+  assert.deepEqual(appStore.getState().queue, ['dawn', 'dream', 'glass', 'rain', 'dawn']);
+});
+
+test('queue actions with nothing playing start the songs', async () => {
+  await resetAppState();
+  libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics });
+  appStore.getState().addToQueue(['missing', 'rain', 'glass']);
+  assert.equal(appStore.getState().songId, 'rain');
+  assert.deepEqual(appStore.getState().queue, ['rain', 'glass']);
+});
+
+test('Up next edits remove, move and clear upcoming songs without touching history or the current song', () => {
+  appStore.setState({ queue: ['dawn', 'glass', 'rain', 'dream'], queueIndex: 1, autoplay: ['bluebird', 'summer'] });
+  appStore.getState().moveUpNext(0, 1, 'rain');
+  assert.deepEqual(appStore.getState().queue, ['dawn', 'glass', 'dream', 'rain']);
+  appStore.getState().moveUpNext(1, 0, 'rain');
+  assert.deepEqual(appStore.getState().queue, ['dawn', 'glass', 'rain', 'dream']);
+  const before = appStore.getState();
+  for (const [from, to, id] of [
+    [0, 1, 'dream'],
+    [0, 2, 'rain'],
+    [-1, 0, 'glass'],
+    [0, 0.5, 'rain'],
+  ] as const)
+    appStore.getState().moveUpNext(from, to, id);
+  assert.equal(appStore.getState(), before);
+  appStore.getState().removeUpNext(3, 'summer');
+  assert.deepEqual(appStore.getState().autoplay, ['bluebird']);
+  appStore.getState().removeUpNext(0, 'rain');
+  assert.deepEqual(appStore.getState().queue, ['dawn', 'glass', 'dream']);
+  const unchanged = appStore.getState();
+  appStore.getState().removeUpNext(0, 'rain');
+  appStore.getState().removeUpNext(9, 'dream');
+  appStore.getState().removeUpNext(-1, 'glass');
+  assert.equal(appStore.getState(), unchanged);
+  appStore.getState().clearUpNext();
+  assert.deepEqual(appStore.getState().queue, ['dawn', 'glass']);
+  assert.equal(appStore.getState().queueIndex, 1);
+  assert.deepEqual(appStore.getState().autoplay, ['bluebird']);
+});
+
+test('playing an artist queues visible songs from its albums, newest album first', () => {
+  appStore.getState().startArtist('minami');
+  assert.deepEqual(appStore.getState().queue, ['dawn', 'glass', 'dream']);
+  assert.equal(appStore.getState().songId, 'dawn');
+  appStore.getState().startArtist('minami', true);
+  assert.deepEqual(new Set(appStore.getState().queue), new Set(['dawn', 'glass', 'dream']));
+  assert.equal(appStore.getState().songId, appStore.getState().queue[0]);
+  const before = appStore.getState();
+  appStore.getState().startArtist('nobody');
+  assert.equal(appStore.getState(), before);
+});
+
+test('a repeated song replays with a new run when it ends and turns off when another song plays', () => {
+  appStore.getState().setRepeatSong('dawn', true);
+  const run = appStore.getState().run;
+  finishSong();
+  assert.equal(appStore.getState().songId, 'dawn');
+  assert.equal(appStore.getState().queueIndex, 0);
+  assert.notEqual(appStore.getState().run, run);
+  assert.equal(appStore.getState().repeatSongId, 'dawn');
+  appStore.getState().nextSong();
+  assert.equal(appStore.getState().songId, 'glass');
+  assert.equal(appStore.getState().repeatSongId, null);
+  appStore.getState().setRepeatSong('glass', true);
+  appStore.getState().setRepeatSong('dawn', false);
+  assert.equal(appStore.getState().repeatSongId, 'glass');
+  appStore.getState().setRepeatSong('glass', false);
+  finishSong();
+  assert.notEqual(appStore.getState().songId, 'glass');
+  // Skipping to another queued play of the same song still turns it off.
+  appStore.setState({ queue: ['dawn', 'dawn'], queueIndex: 0, songId: 'dawn' });
+  appStore.getState().setRepeatSong('dawn', true);
+  appStore.getState().nextSong();
+  assert.equal(appStore.getState().songId, 'dawn');
+  assert.equal(appStore.getState().repeatSongId, null);
 });
 
 test('next enters autoplay, appends its song and previous returns through queue history', () => {

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
@@ -14,18 +14,23 @@ import type { Song } from '@/types/domain';
 
 /**
  * A song in the Library, an album's numbered list or Up next. Tapping plays it with `queue` (stable ids, default just
- * this song) as the queue, unless `onPress` overrides it. Long-press opens the song menu.
+ * this song) as the queue, unless `onPress` overrides it. Long-press opens the song menu unless `onLongPress` overrides
+ * it. `accessory` sits after the duration, like Up next's drag handle.
  */
 export const SongRow = memo(function SongRow({
   song,
   number,
   queue,
   onPress,
+  onLongPress,
+  accessory,
 }: {
   song: Song;
   number?: number;
   queue?: string[];
   onPress?: () => void;
+  onLongPress?: () => void;
+  accessory?: ReactNode;
 }) {
   const router = useRouter();
   const hideUnsynced = appStore((state) => state.hideSongsWithoutSyncedLyrics),
@@ -42,7 +47,7 @@ export const SongRow = memo(function SongRow({
           appStore.getState().startSong(song.id, queue);
         })
       }
-      onLongPress={() => router.push(songMenu(song.id))}
+      onLongPress={onLongPress ?? (() => router.push(songMenu(song.id)))}
       style={({ pressed }) => [
         styles.row,
         {
@@ -83,6 +88,7 @@ export const SongRow = memo(function SongRow({
         </Label>
         <FogBadge songId={song.id} compact />
       </View>
+      {accessory}
     </Pressable>
   );
 });

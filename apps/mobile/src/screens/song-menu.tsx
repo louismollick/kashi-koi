@@ -11,10 +11,10 @@ import { FogBadge, FogStrip, useSongFog } from '@/components/Fog';
 import { IconButton, Label, PixelToggle, styles } from '@/components/ui';
 import type { ReactNode } from 'react';
 
-/** Route to the song menu, for long presses and ⋯ buttons. */
-export const songMenu = (id: string) => ({
+/** Route to the song menu, for long presses and ⋯ buttons. Up next rows pass their `position` to offer removal. */
+export const songMenu = (id: string, position?: number) => ({
   pathname: '/song-menu' as const,
-  params: { id },
+  params: position === undefined ? { id } : { id, position: String(position) },
 });
 
 /**
@@ -64,7 +64,9 @@ function Row({
 
 /** Everything you can do with one song, from the player's ⋯, a long press, or the full player. */
 export default function SongMenuScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; position?: string }>(),
+    id = params.id,
+    position = params.position === undefined ? undefined : Number(params.position);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const song = libraryStore((state) => state.bySong[id]);
@@ -72,6 +74,7 @@ export default function SongMenuScreen() {
   libraryStore((state) => state.translationSongIds.has(id));
   libraryStore((state) => state.translationStatus);
   const current = appStore((state) => state.songId === id);
+  const repeat = appStore((state) => state.repeatSongId === id);
   const offline = appStore((state) => state.offlineMode);
   const showTranslations = appStore((state) => state.showTranslations);
   const useAnalysis = appStore((state) => !state.lineByLineSongIds.includes(id));
@@ -130,11 +133,22 @@ export default function SongMenuScreen() {
           )}
         </View>
         <ScrollView bounces={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 8 }}>
-          {!current && (
+          {current ? (
+            <Row label="Repeat song">
+              <PixelToggle
+                label="Repeat song"
+                on={repeat}
+                onPress={() => appStore.getState().setRepeatSong(id, !repeat)}
+              />
+            </Row>
+          ) : (
             <>
-              <Row label="Play next" onPress={act(() => appStore.getState().playNext(id))} />
-              <Row label="Add to queue" onPress={act(() => appStore.getState().addToQueue(id))} />
+              <Row label="Play next" onPress={act(() => appStore.getState().playNext([id]))} />
+              <Row label="Add to queue" onPress={act(() => appStore.getState().addToQueue([id]))} />
             </>
+          )}
+          {position !== undefined && (
+            <Row label="Remove from queue" onPress={act(() => appStore.getState().removeUpNext(position, id))} />
           )}
           <Row
             label="Go to album"

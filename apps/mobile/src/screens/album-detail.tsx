@@ -8,10 +8,10 @@ import { appStore, useLibraryFilters } from '@/store/appStore';
 import { Cover } from '@/components/Cover';
 import { DownloadButton } from '@/components/DownloadButton';
 import { ScreenHeader } from '@/components/Header';
-import { Icon } from '@/components/Icon';
+import { PlayButtons } from '@/components/PlayButtons';
 import { SongRow } from '@/components/SongRow';
 import { HiddenSongsRow } from '@/components/HiddenSongsRow';
-import { Button, Label, styles } from '@/components/ui';
+import { Label, styles } from '@/components/ui';
 
 /** Album artwork, metadata, Play/Shuffle, and its ordered songs. */
 export default function AlbumDetailScreen() {
@@ -41,10 +41,6 @@ export default function AlbumDetailScreen() {
         </Label>
       </View>
     );
-  const startAlbum = (shuffle = false) => {
-    router.push('/player');
-    appStore.getState().startAlbum(album.id, shuffle);
-  };
   return (
     <View style={styles.page}>
       <ScreenHeader right={<DownloadButton target={{ kind: 'album', id: album.id }} />} />
@@ -72,30 +68,11 @@ export default function AlbumDetailScreen() {
                 {album.year} · {tracks.length} {tracks.length === 1 ? 'song' : 'songs'}
               </Label>
             </View>
-            <View style={styles.row}>
-              <Button
-                label="Play album"
-                fill={colors.coral}
-                border={colors.coralBorder}
-                style={{ flex: 1 }}
-                disabled={!tracks.length}
-                onPress={() => startAlbum()}
-              >
-                <View style={styles.row}>
-                  <Icon name="play" size={22} />
-                  <Label style={{ fontWeight: '700' }}>Play</Label>
-                </View>
-              </Button>
-              <Button
-                label="Shuffle album"
-                border="#4b4f80"
-                style={{ flex: 1 }}
-                disabled={!tracks.length}
-                onPress={() => startAlbum(true)}
-              >
-                <Label style={{ fontWeight: '700' }}>Shuffle</Label>
-              </Button>
-            </View>
+            <PlayButtons
+              noun="album"
+              disabled={!tracks.length}
+              start={(shuffle) => appStore.getState().startAlbum(album.id, shuffle)}
+            />
           </View>
         }
         ListFooterComponent={<HiddenSongsRow count={hiddenCount} album />}

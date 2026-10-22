@@ -128,6 +128,8 @@ export const getArtistAlbums = (id: string) =>
     .getState()
     .albums.filter((album) => album.artistId === id)
     .sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+/** Every song on the artist's albums, newest album first, in track order, as the artist page lists them. */
+export const getArtistSongs = (id: string) => getArtistAlbums(id).flatMap((album) => getAlbumSongs(album.id));
 export const getLineText = (line: Line) => line.segments.map((segment) => segment.text).join('');
 export const hasTranslations = (id: string | null) => {
   const sentences = getLyrics(id).sentences;

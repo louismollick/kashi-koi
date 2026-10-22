@@ -67,8 +67,12 @@ A setting that limits the app to downloaded songs and stops all network work. Do
 _Avoid_: Airplane mode, local mode
 
 **Queue**:
-The songs that play after the current one: the list a song was started from, plus anything added with Play next or Add to queue. When the queue runs out, autoplay continues with a shuffle of the visible library.
+The songs that play after the current one: the list a song, album or artist was started from, plus anything added with Play next or Add to queue. A song already in the queue moves instead of appearing twice. Up next can be reordered, trimmed or cleared. When the queue runs out, autoplay continues with a shuffle of the visible library.
 _Avoid_: Playlist, up next (that's the view, not the list)
+
+**Repeat song**:
+A song menu switch on the playing song that replays it from the start, as a new run, each time it ends. Skipping or starting any song turns it off.
+_Avoid_: Loop, repeat one
 
 ### Modes
 

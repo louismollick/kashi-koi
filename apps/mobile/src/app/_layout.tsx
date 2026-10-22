@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import { loadSession, sessionStore } from '@/navidrome/session';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { colors } from '@/constants/theme';
 
 setTranslator(Japanese, saveTranslations);
@@ -104,40 +105,45 @@ export default function RootLayout() {
   }, [session]);
   if (!ready || (session && transportReady !== session)) return null;
   return (
-    <ThemeProvider value={navigationTheme}>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Protected guard={!session}>
-          <Stack.Screen name="login" />
-        </Stack.Protected>
-        <Stack.Protected guard={!!session}>
-          <Stack.Screen name="(tabs)" />
-          {/* Swipe-to-dismiss can't start over the PlayerBar, so its scrub line gets horizontal drags. */}
-          <Stack.Screen
-            name="player"
-            dangerouslySingular
-            options={{
-              animation: 'slide_from_bottom',
-              gestureDirection: 'vertical',
-              gestureResponseDistance: { bottom: height - 150 },
-            }}
-          />
-          <Stack.Screen
-            name="full-player"
-            options={{
-              animation: 'slide_from_bottom',
-              gestureDirection: 'vertical',
-              gestureResponseDistance: { bottom: height - 150 },
-            }}
-          />
-          <Stack.Screen name="clip-review" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-          <Stack.Screen name="edit-line" options={transparentModal} />
-          <Stack.Screen name="breakdown" options={transparentModal} />
-          <Stack.Screen name="download" options={transparentModal} />
-          <Stack.Screen name="song-menu" options={transparentModal} />
-          <Stack.Screen name="settings" />
-        </Stack.Protected>
-      </Stack>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={navigationTheme}>
+        <StatusBar style="light" />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+          <Stack.Protected guard={!session}>
+            <Stack.Screen name="login" />
+          </Stack.Protected>
+          <Stack.Protected guard={!!session}>
+            <Stack.Screen name="(tabs)" />
+            {/* Swipe-to-dismiss can't start over the PlayerBar, so its scrub line gets horizontal drags. */}
+            <Stack.Screen
+              name="player"
+              dangerouslySingular
+              options={{
+                animation: 'slide_from_bottom',
+                gestureDirection: 'vertical',
+                gestureResponseDistance: { bottom: height - 150 },
+              }}
+            />
+            <Stack.Screen
+              name="full-player"
+              options={{
+                animation: 'slide_from_bottom',
+                gestureDirection: 'vertical',
+                gestureResponseDistance: { bottom: height - 150 },
+              }}
+            />
+            <Stack.Screen
+              name="clip-review"
+              options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }}
+            />
+            <Stack.Screen name="edit-line" options={transparentModal} />
+            <Stack.Screen name="breakdown" options={transparentModal} />
+            <Stack.Screen name="download" options={transparentModal} />
+            <Stack.Screen name="song-menu" options={transparentModal} />
+            <Stack.Screen name="settings" />
+          </Stack.Protected>
+        </Stack>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
