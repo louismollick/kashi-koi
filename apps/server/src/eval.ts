@@ -1,15 +1,9 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  analysisAdvice,
-  dropInvalidQuizzes,
-  validateQuizzes,
-  type SongAnalysisDraft,
-  songAnalysisDraftSchema,
-} from '@kashi-koi/shared/analysis';
-import { CodexAnalyzer, UsageLimitError } from './analyzer/index.ts';
-import { validateDraft } from './analyzer/validate.ts';
+import { type SongAnalysisDraft, songAnalysisDraftSchema } from '@kashi-koi/shared/analysis';
+import { analyzeWithRetry } from './analyzer/attempts.ts';
+import { type Analyzer, CodexAnalyzer, UsageLimitError } from './analyzer/index.ts';
 
 /** An eval fixture: original lyrics plus what a reader should look for in the analysis. */
 type Fixture = { title: string; artist?: string; lines: string[]; checks: string[] };
@@ -67,6 +61,23 @@ function analysisLines(lines: string[], analysis: SongAnalysisDraft) {
   return out;
 }
 
+/** Prints each attempt's duration, and the feedback a retry starts from. */
+function timed(analyzer: Analyzer): Analyzer {
+  let attempt = 0;
+  return {
+    model: analyzer.model,
+    async analyze(input) {
+      if (input.feedback) console.log('First-attempt feedback', ...input.feedback.map((item) => `\n  ${item}`), '\n');
+      const started = Date.now();
+      try {
+        return await analyzer.analyze(input);
+      } finally {
+        console.log(`Attempt ${++attempt}: ${((Date.now() - started) / 1000).toFixed(1)}s`);
+      }
+    },
+  };
+}
+
 /** A bare name such as `kaeru` is a fixture in eval/. A path is resolved from where npm or node was called. */
 function fixturePath(arg: string) {
   if (!arg.includes('/')) return join(evalDir, arg.endsWith('.json') ? arg : `${arg}.json`);
@@ -90,31 +101,9 @@ async function main() {
     const fixture = parseFixture(JSON.parse(await readFile(file, 'utf8')), file);
     const started = Date.now();
     try {
-      let output: unknown;
-      let feedback: string[] | undefined;
-      let advice: string[] = [];
-      let dropped: string[] = [];
-      let errors: string[] = [];
-      for (let attempt = 0; attempt < 2; attempt++) {
-        const attemptStarted = Date.now();
-        const raw = await analyzer.analyze({
-          title: fixture.title,
-          artist: fixture.artist,
-          lines: fixture.lines,
-          feedback,
-        });
-        console.log(`Attempt ${attempt + 1}: ${((Date.now() - attemptStarted) / 1000).toFixed(1)}s`);
-        if (attempt === 0) advice = analysisAdvice(raw);
-        else dropped = validateQuizzes(raw, fixture.lines);
-        output = attempt === 0 ? raw : dropInvalidQuizzes(raw, fixture.lines);
-        errors = validateDraft(output, fixture.lines.length, fixture.lines);
-        if (!errors.length && (attempt !== 0 || !advice.length)) break;
-        if (attempt !== 0) break;
-        feedback = [...errors, ...advice];
-        console.log('First-attempt feedback', ...feedback.map((item) => `\n  ${item}`), '\n');
-      }
+      const { draft, errors, advice, dropped } = await analyzeWithRetry(timed(analyzer), fixture);
       if (errors.length) failures++;
-      console.log(report(file, fixture, output, errors, Math.round((Date.now() - started) / 1000), advice, dropped));
+      console.log(report(file, fixture, draft, errors, Math.round((Date.now() - started) / 1000), advice, dropped));
     } catch (error) {
       failures++;
       console.log(`━━ ${basename(file)}  ${fixture.title}\n\n${error instanceof Error ? error.message : error}\n`);

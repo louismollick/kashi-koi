@@ -2,7 +2,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { breakdownDraftJsonSchema, songAnalysisDraftJsonSchema } from '@kashi-koi/shared';
+import { songAnalysisDraftJsonSchema } from '@kashi-koi/shared/analysis';
+import { breakdownDraftJsonSchema } from '@kashi-koi/shared/breakdown';
 import { buildBreakdownPrompt, type BreakdownInput } from './breakdown-prompt.ts';
 import { buildPrompt } from './prompt.ts';
 
@@ -131,6 +132,14 @@ export function codexFailure(stdout: string, stderr: string, reason: string): Er
   const message = (messages[0] ?? 'no error message').replace(japanese, '…').slice(0, 300);
   if (messages.some((text) => usageLimit.test(text))) return new UsageLimitError(message);
   return new Error(`Codex failed (${reason}): ${message}`);
+}
+
+/** Keep bounded failure details while removing source lines and Japanese text. */
+export function errorMessage(error: unknown, lines: string[]) {
+  if (!(error instanceof Error)) return 'Unknown analyzer error';
+  let message = error.message;
+  for (const line of lines) message = message.split(line).join('…');
+  return message.replace(japanese, '…').slice(0, 400);
 }
 
 /** Failure messages, the turn's own failure first, then the last stream error. */

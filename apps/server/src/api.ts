@@ -1,11 +1,10 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { fingerprint } from '@kashi-koi/shared';
+import { fingerprint } from '@kashi-koi/shared/fingerprint';
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { type BreakdownAnalyzer, CodexAnalyzer, UsageLimitError } from './analyzer/index.ts';
+import { type BreakdownAnalyzer, CodexAnalyzer, errorMessage, UsageLimitError } from './analyzer/index.ts';
 import { BreakdownBusyError, createBreakdownGenerator } from './breakdowns.ts';
 import type { Store } from './db/index.ts';
-import { errorMessage } from './worker.ts';
 
 export const MAX_BODY_BYTES = 512 * 1024;
 const japanese = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;

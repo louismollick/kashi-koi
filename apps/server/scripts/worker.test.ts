@@ -428,3 +428,41 @@ test('final quiz dropping checks Japanese presence and English already visible i
     assert.equal(store.getAnalysis(input.fingerprint)?.sentences[0]?.quiz, null);
   }
 });
+
+test('a valid first draft with advice is kept when the retry is invalid or throws', async (t) => {
+  const source = ['朝', '窓', '風', '空'];
+  const first = {
+    ...draft,
+    lines: source.map(() => 'A translated line'),
+    sentences: [
+      {
+        start: 0,
+        end: 3,
+        translation: 'Morning window and wind in the sky',
+        quiz: testQuiz('Morning window and wind in the sky'),
+      },
+    ],
+  };
+  const retries: Array<() => unknown> = [
+    () => ({ ...first, lines: [] }),
+    () => {
+      throw new Error('Codex timed out after 300s');
+    },
+  ];
+  for (const retry of retries) {
+    const { store } = testStore(t);
+    store.enqueue({ ...input, lines: source });
+    let calls = 0;
+    await new Worker(store, {
+      model,
+      async analyze(request) {
+        if (++calls === 1) return first;
+        assert.match(request.feedback?.join('\n') ?? '', /at most 3/);
+        return retry();
+      },
+    }).runNext();
+    assert.equal(calls, 2);
+    assert.equal(store.getJob(input.fingerprint)?.status, 'done');
+    assert.deepEqual(store.getAnalysis(input.fingerprint)?.sentences, first.sentences);
+  }
+});
