@@ -1,4 +1,4 @@
-import { breakdownDraftSchema, breakdownSchema, validateBreakdown, type Breakdown } from '@kashi-koi/shared';
+import { breakdownDraftSchema, breakdownSchema, validateBreakdown, type Breakdown } from '@kashi-koi/shared/breakdown';
 import type { BreakdownAnalyzer } from './analyzer/index.ts';
 import type { Store } from './db/index.ts';
 

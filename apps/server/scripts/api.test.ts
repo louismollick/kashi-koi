@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fingerprint } from '@kashi-koi/shared';
+import { fingerprint } from '@kashi-koi/shared/fingerprint';
 import { createApi, MAX_BODY_BYTES } from '../src/api.ts';
 import { analysis, input, key, lines, testStore } from './test-utils.ts';
 

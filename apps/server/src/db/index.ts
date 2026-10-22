@@ -1,7 +1,8 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Breakdown, breakdownSchema, type SongAnalysis } from '@kashi-koi/shared';
+import type { SongAnalysis } from '@kashi-koi/shared/analysis';
+import { type Breakdown, breakdownSchema } from '@kashi-koi/shared/breakdown';
 import Database from 'better-sqlite3';
 import { and, eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';

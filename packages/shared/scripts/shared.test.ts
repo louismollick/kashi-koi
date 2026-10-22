@@ -1,25 +1,26 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  fingerprint,
-  decoySentence,
-  quizErrors,
-  validateQuizzes,
   analysisAdvice,
+  decoySentence,
   dropInvalidQuizzes,
-  breakdownDraftJsonSchema,
-  breakdownDraftSchema,
-  breakdownSchema,
-  validateBreakdown,
-  lyricLines,
-  pickEntry,
+  quizErrors,
+  type SongAnalysisDraft,
   songAnalysisDraftJsonSchema,
   songAnalysisDraftSchema,
   songAnalysisSchema,
   validateAnalysis,
-  type SongAnalysisDraft,
-  type StructuredLyrics,
-} from '../src/index.ts';
+  validateQuizzes,
+} from '../src/analysis.ts';
+import {
+  breakdownDraftJsonSchema,
+  breakdownDraftSchema,
+  breakdownSchema,
+  validateBreakdown,
+} from '../src/breakdown.ts';
+import { fingerprint } from '../src/fingerprint.ts';
+import { lyricLines, pickEntry } from '../src/lyrics.ts';
+import type { StructuredLyrics } from '../src/subsonic.ts';
 
 /** Small valid swaps for fixtures; behavior tests use explicit decoys. */
 const testQuiz = (translation: string) => ({
