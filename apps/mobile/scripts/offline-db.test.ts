@@ -5,17 +5,20 @@ import { test } from 'node:test';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import type { Breakdown } from '@kashi-koi/shared/breakdown';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
+import { albums, artists, songLyrics, songs } from './fixtures';
 
-test('SQLite atomically invalidates replacement breakdowns, rolls back interruptions, and keeps identical-analysis caches', async () => {
+test('SQLite atomically invalidates replacement breakdowns, rolls back interruptions, keeps identical-analysis caches and writes the library in batches', async () => {
   const sqlite = new DatabaseSync(':memory:');
   let interrupt = false,
     interruptDownloads = false,
-    transactions = 0;
+    transactions = 0,
+    statements = 0;
   const adapter = {
     execAsync: async (sql: string) => {
       sqlite.exec(sql);
     },
     runAsync: async (sql: string, ...params: SQLInputValue[]) => {
+      statements++;
       if (interrupt && sql.startsWith('INSERT OR REPLACE INTO analyses')) throw new Error('Interrupted replacement');
       if (interruptDownloads && sql.startsWith('INSERT OR REPLACE INTO downloads') && params[0] === 'second')
         throw new Error('Interrupted enqueue');
@@ -117,6 +120,42 @@ test('SQLite atomically invalidates replacement breakdowns, rolls back interrupt
     interruptDownloads = true;
     await assert.rejects(db.saveDownloads({ first: queued, second: queued }), /Interrupted enqueue/);
     assert.deepEqual(await db.loadDownloads(), {});
+    // Library write path: set-based replace that keeps lyrics, one transaction per scan batch, in-place updates.
+    const [first, second] = songs.map((song) => ({ ...song, lyricsStatus: 'unchecked' as const }));
+    const status = async () =>
+      Object.fromEntries((await db.loadAll()).songs.map((song) => [song.id, song.lyricsStatus]));
+    let writes = { transactions, statements };
+    await db.replaceLibrary({ songs: [first!, second!], albums, artists });
+    assert.deepEqual(
+      { transactions: transactions - writes.transactions, statements: statements - writes.statements },
+      {
+        transactions: 1,
+        statements: 7,
+      },
+    );
+    writes = { transactions, statements };
+    await db.saveLyricsResults([
+      { songId: first!.id, status: 'synced', lyrics: songLyrics[first!.id] },
+      { songId: second!.id, status: 'synced', lyrics: songLyrics[second!.id] },
+      { songId: 'removed', status: 'synced', lyrics: songLyrics[first!.id] },
+    ]);
+    assert.equal(transactions - writes.transactions, 1);
+    assert.deepEqual(await status(), { [first!.id]: 'synced', [second!.id]: 'synced' });
+    const loaded = (await db.loadAll()).lyrics;
+    assert.deepEqual(Object.keys(loaded).sort(), [first!.id, second!.id].sort());
+    // Cached lyrics are raw: sentences and fingerprints are derived by the store on load.
+    assert.equal(loaded[first!.id]!.sentences, undefined);
+    assert.equal(loaded[first!.id]!.timeline.length, songLyrics[first!.id]!.timeline.length);
+    await db.savePlayed(first!.id, 12345);
+    const played = (await db.loadAll()).songs.find((song) => song.id === first!.id);
+    assert.equal(played?.played, 12345);
+    assert.equal(played?.lyricsStatus, 'synced');
+    // A sync keeps lyrics of surviving songs untouched and prunes those of removed songs.
+    await db.replaceLibrary({ songs: [{ ...played!, lyricsStatus: 'synced' }], albums, artists });
+    assert.deepEqual(Object.keys((await db.loadAll()).lyrics), [first!.id]);
+    assert.deepEqual((await db.loadAll()).lyrics[first!.id], loaded[first!.id]);
+    await db.saveLyricsResults([{ songId: first!.id, status: 'none' }]);
+    assert.deepEqual((await db.loadAll()).lyrics, {});
   } finally {
     hooks.deregister();
     delete globals[key];

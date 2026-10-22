@@ -377,12 +377,21 @@ export function loadDownloadState() {
   return operation(async () => {
     await prepare();
     downloadStore.setState({ entries: await runtime.load() });
-    for (const [id, entry] of Object.entries(downloadStore.getState().entries)) {
-      if (
-        entry.status === 'downloading' ||
-        (entry.status === 'done' &&
-          (!entry.fileName || !(await runtime.exists(`${downloadStore.getState().root}/audio/${entry.fileName}`))))
-      ) {
+    const { entries, root } = downloadStore.getState();
+    // Check every finished song's audio at once rather than one native call after another.
+    const present = new Set(
+      (
+        await Promise.all(
+          Object.entries(entries).map(async ([id, entry]) =>
+            entry.status === 'done' && entry.fileName && (await runtime.exists(`${root}/audio/${entry.fileName}`))
+              ? id
+              : null,
+          ),
+        )
+      ).filter((id) => id !== null),
+    );
+    for (const [id, entry] of Object.entries(entries)) {
+      if (entry.status === 'downloading' || (entry.status === 'done' && !present.has(id))) {
         if (entry.fileName) await runtime.remove(`${downloadStore.getState().root}/audio/${entry.fileName}`);
         await publish(id, { ...entry, status: 'queued', fileName: undefined, bytes: undefined, updatedAt: Date.now() });
       }

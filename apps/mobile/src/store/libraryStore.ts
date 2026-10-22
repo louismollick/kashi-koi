@@ -14,10 +14,13 @@ export type Library = {
   translations?: Translations;
   analyses?: Record<string, SongAnalysis>;
 };
+/** A library as loaded from SQLite: lyrics are raw input that `setLibrary` derives sentences for. */
+export type LibraryInput = Omit<Library, 'lyrics'> & { lyrics: Record<string, LyricsInput> };
 export type LyricsResult = { songId: string; status: LyricsStatus; lyrics?: LyricsInput };
 export type Progress = { kind: 'sync' | 'scan'; completed: number; total: number };
 const empty: Library = { songs: [], albums: [], artists: [], lyrics: {} };
-const emptyLyrics = (songId: string): SongLyrics => withSentences({ songId, lines: [], timeline: [] });
+/** Shared by every song without lyrics (and by no song at all), so reads never rebuild it. */
+const emptyLyrics = withSentences({ songId: '', lines: [], timeline: [] });
 
 /** The in-memory library is seeded from SQLite at boot, or fixtures in Node tests. */
 export const libraryStore = create<
@@ -35,9 +38,9 @@ export const libraryStore = create<
     translationSongIds: Set<string>;
     translationError: string | null;
     applyTranslationsToSong: (songId: string, translations?: Translations) => void;
-    setLibrary: (library: Library) => void;
+    setLibrary: (library: LibraryInput) => void;
     setLyricsResult: (songId: string, status: LyricsStatus, lyrics?: LyricsInput) => void;
-    /** Publish many scan results in one update, so subscribers walk the library once per batch. */
+    /** Publish many scan results in one update, so subscribers walk the library once per batch. Applies them as given. */
     setLyricsResults: (results: LyricsResult[]) => void;
     markPlayed: (songId: string, at?: number) => void;
   }
@@ -94,7 +97,7 @@ export const libraryStore = create<
     let changed = false;
     for (const { songId, status, lyrics: input } of results) {
       const song = bySong[songId];
-      if (!song || (status === 'error' && song.lyricsStatus === 'synced' && lyrics[songId])) continue;
+      if (!song) continue;
       bySong[songId] = { ...song, lyricsStatus: status };
       if (status === 'none') delete lyrics[songId];
       else if (input) lyrics[songId] = applySongTranslations(input, state.translations, state.analyses, true);
@@ -116,8 +119,7 @@ export const libraryStore = create<
 export const getSong = (id: string | null) => (id ? libraryStore.getState().bySong[id] : undefined);
 export const getAlbum = (id: string) => libraryStore.getState().byAlbum[id];
 export const getArtist = (id: string) => libraryStore.getState().byArtist[id];
-export const getLyrics = (id: string | null) =>
-  id ? (libraryStore.getState().lyrics[id] ?? emptyLyrics(id)) : emptyLyrics('');
+export const getLyrics = (id: string | null) => (id && libraryStore.getState().lyrics[id]) || emptyLyrics;
 export const getAlbumSongs = (id: string) =>
   libraryStore
     .getState()
@@ -181,7 +183,7 @@ export function getAnswers(song: Song, index: number, random = Math.random): Cho
 
 /** Reuse translations by Japanese text after loading or rescanning lyrics. */
 function applyTranslations(
-  lyrics: Library['lyrics'],
+  lyrics: LibraryInput['lyrics'],
   translations: Translations,
   analyses: Record<string, SongAnalysis>,
 ): Library['lyrics'] {
