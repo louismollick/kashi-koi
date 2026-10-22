@@ -42,11 +42,17 @@ jobs:
     # Other labels don't change anything, so they don't rebuild.
     if: github.event.action != 'labeled' || github.event.label.name == 'server-image'
     runs-on: ubuntu-latest
+    # A newer push to a PR supersedes its running build. Runs that publish from main always finish.
+    concurrency:
+      group: server-image-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      # Emulation is only needed for the arm64 half of a published image.
       - uses: docker/setup-qemu-action@v3
+        if: env.PUBLISH == 'true'
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         if: env.PUBLISH == 'true'
@@ -68,7 +74,7 @@ jobs:
           pull: true
           no-cache: ${{ github.event_name == 'schedule' }}
           file: apps/server/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ env.PUBLISH == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           push: ${{ env.PUBLISH == 'true' }}
           tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
