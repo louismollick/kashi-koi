@@ -19,7 +19,6 @@ sentenceOccurrenceAt(songId: string | null, lineIndex: number)
 sentenceForReview(item: ReviewList[number])
 // Same result as currentSentence, for the sentence's first occurrence
 songAnalysisInfo(songId: string | null) // SongLyrics['analysis']
-isAnalyzed(songId: string | null) // boolean
 hasTranslations(songId: string | null) // boolean
 getSentenceText(songId: string, sentence: Sentence) // string
 reviewClip(item: ReviewList[number]) // { startMs: number, endMs: number } | undefined
@@ -42,14 +41,13 @@ appStore.getState().analyzeSong(songId: string, options?: { force?: boolean }) /
 canAnalyze() // boolean, exported by appStore.ts
 appStore.getState().moveReviewSentence(reviewId: string, sentenceId: string) // void
 appStore.getState().removeReviewSentence(reviewId: string) // void
-appStore.getState().sendToReview(sentenceId: string, enabled: boolean) // void
 ```
 
 `analysisServerUrl` persists in learning state. An empty override uses `EXPO_PUBLIC_KASHI_SERVER_URL`; both empty disable network reads. `analysisToken` is transient store state loaded from SecureStore key `analysis-token`. An empty token removes it. `canAnalyze` requires a token and effective URL; the action also requires a song with synced lines.
 
 `analysisRequests[songId]` is `{ status: 'requesting' | 'queued' | 'running' | 'failed', error?: string, force: boolean }`. Success removes it and publishes the cached analysis. Failed requests remain for display and Retry preserves their force flag. Concurrent requests for the same song share one job. Polling runs every five seconds for up to ten minutes.
 
-Clip choices use sentence IDs. Clip answers retain review entry IDs to preserve the existing editing and feedback behavior. Clips use the entire first sentence occurrence. Correct answers auto-advance after 800 ms. Wrong answers wait for `nextClip()`. In runs, correct answers release a held sentence after 800 ms; wrong answers keep it held until `continueAfterAnswer()` or another playback action. `moveReviewLine`, `removeReviewLine`, `dueLines` and `readyReviewLines` remain compatibility aliases for existing screens.
+Clip choices use sentence IDs. Clip answers retain review entry IDs to preserve the existing editing and feedback behavior. Clips use the entire first sentence occurrence. Correct answers auto-advance after 800 ms. Wrong answers wait for `nextClip()`. In runs, correct answers release a held sentence after 800 ms; wrong answers keep it held until `continueAfterAnswer()` or another playback action.
 
 ## Cache and migration
 
@@ -92,9 +90,9 @@ canExplain(songId) // boolean
 
 IDs accept `string | null | undefined`. A `BreakdownTarget` is `{fingerprint, start, text, translation}`. Repeated sentences resolve to the first occurrence's start. Songs without an analysis have no target. `canExplain` requires an analysis and an effective server URL.
 
-`state` is undefined before loading, then one of `{status: 'loading'}`, `{status: 'ready', breakdown}`, `{status: 'failed', error}` or `{status: 'missing'}`. The non-persisted `breakdownStore.states` uses `${fingerprint}:${start}` keys. `useBreakdown` subscribes to lyrics and cached request state; call `loadBreakdown` explicitly when opening the sheet. A failed or missing request can be retried by calling it again.
+`state` is undefined before loading, then one of `{status: 'loading'}`, `{status: 'ready', breakdown}`, `{status: 'failed', error}` or `{status: 'missing'}`. `breakdownStore.states` holds request state and uses `${fingerprint}:${start}` keys. `useBreakdown` subscribes to lyrics and cached request state; call `loadBreakdown` explicitly when opening the sheet. A failed or missing request can be retried by calling it again.
 
-Loading calls the public GET first. On 404 it calls POST only with an admin token, otherwise records `missing`. Same-key calls share a request. Ready results are reused. POST allows 270 seconds, above the server maximum of 120 seconds waiting plus two 60 second attempts. A full waiting queue returns 503. The failed state shows "Server busy, try again" for 503, "Usage limit reached, try later" for 429, or "Breakdown failed" for other errors. Client helpers `fetchBreakdown(base, fingerprint, start, sentenceText, translation, fetcher?)` and `requestBreakdown(base, token, fingerprint, start, sentenceText, translation, fetcher?)` return `{status: 200, breakdown}` or `{status: 404}` and validate metadata, Japanese-only chunk coverage, hiragana readings, English spans and steps.
+Loading calls the public GET first. On 404 it calls POST only with an admin token, otherwise records `missing`. Same-key calls share a request. Ready results are stored in SQLite (ADR 0004) and reused, including offline. POST allows 270 seconds, above the server maximum of 120 seconds waiting plus two 60 second attempts. A full waiting queue returns 503. The failed state shows "Server busy, try again" for 503, "Usage limit reached, try later" for 429, or "Breakdown failed" for other errors. Client helpers `fetchBreakdown(base, fingerprint, start, sentenceText, translation, fetcher?)` and `requestBreakdown(base, token, fingerprint, start, sentenceText, translation, fetcher?)` return `{status: 200, breakdown}` or `{status: 404}` and validate metadata, Japanese-only chunk coverage, hiragana readings, English spans and steps.
 
 A breakdown chunk is `{text, reading, english, steps, note}`. `reading` is hiragana and required for kanji. `english` is empty or an exact substring of the sentence translation. Steps remain `{japanese, reading, english}`; kanji step text needs a hiragana reading. Coverage compares only Han, Hiragana, Katakana, `ー` and `々`, so interjections such as "Ah" need no chunk.
 
