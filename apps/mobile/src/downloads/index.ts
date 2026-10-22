@@ -7,8 +7,8 @@ export {
   type DownloadEntry,
   type DownloadProgress,
 } from './store';
-export { eligibleSongs } from './targets';
 export {
+  eligibleSongs,
   queueDownloads,
   removeDownloads,
   deleteAllDownloads,

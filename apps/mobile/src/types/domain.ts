@@ -13,9 +13,6 @@ export type RunEnd = {
   at: number;
 };
 export type Combo = number;
-export type QuizToggle = boolean;
-export type ListenMode = 'listen';
-export type QuizMode = 'quiz';
 export type Line = { id: string; segments: { text: string; reading?: string }[]; translation?: string };
 export type Occurrence = { lineId: string; startMs: number; endMs: number; translation?: string };
 export type Sentence = { id: string; lineIds: string[]; translation?: string; quiz?: Quiz | null };
@@ -65,10 +62,6 @@ export type NewSentence = ReviewSentence & { kind: 'new' };
 export type DueSentence = ReviewSentence & { kind: 'due'; misses: number };
 export type LaterSentence = ReviewSentence & { kind: 'later'; step: number; dueAt: number };
 export type ReviewList = (NewSentence | DueSentence | LaterSentence)[];
-// Compatibility names for the existing screens until their sentence UI lands.
-export type NewLine = NewSentence;
-export type DueLine = DueSentence;
-export type LaterLine = LaterSentence;
 export type ClipReview = {
   id: string;
   ids: string[];

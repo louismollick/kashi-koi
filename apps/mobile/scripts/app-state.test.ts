@@ -5,14 +5,7 @@ import { registerHooks } from 'node:module';
 import { withSentences } from '../src/lyrics/sentences';
 import { currentOccurrence } from '../src/navidrome/lyrics';
 import { sessionStore } from '../src/navidrome/session';
-import {
-  appStore,
-  finishSong,
-  getRunSummary,
-  setTransport,
-  hydrateAppState,
-  resetAppState,
-} from '../src/store/appStore';
+import { appStore, finishSong, setTransport, hydrateAppState, resetAppState } from '../src/store/appStore';
 import { albums, artists, firstSong, songs, songLyrics, fixtureLine, fixtureReviewList } from './fixtures';
 import {
   getAlbumSongs,
@@ -22,14 +15,11 @@ import {
   reviewClip,
   getLyrics,
   libraryStore,
-  occurrenceLine,
   isDue,
-  dueLines,
-  readyReviewLines,
+  dueSentences,
+  readyReviewSentences,
 } from '../src/store/libraryStore';
 import {
-  albumHasSyncedLyrics,
-  artistHasSyncedLyrics,
   getRecentlyPlayed,
   getVisibleLibrary,
   getVisibleSongs,
@@ -93,12 +83,12 @@ test('a lost mark can be undone without removing pre-existing review lines', () 
 
 test('edit moves a new line and removal persists through the clip flow', () => {
   appStore.getState().startClipReview();
-  appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-4'));
+  appStore.getState().moveReviewSentence('new-dawn', fixtureLine('dawn-4'));
   assert.equal(
     appStore.getState().reviewList.find((line) => line.id === 'new-dawn')?.sentenceId,
     fixtureLine('dawn-4'),
   );
-  appStore.getState().removeReviewLine('new-dawn');
+  appStore.getState().removeReviewSentence('new-dawn');
   assert.ok(!appStore.getState().reviewList.some((line) => line.id === 'new-dawn'));
   assert.equal(appStore.getState().clipReview?.ids[0], 'new-rain');
 });
@@ -163,7 +153,7 @@ test('moving a lost mark frees its line without reusing the entry id', () => {
   appStore.getState().jumpToLine(5);
   appStore.getState().addLostMark();
   const firstId = appStore.getState().addedId!;
-  appStore.getState().moveReviewLine(firstId, fixtureLine('dawn-4'));
+  appStore.getState().moveReviewSentence(firstId, fixtureLine('dawn-4'));
   appStore.getState().addLostMark();
   const secondId = appStore.getState().addedId!;
   assert.notEqual(firstId, secondId);
@@ -172,20 +162,20 @@ test('moving a lost mark frees its line without reusing the entry id', () => {
   assert.ok(!appStore.getState().reviewList.some((line) => line.id === secondId));
   appStore.getState().addLostMark();
   const thirdId = appStore.getState().addedId!;
-  appStore.getState().removeReviewLine(firstId);
+  appStore.getState().removeReviewSentence(firstId);
   assert.ok(appStore.getState().reviewList.some((line) => line.id === thirdId));
 });
 
 test('moving an answered current clip resets it to new and permits another answer', () => {
   appStore.getState().startClipReview();
   appStore.getState().answerClip(clipAnswer());
-  appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-4'));
+  appStore.getState().moveReviewSentence('new-dawn', fixtureLine('dawn-4'));
   assert.equal(appStore.getState().reviewList.find((line) => line.id === 'new-dawn')?.kind, 'new');
   assert.equal(clipResult(), null);
   appStore.getState().answerClip('wrong');
   assert.equal(clipResult(), false);
   assert.equal(appStore.getState().reviewList.find((line) => line.id === 'new-dawn')?.kind, 'due');
-  appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-5'));
+  appStore.getState().moveReviewSentence('new-dawn', fixtureLine('dawn-5'));
   assert.equal(appStore.getState().reviewList.find((line) => line.id === 'new-dawn')?.kind, 'new');
   assert.equal(clipResult(), null);
 });
@@ -218,12 +208,12 @@ test('moving onto another review entry is rejected, including later lines', () =
   appStore.getState().startClipReview();
   appStore.getState().answerClip(clipAnswer());
   const before = appStore.getState();
-  appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-2'));
+  appStore.getState().moveReviewSentence('new-dawn', fixtureLine('dawn-2'));
   assert.deepEqual(appStore.getState().reviewList, before.reviewList);
   assert.deepEqual(appStore.getState().clipReview, before.clipReview);
-  appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-8'));
+  appStore.getState().moveReviewSentence('new-dawn', fixtureLine('dawn-8'));
   assert.deepEqual(appStore.getState().reviewList, before.reviewList);
-  appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-3'));
+  appStore.getState().moveReviewSentence('new-dawn', fixtureLine('dawn-3'));
   assert.deepEqual(appStore.getState().reviewList, before.reviewList);
   assert.equal(clipResult(), true);
 });
@@ -269,7 +259,7 @@ test('miss entry ids survive moving and missing the original sentence again', ()
   appStore.getState().jumpToLine(0);
   appStore.getState().answer('wrong');
   const firstId = appStore.getState().addedId!;
-  appStore.getState().moveReviewLine(firstId, fixtureLine('dawn-1'));
+  appStore.getState().moveReviewSentence(firstId, fixtureLine('dawn-1'));
   appStore.getState().restartRun();
   appStore.getState().answer('wrong');
   const secondId = appStore.getState().addedId!;
@@ -282,7 +272,7 @@ test('miss entry ids survive moving and missing the original sentence again', ()
 test('moving another clip preserves the current answer', () => {
   appStore.getState().startClipReview();
   appStore.getState().answerClip(clipAnswer());
-  appStore.getState().moveReviewLine('new-rain', fixtureLine('rain-4'));
+  appStore.getState().moveReviewSentence('new-rain', fixtureLine('rain-4'));
   assert.equal(clipResult(), true);
   assert.equal(appStore.getState().reviewList.find((line) => line.id === 'new-rain')?.kind, 'new');
 });
@@ -401,25 +391,7 @@ test('visible songs, albums and artists follow the setting and cascade from sync
   );
 });
 
-test('album and artist badges distinguish mixed, lyric-only and no-lyrics collections', () => {
-  assert.equal(albumHasSyncedLyrics('dawn'), true);
-  assert.equal(artistHasSyncedLyrics('minami'), true);
-  assert.equal(albumHasSyncedLyrics('dawn', [firstSong]), true);
-  assert.equal(artistHasSyncedLyrics('minami', [firstSong]), true);
-  assert.equal(albumHasSyncedLyrics('tide'), false);
-  assert.equal(artistHasSyncedLyrics('nagi'), false);
-  assert.equal(albumHasSyncedLyrics('dawn', getAlbumSongs('dawn').slice(1)), false);
-  assert.equal(
-    artistHasSyncedLyrics(
-      'minami',
-      songs.filter((song) => song.lyricsStatus !== 'synced'),
-    ),
-    false,
-  );
-  assert.equal(albumHasSyncedLyrics('dawn', []), false);
-  assert.equal(artistHasSyncedLyrics('minami', []), false);
-  assert.equal(albumHasSyncedLyrics('missing'), false);
-  assert.equal(artistHasSyncedLyrics('missing'), false);
+test('albums and artists with only unsynced songs appear only when unsynced songs are shown', () => {
   assert.ok(
     getVisibleLibrary({ hideUnsynced: false, hideNonJapanese: false }).albums.some((album) => album.id === 'tide'),
   );
@@ -562,6 +534,31 @@ test('audio status follows occurrence boundaries and instrumental gaps', () => {
   appStore.getState().updatePlayback(238000, 238000, false);
   assert.equal(appStore.getState().lineIndex, getLyrics('dawn').timeline.length - 1);
   assert.equal(appStore.getState().playing, false);
+});
+
+test('playback ticks do not rewrite persisted learning state', async () => {
+  const writes: string[] = [];
+  await hydrateAppState({
+    getItem: () => null,
+    setItem: (_key, value) => {
+      writes.push(value);
+    },
+    removeItem: () => {},
+  });
+  appStore.getState().startSong('dawn');
+  appStore.getState().updatePlayback(1000, 238000, true);
+  const settled = writes.length;
+  appStore.getState().updatePlayback(1200, 238000, true);
+  appStore.getState().updatePlayback(1400, 238000, true);
+  appStore.getState().setPlaying(false);
+  assert.equal(writes.length, settled);
+  appStore.getState().toggleHideSongsWithoutJapanese();
+  assert.equal(writes.length, settled + 1);
+  assert.equal(
+    (JSON.parse(writes.at(-1)!) as { state: Record<string, unknown> }).state.hideSongsWithoutJapanese,
+    false,
+  );
+  await resetAppState();
 });
 
 test('learning state survives hydration while playback stays transient, and reset wipes it', async () => {
@@ -766,7 +763,6 @@ test('clips pause at their end without advancing or changing the main learning s
     assert.equal(after.songId, before.songId);
     assert.equal(after.lineIndex, before.lineIndex);
     assert.equal(after.quizToggle, before.quizToggle);
-    assert.equal(after.mode, before.mode);
     assert.equal(after.run, before.run);
     assert.equal(after.queue, before.queue);
     assert.equal(nextCalls, 0);
@@ -811,11 +807,11 @@ test('moving or removing the current review line pauses its old clip', () => {
     const target = getLyrics(item.songId).lines.find(
       (line) => !state.reviewList.some((item) => item.sentenceId === line.id),
     )!;
-    appStore.getState().moveReviewLine(item.id, target.id);
+    appStore.getState().moveReviewSentence(item.id, target.id);
     assert.equal(appStore.getState().playing, false);
     appStore.getState().startClipReview();
     state = appStore.getState();
-    appStore.getState().removeReviewLine(state.clipReview!.ids[0]!);
+    appStore.getState().removeReviewSentence(state.clipReview!.ids[0]!);
     assert.equal(appStore.getState().playing, false);
   } finally {
     detach();
@@ -993,9 +989,6 @@ test('timeout resumes playback, records a miss, and resets combo', (t) => {
     assert.equal(appStore.getState().answerWait, null);
     assert.equal(appStore.getState().run.combo, 0);
     assert.deepEqual(appStore.getState().run.answers[fixtureLine('dawn-0')], { choice: null, correct: false });
-    assert.ok(
-      getRunSummary(firstSong, appStore.getState().run).missed.some((line) => line.id === fixtureLine('dawn-0')),
-    );
     const reviewList = appStore.getState().reviewList;
     assert.deepEqual(calls, ['pause', 'play']);
     stopFirstLine();
@@ -1561,9 +1554,7 @@ test('prelude keeps quiz mode at lineIndex -1 with no answer choices', () => {
     });
     appStore.getState().updatePlayback(0, 238000, true);
     assert.equal(appStore.getState().lineIndex, -1);
-    assert.equal(appStore.getState().mode, 'quiz');
     assert.equal(appStore.getState().quizToggle, true);
-    assert.equal(occurrenceLine('dawn', -1), undefined);
     assert.equal(appStore.getState().answerWait, null);
   } finally {
     detach();
@@ -1622,9 +1613,9 @@ for (const edit of ['invalid move', 'other move', 'other removal', 'invalid jump
       appStore.getState().startClipReview();
       appStore.getState().answerClip(clipAnswer());
       const first = appStore.getState().clipReview!.ids[0]!;
-      if (edit === 'invalid move') appStore.getState().moveReviewLine(first, 'missing');
-      if (edit === 'other move') appStore.getState().moveReviewLine('new-rain', fixtureLine('rain-0'));
-      if (edit === 'other removal') appStore.getState().removeReviewLine('new-rain');
+      if (edit === 'invalid move') appStore.getState().moveReviewSentence(first, 'missing');
+      if (edit === 'other move') appStore.getState().moveReviewSentence('new-rain', fixtureLine('rain-0'));
+      if (edit === 'other removal') appStore.getState().removeReviewSentence('new-rain');
       if (edit === 'invalid jump') appStore.getState().jumpToClip(-1);
       t.mock.timers.tick(799);
       assert.equal(appStore.getState().clipReview?.index, 0);
@@ -1645,7 +1636,7 @@ test('removing an earlier clip preserves the selected review ID and does not ski
     const ids = appStore.getState().clipReview!.ids;
     appStore.getState().jumpToClip(1);
     appStore.getState().answerClip(clipAnswer());
-    appStore.getState().removeReviewLine(ids[0]!);
+    appStore.getState().removeReviewSentence(ids[0]!);
     const clip = appStore.getState().clipReview!;
     assert.equal(clip.ids[clip.index], ids[1]);
     assert.equal(clip.index, 0);
@@ -1666,7 +1657,7 @@ test('editing an answered clip while another is selected clears only the edited 
     appStore.getState().jumpToClip(1);
     appStore.getState().answerClip(clipAnswer());
     const second = appStore.getState().clipReview!.answers['new-rain'];
-    appStore.getState().moveReviewLine('new-dawn', fixtureLine('dawn-4'));
+    appStore.getState().moveReviewSentence('new-dawn', fixtureLine('dawn-4'));
     assert.equal(appStore.getState().clipReview?.answers['new-dawn'], undefined);
     assert.equal(appStore.getState().clipReview?.answers['new-rain'], second);
     appStore.getState().jumpToClip(0);
@@ -1826,11 +1817,11 @@ test('expired later lines join due today and ready review, with new lines separa
     [true, true, true, false],
   );
   assert.deepEqual(
-    dueLines(list, now).map((line) => line.id),
+    dueSentences(list, now).map((line) => line.id),
     ['due', 'expired'],
   );
   assert.deepEqual(
-    readyReviewLines(list, now).map((line) => line.id),
+    readyReviewSentences(list, now).map((line) => line.id),
     ['new', 'due', 'expired'],
   );
 });

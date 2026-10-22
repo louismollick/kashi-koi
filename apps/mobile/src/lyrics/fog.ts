@@ -1,4 +1,3 @@
-import { getLyrics } from '@/store/libraryStore';
 export type { FogTile, LineFog } from '@/types/domain';
 import type { FogTile, LineFog, SongLyrics } from '@/types/domain';
 
@@ -43,9 +42,4 @@ export function lyricsFog(lyrics: SongLyrics, fog: Record<string, LineFog>) {
     );
   const credit = tiles.reduce((sum, tile) => sum + (tile === 'clear' ? 1 : tile === 'half' ? 0.5 : 0), 0);
   return { tiles, percent: tiles.length ? Math.round((100 * credit) / tiles.length) : 0 };
-}
-
-/** Read the song's current fog map from the library. */
-export function songFog(songId: string, fog: Record<string, LineFog>) {
-  return lyricsFog(getLyrics(songId), fog);
 }

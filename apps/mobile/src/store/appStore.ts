@@ -1,6 +1,7 @@
 import { setOfflineModeReader } from '@/data/offlineMode';
 import { useMemo } from 'react';
 import { downloadStore, localAudioUri } from '@/downloads/store';
+import { normalizeBase } from '@/analysis/client';
 import { prefetchBreakdown, resetBreakdowns } from '@/analysis/breakdowns';
 import { remapReview } from '@/lyrics/review';
 import { applyAnswer, quizSentences } from '@/lyrics/fog';
@@ -14,7 +15,13 @@ import {
   setAnalysisStore,
 } from '@/analysis/fetcher';
 import { prioritizeTranslations, pauseTranslations, resumeTranslations } from '@/japanese/translate';
-import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import {
+  createJSONStorage,
+  persist,
+  type PersistStorage,
+  type StateStorage,
+  type StorageValue,
+} from 'zustand/middleware';
 import { currentOccurrence } from '@/navidrome/lyrics';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
@@ -28,21 +35,10 @@ import {
   hasTranslations,
   libraryStore,
   getAnswers,
-  readyReviewLines,
+  readyReviewSentences,
 } from '@/store/libraryStore';
 import { getVisibleSongs, isHiddenSong, type LibraryFilters } from '@/data/libraryVisibility';
-import type {
-  ClipReview,
-  ListenMode,
-  QuizMode,
-  QuizToggle,
-  ReviewList,
-  Run,
-  Song,
-  LineFog,
-  RunEnd,
-  SentenceOccurrence,
-} from '@/types/domain';
+import type { ClipReview, ReviewList, Run, Song, LineFog, RunEnd, SentenceOccurrence } from '@/types/domain';
 
 export type Transport = {
   load(song: Song, startMs?: number): void;
@@ -169,7 +165,7 @@ function scoreSentence(correct: boolean, choice: string | null): boolean {
     const line = currentSentence(state.songId, state.lineIndex)?.sentence;
     if (!line) return state;
     const sentenceId = line.id;
-    if (state.mode !== 'quiz' || state.run.answers[sentenceId]) return state;
+    if (!state.quizToggle || state.run.answers[sentenceId]) return state;
     if (!line.translation) return state;
     const combo = correct ? state.run.combo + 1 : 0,
       answers = { ...state.run.answers, [sentenceId]: { choice, correct } },
@@ -206,14 +202,6 @@ function scoreSentence(correct: boolean, choice: string | null): boolean {
   return scored;
 }
 
-/** Grade only the distinct sentences that can be asked in this song. */
-export function getRunSummary(song: Song, run: Run) {
-  const sentences = quizSentences(getLyrics(song.id)),
-    hits = sentences.filter((sentence) => run.answers[sentence.id]?.correct).length,
-    missed = sentences.filter((sentence) => !run.answers[sentence.id]?.correct);
-  return { hits, total: sentences.length, missed };
-}
-
 /** Publish quiz feedback before advancing to the next song. */
 export function finishSong() {
   if (appStore.getState().answerWait) scoreSentence(false, null);
@@ -248,7 +236,6 @@ function playQueueSong(songId: string, queueIndex: number) {
     run: newRun(),
     playing: true,
     quizToggle,
-    mode: quizToggle ? 'quiz' : 'listen',
   });
   playSong(songId);
 }
@@ -260,8 +247,7 @@ type AppState = {
   playbackError: string | null;
   songId: string | null;
   lineIndex: number;
-  quizToggle: QuizToggle;
-  mode: ListenMode | QuizMode;
+  quizToggle: boolean;
   fog: Record<string, LineFog>;
   perfectRuns: Record<string, true>;
   runEnd: RunEnd | null;
@@ -329,9 +315,7 @@ type AppState = {
   undoLostMark: () => void;
   dismissToast: () => void;
   moveReviewSentence: (id: string, sentenceId: string) => void;
-  moveReviewLine: (id: string, sentenceId: string) => void;
   removeReviewSentence: (id: string) => void;
-  removeReviewLine: (id: string) => void;
   startClipReview: () => void;
   answerClip: (choice: string) => void;
   nextClip: () => void;
@@ -356,7 +340,6 @@ export const appStore = create<AppState>()(
       songId: null,
       lineIndex: 0,
       quizToggle: false,
-      mode: 'listen',
       playing: false,
       fog: {},
       perfectRuns: {},
@@ -371,7 +354,7 @@ export const appStore = create<AppState>()(
       analysisRequests: {},
       setAnalysisServerUrl: (url) => {
         resetBreakdowns();
-        set({ analysisServerUrl: url.trim().replace(/\/+$/, '') });
+        set({ analysisServerUrl: normalizeBase(url) });
         void prioritizeAnalyses(
           [
             get().songId,
@@ -518,7 +501,7 @@ export const appStore = create<AppState>()(
         if (enabled && !hasTranslations(get().songId)) return;
         const waiting = !!get().answerWait;
         clearAnswerWait();
-        set({ quizToggle: enabled, mode: enabled ? 'quiz' : 'listen' });
+        set({ quizToggle: enabled });
         if (waiting) get().setPlaying(true);
       },
       nextSong: () => {
@@ -647,7 +630,7 @@ export const appStore = create<AppState>()(
           occurrence = current?.occurrence,
           line = current?.sentence;
         if (
-          state.mode === 'quiz' &&
+          state.quizToggle &&
           occurrence &&
           line &&
           state.run.choices[line.id]?.length &&
@@ -788,8 +771,6 @@ export const appStore = create<AppState>()(
               : clip,
           };
         }),
-      moveReviewLine: (id, sentenceId) => get().moveReviewSentence(id, sentenceId),
-      removeReviewLine: (id) => get().removeReviewSentence(id),
       removeReviewSentence: (id) =>
         set((state) => {
           const clip = state.clipReview;
@@ -812,7 +793,7 @@ export const appStore = create<AppState>()(
         set((state) => ({
           clipReview: {
             id: newRunId(),
-            ids: readyReviewLines(state.reviewList).map((line) => line.id),
+            ids: readyReviewSentences(state.reviewList).map((line) => line.id),
             index: 0,
             answers: {},
             combo: 0,
@@ -938,23 +919,42 @@ export function useLibraryFilters() {
   return useMemo(() => ({ ...filters, downloadEntries: entries }), [filters, entries]);
 }
 
+/**
+ * JSON persistence that skips the stringify and write when no persisted field changed by reference,
+ * so frequent playback ticks (which only touch transient fields) cost a shallow compare.
+ */
+function changeAwareStorage(storage: StateStorage): PersistStorage<unknown> {
+  let last: StorageValue<unknown> | null = null;
+  // Persisted state is always the plain object from `partialize`.
+  const fields = (value: StorageValue<unknown>) => value.state as Record<string, unknown>;
+  const unchanged = (next: StorageValue<unknown>) => {
+    if (!last || last.version !== next.version) return false;
+    const before = fields(last),
+      after = fields(next),
+      keys = Object.keys(after);
+    return keys.length === Object.keys(before).length && keys.every((key) => Object.is(before[key], after[key]));
+  };
+  const parse = (text: string | null) => (text === null ? null : (JSON.parse(text) as StorageValue<unknown>));
+  return {
+    getItem: (key) => {
+      const text = storage.getItem(key);
+      return text instanceof Promise ? text.then(parse) : parse(text);
+    },
+    setItem: (key, value) => {
+      if (unchanged(value)) return;
+      last = value;
+      return storage.setItem(key, JSON.stringify(value));
+    },
+    removeItem: (key) => {
+      last = null;
+      return storage.removeItem(key);
+    },
+  };
+}
+
 /** Native storage is injected at boot so store imports stay safe in plain Node. */
 export async function hydrateAppState(storage: StateStorage) {
-  let previous: string | null = null;
-  appStore.persist.setOptions({
-    storage: createJSONStorage(() => ({
-      getItem: (key) => storage.getItem(key),
-      setItem: (key, value) => {
-        if (value === previous) return;
-        previous = value;
-        return storage.setItem(key, value);
-      },
-      removeItem: (key) => {
-        previous = null;
-        return storage.removeItem(key);
-      },
-    })),
-  });
+  appStore.persist.setOptions({ storage: changeAwareStorage(storage) });
   await appStore.persist.rehydrate();
 }
 
@@ -1035,7 +1035,7 @@ libraryStore.subscribe((state, previous) => {
           }
         : null,
     });
-  } else appStore.setState({ reviewList });
+  } else if (reviewList !== current.reviewList) appStore.setState({ reviewList });
   const before = previous.lyrics[current.songId ?? ''],
     after = state.lyrics[current.songId ?? ''];
   if (after !== before && JSON.stringify(after?.sentences) !== JSON.stringify(before?.sentences)) {

@@ -12,6 +12,9 @@ export type RequestAnalysisResult =
   | { status: 200; analysis: SongAnalysis }
   | { status: 202; fingerprint: string; job: AnalysisJob };
 
+/** Server base URLs are stored and compared without whitespace or trailing slashes. */
+export const normalizeBase = (base: string) => base.trim().replace(/\/+$/, '');
+
 function readAnalysis(value: unknown, expectedFingerprint: string, lineCount?: number): SongAnalysis {
   const analysis = songAnalysisSchema.parse(value);
   if (analysis.fingerprint !== expectedFingerprint) throw new Error('Song analysis fingerprint does not match');
@@ -41,7 +44,7 @@ export async function fetchAnalysis(
   fetcher: typeof fetch = fetch,
   signal?: AbortSignal,
 ): Promise<FetchAnalysisResult> {
-  const response = await fetcher(`${base.trim().replace(/\/+$/, '')}/v1/analyses/${encodeURIComponent(fp)}`, {
+  const response = await fetcher(`${normalizeBase(base)}/v1/analyses/${encodeURIComponent(fp)}`, {
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
   });
   if (response.status === 404) return { status: 404 };
@@ -59,7 +62,7 @@ export async function requestAnalysis(
 ): Promise<RequestAnalysisResult> {
   const fp = fingerprint(input.lines);
   const lineCount = input.lines.length;
-  const response = await fetcher(`${base.trim().replace(/\/+$/, '')}/v1/analyses`, {
+  const response = await fetcher(`${normalizeBase(base)}/v1/analyses`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -92,6 +95,13 @@ function readBreakdown(
   return breakdown;
 }
 
+/** Map the server's busy and rate-limit statuses to messages shown to the listener. */
+function breakdownError(status: number) {
+  return new Error(
+    status === 503 ? 'Server busy, try again' : status === 429 ? 'Usage limit reached, try later' : 'Breakdown failed',
+  );
+}
+
 /** Public cached lookup, validated against the source sentence. */
 export async function fetchBreakdown(
   base: string,
@@ -102,21 +112,11 @@ export async function fetchBreakdown(
   fetcher: typeof fetch = fetch,
   signal?: AbortSignal,
 ): Promise<FetchBreakdownResult> {
-  const response = await fetcher(
-    `${base.trim().replace(/\/+$/, '')}/v1/analyses/${encodeURIComponent(fp)}/breakdowns/${start}`,
-    {
-      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
-    },
-  );
+  const response = await fetcher(`${normalizeBase(base)}/v1/analyses/${encodeURIComponent(fp)}/breakdowns/${start}`, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
+  });
   if (response.status === 404) return { status: 404 };
-  if (response.status !== 200)
-    throw new Error(
-      response.status === 503
-        ? 'Server busy, try again'
-        : response.status === 429
-          ? 'Usage limit reached, try later'
-          : 'Breakdown failed',
-    );
+  if (response.status !== 200) throw breakdownError(response.status);
   return { status: 200, breakdown: readBreakdown(await response.json(), fp, start, sentenceText, translation) };
 }
 
@@ -130,22 +130,12 @@ export async function requestBreakdown(
   translation: string,
   fetcher: typeof fetch = fetch,
 ): Promise<FetchBreakdownResult> {
-  const response = await fetcher(
-    `${base.trim().replace(/\/+$/, '')}/v1/analyses/${encodeURIComponent(fp)}/breakdowns/${start}`,
-    {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(270_000),
-    },
-  );
+  const response = await fetcher(`${normalizeBase(base)}/v1/analyses/${encodeURIComponent(fp)}/breakdowns/${start}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(270_000),
+  });
   if (response.status === 404) return { status: 404 };
-  if (response.status !== 200)
-    throw new Error(
-      response.status === 503
-        ? 'Server busy, try again'
-        : response.status === 429
-          ? 'Usage limit reached, try later'
-          : 'Breakdown failed',
-    );
+  if (response.status !== 200) throw breakdownError(response.status);
   return { status: 200, breakdown: readBreakdown(await response.json(), fp, start, sentenceText, translation) };
 }

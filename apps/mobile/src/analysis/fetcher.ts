@@ -2,7 +2,7 @@ import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import type { appStore as AppStore } from '@/store/appStore';
 import { getLyrics, getSong, libraryStore } from '@/store/libraryStore';
 import { timelineTexts } from '@/lyrics/sentences';
-import { fetchAnalysis, requestAnalysis } from './client';
+import { fetchAnalysis, normalizeBase, requestAnalysis } from './client';
 import { resetBreakdowns, flushBreakdowns } from './breakdowns';
 
 const defaults = {
@@ -37,7 +37,7 @@ export function setAnalysisRuntime(overrides: Partial<typeof defaults> = {}) {
 
 /** An empty override uses the bundled environment default; empty defaults disable reads. */
 export const analysisServerUrl = () =>
-  (appStore.getState().analysisServerUrl || process.env.EXPO_PUBLIC_KASHI_SERVER_URL || '').trim().replace(/\/+$/, '');
+  normalizeBase(appStore.getState().analysisServerUrl || process.env.EXPO_PUBLIC_KASHI_SERVER_URL || '');
 
 /** Capture the current transport and login so transient breakdowns use the same cancellation rules. */
 export function analysisSession() {
