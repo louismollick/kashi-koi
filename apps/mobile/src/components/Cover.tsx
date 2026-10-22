@@ -15,7 +15,7 @@ import { artStore } from '@/store/artStore';
  * Two of Navidrome's sizes (150, 300, 600): rows and the mini player share 150px, grids, headers,
  * the lock screen and downloads share 600px, so each album has at most two cache entries.
  */
-export const coverUrl = (session: Session, coverArt: string, size: number) =>
+const coverUrl = (session: Session, coverArt: string, size: number) =>
   mediaUrl(session, 'getCoverArt', coverArt, size > 60 ? 600 : 150);
 
 let latest: (string | undefined)[] | null = null,

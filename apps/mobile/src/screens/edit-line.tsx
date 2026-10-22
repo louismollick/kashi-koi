@@ -26,7 +26,7 @@ export default function EditLineScreen() {
         .flatMap((occurrence) => currentSentence(item.songId, occurrence.start) ?? [])
     : [];
   return (
-    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#090a1699' }}>
+    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim }}>
       <Pressable
         accessibilityLabel="Close"
         accessibilityRole="button"
@@ -49,7 +49,7 @@ export default function EditLineScreen() {
             <IconButton
               name="trash"
               fill={colors.coral}
-              border="#ff9aa5"
+              border={colors.coralBorder}
               label="Remove from review"
               onPress={() => {
                 appStore.getState().removeReviewSentence(item.id);

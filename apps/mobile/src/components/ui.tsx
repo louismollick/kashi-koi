@@ -73,7 +73,6 @@ export function IconButton({
   size = 44,
   iconScale = 0.55,
   plain = false,
-  selected,
   disabled = false,
 }: {
   name: ComponentProps<typeof Icon>['name'];
@@ -85,7 +84,6 @@ export function IconButton({
   size?: number;
   iconScale?: number;
   plain?: boolean;
-  selected?: boolean;
   disabled?: boolean;
 }) {
   const icon = <Icon name={name} color={color} size={size * iconScale} />;
@@ -95,7 +93,7 @@ export function IconButton({
       accessibilityRole="button"
       accessibilityLabel={label}
       disabled={disabled}
-      accessibilityState={{ disabled, ...(selected === undefined ? {} : { selected }) }}
+      accessibilityState={{ disabled }}
       onPress={onPress}
       hitSlop={4}
       style={({ pressed }) => ({ opacity: disabled ? 0.45 : pressed ? 0.7 : 1 })}

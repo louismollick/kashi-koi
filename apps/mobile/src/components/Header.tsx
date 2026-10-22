@@ -45,39 +45,22 @@ export function Header() {
   );
 }
 
-/** Plain title band on pushed screens. `sheet` shows a down chevron for screens that slide up; `close` an X. */
-export function ScreenHeader({
-  title,
-  subtitle,
-  close = false,
-  sheet = false,
-  right,
-}: {
-  title?: string;
-  subtitle?: string;
-  close?: boolean;
-  sheet?: boolean;
-  right?: ReactNode;
-}) {
+/** Plain title band on pushed screens. `sheet` shows a down chevron for screens that slide up. */
+export function ScreenHeader({ title, sheet = false, right }: { title?: string; sheet?: boolean; right?: ReactNode }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   return (
     <View style={{ backgroundColor: colors.header, paddingTop: insets.top }}>
       <View style={[styles.row, { paddingHorizontal: 14, paddingVertical: 10, minHeight: 68 }]}>
         <IconButton
-          name={close ? 'close' : sheet ? 'down' : 'back'}
-          label={close || sheet ? 'Close' : 'Back'}
+          name={sheet ? 'down' : 'back'}
+          label={sheet ? 'Close' : 'Back'}
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
         />
         <View style={{ flex: 1 }}>
           {title && (
             <Label numberOfLines={1} style={{ fontWeight: '700', fontSize: 19, lineHeight: 24 }}>
               {title}
-            </Label>
-          )}
-          {subtitle && (
-            <Label numberOfLines={1} muted style={{ fontSize: 13 }}>
-              {subtitle}
             </Label>
           )}
         </View>

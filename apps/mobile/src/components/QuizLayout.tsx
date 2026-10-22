@@ -187,7 +187,13 @@ export function QuizColumn({
             </Button>
           )}
           {onContinue && (
-            <Button label={continueLabel} style={{ flex: 1 }} fill={colors.coral} border="#ff9aa5" onPress={onContinue}>
+            <Button
+              label={continueLabel}
+              style={{ flex: 1 }}
+              fill={colors.coral}
+              border={colors.coralBorder}
+              onPress={onContinue}
+            >
               <Label style={{ fontWeight: '800' }}>{continueLabel}</Label>
             </Button>
           )}

@@ -48,7 +48,7 @@ export default function DownloadScreen() {
             : 'Not downloaded'
           : `${done} of ${eligible} ${eligible === 1 ? 'song' : 'songs'} downloaded${failed ? ` · ${failed} failed` : ''}`;
   return (
-    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#090a1699' }}>
+    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim }}>
       <Pressable
         accessibilityLabel="Close"
         accessibilityRole="button"
@@ -78,7 +78,7 @@ export default function DownloadScreen() {
           <Button
             label={single ? 'Download' : `Download ${missing} songs`}
             fill={colors.coral}
-            border="#ff9aa5"
+            border={colors.coralBorder}
             disabled={offline}
             onPress={() => {
               void queueDownloads(target);

@@ -94,7 +94,7 @@ export default function SongMenuScreen() {
   if (!song) return null;
   const album = getAlbum(song.albumId);
   return (
-    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#090a1699' }}>
+    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim }}>
       <Pressable
         accessibilityLabel="Close"
         accessibilityRole="button"
