@@ -120,7 +120,7 @@ export default function ReviewScreen() {
         <Button
           label="Review lyrics"
           fill={colors.coral}
-          border="#ff9aa5"
+          border={colors.coralBorder}
           disabled={!ready.length}
           contentStyle={{ minHeight: 76 }}
           onPress={() => {

@@ -30,6 +30,13 @@ const navigationTheme = {
   colors: { ...DarkTheme.colors, background: colors.bg, card: colors.header, text: colors.text },
 };
 
+/** Sheets that keep the screen below visible behind a scrim. */
+const transparentModal = {
+  presentation: 'transparentModal',
+  animation: 'slide_from_bottom',
+  contentStyle: { backgroundColor: 'transparent' },
+} as const;
+
 /** Dark, portrait iOS shell. Flow screens sit above the persistent main tabs. */
 export default function RootLayout() {
   const session = sessionStore((state) => state.session);
@@ -124,38 +131,10 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen name="clip-review" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-          <Stack.Screen
-            name="edit-line"
-            options={{
-              presentation: 'transparentModal',
-              animation: 'slide_from_bottom',
-              contentStyle: { backgroundColor: 'transparent' },
-            }}
-          />
-          <Stack.Screen
-            name="breakdown"
-            options={{
-              presentation: 'transparentModal',
-              animation: 'slide_from_bottom',
-              contentStyle: { backgroundColor: 'transparent' },
-            }}
-          />
-          <Stack.Screen
-            name="download"
-            options={{
-              presentation: 'transparentModal',
-              animation: 'slide_from_bottom',
-              contentStyle: { backgroundColor: 'transparent' },
-            }}
-          />
-          <Stack.Screen
-            name="song-menu"
-            options={{
-              presentation: 'transparentModal',
-              animation: 'slide_from_bottom',
-              contentStyle: { backgroundColor: 'transparent' },
-            }}
-          />
+          <Stack.Screen name="edit-line" options={transparentModal} />
+          <Stack.Screen name="breakdown" options={transparentModal} />
+          <Stack.Screen name="download" options={transparentModal} />
+          <Stack.Screen name="song-menu" options={transparentModal} />
           <Stack.Screen name="settings" />
         </Stack.Protected>
       </Stack>

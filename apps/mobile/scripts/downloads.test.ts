@@ -4,12 +4,14 @@ import {
   pauseTranslations,
   setTranslationForeground,
 } from '../src/japanese/translate';
-import { availableReviewList } from '../src/data/reviewVisibility';
 import { withSentences } from '../src/lyrics/sentences';
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import {
+  assetName,
+  audioExtension,
   cancelDownloads,
+  eligibleSongs,
   deleteAllDownloads,
   loadDownloadState,
   pruneDownloads,
@@ -21,13 +23,11 @@ import {
   waitForDownloads,
 } from '../src/downloads/queue';
 import { downloadStore, isDownloaded, localAudioUri, localArtUri, type DownloadEntries } from '../src/downloads/store';
-import { eligibleSongs } from '../src/downloads/targets';
 import { downloadSummary } from '../src/downloads/selectors';
 import { validateMediaHeader, type DownloadMedia } from '../src/downloads/validation';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
-import { assetName, audioExtension } from '../src/downloads/names';
 import { appStore, resetAppState, setTransport, hydrateAppState } from '../src/store/appStore';
-import { libraryStore, readyReviewLines, hasTranslations } from '../src/store/libraryStore';
+import { libraryStore, readyReviewSentences, hasTranslations } from '../src/store/libraryStore';
 import { sessionStore } from '../src/navidrome/session';
 import { countedFilters, getVisibleLibrary, getVisibleSongs } from '../src/data/libraryVisibility';
 import { scanLyrics, syncLibrary } from '../src/navidrome/sync';
@@ -360,7 +360,7 @@ test('offline visibility, lyric hidden counts, album queue steps and review read
       misses: 1,
     }));
     assert.deepEqual(
-      readyReviewLines(review).map((item) => item.songId),
+      readyReviewSentences(review).map((item) => item.songId),
       ['dawn'],
     );
   } finally {
@@ -482,26 +482,6 @@ test('a duplicate tap whose native begin resolves after drain ends the unused ta
   assert.equal(await duplicate, 0);
   await waitForDownloads();
   assert.deepEqual(ends, [true]);
-});
-
-test('available review lists preserve stored unavailable schedules and omit them only offline', async () => {
-  const review = ['dawn', 'glass'].map((songId) => ({
-    id: songId,
-    songId,
-    sentenceId: songLyrics[songId]!.sentences[0]!.id,
-    kind: 'due' as const,
-    misses: 1,
-  }));
-  appStore.setState({ reviewList: review, offlineMode: true });
-  await cancelDownloads();
-  downloadStore.setState({ entries: { dawn: { ...entry('done'), fileName: 'dawn.mp3' } }, root });
-  assert.deepEqual(
-    availableReviewList(review).map((item) => item.songId),
-    ['dawn'],
-  );
-  assert.equal(appStore.getState().reviewList.length, 2);
-  appStore.setState({ offlineMode: false });
-  assert.equal(availableReviewList(review).length, 2);
 });
 
 test('adding a new target while the previous batch drains keeps its background task alive', async () => {

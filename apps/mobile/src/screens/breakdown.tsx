@@ -208,7 +208,7 @@ export default function BreakdownScreen() {
   );
 
   return (
-    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#090a1699' }}>
+    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim }}>
       <Pressable
         accessibilityLabel="Close"
         accessibilityRole="button"

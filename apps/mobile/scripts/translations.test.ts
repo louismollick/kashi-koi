@@ -10,18 +10,19 @@ import {
   translationHint,
   type Translator,
 } from '../src/japanese/translate';
-import { appStore, getRunSummary } from '../src/store/appStore';
+import { appStore } from '../src/store/appStore';
 import {
   getAnswers,
   getLineText,
   getLyrics,
   hasTranslations,
   libraryStore,
-  readyReviewLines,
+  readyReviewSentences,
   type Library,
   type Translations,
 } from '../src/store/libraryStore';
 import { songs } from './fixtures';
+import { quizSentences } from '../src/lyrics/fog';
 import { withSentences } from '../src/lyrics/sentences';
 import type { Line } from '../src/types/domain';
 
@@ -147,18 +148,19 @@ test('English lines skip answering, grading and lost marks', () => {
   appStore.getState().jumpToLine(1);
   appStore.getState().addLostMark();
   assert.equal(appStore.getState().reviewList[0]!.sentenceId, '0:1');
-  appStore.getState().moveReviewLine(appStore.getState().reviewList[0]!.id, '0:2');
+  appStore.getState().moveReviewSentence(appStore.getState().reviewList[0]!.id, '0:2');
   assert.equal(appStore.getState().reviewList[0]!.sentenceId, '0:1');
   appStore.getState().jumpToLine(2);
   appStore.getState().answer('wrong');
   assert.equal(appStore.getState().reviewList.length, 1);
   appStore.getState().jumpToLine(1);
   assert.equal(appStore.getState().run.choices['0:1'], choices);
+  const quiz = quizSentences(getLyrics('0'));
+  assert.equal(quiz.length, 2);
   assert.deepEqual(
-    getRunSummary(libraryStore.getState().bySong['0']!, appStore.getState().run).missed.map((line) => line.id),
+    quiz.filter((sentence) => !appStore.getState().run.answers[sentence.id]?.correct).map((sentence) => sentence.id),
     ['0:3'],
   );
-  assert.equal(getRunSummary(libraryStore.getState().bySong['0']!, appStore.getState().run).total, 2);
 });
 
 test('quiz and review gates accept translated songs despite English lines and partial library readiness', () => {
@@ -180,7 +182,7 @@ test('quiz and review gates accept translated songs despite English lines and pa
       { id: 'wait', songId: '1', sentenceId: '1:0', kind: 'due', misses: 1 },
     ],
   });
-  assert.equal(readyReviewLines(appStore.getState().reviewList).length, 1);
+  assert.equal(readyReviewSentences(appStore.getState().reviewList).length, 1);
   appStore.getState().startClipReview();
   assert.deepEqual(appStore.getState().clipReview!.ids, ['ready']);
   const choice = appStore.getState().clipReview!.choices['0:0']![0]!;

@@ -6,7 +6,7 @@ import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
 import { remapReview } from '../src/lyrics/review';
 import { timelineTexts, withSentences } from '../src/lyrics/sentences';
-import { appStore, getRunSummary, resetAppState, setTransport } from '../src/store/appStore';
+import { appStore, resetAppState, setTransport } from '../src/store/appStore';
 import {
   carryLyrics,
   currentSentence,
@@ -14,7 +14,7 @@ import {
   getLyrics,
   hasTranslations,
   libraryStore,
-  readyReviewLines,
+  readyReviewSentences,
   reviewClip,
   sentenceForReview,
 } from '../src/store/libraryStore';
@@ -277,11 +277,10 @@ test('choices and answers use sentence translations, score repeats once and sche
   assert.equal(appStore.getState().run.combo, 0);
   assert.equal(appStore.getState().run.bestCombo, 2);
   assert.equal(Object.keys(appStore.getState().run.answers).length, 3);
-  const summary = getRunSummary(song, appStore.getState().run);
-  assert.equal(summary.total, 3);
-  assert.equal(summary.hits, 2);
+  const results = Object.entries(appStore.getState().run.answers);
+  assert.equal(results.filter(([, answer]) => answer.correct).length, 2);
   assert.deepEqual(
-    summary.missed.map((sentence) => sentence.id),
+    results.filter(([, answer]) => !answer.correct).map(([id]) => id),
     [rawLyrics.lines[4]!.id],
   );
 });
@@ -364,7 +363,7 @@ test('clip review plays the whole first sentence occurrence and answers its sent
       analysis.lines.slice(0, 2),
     );
     assert.deepEqual(
-      readyReviewLines(appStore.getState().reviewList).map((item) => item.id),
+      readyReviewSentences(appStore.getState().reviewList).map((item) => item.id),
       ['letter-mark'],
     );
     calls.length = 0;

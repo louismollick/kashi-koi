@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
-import { applyAnswer, songFog } from '../src/lyrics/fog';
+import { applyAnswer, lyricsFog } from '../src/lyrics/fog';
 import { appStore, finishSong, getUpNext, hydrateAppState, resetAppState, setTransport } from '../src/store/appStore';
 import { getLyrics, libraryStore } from '../src/store/libraryStore';
 import type { LineFog } from '../src/types/domain';
@@ -76,8 +76,8 @@ test('fog uses quiz sentence order, deduplicates repeats and takes the weakest l
     e: { state: 'red' },
     f: { state: 'red' },
   };
-  assert.deepEqual(songFog('dawn', fog), { tiles: ['fog', 'half', 'red', 'clear'], percent: 38 });
-  assert.deepEqual(songFog('missing', fog), { tiles: [], percent: 0 });
+  assert.deepEqual(lyricsFog(getLyrics('dawn'), fog), { tiles: ['fog', 'half', 'red', 'clear'], percent: 38 });
+  assert.deepEqual(lyricsFog(getLyrics('missing'), fog), { tiles: [], percent: 0 });
 });
 
 test('a perfect run requires every distinct quiz sentence and remains earned after a later miss', () => {
@@ -90,7 +90,7 @@ test('a perfect run requires every distinct quiz sentence and remains earned aft
     assert.equal(appStore.getState().run.perfect, index === lyrics.sentenceTimeline.length - 1);
   }
   assert.equal(appStore.getState().perfectRuns.dawn, true);
-  assert.equal(songFog('dawn', appStore.getState().fog).percent, 50);
+  assert.equal(lyricsFog(getLyrics('dawn'), appStore.getState().fog).percent, 50);
   const id = appStore.getState().run.id;
   finishSong();
   assert.deepEqual(withoutTime(appStore.getState().runEnd), {

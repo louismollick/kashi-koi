@@ -7,11 +7,11 @@ export const colors = {
   coral: '#fb4a5e',
   coralDeep: '#df475a',
   coralSoft: '#ff6d7d',
+  coralBorder: '#ff9aa5',
   maroon: '#4a3441',
   greenDeep: '#1c6747',
   green: '#55ee9c',
   red: '#f95362',
-  laneEmpty: '#555470',
   track: '#3e3d5b',
   cream: '#fbf8c6',
   combo: '#ffc93c',
@@ -19,4 +19,5 @@ export const colors = {
   text: '#ffffff',
   muted: '#9a9cb8',
   lavender: '#b4a6e6',
+  scrim: '#090a1699',
 } as const;

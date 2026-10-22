@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { getAlbum } from '@/store/libraryStore';
-import { appStore, useLibraryFilters } from '@/store/appStore';
+import { appStore } from '@/store/appStore';
 import { Cover } from './Cover';
 import { FogBadge } from './Fog';
 import { songMenu } from '@/screens/song-menu';
@@ -28,7 +28,7 @@ export const SongRow = memo(function SongRow({
   onPress?: () => void;
 }) {
   const router = useRouter();
-  const filters = useLibraryFilters(),
+  const hideUnsynced = appStore((state) => state.hideSongsWithoutSyncedLyrics),
     downloaded = useIsDownloaded(song.id);
   const duration = `${Math.floor(song.duration / 60)}:${String(Math.floor(song.duration) % 60).padStart(2, '0')}`;
   return (
@@ -66,7 +66,7 @@ export const SongRow = memo(function SongRow({
           <Label numberOfLines={1} style={{ fontWeight: '700', fontSize: 16, flexShrink: 1 }}>
             {song.title}
           </Label>
-          {!filters.hideUnsynced && !(song.lyricsStatus === 'synced') && (
+          {!hideUnsynced && !(song.lyricsStatus === 'synced') && (
             <Icon name="micOff" color={colors.muted} size={16} accessibilityLabel="No synced lyrics" />
           )}
           {downloaded && <Icon name="downloaded" color={colors.green} size={14} accessibilityLabel="Downloaded" />}

@@ -84,6 +84,17 @@ export function ProgressLine({
   );
 }
 
+/** Bar progress (clip progress in clip review); subscribes on its own so the bar doesn't re-render every tick. */
+function BarProgress({ clipReview }: { clipReview: boolean }) {
+  const progress = appStore((state) => {
+    const clip = clipReview ? state.clipPlayback : null;
+    const elapsed = clip ? Math.max(0, clip.positionMs - clip.startMs) : state.positionMs;
+    const total = clip ? clip.endMs - clip.startMs : state.durationMs;
+    return total ? elapsed / total : 0;
+  });
+  return <ProgressLine progress={progress} />;
+}
+
 /**
  * Progress, song, play/pause and next under the song screen. Tapping or swiping up on the song opens the full player.
  * Clip review shows clip progress, keeps only play and doesn't open the full player.
@@ -91,14 +102,12 @@ export function ProgressLine({
 export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const clip = appStore((state) => state.clipPlayback);
+  const clipEnded = appStore((state) => !!state.clipPlayback?.ended);
   const songId = appStore((state) => (clipReview ? state.clipPlayback?.songId : state.songId));
   const waiting = appStore((state) => !!state.answerWait);
   const loading = appStore((state) => state.loading);
   const song = libraryStore((state) => (songId ? state.bySong[songId] : undefined));
   const playing = appStore((state) => state.playing && (clipReview || !state.clipPlayback));
-  const position = appStore((state) => state.positionMs),
-    duration = appStore((state) => state.durationMs);
   // An upward swipe on the bar opens the full player; horizontal drags stay with the sheet.
   const swipe = useMemo(
     () =>
@@ -111,13 +120,11 @@ export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
     [clipReview, router],
   );
   if (!song) return null;
-  const ended = clipReview ? !!clip?.ended : waiting;
-  const elapsed = clipReview && clip ? Math.max(0, clip.positionMs - clip.startMs) : position;
-  const total = clipReview && clip ? clip.endMs - clip.startMs : duration;
+  const ended = clipReview ? clipEnded : waiting;
   const open = () => router.push('/full-player');
   return (
     <View style={{ backgroundColor: colors.panel, paddingBottom: Math.max(insets.bottom - 4, 14) }}>
-      <ProgressLine progress={total ? elapsed / total : 0} />
+      <BarProgress clipReview={clipReview} />
       <View {...swipe.panHandlers} style={[styles.row, { paddingHorizontal: 16, paddingTop: 12 }]}>
         <Pressable
           accessibilityRole="button"

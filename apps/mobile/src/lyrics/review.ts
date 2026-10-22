@@ -1,6 +1,6 @@
 import type { ReviewList, SongLyrics } from '@/types/domain';
 
-/** Move changed sentence identities by surviving lines and retain the earliest schedule. */
+/** Move changed sentence identities by surviving lines and retain the earliest schedule. Returns `list` itself when nothing changed. */
 export function remapReview(
   list: ReviewList,
   songId: string,
@@ -36,5 +36,6 @@ export function remapReview(
     )
       merged.set(key, updated);
   }
-  return [...merged.values()];
+  const remapped = [...merged.values()];
+  return remapped.length === list.length && remapped.every((item, index) => item === list[index]) ? list : remapped;
 }

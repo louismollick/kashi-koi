@@ -2,7 +2,6 @@ import { isSongAvailable } from '@/data/libraryVisibility';
 import { quizChoices } from '@/lyrics/choices';
 import { withSentences, type LyricsInput } from '@/lyrics/sentences';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
-import { isJapanese } from '@/japanese/text';
 import { create } from 'zustand';
 import type { Album, Artist, Choice, Line, LyricsStatus, Song, SongLyrics, ReviewList } from '@/types/domain';
 
@@ -130,7 +129,6 @@ export const getArtistAlbums = (id: string) =>
     .albums.filter((album) => album.artistId === id)
     .sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
 export const getLineText = (line: Line) => line.segments.map((segment) => segment.text).join('');
-export const japaneseLines = (id: string | null) => getLyrics(id).lines.filter((line) => isJapanese(getLineText(line)));
 export const hasTranslations = (id: string | null) => {
   const sentences = getLyrics(id).sentences;
   return !!sentences.length && sentences.every((sentence) => !!sentence.translation);
@@ -138,10 +136,10 @@ export const hasTranslations = (id: string | null) => {
 /** New and missed sentences are ready now; scheduled sentences return at their due time. */
 export const isDue = (line: ReviewList[number], now = Date.now()) => line.kind !== 'later' || line.dueAt <= now;
 /** Due today excludes the separate new-from-listening group. */
-export const dueLines = (list: ReviewList, now = Date.now()) =>
+export const dueSentences = (list: ReviewList, now = Date.now()) =>
   list.filter((line) => line.kind !== 'new' && isDue(line, now));
 /** Review actions require a surviving sentence in a fully translated song. */
-export const readyReviewLines = (list: ReviewList, now = Date.now()) =>
+export const readyReviewSentences = (list: ReviewList, now = Date.now()) =>
   list.filter(
     (item) =>
       isSongAvailable(item.songId) &&
@@ -149,10 +147,6 @@ export const readyReviewLines = (list: ReviewList, now = Date.now()) =>
       hasTranslations(item.songId) &&
       getLyrics(item.songId).sentences.some((sentence) => sentence.id === item.sentenceId),
   );
-export const occurrenceLine = (id: string | null, index: number) => {
-  const lyrics = getLyrics(id);
-  return lyrics.lines.find((line) => line.id === lyrics.timeline[index]?.lineId);
-};
 
 /** Shuffle analyzed decoys or distinct same-song translations once when a sentence becomes current. */
 export function getAnswers(song: Song, index: number, random = Math.random): Choice[] {
@@ -269,9 +263,6 @@ export function sentenceForReview(item: ReviewList[number]) {
 
 /** Song metadata belongs to the accepted whole-song analysis. */
 export const songAnalysisInfo = (songId: string | null) => getLyrics(songId).analysis;
-export const isAnalyzed = (songId: string | null) => !!songAnalysisInfo(songId);
-export const dueSentences = dueLines;
-export const readyReviewSentences = readyReviewLines;
 
 /** Bounds of the first sentence occurrence, for clip playback and edit checks. */
 export function reviewClip(item: ReviewList[number]) {

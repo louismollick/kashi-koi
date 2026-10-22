@@ -1,7 +1,7 @@
 import { canExplain } from '@/analysis/breakdowns';
 import { translationHint } from '@/japanese/translate';
 import { isJapanese } from '@/japanese/text';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Pressable, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
@@ -104,7 +104,18 @@ export default function PlayerScreen() {
   const runEnd = appStore((state) => !!state.runEnd);
   const lyrics = libraryStore((state) => state.lyrics[songId ?? '']);
   const timeline = lyrics?.timeline ?? [];
-  const lines = timeline.map((occurrence) => lyrics!.lines.find((line) => line.id === occurrence.lineId)!);
+  const lines = useMemo(
+    () => lyrics?.timeline.map((occurrence) => lyrics.lines.find((line) => line.id === occurrence.lineId)!) ?? [],
+    [lyrics],
+  );
+  // The sentence each line belongs to, if any.
+  const sentenceAt = useMemo(
+    () =>
+      lyrics?.timeline.map((_, index) =>
+        lyrics.sentenceTimeline.find((item) => item.start <= index && item.end >= index),
+      ) ?? [],
+    [lyrics],
+  );
   const translationsReady =
     hasTranslations(songId) &&
     (quizToggle || useAnalysis || lines.every((line) => !isJapanese(getLineText(line)) || !!line.translation));
@@ -123,7 +134,6 @@ export default function PlayerScreen() {
   const inReview = !!sentenceId && reviewList.some((item) => item.sentenceId === sentenceId);
   const canAdd = !!sentenceId && !inReview;
   const reviewed = new Set(reviewList.filter((item) => item.songId === songId).map((item) => item.sentenceId));
-  const sentenceAt = timeline.map((_, index) => sentences.find((item) => item.start <= index && item.end >= index));
   // Breakdowns explain song analysis sentences, so they follow the listen-mode translation source.
   const explainable = !!songId && canExplain(songId) && (quizToggle || useAnalysis);
   const explain = (id: string) => songId && router.push({ pathname: '/breakdown', params: { songId, sentenceId: id } });
@@ -272,7 +282,7 @@ export default function PlayerScreen() {
                 disabled={!canAdd}
                 label={inReview ? 'In review' : 'Review this sentence later'}
                 fill={colors.coral}
-                border="#ff9aa5"
+                border={colors.coralBorder}
                 style={{ flex: 1 }}
                 contentStyle={{ paddingVertical: 14 }}
                 onPress={() => appStore.getState().addLostMark()}

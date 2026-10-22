@@ -1,13 +1,19 @@
 import { useShallow } from 'zustand/react/shallow';
 import { libraryStore } from '@/store/libraryStore';
 import { hasJapaneseLyrics } from '@/data/libraryVisibility';
+import type { Song } from '@/types/domain';
 import { downloadStore, type DownloadTarget } from './store';
+
+type LibraryState = ReturnType<typeof libraryStore.getState>;
 
 type Summary = { eligible: number; done: number; pending: number; failed: number };
 const empty: Summary = { eligible: 0, done: 0, pending: 0, failed: 0 };
 let cached:
   | {
-      library: ReturnType<typeof libraryStore.getState>;
+      songs: Song[];
+      byAlbum: LibraryState['byAlbum'];
+      bySong: LibraryState['bySong'];
+      lyrics: LibraryState['lyrics'];
       entries: ReturnType<typeof downloadStore.getState>['entries'];
       summaries: Map<string, Summary>;
     }
@@ -18,7 +24,15 @@ const keyOf = (target: DownloadTarget) => (target.kind === 'library' ? 'library'
 export function downloadSummary(target: DownloadTarget): Summary {
   const library = libraryStore.getState(),
     { entries } = downloadStore.getState();
-  if (!cached || cached.library !== library || cached.entries !== entries) {
+  // Key on the fields this reads; progress and translation updates replace `library` without touching them.
+  if (
+    !cached ||
+    cached.songs !== library.songs ||
+    cached.byAlbum !== library.byAlbum ||
+    cached.bySong !== library.bySong ||
+    cached.lyrics !== library.lyrics ||
+    cached.entries !== entries
+  ) {
     const summaries = new Map<string, Summary>();
     for (const song of library.songs) {
       if (!hasJapaneseLyrics(song.id)) continue;
@@ -35,7 +49,14 @@ export function downloadSummary(target: DownloadTarget): Summary {
         summaries.set(key, summary);
       }
     }
-    cached = { library, entries, summaries };
+    cached = {
+      songs: library.songs,
+      byAlbum: library.byAlbum,
+      bySong: library.bySong,
+      lyrics: library.lyrics,
+      entries,
+      summaries,
+    };
   }
   return cached.summaries.get(keyOf(target)) ?? empty;
 }

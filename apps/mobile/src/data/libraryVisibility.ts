@@ -44,15 +44,6 @@ export function getVisibleSongs(source: Song[], filters: LibraryFilters) {
   return source.filter((song) => !isHiddenSong(song, filters));
 }
 
-/** Cover badges use the whole album or artist, regardless of the current search. */
-export function albumHasSyncedLyrics(albumId: string, source = libraryStore.getState().songs) {
-  return source.some((song) => song.albumId === albumId && song.lyricsStatus === 'synced');
-}
-
-export function artistHasSyncedLyrics(artistId: string, source = libraryStore.getState().songs) {
-  return source.some((song) => song.artistId === artistId && song.lyricsStatus === 'synced');
-}
-
 /** Albums need visible songs; artists need visible albums. */
 export function getVisibleLibrary(
   filters: LibraryFilters,

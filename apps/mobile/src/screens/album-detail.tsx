@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Pressable, FlatList, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
@@ -17,10 +18,20 @@ export default function AlbumDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  libraryStore((state) => state.songs);
-  libraryStore((state) => state.lyrics);
+  const songs = libraryStore((state) => state.songs),
+    lyrics = libraryStore((state) => state.lyrics);
   const filters = useLibraryFilters();
   const album = getAlbum(id);
+  // Visibility reads each song's lyrics; `queue` stays stable so the memoized rows don't re-render.
+  const { tracks, queue, hiddenCount } = useMemo(() => {
+    const allTracks = album ? getAlbumSongs(album.id) : [],
+      tracks = getVisibleSongs(allTracks, filters);
+    return {
+      tracks,
+      queue: tracks.map((song) => song.id),
+      hiddenCount: allTracks.length - getVisibleSongs(allTracks, countedFilters(filters)).length,
+    };
+  }, [album, songs, lyrics, filters]);
   if (!album)
     return (
       <View style={styles.page}>
@@ -30,9 +41,6 @@ export default function AlbumDetailScreen() {
         </Label>
       </View>
     );
-  const allTracks = getAlbumSongs(album.id);
-  const tracks = getVisibleSongs(allTracks, filters),
-    queue = tracks.map((song) => song.id);
   const startAlbum = (shuffle = false) => {
     router.push('/player');
     appStore.getState().startAlbum(album.id, shuffle);
@@ -68,7 +76,7 @@ export default function AlbumDetailScreen() {
               <Button
                 label="Play album"
                 fill={colors.coral}
-                border="#ff9aa5"
+                border={colors.coralBorder}
                 style={{ flex: 1 }}
                 disabled={!tracks.length}
                 onPress={() => startAlbum()}
@@ -90,9 +98,7 @@ export default function AlbumDetailScreen() {
             </View>
           </View>
         }
-        ListFooterComponent={
-          <HiddenSongsRow count={allTracks.length - getVisibleSongs(allTracks, countedFilters(filters)).length} album />
-        }
+        ListFooterComponent={<HiddenSongsRow count={hiddenCount} album />}
       />
     </View>
   );
