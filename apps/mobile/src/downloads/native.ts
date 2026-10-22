@@ -71,9 +71,8 @@ export async function deleteFile(uri: string) {
   const file = new File(uri);
   if (file.exists) file.delete();
 }
-/** File names in the audio directory, for checking every finished download at once. */
-export async function listAudio() {
-  return new Directory(Paths.document, 'downloads', 'audio').list().map((file) => file.name);
+export async function fileExists(uri: string) {
+  return new File(uri).exists;
 }
 export async function clearFiles() {
   const directory = new Directory(Paths.document, 'downloads');
@@ -110,7 +109,7 @@ export const nativeDownloadRuntime = {
   detect: detectAudio,
   move: moveFile,
   remove: deleteFile,
-  listAudio,
+  exists: fileExists,
   clearFiles,
   begin: beginTask,
   progress: taskProgress,
