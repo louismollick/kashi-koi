@@ -3,15 +3,18 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import {
+  analysisRequests,
   analyzeSong,
+  canAnalyze,
   cancelAnalyses,
-  fetchLibraryAnalyses,
   loadAnalysisToken,
   prioritizeAnalyses,
   setAnalysisRuntime,
   saveAnalysisToken,
+  setAnalysisToken,
 } from '../src/analysis/fetcher';
-import { appStore, canAnalyze, hydrateAppState, resetAppState } from '../src/store/appStore';
+import { appStore, fetchLibraryAnalyses, resetAppState, setAnalysisServerUrl } from '../src/store/appStore';
+import { hydrateSettings, settingsStore } from '../src/store/settingsStore';
 import { getLyrics, hasTranslations, libraryStore } from '../src/store/libraryStore';
 import { toSongLyrics } from '../src/navidrome/lyrics';
 import { songs } from './fixtures';
@@ -38,7 +41,7 @@ const analysisFor = (id: string): SongAnalysis => {
 beforeEach(async () => {
   await cancelAnalyses();
   await resetAppState();
-  appStore.setState({ analysisServerUrl: `https://analysis-${launch++}.test`, analysisToken: 'test-token' });
+  settingsStore.setState({ analysisServerUrl: `https://analysis-${launch++}.test`, analysisToken: 'test-token' });
   const targets = Array.from({ length: 8 }, (_, index) => ({ ...songs[0]!, id: String(index) }));
   libraryStore.getState().setLibrary({
     songs: targets,
@@ -122,7 +125,7 @@ test('404s, network failures and invalid analyses stay silent and are tried once
   await prioritizeAnalyses(['0', '1', '2']);
   assert.equal(calls, 3);
   assert.deepEqual(libraryStore.getState().analyses, {});
-  assert.deepEqual(appStore.getState().analysisRequests, {});
+  assert.deepEqual(analysisRequests.getState(), {});
 });
 
 test('cached analyses skip reads and successful reads translate without Apple', async () => {
@@ -150,8 +153,8 @@ test('analyzeSong posts ordered lines and polls queued, running, then saves succ
     statuses: string[] = [],
     sleeps: number[] = [],
     saved: SongAnalysis[] = [];
-  const unsubscribe = appStore.subscribe((state) => {
-    const status = state.analysisRequests['0']?.status;
+  const unsubscribe = analysisRequests.subscribe((state) => {
+    const status = state['0']?.status;
     if (status) statuses.push(status);
   });
   let gets = 0;
@@ -177,14 +180,14 @@ test('analyzeSong posts ordered lines and polls queued, running, then saves succ
     },
   });
   try {
-    await appStore.getState().analyzeSong('0', { force: true });
+    await analyzeSong('0', { force: true });
   } finally {
     unsubscribe();
   }
   assert.deepEqual(sleeps, [5000, 5000]);
   assert.deepEqual([...new Set(statuses)], ['requesting', 'queued', 'running']);
   assert.deepEqual(saved, [analysis]);
-  assert.equal(appStore.getState().analysisRequests['0'], undefined);
+  assert.equal(analysisRequests.getState()['0'], undefined);
   assert.equal(hasTranslations('0'), true);
 });
 
@@ -211,7 +214,7 @@ test('poll failures, missing jobs and ten-minute timeout leave a failed request'
       save: async () => assert.fail('Failed requests must not save'),
     });
     await analyzeSong('0');
-    const request = appStore.getState().analysisRequests['0']!;
+    const request = analysisRequests.getState()['0']!;
     assert.equal(request.status, 'failed');
     assert.ok(request.error);
     assert.equal(polls, result === 'timeout' ? 120 : 1);
@@ -252,23 +255,23 @@ test('settings persist URL while the token stays in SecureStore only', async () 
     fetch: async () => new Response(null, { status: 404 }),
   });
   let persisted = '';
-  await hydrateAppState({
+  await hydrateSettings({
     getItem: () => null,
     setItem: (_key, value) => {
       persisted = value;
     },
     removeItem() {},
   });
-  await appStore.getState().setAnalysisToken(' secret ');
-  appStore.getState().setAnalysisServerUrl(' https://override.test/ ');
+  await setAnalysisToken(' secret ');
+  setAnalysisServerUrl(' https://override.test/ ');
   assert.deepEqual(tokens, ['secret']);
   assert.equal(JSON.parse(persisted).state.analysisServerUrl, 'https://override.test');
   assert.equal('analysisToken' in JSON.parse(persisted).state, false);
   assert.equal('analysisRequests' in JSON.parse(persisted).state, false);
   await loadAnalysisToken();
-  assert.equal(appStore.getState().analysisToken, 'boot-token');
+  assert.equal(settingsStore.getState().analysisToken, 'boot-token');
   assert.equal(canAnalyze(), true);
-  appStore.setState({ analysisToken: '' });
+  settingsStore.setState({ analysisToken: '' });
   assert.equal(canAnalyze(), false);
 });
 
@@ -311,7 +314,7 @@ test('disabled analyses make no requests, and the empty override uses the enviro
   });
   try {
     delete process.env.EXPO_PUBLIC_KASHI_SERVER_URL;
-    appStore.setState({ analysisServerUrl: '' });
+    settingsStore.setState({ analysisServerUrl: '' });
     assert.equal(canAnalyze(), false);
     await prioritizeAnalyses(['0']);
     await analyzeSong('0');
@@ -343,7 +346,7 @@ test('cancelling a pending request prevents both saving and later request state'
   const cancellation = cancelAnalyses();
   release();
   await Promise.all([work, cancellation]);
-  assert.deepEqual(appStore.getState().analysisRequests, {});
+  assert.deepEqual(analysisRequests.getState(), {});
   assert.deepEqual(libraryStore.getState().analyses, {});
 });
 
@@ -401,8 +404,8 @@ test('failed forced re-analysis retains its intent through Retry', async () => {
   libraryStore.getState().setAnalysis(old);
   const forces: boolean[] = [];
   const requests: Record<string, boolean> = {};
-  const unsubscribe = appStore.subscribe((state) => {
-    const request = state.analysisRequests['0'];
+  const unsubscribe = analysisRequests.subscribe((state) => {
+    const request = state['0'];
     if (request) requests[request.status] = request.force;
   });
   let posts = 0,
@@ -424,13 +427,13 @@ test('failed forced re-analysis retains its intent through Retry', async () => {
   try {
     await analyzeSong('0', { force: true });
     assert.equal(polls, 1);
-    const failed = appStore.getState().analysisRequests['0']!;
+    const failed = analysisRequests.getState()['0']!;
     assert.deepEqual(failed, { status: 'failed', error: 'Analyzer unavailable', force: true });
     assert.equal(libraryStore.getState().analyses[old.fingerprint], old);
-    await appStore.getState().analyzeSong('0', { force: failed.force });
+    await analyzeSong('0', { force: failed.force });
     assert.deepEqual(forces, [true, true]);
     assert.deepEqual(requests, { requesting: true, queued: true, failed: true });
-    assert.equal(appStore.getState().analysisRequests['0'], undefined);
+    assert.equal(analysisRequests.getState()['0'], undefined);
     assert.equal(libraryStore.getState().analyses[old.fingerprint]?.createdAt, updated.createdAt);
   } finally {
     unsubscribe();
@@ -456,7 +459,7 @@ test('logout drains a slow token save and prevents late token publication', asyn
       persisted = token;
     },
   });
-  const work = appStore.getState().setAnalysisToken('new-token');
+  const work = setAnalysisToken('new-token');
   await saving;
   let drained = false;
   const logout = cancelAnalyses().then(async () => {
@@ -466,11 +469,11 @@ test('logout drains a slow token save and prevents late token publication', asyn
   });
   await Promise.resolve();
   assert.equal(drained, false);
-  appStore.setState({ analysisToken: '' });
+  settingsStore.setState({ analysisToken: '' });
   release();
   await work;
-  assert.equal(appStore.getState().analysisToken, '');
+  assert.equal(settingsStore.getState().analysisToken, '');
   await logout;
   assert.equal(persisted, '');
-  assert.equal(appStore.getState().analysisToken, '');
+  assert.equal(settingsStore.getState().analysisToken, '');
 });

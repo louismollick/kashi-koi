@@ -1,6 +1,6 @@
 import { validateBreakdown, type Breakdown } from '@kashi-koi/shared/breakdown';
 import { create } from 'zustand';
-import { isOfflineMode } from '@/data/offlineMode';
+import { settingsStore } from '@/store/settingsStore';
 import { timelineTexts } from '@/lyrics/sentences';
 import { getLyrics, libraryStore } from '@/store/libraryStore';
 import { analysisServerUrl, analysisSession } from './fetcher';
@@ -107,7 +107,7 @@ export function loadBreakdown(
   const update = (state: BreakdownState) => {
     if (valid()) breakdownStore.setState(({ states }) => ({ states: { ...states, [key]: state } }));
   };
-  if (session.base || isOfflineMode()) update({ status: 'loading' });
+  if (session.base || settingsStore.getState().offlineMode) update({ status: 'loading' });
   const work = (async () => {
     try {
       await flushBreakdowns();
@@ -117,8 +117,8 @@ export function loadBreakdown(
         update({ status: 'ready', breakdown: cached });
         return;
       }
-      if (isOfflineMode() || !session.base) {
-        if (isOfflineMode()) update({ status: 'missing' });
+      if (settingsStore.getState().offlineMode || !session.base) {
+        if (settingsStore.getState().offlineMode) update({ status: 'missing' });
         return;
       }
       let result = await fetchBreakdown(
@@ -131,7 +131,7 @@ export function loadBreakdown(
         signal,
       );
       if (!valid()) return;
-      if (result.status === 404 && session.token && !cachedOnly && !isOfflineMode()) {
+      if (result.status === 404 && session.token && !cachedOnly && !settingsStore.getState().offlineMode) {
         result = await requestBreakdown(
           session.base,
           session.token,
@@ -142,7 +142,7 @@ export function loadBreakdown(
           session.fetch,
         );
       }
-      if (isOfflineMode() || !valid()) return;
+      if (settingsStore.getState().offlineMode || !valid()) return;
       if (result.status === 200) {
         const value = result.breakdown,
           save = runtime.save;
@@ -167,7 +167,7 @@ export function loadBreakdown(
 
 /** Owner-only background requests share the same cache and never reject. */
 export function prefetchBreakdown(songId: string | null | undefined, sentenceId: string | null | undefined): void {
-  if (!isOfflineMode() && analysisSession().token) void loadBreakdown(songId, sentenceId);
+  if (!settingsStore.getState().offlineMode && analysisSession().token) void loadBreakdown(songId, sentenceId);
 }
 
 /**
@@ -190,7 +190,7 @@ export function englishSpans(translation: string, chunks: Breakdown['chunks']) {
 }
 
 export const canExplain = (songId: string | null | undefined) =>
-  !!getLyrics(songId ?? null).analysis && (isOfflineMode() || !!analysisServerUrl());
+  !!getLyrics(songId ?? null).analysis && (settingsStore.getState().offlineMode || !!analysisServerUrl());
 
 /** Subscribe to lyrics and the target's transient request state; loading is an explicit action. */
 export function useBreakdown(songId: string | null | undefined, sentenceId: string | null | undefined) {
@@ -225,7 +225,7 @@ export async function cacheSongBreakdowns(songId: string, valid: () => boolean, 
   const { fingerprint, sentences } = getLyrics(songId),
     analysis = libraryStore.getState().analyses[fingerprint];
   for (const sentence of sentences) {
-    if (!valid() || isOfflineMode()) break;
+    if (!valid() || settingsStore.getState().offlineMode) break;
     const target = breakdownTarget(songId, sentence.id);
     await loadBreakdown(songId, sentence.id, { cachedOnly: true, signal });
     const state = target && breakdownStore.getState().states[keyOf(target)];

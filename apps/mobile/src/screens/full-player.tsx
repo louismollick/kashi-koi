@@ -4,8 +4,8 @@ import ReorderableList, { useReorderableDrag, type ReorderableListReorderEvent }
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { getAlbum, getSong, libraryStore } from '@/store/libraryStore';
-import { appStore, getUpNext, useLibraryFilters } from '@/store/appStore';
-import { isHiddenSong } from '@/data/libraryVisibility';
+import { appStore, getUpNext } from '@/store/appStore';
+import { isHiddenSong, useLibraryFilters } from '@/data/libraryVisibility';
 import { ScreenHeader } from '@/components/Header';
 import { Cover } from '@/components/Cover';
 import { FogBadge } from '@/components/Fog';

@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { appStore } from '@/store/appStore';
+import { settingsStore } from '@/store/settingsStore';
 import { IconButton, Label, Tag, styles } from './ui';
 import type { ReactNode } from 'react';
 
@@ -11,7 +11,7 @@ import type { ReactNode } from 'react';
 export function Header() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const offline = appStore((state) => state.offlineMode);
+  const offline = settingsStore((state) => state.offlineMode);
   return (
     <View style={{ paddingTop: insets.top, backgroundColor: colors.header }}>
       <View style={[styles.row, { height: 60, paddingLeft: 8, paddingRight: 12, justifyContent: 'space-between' }]}>

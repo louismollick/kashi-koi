@@ -5,7 +5,7 @@ import { analysisSession } from '@/analysis/fetcher';
 import { cacheSongBreakdowns } from '@/analysis/breakdowns';
 import { prioritizeTranslations, ensureSongTranslation, setTranslationBackground } from '@/japanese/translate';
 import { hasJapaneseLyrics } from '@/data/libraryVisibility';
-import { appStore } from '@/store/appStore';
+import { settingsStore } from '@/store/settingsStore';
 import { libraryStore } from '@/store/libraryStore';
 import { sessionStore } from '@/navidrome/session';
 import { mediaUrl } from '@/navidrome/subsonic';
@@ -153,7 +153,7 @@ function start() {
   if (
     running ||
     !pending() ||
-    appStore.getState().offlineMode ||
+    settingsStore.getState().offlineMode ||
     !sessionStore.getState().session ||
     (!foreground && !background)
   )
@@ -163,7 +163,7 @@ function start() {
   controller = new AbortController();
   const signal = controller.signal;
   const valid = () =>
-    version === generation && !appStore.getState().offlineMode && session === sessionStore.getState().session;
+    version === generation && !settingsStore.getState().offlineMode && session === sessionStore.getState().session;
   if (!downloadStore.getState().progress) downloadStore.setState({ progress: { completed: 0, total: pending() } });
   let failures = false;
   const stages = new Map<string, number>();
@@ -288,7 +288,7 @@ function start() {
 
 /** User taps share the same native task lifecycle, including retries. */
 async function queueSongs(candidates: Song[]): Promise<number> {
-  if (appStore.getState().offlineMode || !sessionStore.getState().session) return 0;
+  if (settingsStore.getState().offlineMode || !sessionStore.getState().session) return 0;
   const entries = downloadStore.getState().entries;
   const songs = candidates.filter((song) => !entries[song.id] || entries[song.id]?.status === 'failed');
   const total = (downloadStore.getState().progress?.completed ?? 0) + pending() + songs.length;
@@ -298,7 +298,7 @@ async function queueSongs(candidates: Song[]): Promise<number> {
   try {
     const granted = await runtime.begin(total, downloadStore.getState().progress?.completed ?? 0).catch(() => false);
     setBackground(background || granted);
-    if (appStore.getState().offlineMode || !sessionStore.getState().session) {
+    if (settingsStore.getState().offlineMode || !sessionStore.getState().session) {
       if (background) await runtime.end(false).catch(() => {});
       setBackground(false);
       return 0;
@@ -327,7 +327,7 @@ async function queueSongs(candidates: Song[]): Promise<number> {
   } finally {
     queueing = false;
     if (!running) {
-      if (pending() && version === generation && !appStore.getState().offlineMode) void start();
+      if (pending() && version === generation && !settingsStore.getState().offlineMode) void start();
       else {
         if (background) await runtime.end(!pending()).catch(() => {});
         setBackground(false);
@@ -473,7 +473,7 @@ export const retryFailedDownloads = () =>
 sessionStore.subscribe((state, previous) => {
   if (state.session && state.session !== previous.session) void resumeDownloads();
 });
-appStore.subscribe((state, previous) => {
+settingsStore.subscribe((state, previous) => {
   if (state.offlineMode === previous.offlineMode) return;
   if (state.offlineMode) void cancelDownloads();
   else void resumeDownloads();

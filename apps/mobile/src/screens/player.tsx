@@ -1,4 +1,5 @@
 import { canExplain } from '@/analysis/breakdowns';
+import { analysisRequests } from '@/analysis/fetcher';
 import { translationHint } from '@/japanese/translate';
 import { isJapanese } from '@/japanese/text';
 import { useEffect, useMemo } from 'react';
@@ -14,6 +15,7 @@ import {
   songAnalysisInfo,
 } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
+import { settingsStore } from '@/store/settingsStore';
 import { ScreenHeader } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { CenteredList, LyricRow } from '@/components/Lyrics';
@@ -93,8 +95,8 @@ export default function PlayerScreen() {
   const lineIndex = appStore((state) => state.lineIndex);
   libraryStore((state) => state.translationSongIds.has(songId ?? ''));
   libraryStore((state) => state.translationStatus);
-  const showTranslations = appStore((state) => state.showTranslations);
-  const useAnalysis = appStore((state) => !state.lineByLineSongIds.includes(songId ?? ''));
+  const showTranslations = settingsStore((state) => state.showTranslations);
+  const useAnalysis = settingsStore((state) => !state.lineByLineSongIds.includes(songId ?? ''));
   const quizToggle = appStore((state) => state.quizToggle);
   const answerWait = appStore((state) => state.answerWait);
   const run = appStore((state) => state.run);
@@ -121,7 +123,7 @@ export default function PlayerScreen() {
     (quizToggle || useAnalysis || lines.every((line) => !isJapanese(getLineText(line)) || !!line.translation));
   const loading = appStore((state) => state.loading);
   const playbackError = appStore((state) => state.playbackError);
-  const request = appStore((state) => state.analysisRequests[songId ?? '']);
+  const request = analysisRequests((requests) => requests[songId ?? '']);
   const sentences = lyrics?.sentenceTimeline ?? [];
   // While the quiz holds a sentence, it stays current even if playback has moved past its last line.
   const occurrence = answerWait?.occurrence ?? sentenceOccurrenceAt(songId, lineIndex);

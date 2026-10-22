@@ -11,6 +11,7 @@ import {
   type Translator,
 } from '../src/japanese/translate';
 import { appStore } from '../src/store/appStore';
+import { settingsStore } from '../src/store/settingsStore';
 import {
   getAnswers,
   getLineText,
@@ -52,6 +53,7 @@ beforeEach(async () => {
   await pauseTranslations(true);
   libraryStore.getState().setLibrary(makeLibrary([['一つ', '二つ', 'English']]));
   appStore.setState(appStore.getInitialState(), true);
+  settingsStore.setState(settingsStore.getInitialState(), true);
   setTranslator(fake, async () => {});
   await setTranslationForeground(false);
 });
@@ -348,12 +350,13 @@ test('failed translation or persistence skips a batch for this run and retries o
 });
 
 test('translation settings persist and reset on logout', async () => {
-  appStore.getState().toggleTranslations();
-  appStore.setState({ translationPrompted: true });
-  assert.equal(appStore.getState().showTranslations, false);
+  settingsStore.getState().toggleTranslations();
+  settingsStore.setState({ translationPrompted: true });
+  assert.equal(settingsStore.getState().showTranslations, false);
   appStore.setState(appStore.getInitialState(), true);
-  assert.equal(appStore.getState().showTranslations, true);
-  assert.equal(appStore.getState().translationPrompted, false);
+  settingsStore.setState(settingsStore.getInitialState(), true);
+  assert.equal(settingsStore.getState().showTranslations, true);
+  assert.equal(settingsStore.getState().translationPrompted, false);
 });
 
 test('a failed SQLite save never publishes translations and retries next run', async () => {

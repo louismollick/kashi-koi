@@ -1,5 +1,6 @@
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
-import type { appStore as AppStore } from '@/store/appStore';
+import { create } from 'zustand';
+import { settingsStore } from '@/store/settingsStore';
 import { getLyrics, getSong, libraryStore } from '@/store/libraryStore';
 import { timelineTexts } from '@/lyrics/sentences';
 import { fetchAnalysis, normalizeBase, requestAnalysis } from './client';
@@ -17,7 +18,6 @@ const defaults = {
   },
 };
 let runtime = defaults;
-let appStore: typeof AppStore;
 let generation = 0;
 let tokenWrites = Promise.resolve();
 let queue: string[] = [];
@@ -25,10 +25,10 @@ let running: Promise<void> | null = null;
 const attempted = new Set<string>();
 const requests = new Map<string, Promise<void>>();
 
-/** Inject the initialized store so the fetcher has no runtime dependency on appStore. */
-export function setAnalysisStore(store: typeof AppStore) {
-  appStore = store;
-}
+/** Progress of manual analysis requests by song, for the player and song menu. Transient. */
+export const analysisRequests = create<
+  Record<string, { status: 'requesting' | 'queued' | 'running' | 'failed'; error?: string; force: boolean }>
+>(() => ({}));
 
 /** Inject fetch, clock waits and persistence without native imports in Node tests. */
 export function setAnalysisRuntime(overrides: Partial<typeof defaults> = {}) {
@@ -37,24 +37,27 @@ export function setAnalysisRuntime(overrides: Partial<typeof defaults> = {}) {
 
 /** An empty override uses the bundled environment default; empty defaults disable reads. */
 export const analysisServerUrl = () =>
-  normalizeBase(appStore.getState().analysisServerUrl || process.env.EXPO_PUBLIC_KASHI_SERVER_URL || '');
+  normalizeBase(settingsStore.getState().analysisServerUrl || process.env.EXPO_PUBLIC_KASHI_SERVER_URL || '');
 
 /** Capture the current transport and login so transient breakdowns use the same cancellation rules. */
 export function analysisSession() {
   const version = generation,
     base = analysisServerUrl(),
-    token = appStore.getState().analysisToken;
+    token = settingsStore.getState().analysisToken;
   return { base, token, fetch: runtime.fetch, valid: () => version === generation && base === analysisServerUrl() };
 }
 
-/** Load the admin token at boot; it is never included in persisted learning state. */
+/** Admin requests are available only with both a URL and a SecureStore token. */
+export const canAnalyze = () => !!analysisServerUrl() && !!settingsStore.getState().analysisToken;
+
+/** Load the admin token at boot; it is never included in persisted settings. */
 export async function loadAnalysisToken() {
   const version = generation;
   try {
     const token = await runtime.loadToken();
-    if (version === generation) appStore.setState({ analysisToken: token ?? '' });
+    if (version === generation) settingsStore.setState({ analysisToken: token ?? '' });
   } catch {
-    if (version === generation) appStore.setState({ analysisToken: '' });
+    if (version === generation) settingsStore.setState({ analysisToken: '' });
   }
 }
 /** Serialize SecureStore writes and report whether publication still belongs to this login. */
@@ -67,6 +70,12 @@ export async function saveAnalysisToken(token: string) {
   return version === generation;
 }
 
+/** Save the admin token to SecureStore, then publish it unless a logout intervened. */
+export async function setAnalysisToken(token: string) {
+  const value = token.trim();
+  if (await saveAnalysisToken(value)) settingsStore.setState({ analysisToken: value });
+}
+
 /** Save before publication so logout can wait for every accepted SQLite write. */
 async function accept(analysis: SongAnalysis, valid: () => boolean) {
   if (!valid()) return;
@@ -76,7 +85,7 @@ async function accept(analysis: SongAnalysis, valid: () => boolean) {
 
 /** Four workers fetch missing analyses, with newly prioritized songs ahead of the backlog. */
 export function prioritizeAnalyses(ids: string[]) {
-  if (appStore.getState().offlineMode) return Promise.resolve();
+  if (settingsStore.getState().offlineMode) return Promise.resolve();
   queue = [...new Set([...ids, ...queue])];
   if (running) return running;
   const base = analysisServerUrl(),
@@ -85,7 +94,7 @@ export function prioritizeAnalyses(ids: string[]) {
     queue = [];
     return Promise.resolve();
   }
-  const valid = () => version === generation && base === analysisServerUrl() && !appStore.getState().offlineMode;
+  const valid = () => version === generation && base === analysisServerUrl() && !settingsStore.getState().offlineMode;
   const fetcher = runtime.fetch;
   running = Promise.all(
     Array.from({ length: 4 }, async () => {
@@ -115,43 +124,31 @@ export function prioritizeAnalyses(ids: string[]) {
   return running;
 }
 
-/** Fetch the whole library after a scan, preserving playback and queue priority. */
-export function fetchLibraryAnalyses() {
-  const state = appStore.getState();
-  return prioritizeAnalyses(
-    [
-      state.songId,
-      ...state.queue.slice(state.queueIndex + 1),
-      ...state.autoplay,
-      ...libraryStore.getState().songs.map((song) => song.id),
-    ].filter((id): id is string => !!id),
-  );
-}
-
 /** Request an analysis once per song and poll for at most ten minutes. */
 export function analyzeSong(songId: string, { force = false }: { force?: boolean } = {}) {
   const existing = requests.get(songId);
   if (existing) return existing;
   const base = analysisServerUrl(),
-    token = appStore.getState().analysisToken;
+    token = settingsStore.getState().analysisToken;
   const song = getSong(songId),
     lyrics = getLyrics(songId),
     version = generation;
-  if (appStore.getState().offlineMode || !base || !token || !song || !lyrics.timeline.length) return Promise.resolve();
+  if (settingsStore.getState().offlineMode || !base || !token || !song || !lyrics.timeline.length)
+    return Promise.resolve();
   const hash = lyrics.fingerprint,
     previous = libraryStore.getState().analyses[lyrics.fingerprint],
     service = runtime;
   const valid = () =>
     version === generation &&
     base === analysisServerUrl() &&
-    !appStore.getState().offlineMode &&
+    !settingsStore.getState().offlineMode &&
     getLyrics(songId).fingerprint === hash;
   const update = (request?: { status: 'requesting' | 'queued' | 'running' | 'failed'; error?: string }) => {
     if (!valid()) return;
-    const analysisRequests = { ...appStore.getState().analysisRequests };
-    if (request) analysisRequests[songId] = { ...request, force };
-    else delete analysisRequests[songId];
-    appStore.setState({ analysisRequests });
+    const next = { ...analysisRequests.getState() };
+    if (request) next[songId] = { ...request, force };
+    else delete next[songId];
+    analysisRequests.setState(next, true);
   };
   update({ status: 'requesting' });
   const work = (async () => {
@@ -199,9 +196,9 @@ export function analyzeSong(songId: string, { force = false }: { force?: boolean
   })().finally(() => {
     requests.delete(songId);
     if (!valid() && version === generation) {
-      const analysisRequests = { ...appStore.getState().analysisRequests };
-      delete analysisRequests[songId];
-      appStore.setState({ analysisRequests });
+      const next = { ...analysisRequests.getState() };
+      delete next[songId];
+      analysisRequests.setState(next, true);
     }
   });
   requests.set(songId, work);
@@ -215,5 +212,5 @@ export async function cancelAnalyses() {
   queue = [];
   await Promise.allSettled([running, ...requests.values(), tokenWrites]);
   await flushBreakdowns();
-  appStore.setState({ analysisRequests: {} });
+  analysisRequests.setState({}, true);
 }

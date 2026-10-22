@@ -2,6 +2,7 @@ import { localAudioUri, localArtUri } from '@/downloads/store';
 import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync } from 'expo-audio';
 import { appStore, finishSong, setTransport } from '@/store/appStore';
 import { libraryStore } from '@/store/libraryStore';
+import { settingsStore } from '@/store/settingsStore';
 import { sessionStore } from '@/navidrome/session';
 import { mediaUrl, request } from '@/navidrome/subsonic';
 import { savePlayed } from '@/navidrome/db';
@@ -93,7 +94,7 @@ export async function setupTransport(valid = () => true) {
         at = Date.now();
       libraryStore.getState().markPlayed(song.id, at);
       void savePlayed(song.id, at).catch(() => appStore.setState({ playbackError: 'Could not save Recently played' }));
-      if (session && !appStore.getState().offlineMode)
+      if (session && !settingsStore.getState().offlineMode)
         void request(session, 'scrobble', { id: song.id, submission: true, time: at }).catch(() =>
           appStore.setState({ playbackError: 'Could not scrobble this song' }),
         );
@@ -106,7 +107,7 @@ export async function setupTransport(valid = () => true) {
   const transportLoad = (next: Song, offset = 0) => {
     const session = sessionStore.getState().session;
     const local = localAudioUri(next.id);
-    if (appStore.getState().offlineMode && !local) {
+    if (settingsStore.getState().offlineMode && !local) {
       song = null;
       awaitingStart = false;
       player.pause();
@@ -139,14 +140,14 @@ export async function setupTransport(valid = () => true) {
           albumTitle: next.album,
           artworkUrl: next.coverArt
             ? (localArtUri(next.coverArt) ??
-              (session && !appStore.getState().offlineMode
+              (session && !settingsStore.getState().offlineMode
                 ? mediaUrl(session, 'getCoverArt', next.coverArt, 600)
                 : undefined))
             : undefined,
         },
         { showSeekBackward: false, showSeekForward: false },
       );
-      if (session && !appStore.getState().offlineMode && !appStore.getState().clipPlayback)
+      if (session && !settingsStore.getState().offlineMode && !appStore.getState().clipPlayback)
         void request(session, 'scrobble', { id: next.id, submission: false }).catch(() =>
           appStore.setState({ playbackError: 'Could not announce this song to the server' }),
         );
@@ -183,8 +184,9 @@ export async function setupTransport(valid = () => true) {
     seek,
   });
   // Switching offline must release a streaming AVPlayer item, including its buffered network work.
-  const unsubscribeOffline = appStore.subscribe((state, previous) => {
-    if (!state.offlineMode || previous.offlineMode || !song) return;
+  const unsubscribeOffline = settingsStore.subscribe((settings, previous) => {
+    if (!settings.offlineMode || previous.offlineMode || !song) return;
+    const state = appStore.getState();
     const local = localAudioUri(song.id);
     if (local && local === sourceUri) return;
     if (local) {

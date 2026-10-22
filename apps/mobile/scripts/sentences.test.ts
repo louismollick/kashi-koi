@@ -7,6 +7,7 @@ import { fingerprint } from '@kashi-koi/shared/fingerprint';
 import { remapReview } from '../src/lyrics/review';
 import { timelineTexts, withSentences } from '../src/lyrics/sentences';
 import { appStore, resetAppState, setTransport } from '../src/store/appStore';
+import { settingsStore } from '../src/store/settingsStore';
 import {
   carryLyrics,
   currentSentence,
@@ -502,7 +503,7 @@ test('analysis arriving during a quiz wait cancels its timer and discards obsole
   try {
     appStore.getState().startSong(song.id);
     appStore.getState().setQuizToggle(true);
-    appStore.setState({ answerTime: 3 });
+    settingsStore.setState({ answerTime: 3 });
     appStore.getState().jumpToLine(0);
     appStore.getState().answer(rawLyrics.lines[0]!.translation!);
     appStore.getState().jumpToLine(1);

@@ -1,11 +1,13 @@
-import { translationHint } from '@/japanese/translate';
+import { analysisRequests, analyzeSong, canAnalyze } from '@/analysis/fetcher';
+import { prioritizeTranslations, translationHint } from '@/japanese/translate';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
 import { queueDownloads, removeDownloads, useDownloadSummary } from '@/downloads';
 import { getAlbum, hasTranslations, libraryStore, songAnalysisInfo } from '@/store/libraryStore';
-import { appStore, canAnalyze } from '@/store/appStore';
+import { appStore } from '@/store/appStore';
+import { settingsStore } from '@/store/settingsStore';
 import { Cover } from '@/components/Cover';
 import { FogBadge, FogStrip, useSongFog } from '@/components/Fog';
 import { IconButton, Label, PixelToggle, styles } from '@/components/ui';
@@ -75,11 +77,11 @@ export default function SongMenuScreen() {
   libraryStore((state) => state.translationStatus);
   const current = appStore((state) => state.songId === id);
   const repeat = appStore((state) => state.repeatSongId === id);
-  const offline = appStore((state) => state.offlineMode);
-  const showTranslations = appStore((state) => state.showTranslations);
-  const useAnalysis = appStore((state) => !state.lineByLineSongIds.includes(id));
-  const request = appStore((state) => state.analysisRequests[id]);
-  appStore((state) => state.analysisToken + state.analysisServerUrl);
+  const offline = settingsStore((state) => state.offlineMode);
+  const showTranslations = settingsStore((state) => state.showTranslations);
+  const useAnalysis = settingsStore((state) => !state.lineByLineSongIds.includes(id));
+  const request = analysisRequests((requests) => requests[id]);
+  settingsStore((state) => state.analysisToken + state.analysisServerUrl);
   const { tiles } = useSongFog(id);
   const download = useDownloadSummary({ kind: 'song', id });
   const info = songAnalysisInfo(id);
@@ -179,7 +181,7 @@ export default function SongMenuScreen() {
               <PixelToggle
                 label="Translations"
                 on={showTranslations}
-                onPress={() => appStore.getState().toggleTranslations()}
+                onPress={() => settingsStore.getState().toggleTranslations()}
               />
             </Row>
           )}
@@ -195,7 +197,11 @@ export default function SongMenuScreen() {
                     accessibilityRole="radio"
                     accessibilityLabel={label}
                     accessibilityState={{ checked: useAnalysis === enabled }}
-                    onPress={() => appStore.getState().setListenAnalysisEnabled(id, enabled)}
+                    onPress={() => {
+                      settingsStore.getState().setListenAnalysisEnabled(id, enabled);
+                      // Line-by-line display needs the song's line translations soon.
+                      if (!enabled) prioritizeTranslations([id]);
+                    }}
                     style={{
                       minHeight: 44,
                       paddingHorizontal: 10,
@@ -218,7 +224,7 @@ export default function SongMenuScreen() {
               label="Retry analysis"
               detail={request.error ?? 'Analysis failed'}
               color={colors.red}
-              onPress={() => void appStore.getState().analyzeSong(id, { force: request.force })}
+              onPress={() => void analyzeSong(id, { force: request.force })}
             />
           ) : request ? (
             <Row label={request.status === 'running' ? 'Analyzing song' : 'Analysis queued'} disabled>
@@ -229,7 +235,7 @@ export default function SongMenuScreen() {
             synced && (
               <Row
                 label={info ? 'Re-analyze song' : 'Analyze song'}
-                onPress={() => void appStore.getState().analyzeSong(id, { force: !!info })}
+                onPress={() => void analyzeSong(id, { force: !!info })}
               />
             )
           )}

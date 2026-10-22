@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { applyAnswer, lyricsFog } from '../src/lyrics/fog';
 import { appStore, finishSong, getUpNext, hydrateAppState, resetAppState, setTransport } from '../src/store/appStore';
+import { settingsStore } from '../src/store/settingsStore';
 import { getLyrics, libraryStore } from '../src/store/libraryStore';
 import type { LineFog } from '../src/types/domain';
 import { albums, artists, firstSong, songs, songLyrics } from './fixtures';
@@ -156,8 +157,8 @@ for (const release of ['timeout', 'play', 'zero'] as const)
         endMs = lyrics.timeline[occurrence.end]!.endMs;
       appStore.getState().answer(first.translation!);
       appStore.getState().jumpToLine(occurrence.start);
+      settingsStore.setState({ answerTime: release === 'zero' ? 0 : release === 'timeout' ? 3 : null });
       appStore.setState({
-        answerTime: release === 'zero' ? 0 : release === 'timeout' ? 3 : null,
         fog: Object.fromEntries(sentence.lineIds.map((id) => [id, { state: 'clear' as const }])),
       });
       appStore.getState().updatePlayback(endMs - 1, 238000, true);
@@ -197,8 +198,8 @@ for (const release of ['timeout', 'play', 'zero'] as const)
 test('an unanswered miss reschedules an existing review sentence without another undo toast', () => {
   appStore.getState().setQuizToggle(true);
   const sentence = getLyrics('dawn').sentences[0]!;
+  settingsStore.setState({ answerTime: 0 });
   appStore.setState({
-    answerTime: 0,
     reviewList: [{ id: 'existing', songId: 'dawn', sentenceId: sentence.id, kind: 'later', step: 2, dueAt: 100000 }],
   });
   appStore.getState().updatePlayback(9000, 238000, true);
@@ -213,7 +214,7 @@ for (const skip of ['seek', 'jump', 'waiting seek', 'song change', 'before quiz'
   test(`${skip} leaves skipped sentences unanswered`, (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const lyrics = getLyrics('dawn');
-    appStore.setState({ answerTime: skip === 'waiting seek' || skip === 'song change' ? 3 : 0 });
+    settingsStore.setState({ answerTime: skip === 'waiting seek' || skip === 'song change' ? 3 : 0 });
     if (skip !== 'before quiz') appStore.getState().setQuizToggle(true);
     if (skip === 'waiting seek' || skip === 'song change') appStore.getState().updatePlayback(9000, 238000, true);
     if (skip === 'song change') appStore.getState().nextSong();
@@ -236,7 +237,7 @@ test('jumping past the last held sentence advances without scoring it', (t) => {
     occurrence = lyrics.sentenceTimeline.at(-1)!;
   appStore.getState().setQuizToggle(true);
   appStore.getState().jumpToLine(occurrence.start);
-  appStore.setState({ answerTime: 3 });
+  settingsStore.setState({ answerTime: 3 });
   appStore.getState().updatePlayback(lyrics.timeline[occurrence.end]!.endMs, 238000, true);
   assert.ok(appStore.getState().answerWait);
   appStore.getState().advanceLine();
@@ -256,7 +257,7 @@ test('turning quiz on after a sentence ended in listen mode does not score it', 
       dawn: { ...lyrics, timeline: lyrics.timeline.map((line, index) => (index ? line : { ...line, endMs: 8000 })) },
     },
   });
-  appStore.setState({ answerTime: 0 });
+  settingsStore.setState({ answerTime: 0 });
   appStore.getState().updatePlayback(8500, 238000, true);
   appStore.getState().setQuizToggle(true);
   appStore.getState().updatePlayback(8600, 238000, true);
@@ -273,7 +274,7 @@ for (const release of ['timeout', 'play', 'finish', 'zero'] as const)
       sentence = lyrics.sentences.find((sentence) => sentence.id === occurrence.sentenceId)!;
     appStore.getState().setQuizToggle(true);
     appStore.getState().jumpToLine(occurrence.start);
-    appStore.setState({ answerTime: release === 'zero' ? 0 : release === 'timeout' ? 3 : null });
+    settingsStore.setState({ answerTime: release === 'zero' ? 0 : release === 'timeout' ? 3 : null });
     appStore.getState().updatePlayback(lyrics.timeline[occurrence.end]!.endMs, 238000, false);
     if (release === 'timeout') t.mock.timers.tick(3000);
     else if (release === 'play') appStore.getState().setPlaying(true);

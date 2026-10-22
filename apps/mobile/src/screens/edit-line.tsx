@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
 import { appStore } from '@/store/appStore';
+import { settingsStore } from '@/store/settingsStore';
 import { currentSentence, getLineText, getLyrics, libraryStore } from '@/store/libraryStore';
 import { CenteredList, LyricRow } from '@/components/Lyrics';
 import { IconButton, Label, styles } from '@/components/ui';
@@ -12,7 +13,7 @@ export default function EditLineScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   libraryStore((state) => state.lyrics);
   const reviewList = appStore((state) => state.reviewList);
-  const showTranslations = appStore((state) => state.showTranslations);
+  const showTranslations = settingsStore((state) => state.showTranslations);
   const item = reviewList.find((line) => line.id === id);
   const router = useRouter();
   const { height } = useWindowDimensions();

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { scan, scanLyrics, syncLibrary, cancelSync } from '../src/navidrome/sync';
 import { sessionStore } from '../src/navidrome/session';
 import { appStore } from '../src/store/appStore';
+import { settingsStore } from '../src/store/settingsStore';
 import { libraryStore } from '../src/store/libraryStore';
 import { songs, albums, artists, songLyrics } from './fixtures';
 import type { Session } from '../src/navidrome/subsonic';
@@ -13,6 +14,7 @@ beforeEach(() => {
   libraryStore.getState().setLibrary({ songs: [songs[0]!], albums, artists, lyrics: songLyrics });
   libraryStore.setState({ error: null, progress: null });
   appStore.setState(appStore.getInitialState(), true);
+  settingsStore.setState(settingsStore.getInitialState(), true);
 });
 
 test('failed rescans preserve synced lyrics and review entries but count errors', async () => {
@@ -193,7 +195,7 @@ test('a failed save stops new work and waits for all workers before rejecting', 
       libraryStore.getState().songs.map((song) => song.lyricsStatus),
       ['unchecked', 'none', 'none', 'none', 'unchecked', 'unchecked'],
     );
-    assert.equal(appStore.getState().lastScanAt, null);
+    assert.equal(settingsStore.getState().lastScanAt, null);
   } finally {
     release();
     globalThis.fetch = original;
@@ -219,7 +221,7 @@ test('logging out during a saved result prevents publishing or pruning', async (
     );
     assert.equal(libraryStore.getState().lyrics[song.id], cached);
     assert.equal(appStore.getState().reviewList.length, 1);
-    assert.equal(appStore.getState().lastScanAt, null);
+    assert.equal(settingsStore.getState().lastScanAt, null);
   } finally {
     globalThis.fetch = original;
   }
@@ -256,7 +258,7 @@ test('clearing the session refuses new syncs while cancellation waits for active
     await active;
     await cancellation;
     assert.equal(libraryStore.getState().lyrics[song.id], cached);
-    assert.equal(appStore.getState().lastScanAt, null);
+    assert.equal(settingsStore.getState().lastScanAt, null);
     assert.equal(libraryStore.getState().progress, null);
   } finally {
     release();
@@ -365,13 +367,13 @@ test('switching offline after a save still publishes that saved result', async (
     await scan(
       session,
       true,
-      () => !appStore.getState().offlineMode,
+      () => !settingsStore.getState().offlineMode,
       async () => {
-        appStore.setState({ offlineMode: true });
+        settingsStore.setState({ offlineMode: true });
       },
     );
     assert.equal(libraryStore.getState().bySong[song.id]!.lyricsStatus, 'none');
-    assert.equal(appStore.getState().lastScanAt, null);
+    assert.equal(settingsStore.getState().lastScanAt, null);
   } finally {
     sessionStore.setState({ session: null });
     globalThis.fetch = original;
