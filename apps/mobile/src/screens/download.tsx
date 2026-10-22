@@ -3,8 +3,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
 import { queueDownloads, removeDownloads, useDownloadSummary, type DownloadTarget } from '@/downloads';
-import { appStore } from '@/store/appStore';
-import { getAlbum, getArtist, getArtistAlbums, getSong } from '@/store/libraryStore';
+import { appStore, getLibraryFilters } from '@/store/appStore';
+import { getAlbum, getAlbumSongs, getArtist, getArtistAlbums, getArtistSongs, getSong } from '@/store/libraryStore';
+import { getVisibleSongs } from '@/data/libraryVisibility';
 import { Cover } from '@/components/Cover';
 import { Icon } from '@/components/Icon';
 import { Button, IconButton, Label, styles } from '@/components/ui';
@@ -23,7 +24,17 @@ function describe(target: Exclude<DownloadTarget, { kind: 'library' }>) {
   return artist && { title: artist.name, subtitle: 'Discography', art: getArtistAlbums(artist.id)[0] ?? artist };
 }
 
-/** Bottom sheet from a long press or a page's download button: queue or remove offline copies. */
+/** Visible song ids an album or artist adds to the queue. */
+function queueable(target: Exclude<DownloadTarget, { kind: 'library' }>) {
+  const songs =
+    target.kind === 'album' ? getAlbumSongs(target.id) : target.kind === 'artist' ? getArtistSongs(target.id) : [];
+  return getVisibleSongs(songs, getLibraryFilters()).map((song) => song.id);
+}
+
+/**
+ * Bottom sheet from a long press or a page's download button: queue an album or artist, and download or remove
+ * offline copies.
+ */
 export default function DownloadScreen() {
   const params = useLocalSearchParams<{ kind: 'song' | 'album' | 'artist'; id: string }>();
   const target = { kind: params.kind, id: params.id };
@@ -74,6 +85,26 @@ export default function DownloadScreen() {
             {status}
           </Label>
         </View>
+        {!single && (
+          <View style={styles.row}>
+            {(['Play next', 'Add to queue'] as const).map((label) => (
+              <Button
+                key={label}
+                label={label}
+                border="#4b4f80"
+                style={{ flex: 1 }}
+                onPress={() => {
+                  const ids = queueable(target);
+                  if (label === 'Play next') appStore.getState().playNext(ids);
+                  else appStore.getState().addToQueue(ids);
+                  router.back();
+                }}
+              >
+                <Label style={{ fontWeight: '700' }}>{label}</Label>
+              </Button>
+            ))}
+          </View>
+        )}
         {missing > 0 && (
           <Button
             label={single ? 'Download' : `Download ${missing} songs`}

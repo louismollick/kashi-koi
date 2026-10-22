@@ -27,6 +27,7 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import {
   getAlbumSongs,
+  getArtistSongs,
   getSong,
   getLyrics,
   currentSentence,
@@ -219,7 +220,8 @@ export function finishSong() {
         at: Date.now(),
       },
     });
-  state.nextSong();
+  if (state.songId && state.repeatSongId === state.songId) playQueueSong(state.songId, state.queueIndex);
+  else state.nextSong();
 }
 
 /** Start another queued play without rebuilding the queue or autoplay. */
@@ -229,6 +231,7 @@ function playQueueSong(songId: string, queueIndex: number) {
   appStore.setState({
     songId,
     queueIndex,
+    ...(songId !== state.repeatSongId ? { repeatSongId: null } : {}),
     lineIndex: 0,
     positionMs: 0,
     durationMs: getSong(songId)!.duration * 1000,
@@ -282,10 +285,17 @@ type AppState = {
   addedExpiresAt: number | null;
   nextReviewId: number;
   startSong: (songId: string, list?: string[]) => void;
-  playNext: (songId: string) => void;
-  addToQueue: (songId: string) => void;
+  playNext: (songIds: string[]) => void;
+  addToQueue: (songIds: string[]) => void;
   playUpNext: (position: number) => void;
+  removeUpNext: (position: number, songId: string) => void;
+  moveUpNext: (from: number, to: number) => void;
+  clearUpNext: () => void;
   startAlbum: (albumId: string, shuffle?: boolean) => void;
+  startArtist: (artistId: string, shuffle?: boolean) => void;
+  /** The song that replays when it ends instead of advancing; playing any other song turns it off. */
+  repeatSongId: string | null;
+  setRepeatSong: (songId: string, enabled: boolean) => void;
   restartRun: () => void;
   setQuizToggle: (enabled: boolean) => void;
   nextSong: () => void;
@@ -328,6 +338,36 @@ const libraryFilters = (state: AppState): LibraryFilters => ({
   hideUnsynced: state.hideSongsWithoutSyncedLyrics,
   hideNonJapanese: state.hideSongsWithoutJapanese,
 });
+
+/** Shuffle optionally, then play visible songs as the queue. */
+function startList(songs: Song[], shuffle: boolean) {
+  const ids = getVisibleSongs(songs, libraryFilters(appStore.getState())).map((song) => song.id);
+  if (!ids.length) return;
+  if (shuffle) shuffled(ids);
+  appStore.getState().startSong(ids[0]!, ids);
+}
+
+/** Queue actions with nothing playing start the songs as a new queue. */
+function startIdle(songIds: string[]) {
+  const ids = [...new Set(songIds)].filter((id) => getSong(id));
+  if (ids.length) appStore.getState().startSong(ids[0]!, ids);
+}
+
+/**
+ * Put songs into the upcoming queue at `at` (an index into the whole queue). Songs already upcoming move instead of
+ * repeating, and leave autoplay.
+ */
+function insertUpcoming(state: AppState, songIds: string[], at: 'next' | 'end') {
+  const ids = [...new Set(songIds)].filter((id) => getSong(id) && (at === 'end' || id !== state.songId));
+  if (!ids.length) return state;
+  const moving = new Set(ids),
+    played = state.queue.slice(0, state.queueIndex + 1),
+    upcoming = state.queue.slice(state.queueIndex + 1).filter((id) => !moving.has(id));
+  return {
+    queue: at === 'next' ? [...played, ...ids, ...upcoming] : [...played, ...upcoming, ...ids],
+    autoplay: state.autoplay.filter((id) => !moving.has(id)),
+  };
+}
 
 /** Learning state and queue actions, independent of native playback. */
 export const appStore = create<AppState>()(
@@ -428,25 +468,44 @@ export const appStore = create<AppState>()(
         });
         playQueueSong(songId, queue.indexOf(songId));
       },
-      startAlbum: (albumId, shuffle = false) => {
-        const ids = getVisibleSongs(getAlbumSongs(albumId), libraryFilters(get())).map((song) => song.id);
-        if (!ids.length) return;
-        if (shuffle) shuffled(ids);
-        get().startSong(ids[0]!, ids);
+      startAlbum: (albumId, shuffle = false) => startList(getAlbumSongs(albumId), shuffle),
+      startArtist: (artistId, shuffle = false) => startList(getArtistSongs(artistId), shuffle),
+      // With nothing playing, both start the songs instead.
+      playNext: (songIds) => {
+        if (!get().songId) return startIdle(songIds);
+        set((state) => insertUpcoming(state, songIds, 'next'));
+        prioritizeUpNext();
       },
-      playNext: (songId) => {
-        if (songId === get().songId || !getSong(songId)) return;
+      addToQueue: (songIds) => {
+        if (!get().songId) return startIdle(songIds);
+        set((state) => insertUpcoming(state, songIds, 'end'));
+        prioritizeUpNext();
+      },
+      // Positions index `[...upcoming queue, ...autoplay]`, like playUpNext. The id guards against a stale position.
+      removeUpNext: (position, songId) =>
+        set((state) => {
+          const start = state.queueIndex + 1,
+            queued = state.queue.length - start;
+          if ([...state.queue.slice(start), ...state.autoplay][position] !== songId) return state;
+          if (position < queued) return { queue: state.queue.filter((_, index) => index !== start + position) };
+          return { autoplay: state.autoplay.filter((_, index) => index !== position - queued) };
+        }),
+      // Reorders the upcoming queue only; autoplay keeps its shuffle.
+      moveUpNext: (from, to) =>
+        set((state) => {
+          const upcoming = state.queue.slice(state.queueIndex + 1);
+          const valid = (position: number) => Number.isInteger(position) && position >= 0 && position < upcoming.length;
+          if (from === to || !valid(from) || !valid(to)) return state;
+          const [id] = upcoming.splice(from, 1);
+          upcoming.splice(to, 0, id!);
+          return { queue: [...state.queue.slice(0, state.queueIndex + 1), ...upcoming] };
+        }),
+      clearUpNext: () => set((state) => ({ queue: state.queue.slice(0, state.queueIndex + 1) })),
+      repeatSongId: null,
+      setRepeatSong: (songId, enabled) =>
         set((state) => ({
-          queue: [...state.queue.slice(0, state.queueIndex + 1), songId, ...state.queue.slice(state.queueIndex + 1)],
-          autoplay: state.autoplay.filter((id) => id !== songId),
-        }));
-        prioritizeUpNext();
-      },
-      addToQueue: (songId) => {
-        if (!getSong(songId)) return;
-        set((state) => ({ queue: [...state.queue, songId], autoplay: state.autoplay.filter((id) => id !== songId) }));
-        prioritizeUpNext();
-      },
+          repeatSongId: enabled ? songId : state.repeatSongId === songId ? null : state.repeatSongId,
+        })),
       playUpNext: (position) => {
         if (!Number.isInteger(position) || position < 0) return;
         const state = get(),

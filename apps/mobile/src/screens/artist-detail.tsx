@@ -3,15 +3,16 @@ import { FlatList, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { getArtist, libraryStore } from '@/store/libraryStore';
 import { countBy, countedFilters, getVisibleLibrary, getVisibleSongs, syncedIds } from '@/data/libraryVisibility';
-import { useLibraryFilters } from '@/store/appStore';
+import { appStore, useLibraryFilters } from '@/store/appStore';
 import { AlbumTile } from '@/components/AlbumTile';
 import { HiddenSongsRow } from '@/components/HiddenSongsRow';
 import { Cover } from '@/components/Cover';
 import { DownloadButton } from '@/components/DownloadButton';
+import { PlayButtons } from '@/components/PlayButtons';
 import { ScreenHeader } from '@/components/Header';
 import { Label, SectionHeader, styles } from '@/components/ui';
 
-/** Artist artwork and a grid of that artist's albums. */
+/** Artist artwork, Play/Shuffle for every visible song, and a grid of that artist's albums. */
 export default function ArtistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
@@ -76,6 +77,11 @@ export default function ArtistDetailScreen() {
                 {artistAlbums.length} {artistAlbums.length === 1 ? 'album' : 'albums'}
               </Label>
             </View>
+            <PlayButtons
+              noun="artist"
+              disabled={!visible.songs.length}
+              start={(shuffle) => appStore.getState().startArtist(artist.id, shuffle)}
+            />
             <SectionHeader title="Albums" />
           </View>
         }
