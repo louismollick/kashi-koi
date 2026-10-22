@@ -29,7 +29,7 @@ function Heading({ title, onClear }: { title: string; onClear?: () => void }) {
         {title}
       </Label>
       {onClear && (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Clear ${title}`} hitSlop={12} onPress={onClear}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Clear Up next" hitSlop={12} onPress={onClear}>
           <Label style={{ color: colors.lavender, fontSize: 13, fontWeight: '700' }}>Clear</Label>
         </Pressable>
       )}
