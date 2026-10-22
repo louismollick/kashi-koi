@@ -194,6 +194,8 @@ export function Row({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      // The detail (last sync, progress, results) is read after the label.
+      accessibilityValue={detail ? { text: detail } : undefined}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [row, { opacity: disabled ? 0.45 : pressed ? 0.7 : 1 }]}
