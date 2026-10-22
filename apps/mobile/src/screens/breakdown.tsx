@@ -1,9 +1,10 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View, type ViewStyle, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, View, type ViewStyle, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Breakdown } from '@kashi-koi/shared/breakdown';
 import { colors } from '@/constants/theme';
+import { PixelSpinner } from '@/components/PixelSpinner';
 import { englishSpans, loadBreakdown, useBreakdown } from '@/analysis/breakdowns';
 import { alignReading } from '@/japanese/text';
 import { currentSentence, libraryStore } from '@/store/libraryStore';
@@ -268,7 +269,7 @@ export default function BreakdownScreen() {
           ) : state?.status === 'missing' || !target ? (
             <Label muted>Not explained yet</Label>
           ) : (
-            <ActivityIndicator size="small" color={colors.lavender} accessibilityLabel="Explaining sentence" />
+            <PixelSpinner color={colors.lavender} accessibilityLabel="Explaining sentence" />
           )}
         </ScrollView>
       </View>

@@ -11,6 +11,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { font } from '@/constants/theme';
 import { styles } from './ui';
 import type { StyleProp, TextStyle } from 'react-native';
 
@@ -20,7 +21,7 @@ export function Marquee({ children, style }: { children: string; style?: StylePr
   const [textWidth, setTextWidth] = useState(0);
   const offset = useSharedValue(0);
   const reducedMotion = useReducedMotion();
-  const textStyle = StyleSheet.flatten([styles.text, style]);
+  const textStyle: TextStyle = StyleSheet.flatten([styles.text, style]);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.value }] }));
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export function Marquee({ children, style }: { children: string; style?: StylePr
         <Animated.View style={animatedStyle}>
           <Text
             numberOfLines={1}
-            style={textStyle}
+            style={[textStyle, font('body', textStyle.fontWeight)]}
             onLayout={({ nativeEvent }) => setTextWidth(nativeEvent.layout.width)}
           >
             {children}

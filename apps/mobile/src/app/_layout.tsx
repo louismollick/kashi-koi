@@ -17,7 +17,8 @@ import { loadSession, sessionStore } from '@/navidrome/session';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { colors } from '@/constants/theme';
+import { useFonts } from 'expo-font';
+import { colors, fontFiles } from '@/constants/theme';
 
 setTranslator(Japanese, saveTranslations);
 setDownloadRuntime(nativeDownloadRuntime);
@@ -44,6 +45,8 @@ export default function RootLayout() {
   const session = sessionStore((state) => state.session);
   const [transportReady, setTransportReady] = useState<typeof session>(null);
   const ready = sessionStore((state) => state.ready);
+  // A font that fails to load falls back to the system face rather than blocking launch.
+  const [fontsLoaded, fontError] = useFonts(fontFiles);
   const { height } = useWindowDimensions();
   useEffect(() => {
     const storage = {
@@ -107,7 +110,7 @@ export default function RootLayout() {
       void pauseTranslations();
     };
   }, [session]);
-  if (!ready || (session && transportReady !== session)) return null;
+  if (!ready || (!fontsLoaded && !fontError) || (session && transportReady !== session)) return null;
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={navigationTheme}>

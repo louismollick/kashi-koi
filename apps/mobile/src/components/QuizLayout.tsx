@@ -65,7 +65,9 @@ function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
               border={colors.coral}
               contentStyle={{ paddingHorizontal: 14, paddingVertical: 6 }}
             >
-              <Label style={{ color: colors.coralDeep, fontWeight: '900', fontSize: 22, lineHeight: 26 }}>NICE!</Label>
+              <Label pixel style={{ color: colors.coralDeep, fontWeight: '900', fontSize: 22, lineHeight: 26 }}>
+                NICE!
+              </Label>
             </PixelFrame>
             <View
               style={{
@@ -82,10 +84,11 @@ function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
               }}
             />
           </Animated.View>
-          <Label style={{ color: colors.combo, fontSize: 15, fontWeight: '800', letterSpacing: 1.5, marginTop: 6 }}>
+          <Label pixel style={{ color: colors.combo, fontSize: 17, fontWeight: '700', letterSpacing: 1, marginTop: 6 }}>
             COMBO
           </Label>
           <Label
+            pixel
             style={{
               color: colors.cream,
               fontSize: 48,
@@ -183,7 +186,9 @@ export function QuizColumn({
         <View style={[styles.row, { marginTop: 12 }]}>
           {onExplain && (
             <Button label="Explain this sentence" style={{ flex: 1 }} onPress={onExplain}>
-              <Label style={{ fontWeight: '800' }}>EXPLAIN</Label>
+              <Label pixel style={{ fontSize: 18, fontWeight: '700' }}>
+                EXPLAIN
+              </Label>
             </Button>
           )}
           {onContinue && (
@@ -194,7 +199,9 @@ export function QuizColumn({
               border={colors.coralBorder}
               onPress={onContinue}
             >
-              <Label style={{ fontWeight: '800' }}>{continueLabel}</Label>
+              <Label pixel style={{ fontSize: 18, fontWeight: '700' }}>
+                {continueLabel}
+              </Label>
             </Button>
           )}
         </View>

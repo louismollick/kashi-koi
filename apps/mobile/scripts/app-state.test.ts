@@ -6,7 +6,7 @@ import { withSentences } from '../src/lyrics/sentences';
 import { currentOccurrence } from '../src/navidrome/lyrics';
 import { sessionStore } from '../src/navidrome/session';
 import { appStore, finishSong, setTransport, hydrateAppState, resetAppState } from '../src/store/appStore';
-import { hydrateSettings, settingsStore } from '../src/store/settingsStore';
+import { hydrateSettings, settingsStore, type AnswerTime } from '../src/store/settingsStore';
 import { albums, artists, firstSong, songs, songLyrics, fixtureLine, fixtureReviewList } from './fixtures';
 import {
   getAlbumSongs,
@@ -884,7 +884,7 @@ test('main-player line seeking restores the original source after a different-so
 });
 
 /** Start a translated fixture at its first occurrence with the injected player. */
-function pacingRun(answerTime: number | null = null) {
+function pacingRun(answerTime: AnswerTime = null) {
   const fake = clipTransport();
   appStore.getState().startSong('dawn');
   appStore.getState().setQuizToggle(true);
@@ -1123,11 +1123,11 @@ test('answer-time presets persist without the wait and logout restores no limit'
       values.delete(key);
     },
   });
-  for (const value of [10, 5, 3, 0, null]) {
-    settingsStore.getState().cycleAnswerTime();
+  for (const value of [10, 5, 3, 0, null] as const) {
+    settingsStore.getState().setAnswerTime(value);
     assert.equal(settingsStore.getState().answerTime, value);
   }
-  settingsStore.getState().cycleAnswerTime();
+  settingsStore.getState().setAnswerTime(10);
   const saved = values.get('settings')!;
   assert.equal('answerWait' in (JSON.parse(saved) as { state: Record<string, unknown> }).state, false);
   settingsStore.setState(settingsStore.getInitialState(), true);
@@ -1372,7 +1372,7 @@ for (const eof of ['before wait', 'during wait'] as const) {
     });
 }
 
-for (const answerTime of [0, 3])
+for (const answerTime of [0, 3] as const)
   test(`native EOF short of duration counts the last unanswered miss with answer time ${answerTime}`, async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const { status, detach } = await nativePacingRun(t);
@@ -2106,7 +2106,7 @@ test('settings seed once from the pre-split learning blob, and stay out of the l
   assert.equal('offlineMode' in appStore.getState(), false);
   assert.equal('answerTime' in appStore.getState(), false);
   // Once the settings key exists, a stale copy in the learning blob no longer overrides it.
-  settingsStore.getState().cycleAnswerTime();
+  settingsStore.getState().setAnswerTime(3);
   assert.equal(settingsStore.getState().answerTime, 3);
   await hydrateSettings(storage);
   assert.equal(settingsStore.getState().answerTime, 3);

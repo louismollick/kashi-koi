@@ -9,7 +9,7 @@ type SettingsState = {
   hideSongsWithoutSyncedLyrics: boolean;
   hideSongsWithoutJapanese: boolean;
   /** Seconds to answer a stop; null waits forever. */
-  answerTime: number | null;
+  answerTime: AnswerTime;
   showTranslations: boolean;
   /** Per-song translation display in listen mode. Quiz and review always use analyzed sentences when available. */
   lineByLineSongIds: string[];
@@ -20,7 +20,7 @@ type SettingsState = {
   analysisServerUrl: string;
   /** Admin token from SecureStore, loaded at boot and never persisted here. */
   analysisToken: string;
-  cycleAnswerTime: () => void;
+  setAnswerTime: (seconds: AnswerTime) => void;
   toggleTranslations: () => void;
   /** Choose the song analysis (true) or line-by-line translations (false) for one song's listen mode. */
   setListenAnalysisEnabled: (songId: string, enabled: boolean) => void;
@@ -28,7 +28,9 @@ type SettingsState = {
   toggleHideSongsWithoutJapanese: () => void;
 };
 
-const answerTimePresets = [null, 10, 5, 3, 0];
+/** Answer-time presets in seconds: null waits for an answer, 0 never stops the song (an unanswered sentence is a miss). */
+export const answerTimes = [null, 10, 5, 3, 0] as const;
+export type AnswerTime = (typeof answerTimes)[number];
 
 /** The fields that survive a restart. */
 const persistedSettings = (state: SettingsState) => ({
@@ -48,7 +50,7 @@ const storageKey = 'settings';
 
 export const settingsStore = create<SettingsState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       offlineMode: false,
       hideSongsWithoutSyncedLyrics: true,
       hideSongsWithoutJapanese: true,
@@ -60,11 +62,8 @@ export const settingsStore = create<SettingsState>()(
       lastScanAt: null,
       analysisServerUrl: '',
       analysisToken: '',
-      // Cycle the fixed answer-time presets for future stops.
-      cycleAnswerTime: () =>
-        set({
-          answerTime: answerTimePresets[(answerTimePresets.indexOf(get().answerTime) + 1) % answerTimePresets.length]!,
-        }),
+      // Applies to future stops; a wait already running keeps its deadline.
+      setAnswerTime: (answerTime) => set({ answerTime }),
       toggleTranslations: () => set((state) => ({ showTranslations: !state.showTranslations })),
       setListenAnalysisEnabled: (songId, enabled) =>
         set((state) => ({

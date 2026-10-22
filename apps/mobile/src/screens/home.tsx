@@ -61,26 +61,27 @@ export default function HomeScreen() {
               >
                 <Icon name="musicFilled" size={54} color={colors.cream} />
                 <View style={{ flex: 1, alignItems: 'center' }}>
-                  <Label style={{ fontSize: 22, lineHeight: 26, fontWeight: '800', letterSpacing: 1 }}>REVIEW</Label>
-                  <Label style={{ fontSize: 34, lineHeight: 38, fontWeight: '800' }}>{count}</Label>
-                  <Label style={{ fontSize: 22, lineHeight: 26, fontWeight: '800', letterSpacing: 1 }}>LYRICS</Label>
+                  <Label pixel style={{ fontSize: 22, lineHeight: 26, fontWeight: '800', letterSpacing: 1 }}>
+                    REVIEW
+                  </Label>
+                  <Label pixel style={{ fontSize: 34, lineHeight: 38, fontWeight: '800' }}>
+                    {count}
+                  </Label>
+                  <Label pixel style={{ fontSize: 22, lineHeight: 26, fontWeight: '800', letterSpacing: 1 }}>
+                    LYRICS
+                  </Label>
                 </View>
-                <View
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 26,
-                    backgroundColor: colors.coralSoft,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                <PixelFrame
+                  fill={colors.coralSoft}
+                  border={null}
+                  contentStyle={{ width: 52, height: 52, alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Icon name="next" size={40} />
-                </View>
+                </PixelFrame>
               </PixelFrame>
             )}
           </Pressable>
-          <SectionHeader title="Recently played" />
+          {recent.length > 0 && <SectionHeader title="Recently played" />}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {recent.map((song) => (
               <Pressable

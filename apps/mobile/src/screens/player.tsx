@@ -3,9 +3,10 @@ import { analysisRequests } from '@/analysis/fetcher';
 import { translationHint } from '@/japanese/translate';
 import { isJapanese } from '@/japanese/text';
 import { useEffect, useMemo } from 'react';
-import { ActivityIndicator, Pressable, View, type ViewStyle } from 'react-native';
+import { Pressable, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
+import { PixelSpinner } from '@/components/PixelSpinner';
 import {
   currentSentence,
   getLineText,
@@ -39,7 +40,9 @@ function AddedToast({ style }: { style?: ViewStyle }) {
         contentStyle={{ minHeight: 40, paddingHorizontal: 12, paddingVertical: 8 }}
         onPress={() => appStore.getState().undoLostMark()}
       >
-        <Label style={{ fontSize: 12, color: colors.cream, fontWeight: '700' }}>UNDO</Label>
+        <Label pixel style={{ fontSize: 14, color: colors.cream, fontWeight: '700' }}>
+          UNDO
+        </Label>
       </Button>
     </PixelFrame>
   );
@@ -190,7 +193,7 @@ export default function PlayerScreen() {
             </Label>
           ) : (
             <>
-              <ActivityIndicator size="small" color={colors.lavender} />
+              <PixelSpinner color={colors.lavender} />
               <Label muted style={{ flex: 1 }}>
                 {request.status === 'running' ? 'Analyzing song' : 'Analysis queued'}
               </Label>
@@ -207,7 +210,7 @@ export default function PlayerScreen() {
       )}
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="small" color={colors.coral} accessibilityLabel="Loading song" />
+          <PixelSpinner color={colors.coral} accessibilityLabel="Loading song" />
         </View>
       ) : quizToggle ? (
         <QuizColumn
@@ -277,7 +280,9 @@ export default function PlayerScreen() {
                   contentStyle={{ paddingVertical: 14, paddingHorizontal: 16 }}
                   onPress={() => explain(sentenceId)}
                 >
-                  <Label style={{ fontSize: 16, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>EXPLAIN</Label>
+                  <Label pixel style={{ fontSize: 16, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
+                    EXPLAIN
+                  </Label>
                 </Button>
               )}
               <Button
@@ -289,7 +294,7 @@ export default function PlayerScreen() {
                 contentStyle={{ paddingVertical: 14 }}
                 onPress={() => appStore.getState().addLostMark()}
               >
-                <Label style={{ fontSize: 22, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
+                <Label pixel style={{ fontSize: 22, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
                   {inReview ? 'IN REVIEW' : 'REVIEW LATER'}
                 </Label>
               </Button>

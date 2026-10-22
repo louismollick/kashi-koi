@@ -25,7 +25,7 @@ const AUTOPLAY_PREVIEW = 20;
 function Heading({ title, onClear }: { title: string; onClear?: () => void }) {
   return (
     <View style={[styles.row, { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 4 }]}>
-      <Label muted style={{ flex: 1, fontSize: 12, fontWeight: '800', letterSpacing: 1 }}>
+      <Label muted pixel style={{ flex: 1, fontSize: 13, fontWeight: '700', letterSpacing: 1 }}>
         {title}
       </Label>
       {onClear && (

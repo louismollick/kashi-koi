@@ -1,24 +1,30 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '@/constants/theme';
+import { colors, font } from '@/constants/theme';
 import { PixelFrame } from './PixelFrame';
 import { Icon } from './Icon';
 import type { ComponentProps, ReactNode } from 'react';
 import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 
-/** System typography, shared across English and Japanese copy. */
+/**
+ * All app text. Rounded body type by default; `pixel` switches to the pixel face for titles, numbers and short labels.
+ * `fontWeight` in `style` picks the face (see `font`).
+ */
 export function Label({
   children,
   muted = false,
+  pixel = false,
   style,
   numberOfLines,
 }: {
   children: ReactNode;
   muted?: boolean;
+  pixel?: boolean;
   style?: StyleProp<TextStyle>;
   numberOfLines?: number;
 }) {
+  const flat: TextStyle = StyleSheet.flatten([styles.text, muted && { color: colors.muted }, style]);
   return (
-    <Text numberOfLines={numberOfLines} style={[styles.text, muted && { color: colors.muted }, style]}>
+    <Text numberOfLines={numberOfLines} style={[flat, font(pixel ? 'pixel' : 'body', flat.fontWeight)]}>
       {children}
     </Text>
   );
@@ -145,14 +151,107 @@ export function PixelToggle({
 export function Tag({ children, fill = colors.coral }: { children: ReactNode; fill?: string }) {
   return (
     <PixelFrame fill={fill} border={null} contentStyle={{ paddingHorizontal: 7, paddingVertical: 2 }}>
-      <Label style={{ fontSize: 11, lineHeight: 15, fontWeight: '800' }}>{children}</Label>
+      <Label pixel style={{ fontSize: 11, lineHeight: 15, fontWeight: '800' }}>
+        {children}
+      </Label>
     </PixelFrame>
   );
 }
 
-/** Section title on Home, Settings and artist pages. */
+/**
+ * One full-width menu row: label left, detail or control right, divided by a hairline. Used by the song menu and
+ * Settings. Without `onPress` it's a plain row, so VoiceOver reaches the control inside it.
+ */
+export function Row({
+  label,
+  detail,
+  onPress,
+  disabled = false,
+  color = colors.text,
+  children,
+}: {
+  label: string;
+  detail?: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  color?: string;
+  children?: ReactNode;
+}) {
+  const row = [styles.row, { minHeight: 52, borderTopWidth: 1, borderTopColor: colors.track }],
+    content = (
+      <>
+        <Label style={{ flex: 1, fontSize: 16, color }}>{label}</Label>
+        {detail && (
+          <Label muted numberOfLines={1} style={{ fontSize: 14, maxWidth: '55%' }}>
+            {detail}
+          </Label>
+        )}
+        {children}
+      </>
+    );
+  if (!onPress) return <View style={[row, { opacity: disabled ? 0.45 : 1 }]}>{content}</View>;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [row, { opacity: disabled ? 0.45 : pressed ? 0.7 : 1 }]}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
+/** Pixel segmented control for a short list of choices, like Settings' answer time. */
+export function Segmented<T>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: readonly { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  label: string;
+}) {
+  return (
+    <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ flexDirection: 'row', gap: 4 }}>
+      {options.map((option) => {
+        const on = option.value === value;
+        return (
+          <Pressable
+            key={option.label}
+            accessibilityRole="radio"
+            accessibilityLabel={option.label}
+            accessibilityState={{ checked: on }}
+            onPress={() => onChange(option.value)}
+            style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}
+          >
+            <PixelFrame
+              fill={on ? colors.coral : colors.panel}
+              border={on ? '#ff9aa5' : colors.track}
+              contentStyle={{ minHeight: 40, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Label pixel style={{ fontSize: 15, fontWeight: '700', color: on ? colors.text : colors.muted }}>
+                {option.label}
+              </Label>
+            </PixelFrame>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Section title on Home
+, Settings and artist pages. */
 export function SectionHeader({ title }: { title: string }) {
-  return <Label style={{ fontSize: 20, lineHeight: 26, fontWeight: '700' }}>{title}</Label>;
+  return (
+    <Label pixel style={{ fontSize: 21, lineHeight: 26, fontWeight: '700' }}>
+      {title}
+    </Label>
+  );
 }
 
 export const styles = StyleSheet.create({

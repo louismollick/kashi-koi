@@ -1,12 +1,12 @@
 import { setAnalysisToken } from '@/analysis/fetcher';
 import { prepareTranslation } from '@/japanese/translate';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Alert, ScrollView, TextInput, View } from 'react-native';
-import { colors } from '@/constants/theme';
+import { colors, font } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
 import { hasJapaneseLyrics } from '@/data/libraryVisibility';
 import { setAnalysisServerUrl } from '@/store/appStore';
-import { settingsStore } from '@/store/settingsStore';
+import { answerTimes, settingsStore } from '@/store/settingsStore';
 import { refreshAlbumArt } from '@/store/artStore';
 import { sessionStore, logout } from '@/navidrome/session';
 import { syncLibrary, scanLyrics, setOfflineMode } from '@/navidrome/sync';
@@ -19,71 +19,58 @@ import {
   useDownloadSummary,
 } from '@/downloads';
 import { ScreenHeader } from '@/components/Header';
-import { PixelFrame } from '@/components/PixelFrame';
-import { Button, Label, PixelToggle, SectionHeader, styles } from '@/components/ui';
+import { Icon } from '@/components/Icon';
+import { Label, PixelToggle, Row, SectionHeader, Segmented, styles } from '@/components/ui';
 
-const date = (at: number | null) => (at ? new Date(at).toLocaleString() : 'never');
+/** "4:02 PM" today, "Oct 21" before that. */
+const when = (at: number | null) => {
+  if (!at) return 'Never';
+  const date = new Date(at);
+  return date.toDateString() === new Date().toDateString()
+    ? date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
 const size = (bytes: number) =>
   bytes >= 1e9 ? `${(bytes / 1e9).toFixed(1)} GB` : `${Math.max(1, Math.round(bytes / 1e6))} MB`;
+const songs = (count: number) => `${count.toLocaleString()} ${count === 1 ? 'song' : 'songs'}`;
 
-/** Offline mode, whole-library downloads and the pinned download storage. */
-function OfflineSection() {
-  const offline = settingsStore((state) => state.offlineMode);
-  const library = useDownloadSummary({ kind: 'library' }),
-    storage = useDownloadStorage(),
-    progress = useDownloadProgress();
-  const missing = library.eligible - library.done - library.pending;
+/** A pixel title, anything shown `above` the rows, the rows closed by a hairline, then any `problem` in red. */
+function Section({
+  title,
+  above,
+  problem,
+  children,
+}: {
+  title: string;
+  above?: ReactNode;
+  problem?: string | null;
+  children: ReactNode;
+}) {
   return (
-    <>
-      <SectionHeader title="Offline" />
-      <View style={styles.row}>
-        <Label style={{ flex: 1 }}>Offline mode</Label>
-        <PixelToggle label="Offline mode" on={offline} onPress={() => setOfflineMode(!offline)} />
-      </View>
-      <Label muted>
-        {storage.songs} of {library.eligible} songs downloaded{storage.bytes ? ` · ${size(storage.bytes)}` : ''}
-      </Label>
-      {progress && (
-        <Label>
-          Downloading… {progress.completed} / {progress.total}
-        </Label>
-      )}
-      {missing > 0 && (
-        <Button
-          label="Download library"
-          disabled={offline}
-          onPress={() => {
-            void queueDownloads({ kind: 'library' });
-          }}
-        >
-          <Label>
-            Download library ({missing} {missing === 1 ? 'song' : 'songs'})
-          </Label>
-        </Button>
-      )}
-      {library.failed > 0 && !progress && (
-        <Button label="Retry failed downloads" disabled={offline} onPress={() => void retryFailedDownloads()}>
-          <Label>Retry {library.failed} failed</Label>
-        </Button>
-      )}
-      {(storage.songs > 0 || library.pending > 0) && (
-        <Button
-          label="Delete downloads"
-          onPress={() =>
-            Alert.alert('Delete downloads?', 'Songs and artwork saved for offline use will be removed.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Delete', style: 'destructive', onPress: () => void deleteAllDownloads() },
-            ])
-          }
-        >
-          <Label style={{ color: colors.red }}>Delete downloads</Label>
-        </Button>
-      )}
-    </>
+    <View style={{ gap: 10 }}>
+      <SectionHeader title={title} />
+      {above}
+      <View style={{ borderBottomWidth: 1, borderBottomColor: colors.track }}>{children}</View>
+      {problem && <Label style={{ color: colors.red, fontSize: 13 }}>{problem}</Label>}
+    </View>
   );
 }
 
-/** Framed single-line field that commits when editing ends, like Library search. */
+/** Big pixel numbers for what the lyrics scan found. */
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <View style={{ flex: 1, gap: 2 }}>
+      <Label pixel style={{ fontSize: 26, lineHeight: 30, fontWeight: '700' }}>
+        {value.toLocaleString()}
+      </Label>
+      <Label muted style={{ fontSize: 12, lineHeight: 16 }}>
+        {label}
+      </Label>
+    </View>
+  );
+}
+
+/** Row with a right-aligned single-line input that commits when editing ends, like Library search. */
 function Field({
   label,
   value,
@@ -99,29 +86,77 @@ function Field({
 }) {
   const [draft, setDraft] = useState(value);
   return (
-    <View style={{ gap: 6 }}>
-      <Label muted style={{ fontSize: 13 }}>
-        {label}
-      </Label>
-      <PixelFrame fill={colors.panel} border={colors.track} contentStyle={{ paddingHorizontal: 12 }}>
-        <TextInput
-          accessibilityLabel={label}
-          value={draft}
-          placeholder={placeholder}
-          placeholderTextColor={colors.muted}
-          onChangeText={setDraft}
-          onEndEditing={() => onCommit(draft)}
-          secureTextEntry={secure}
-          autoCapitalize="none"
-          autoCorrect={false}
-          style={{ color: colors.text, height: 46, fontSize: 15 }}
-        />
-      </PixelFrame>
-    </View>
+    <Row label={label}>
+      <TextInput
+        accessibilityLabel={label}
+        value={draft}
+        placeholder={placeholder}
+        placeholderTextColor={colors.muted}
+        onChangeText={setDraft}
+        onEndEditing={() => onCommit(draft)}
+        secureTextEntry={secure}
+        autoCapitalize="none"
+        autoCorrect={false}
+        style={{ ...font('body'), flex: 2, color: colors.text, height: 50, fontSize: 15, textAlign: 'right' }}
+      />
+    </Row>
   );
 }
 
-/** Account, library sync, artwork refresh and lyrics scan controls. */
+/** Offline mode, whole-library downloads and the pinned download storage. */
+function OfflineSection() {
+  const offline = settingsStore((state) => state.offlineMode);
+  const library = useDownloadSummary({ kind: 'library' }),
+    storage = useDownloadStorage(),
+    progress = useDownloadProgress();
+  const missing = library.eligible - library.done - library.pending;
+  return (
+    <Section title="Offline">
+      <Row label="Offline mode">
+        <PixelToggle label="Offline mode" on={offline} onPress={() => setOfflineMode(!offline)} />
+      </Row>
+      <Row
+        label="Downloaded"
+        detail={
+          progress
+            ? `Downloading ${progress.completed} / ${progress.total}`
+            : `${storage.songs} of ${songs(library.eligible)}${storage.bytes ? ` · ${size(storage.bytes)}` : ''}`
+        }
+      />
+      {missing > 0 && (
+        <Row
+          label="Download library"
+          detail={songs(missing)}
+          disabled={offline}
+          color={colors.coral}
+          onPress={() => void queueDownloads({ kind: 'library' })}
+        />
+      )}
+      {library.failed > 0 && !progress && (
+        <Row
+          label="Retry failed downloads"
+          detail={songs(library.failed)}
+          disabled={offline}
+          onPress={() => void retryFailedDownloads()}
+        />
+      )}
+      {(storage.songs > 0 || library.pending > 0) && (
+        <Row
+          label="Delete downloads"
+          color={colors.red}
+          onPress={() =>
+            Alert.alert('Delete downloads?', 'Songs and artwork saved for offline use will be removed.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete', style: 'destructive', onPress: () => void deleteAllDownloads() },
+            ])
+          }
+        />
+      )}
+    </Section>
+  );
+}
+
+/** Account, quiz pacing, library upkeep, offline downloads and the song analysis server. */
 export default function SettingsScreen() {
   const status = libraryStore((state) => state.translationStatus),
     translationProgress = libraryStore((state) => state.translationProgress),
@@ -136,7 +171,7 @@ export default function SettingsScreen() {
     hidingNonJapanese = settingsStore((state) => state.hideSongsWithoutJapanese),
     lastSync = settingsStore((state) => state.lastSyncAt),
     lastScan = settingsStore((state) => state.lastScanAt);
-  const songs = libraryStore((state) => state.songs),
+  const library = libraryStore((state) => state.songs),
     progress = libraryStore((state) => state.progress),
     error = libraryStore((state) => state.error);
   const analysisServerUrl = settingsStore((state) => state.analysisServerUrl),
@@ -145,162 +180,162 @@ export default function SettingsScreen() {
   const lyrics = libraryStore((state) => state.lyrics);
   const session = sessionStore((state) => state.session);
   // Ready means synced Japanese lyrics, the same songs Download library counts. Scan and translation ticks don't change these.
-  const { synced, ready } = useMemo(
+  const { synced, ready, unsynced } = useMemo(
     () => ({
-      synced: songs.filter((song) => song.lyricsStatus === 'synced').length,
-      ready: songs.filter((song) => hasJapaneseLyrics(song.id)).length,
+      synced: library.filter((song) => song.lyricsStatus === 'synced').length,
+      ready: library.filter((song) => hasJapaneseLyrics(song.id)).length,
+      unsynced: library.filter((song) => song.lyricsStatus === 'none').length,
     }),
-    [songs, lyrics],
+    [library, lyrics],
   );
+  const scanning = progress && `${progress.completed.toLocaleString()} / ${progress.total.toLocaleString()}`;
   return (
     <View style={styles.page}>
       <ScreenHeader title="Settings" />
-      <ScrollView contentContainerStyle={styles.content}>
-        <SectionHeader title="Account" />
-        <Label>{session ? new URL(session.url).host : ''}</Label>
-        <Label>{session?.username}</Label>
-        <Button
-          label="Log out"
-          disabled={loggingOut}
-          onPress={async () => {
-            setLoggingOut(true);
-            setAccountError(null);
-            try {
-              await logout();
-            } catch (error) {
-              setAccountError(error instanceof Error ? error.message : 'Could not log out');
-            } finally {
-              setLoggingOut(false);
-            }
-          }}
-        >
-          <Label>Log out</Label>
-        </Button>
-        {accountError && <Label style={{ color: colors.red }}>{accountError}</Label>}
-        <SectionHeader title="Quiz" />
-        <View style={styles.row}>
-          <Label style={{ flex: 1 }}>Answer time</Label>
-          <Button label="Answer time" onPress={() => settingsStore.getState().cycleAnswerTime()}>
-            <Label>{answerTime === null ? 'No limit' : `${answerTime}s`}</Label>
-          </Button>
-        </View>
-        <SectionHeader title="Song analyses" />
-        <Field
-          label="Server"
-          value={analysisServerUrl}
-          placeholder={process.env.EXPO_PUBLIC_KASHI_SERVER_URL || 'https://'}
-          onCommit={setAnalysisServerUrl}
-        />
-        <Field
-          key={analysisToken ? 'token' : 'empty'}
-          label="Admin token"
-          value={analysisToken}
-          placeholder="Only needed to analyze songs"
-          secure
-          onCommit={(token) => void setAnalysisToken(token)}
-        />
-        <Label muted>
-          {analyzed} {analyzed === 1 ? 'song' : 'songs'} analyzed
-        </Label>
-        <SectionHeader title="Library" />
-        <View style={styles.row}>
-          <Label style={{ flex: 1 }}>Hide songs without synced lyrics</Label>
-          <PixelToggle
-            label="Hide songs without synced lyrics"
-            on={hiding}
-            onPress={() => settingsStore.getState().toggleHideSongsWithoutSyncedLyrics()}
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48, gap: 32 }}>
+        <Section title="Account" problem={accountError}>
+          <Row label={session?.username ?? ''} detail={session ? new URL(session.url).host : ''} />
+          <Row
+            label={loggingOut ? 'Logging out…' : 'Log out'}
+            color={colors.coral}
+            disabled={loggingOut}
+            onPress={async () => {
+              setLoggingOut(true);
+              setAccountError(null);
+              try {
+                await logout();
+              } catch (error) {
+                setAccountError(error instanceof Error ? error.message : 'Could not log out');
+              } finally {
+                setLoggingOut(false);
+              }
+            }}
           />
-        </View>
-        <View style={styles.row}>
-          <Label style={{ flex: 1 }}>Hide songs without Japanese lyrics</Label>
-          <PixelToggle
-            label="Hide songs without Japanese lyrics"
-            on={hidingNonJapanese}
-            onPress={() => settingsStore.getState().toggleHideSongsWithoutJapanese()}
+        </Section>
+        <View style={{ gap: 12 }}>
+          <SectionHeader title="Answer time" />
+          <Segmented
+            label="Answer time"
+            value={answerTime}
+            onChange={(value) => settingsStore.getState().setAnswerTime(value)}
+            options={answerTimes.map((value) => ({ value, label: value === null ? 'No limit' : `${value}s` }))}
           />
+          <Label muted style={{ fontSize: 13 }}>
+            {answerTime === null
+              ? 'The song waits at each sentence until you answer.'
+              : answerTime === 0
+                ? 'The song never stops. Unanswered sentences count as misses.'
+                : `The song waits ${answerTime} seconds at each sentence.`}
+          </Label>
         </View>
-        <Button
-          label="Sync library"
-          disabled={!!progress}
-          onPress={() => {
-            void syncLibrary();
-          }}
+        <Section
+          title="Library"
+          problem={translationError ?? error}
+          above={
+            <View style={[styles.row, { paddingBottom: 6 }]}>
+              <Stat value={ready} label="Ready to learn" />
+              <Stat value={synced - ready} label="Not Japanese" />
+              <Stat value={unsynced} label="No synced lyrics" />
+            </View>
+          }
         >
-          <Label>Sync library</Label>
-        </Button>
-        <Label muted>Last sync: {date(lastSync)}</Label>
-        <Button
-          label="Refresh album art"
-          disabled={refreshingArt}
-          onPress={async () => {
-            setRefreshingArt(true);
-            setArtMessage(null);
-            try {
-              await refreshAlbumArt();
-              setArtMessage('Album art cache cleared');
-            } catch {
-              setArtMessage('Could not clear album art cache');
-            } finally {
-              setRefreshingArt(false);
+          <Row label="Hide songs without synced lyrics">
+            <PixelToggle
+              label="Hide songs without synced lyrics"
+              on={hiding}
+              onPress={() => settingsStore.getState().toggleHideSongsWithoutSyncedLyrics()}
+            />
+          </Row>
+          <Row label="Hide songs without Japanese">
+            <PixelToggle
+              label="Hide songs without Japanese lyrics"
+              on={hidingNonJapanese}
+              onPress={() => settingsStore.getState().toggleHideSongsWithoutJapanese()}
+            />
+          </Row>
+          <Row
+            label="Sync library"
+            detail={progress?.kind === 'sync' ? `Syncing ${scanning}` : when(lastSync)}
+            disabled={!!progress}
+            onPress={() => void syncLibrary()}
+          >
+            <Icon name="refresh" size={18} color={colors.lavender} />
+          </Row>
+          <Row
+            label="Rescan lyrics"
+            detail={progress?.kind === 'scan' ? `Checking ${scanning}` : when(lastScan)}
+            disabled={!!progress}
+            onPress={() => void scanLyrics({ all: true })}
+          >
+            <Icon name="refresh" size={18} color={colors.lavender} />
+          </Row>
+          <Row
+            label="Refresh album art"
+            detail={refreshingArt ? 'Clearing…' : (artMessage ?? undefined)}
+            disabled={refreshingArt}
+            onPress={async () => {
+              setRefreshingArt(true);
+              setArtMessage(null);
+              try {
+                await refreshAlbumArt();
+                setArtMessage('Cache cleared');
+              } catch {
+                setArtMessage('Could not clear');
+              } finally {
+                setRefreshingArt(false);
+              }
+            }}
+          >
+            <Icon name="refresh" size={18} color={colors.lavender} />
+          </Row>
+          <Row
+            label="Japanese translation"
+            detail={
+              translationProgress
+                ? `Translating ${translationProgress.completed} / ${translationProgress.total}`
+                : status === 'installed'
+                  ? 'Installed'
+                  : status === 'unsupported'
+                    ? 'Unavailable'
+                    : downloading
+                      ? 'Downloading…'
+                      : 'Download'
             }
-          }}
-        >
-          <Label>Refresh album art</Label>
-        </Button>
-        {artMessage && <Label>{artMessage}</Label>}
+            disabled={downloading}
+            onPress={
+              status === 'supported'
+                ? async () => {
+                    setDownloading(true);
+                    try {
+                      await prepareTranslation();
+                    } catch {
+                      libraryStore.setState({ translationError: 'Could not download Japanese translation' });
+                    } finally {
+                      setDownloading(false);
+                    }
+                  }
+                : undefined
+            }
+          />
+        </Section>
         <OfflineSection />
-        <SectionHeader title="Lyrics scan" />
-        <Button
-          label="Rescan lyrics"
-          fill={colors.coral}
-          disabled={!!progress}
-          onPress={() => {
-            void scanLyrics({ all: true });
-          }}
-        >
-          <Label>Rescan lyrics</Label>
-        </Button>
-        <Label>
-          {ready} songs ready to learn · {synced - ready} not Japanese ·{' '}
-          {songs.filter((song) => song.lyricsStatus === 'none').length} without synced lyrics
-        </Label>
-        <Label muted>Last scan: {date(lastScan)}</Label>
-        {progress && (
-          <Label>
-            {progress.kind === 'sync' ? 'Syncing library' : 'Checking lyrics'}… {progress.completed} / {progress.total}
-          </Label>
-        )}
-        <View style={styles.row}>
-          <Label style={{ flex: 1 }}>
-            Japanese translation:{' '}
-            {status === 'installed' ? 'Installed' : status === 'unsupported' ? 'Unavailable' : 'Not installed'}
-          </Label>
-          {status === 'supported' && (
-            <Button
-              label="Download Japanese translation"
-              disabled={downloading}
-              onPress={async () => {
-                setDownloading(true);
-                try {
-                  await prepareTranslation();
-                } catch {
-                  libraryStore.setState({ translationError: 'Could not download Japanese translation' });
-                } finally {
-                  setDownloading(false);
-                }
-              }}
-            >
-              <Label>Download</Label>
-            </Button>
-          )}
-        </View>
-        {translationProgress && (
-          <Label>
-            Translating… {translationProgress.completed} / {translationProgress.total}
-          </Label>
-        )}
-        {translationError && <Label style={{ color: colors.red }}>{translationError}</Label>}
-        {error && <Label style={{ color: colors.red }}>{error}</Label>}
+        <Section title="Song analyses">
+          <Field
+            label="Server"
+            value={analysisServerUrl}
+            placeholder={process.env.EXPO_PUBLIC_KASHI_SERVER_URL || 'https://'}
+            onCommit={setAnalysisServerUrl}
+          />
+          <Field
+            key={analysisToken ? 'token' : 'empty'}
+            label="Admin token"
+            value={analysisToken}
+            placeholder="To analyze songs"
+            secure
+            onCommit={(token) => void setAnalysisToken(token)}
+          />
+          <Row label="Analyzed" detail={songs(analyzed)} />
+        </Section>
       </ScrollView>
     </View>
   );
