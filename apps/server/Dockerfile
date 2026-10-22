@@ -1,4 +1,6 @@
 FROM node:24-bookworm-slim AS dependencies
+# Reject base images missing the October 2026 security release.
+RUN node -e "const [major, minor, patch] = process.versions.node.split('.').map(Number); if (major !== 24 || minor < 22 || (minor === 22 && patch < 1)) process.exit(1)"
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
@@ -8,6 +10,8 @@ COPY apps/server/package.json apps/server/package.json
 RUN npm ci --omit=dev --workspace @kashi-koi/server --workspace @kashi-koi/shared
 
 FROM node:24-bookworm-slim
+# Reject base images missing the October 2026 security release.
+RUN node -e "const [major, minor, patch] = process.versions.node.split('.').map(Number); if (major !== 24 || minor < 22 || (minor === 22 && patch < 1)) process.exit(1)"
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/* \

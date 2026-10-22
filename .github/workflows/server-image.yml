@@ -5,6 +5,9 @@ name: Server image
 # so the branch can run on the VPS before merging. Both also publish :sha-<short>.
 
 on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 5 * * *"
   pull_request:
     types: [opened, synchronize, reopened, labeled]
     paths:
@@ -30,7 +33,7 @@ permissions:
 
 env:
   PUBLISH: >-
-    ${{ github.event_name == 'push' ||
+    ${{ github.event_name != 'pull_request' ||
         (github.event.pull_request.head.repo.full_name == github.repository &&
          contains(github.event.pull_request.labels.*.name, 'server-image')) }}
 
@@ -62,6 +65,8 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          pull: true
+          no-cache: ${{ github.event_name == 'schedule' }}
           file: apps/server/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: ${{ env.PUBLISH == 'true' }}
