@@ -52,9 +52,9 @@ Do not copy `auth.json` into a separate Codex home. Refresh tokens rotate, so re
 ## API
 
 - `GET /health`
-- `GET /v1/analyses/:fingerprint`: public, no listing.
+- `GET /v1/analyses/:fingerprint`: public, no listing, `Cache-Control: no-store`.
   - `202 {status: "queued" | "running"}` while a job is in progress, even when an older analysis exists
-  - `202 {status: "failed", error}` when the last job failed, even when an older analysis exists
+  - `202 {status: "failed", error}` when the last job failed and is newer than the stored analysis, or there is none. An older failure leaves the analysis served
   - `200` the analysis
   - `404` otherwise
 - `POST /v1/analyses` with `Authorization: Bearer $KASHI_ADMIN_TOKEN` and `{title, artist?, lines, force?}`. Returns `200` with the existing analysis, or queues a job and returns `202 {fingerprint, status}`. `force` re-analyses a song that already has one. If that fails, `GET` returns the failure until a forced retry succeeds. The previous analysis stays in the database but isn't served in the meantime.
