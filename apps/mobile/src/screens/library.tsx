@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Pressable, TextInput, View, useWindowDimensions } from 'react-native';
+import { TextInput, View, useWindowDimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
 import {
@@ -16,11 +15,9 @@ import { useLibraryFilters } from '@/store/appStore';
 import { Header } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { AlbumTile } from '@/components/AlbumTile';
-import { NoLyricsBadge } from '@/components/NoLyricsBadge';
+import { ArtistTile } from '@/components/ArtistTile';
 import { SongRow } from '@/components/SongRow';
 import { HiddenSongsRow } from '@/components/HiddenSongsRow';
-import { Cover } from '@/components/Cover';
-import { downloadSheet } from '@/components/DownloadButton';
 import { Icon } from '@/components/Icon';
 import { Button, Label, styles } from '@/components/ui';
 
@@ -32,8 +29,7 @@ const column = (index: number) => ({
 });
 /** Recycled grids and rows for the entire in-memory library. */
 export default function LibraryScreen() {
-  const router = useRouter(),
-    { width } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const [segment, setSegment] = useState<(typeof segments)[number]>('Albums'),
     [query, setQuery] = useState('');
   const songs = libraryStore((state) => state.songs),
@@ -45,8 +41,9 @@ export default function LibraryScreen() {
   const filters = useLibraryFilters(),
     size = (width - 56) / 3;
   const source = useMemo(() => {
+    const needle = query.toLowerCase();
     const matching = songs.filter((song) =>
-      `${song.title} ${song.artist} ${song.album}`.toLowerCase().includes(query.toLowerCase()),
+      `${song.title} ${song.artist} ${song.album}`.toLowerCase().includes(needle),
     );
     const albumIds = new Set(matching.map((song) => song.albumId)),
       artistIds = new Set(matching.map((song) => song.artistId));
@@ -56,18 +53,23 @@ export default function LibraryScreen() {
       artists: artists.filter((artist) => artistIds.has(artist.id)),
     };
   }, [songs, albums, artists, query]);
-  // Visibility reads each song's lyrics, so recompute only when the library, lyrics, filters or search change.
-  const { visible, hidden, albumCounts, artistAlbums, synced } = useMemo(() => {
+  // Visibility reads each song's lyrics, so these recompute only when the library, lyrics or filters change.
+  const { albumCounts, synced } = useMemo(
+    () => ({
+      // Counts and badges describe the whole album or artist, not just the songs matching the search.
+      albumCounts: countBy(getVisibleSongs(songs, filters), (song) => song.albumId),
+      synced: syncedIds(songs),
+    }),
+    [filters, songs, lyrics],
+  );
+  const { visible, hidden, artistAlbums } = useMemo(() => {
     const visible = getVisibleLibrary(filters, source);
     return {
       visible,
       hidden: getVisibleLibrary(countedFilters(filters), source),
-      // Counts describe the whole album, not just the songs matching the search.
-      albumCounts: countBy(getVisibleSongs(songs, filters), (song) => song.albumId),
       artistAlbums: groupBy(visible.albums, (album) => album.artistId),
-      synced: syncedIds(songs),
     };
-  }, [filters, source, songs, lyrics]);
+  }, [filters, source, lyrics]);
   // Playing from the Songs list queues the list as shown.
   const queue = useMemo(() => visible.songs.map((song) => song.id), [visible.songs]);
   const kind = segment === 'Albums' ? 'albums' : segment === 'Artists' ? 'artists' : 'songs';
@@ -160,22 +162,13 @@ export default function LibraryScreen() {
             const albums = artistAlbums.get(item.id) ?? [];
             return (
               <View style={column(index)}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open artist ${item.name}`}
-                  onPress={() => router.push({ pathname: '/library/artist/[id]', params: { id: item.id } })}
-                  onLongPress={() => router.push(downloadSheet({ kind: 'artist', id: item.id }))}
-                  style={{ width: size }}
-                >
-                  <View>
-                    <Cover song={albums[0] ?? item} size={size} />
-                    {!filters.hideUnsynced && !synced.artists.has(item.id) && <NoLyricsBadge />}
-                  </View>
-                  <Label numberOfLines={1} style={{ fontWeight: '700', marginTop: 6 }}>
-                    {item.name}
-                  </Label>
-                  <Label muted>{albums.length} albums</Label>
-                </Pressable>
+                <ArtistTile
+                  artist={item}
+                  size={size}
+                  cover={albums[0]}
+                  albumCount={albums.length}
+                  noLyrics={!filters.hideUnsynced && !synced.artists.has(item.id)}
+                />
               </View>
             );
           }}

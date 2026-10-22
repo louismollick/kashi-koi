@@ -1,5 +1,5 @@
 import { prepareTranslation } from '@/japanese/translate';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert, ScrollView, TextInput, View } from 'react-native';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
@@ -140,11 +140,16 @@ export default function SettingsScreen() {
   const analysisServerUrl = appStore((state) => state.analysisServerUrl),
     analysisToken = appStore((state) => state.analysisToken),
     analyzed = libraryStore((state) => Object.values(state.lyrics).filter((lyrics) => lyrics.analysis).length);
-  libraryStore((state) => state.lyrics);
-  // Ready means synced Japanese lyrics, the same songs Download library counts.
-  const session = sessionStore((state) => state.session),
-    synced = songs.filter((song) => song.lyricsStatus === 'synced').length,
-    ready = songs.filter((song) => hasJapaneseLyrics(song.id)).length;
+  const lyrics = libraryStore((state) => state.lyrics);
+  const session = sessionStore((state) => state.session);
+  // Ready means synced Japanese lyrics, the same songs Download library counts. Scan and translation ticks don't change these.
+  const { synced, ready } = useMemo(
+    () => ({
+      synced: songs.filter((song) => song.lyricsStatus === 'synced').length,
+      ready: songs.filter((song) => hasJapaneseLyrics(song.id)).length,
+    }),
+    [songs, lyrics],
+  );
   return (
     <View style={styles.page}>
       <ScreenHeader title="Settings" />

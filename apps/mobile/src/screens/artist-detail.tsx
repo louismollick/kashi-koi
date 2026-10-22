@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { FlatList, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { getArtist, libraryStore } from '@/store/libraryStore';
@@ -14,10 +15,31 @@ import { Label, SectionHeader, styles } from '@/components/ui';
 export default function ArtistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
-  libraryStore((state) => state.songs);
-  libraryStore((state) => state.lyrics);
+  const songs = libraryStore((state) => state.songs),
+    albums = libraryStore((state) => state.albums),
+    lyrics = libraryStore((state) => state.lyrics);
   const filters = useLibraryFilters();
   const artist = getArtist(id);
+  // Visibility reads each song's lyrics, so recompute only when the library, lyrics or filters change.
+  const { artistAlbums, albumCounts, synced, hiddenCount } = useMemo(() => {
+    if (!artist)
+      return { artistAlbums: [], albumCounts: new Map<string, number>(), synced: syncedIds([]), hiddenCount: 0 };
+    const artistSongs = songs.filter((song) => song.artistId === artist.id);
+    const ownAlbums = albums.filter((album) => album.artistId === artist.id),
+      albumIds = new Set(ownAlbums.map((album) => album.id));
+    // Album songs can credit a different artist, so visibility follows the album, not the song's artist.
+    const visible = getVisibleLibrary(filters, {
+      songs: songs.filter((song) => albumIds.has(song.albumId)),
+      albums: ownAlbums,
+      artists: [artist],
+    });
+    return {
+      artistAlbums: visible.albums.sort((a, b) => (b.year ?? 0) - (a.year ?? 0)),
+      albumCounts: countBy(visible.songs, (song) => song.albumId),
+      synced: syncedIds(songs),
+      hiddenCount: artistSongs.length - getVisibleSongs(artistSongs, countedFilters(filters)).length,
+    };
+  }, [artist, songs, albums, lyrics, filters]);
   if (!artist)
     return (
       <View style={styles.page}>
@@ -27,18 +49,6 @@ export default function ArtistDetailScreen() {
         </Label>
       </View>
     );
-  const artistSongs = libraryStore.getState().songs.filter((song) => song.artistId === artist.id);
-  const albums = libraryStore.getState().albums.filter((album) => album.artistId === artist.id),
-    albumIds = new Set(albums.map((album) => album.id));
-  // Album songs can credit a different artist, so visibility follows the album, not the song's artist.
-  const visible = getVisibleLibrary(filters, {
-    songs: libraryStore.getState().songs.filter((song) => albumIds.has(song.albumId)),
-    albums,
-    artists: [artist],
-  });
-  const artistAlbums = visible.albums.sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
-  const albumCounts = countBy(visible.songs, (song) => song.albumId),
-    synced = syncedIds(libraryStore.getState().songs);
   const size = (width - 56) / 3;
   return (
     <View style={styles.page}>
@@ -69,9 +79,7 @@ export default function ArtistDetailScreen() {
             <SectionHeader title="Albums" />
           </View>
         }
-        ListFooterComponent={
-          <HiddenSongsRow count={artistSongs.length - getVisibleSongs(artistSongs, countedFilters(filters)).length} />
-        }
+        ListFooterComponent={<HiddenSongsRow count={hiddenCount} />}
       />
     </View>
   );
