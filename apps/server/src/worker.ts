@@ -31,7 +31,7 @@ export class Worker {
     }
     this.busy = true;
     try {
-      const { draft, errors } = await analyzeWithRetry(this.analyzer, {
+      const { draft, errors, limited } = await analyzeWithRetry(this.analyzer, {
         title: job.title,
         artist: job.artist ?? undefined,
         lines: job.lines,
@@ -49,15 +49,15 @@ export class Worker {
         createdAt: new Date(this.now()).toISOString(),
       });
       this.store.complete(analysis, job.lines);
-      this.usageDelay = MIN_USAGE_DELAY;
+      if (limited) this.pause();
+      else this.usageDelay = MIN_USAGE_DELAY;
     } catch (error) {
       const message = errorMessage(error, job.lines);
       console.error(message);
       // Usage limits pause the queue. Other failures keep a bounded message without Japanese script.
       if (error instanceof UsageLimitError) {
         this.store.retry(job.fingerprint, 'Usage limit reached', true);
-        this.pausedUntil = this.now() + this.usageDelay;
-        this.usageDelay = Math.min(this.usageDelay * 2, MAX_USAGE_DELAY);
+        this.pause();
       } else if (job.attempts >= 3) {
         this.store.fail(job.fingerprint, exhaustedMessage(message));
       } else {
@@ -67,6 +67,12 @@ export class Worker {
       this.busy = false;
     }
     return true;
+  }
+
+  /** Usage limits pause the whole queue, doubling the delay each time up to the cap. */
+  private pause() {
+    this.pausedUntil = this.now() + this.usageDelay;
+    this.usageDelay = Math.min(this.usageDelay * 2, MAX_USAGE_DELAY);
   }
 
   async run(signal: AbortSignal): Promise<void> {
