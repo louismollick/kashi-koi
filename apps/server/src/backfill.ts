@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
-import { lyricLines, pickEntry } from '@kashi-koi/shared/lyrics';
+import { hasJapanese, lyricLines, pickEntry } from '@kashi-koi/shared/lyrics';
 import {
   normalizeServerUrl,
   request,
@@ -26,7 +26,7 @@ export async function backfill(session: Session, store: ReturnType<typeof openDa
       );
       const entry = pickEntry(response.lyricsList?.structuredLyrics ?? []);
       const lines = entry ? lyricLines(entry) : [];
-      if (!lines.some((line) => /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(line))) {
+      if (!lines.some((line) => hasJapanese(line))) {
         summary.skipped++;
         continue;
       }

@@ -1,6 +1,9 @@
 import type { StructuredLyrics } from './subsonic.ts';
 export type { StructuredLyrics } from './subsonic.ts';
 
+/** True when the text contains any Han, Hiragana or Katakana character. */
+export const hasJapanese = (text: string) => /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text);
+
 /** Prefer Japanese synced main lyrics, then any synced main entry. */
 export function pickEntry(entries: StructuredLyrics[]) {
   const main = entries.filter((entry) => entry.kind === undefined || entry.kind === 'main');

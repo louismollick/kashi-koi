@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
+import { hasJapanese } from '@kashi-koi/shared/lyrics';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { type BreakdownAnalyzer, CodexAnalyzer, errorMessage, UsageLimitError } from './analyzer/index.ts';
@@ -7,7 +8,6 @@ import { BreakdownBusyError, createBreakdownGenerator } from './breakdowns.ts';
 import type { Store } from './db/index.ts';
 
 export const MAX_BODY_BYTES = 512 * 1024;
-const japanese = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
 const requestSchema = z.strictObject({
   title: z.string().trim().min(1).max(300),
   artist: z.string().trim().min(1).max(300).optional(),
@@ -15,7 +15,7 @@ const requestSchema = z.strictObject({
     .array(z.string().regex(/\S/).max(300))
     .min(1)
     .max(200)
-    .refine((lines) => lines.some((line) => japanese.test(line)), 'Japanese lyrics are required'),
+    .refine((lines) => lines.some((line) => hasJapanese(line)), 'Japanese lyrics are required'),
   force: z.boolean().optional(),
 });
 const digest = (value: string) => createHash('sha256').update(value).digest();
