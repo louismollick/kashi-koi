@@ -1,5 +1,6 @@
 import { decoySentence, type Quiz } from '@kashi-koi/shared/analysis';
-import type { Choice } from '@/types/domain';
+import { currentSentence, getLyrics } from '@/store/libraryStore';
+import type { Choice, Song } from '@/types/domain';
 
 /** Each gap choice changes one phrase and shares the same surrounding sentence. */
 export function quizChoices(translation: string, quiz: Quiz): Choice[] {
@@ -40,4 +41,33 @@ export function gapOf(choices: Choice[]): { before: string; after: string } | un
     gap = { before, after };
   }
   return gap;
+}
+
+/** Shuffle analyzed decoys or distinct same-song translations once when a sentence becomes current. */
+export function getAnswers(song: Song, index: number, random = Math.random): Choice[] {
+  const line = currentSentence(song.id, index)?.sentence;
+  if (!line?.translation) return [];
+  const choices = line.quiz ? quizChoices(line.translation, line.quiz) : undefined;
+  const others = [
+    ...new Set(
+      getLyrics(song.id)
+        .sentences.map((item) => item.translation)
+        .filter((text): text is string => !!text && text !== line.translation),
+    ),
+  ];
+  const shuffle = <T>(texts: T[]) => {
+    for (let i = texts.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [texts[i], texts[j]] = [texts[j]!, texts[i]!];
+    }
+    return texts;
+  };
+  return shuffle(
+    choices ??
+      [line.translation, ...shuffle(others).slice(0, 2)].map((text) => ({
+        text,
+        parts: [{ text, marked: false }],
+        correct: text === line.translation,
+      })),
+  );
 }

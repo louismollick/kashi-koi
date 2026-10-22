@@ -28,7 +28,8 @@ import { validateMediaHeader, type DownloadMedia } from '../src/downloads/valida
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { appStore, resetAppState, setTransport } from '../src/store/appStore';
 import { hydrateSettings, settingsStore } from '../src/store/settingsStore';
-import { libraryStore, readyReviewSentences, hasTranslations } from '../src/store/libraryStore';
+import { libraryStore, hasTranslations } from '../src/store/libraryStore';
+import { readyReviewSentences } from '../src/lyrics/review';
 import { sessionStore } from '../src/navidrome/session';
 import { countedFilters, getVisibleLibrary, getVisibleSongs } from '../src/data/libraryVisibility';
 import { scanLyrics, syncLibrary } from '../src/navidrome/sync';

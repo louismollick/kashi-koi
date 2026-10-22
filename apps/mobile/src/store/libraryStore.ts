@@ -1,9 +1,7 @@
-import { isSongAvailable } from '@/data/libraryVisibility';
-import { quizChoices } from '@/lyrics/choices';
 import { withSentences, type LyricsInput } from '@/lyrics/sentences';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { create } from 'zustand';
-import type { Album, Artist, Choice, Line, LyricsStatus, Song, SongLyrics, ReviewList } from '@/types/domain';
+import type { Album, Artist, Line, LyricsStatus, Song, SongLyrics, ReviewList } from '@/types/domain';
 
 export type Translations = Record<string, { translation: string; segments: Line['segments'] }>;
 export type Library = {
@@ -143,50 +141,6 @@ export const hasTranslations = (id: string | null) => {
   const sentences = getLyrics(id).sentences;
   return !!sentences.length && sentences.every((sentence) => !!sentence.translation);
 };
-/** New and missed sentences are ready now; scheduled sentences return at their due time. */
-export const isDue = (line: ReviewList[number], now = Date.now()) => line.kind !== 'later' || line.dueAt <= now;
-/** Due today excludes the separate new-from-listening group. */
-export const dueSentences = (list: ReviewList, now = Date.now()) =>
-  list.filter((line) => line.kind !== 'new' && isDue(line, now));
-/** Review actions require a surviving sentence in a fully translated song. */
-export const readyReviewSentences = (list: ReviewList, now = Date.now()) =>
-  list.filter(
-    (item) =>
-      isSongAvailable(item.songId) &&
-      isDue(item, now) &&
-      hasTranslations(item.songId) &&
-      getLyrics(item.songId).sentences.some((sentence) => sentence.id === item.sentenceId),
-  );
-
-/** Shuffle analyzed decoys or distinct same-song translations once when a sentence becomes current. */
-export function getAnswers(song: Song, index: number, random = Math.random): Choice[] {
-  const line = currentSentence(song.id, index)?.sentence;
-  if (!line?.translation) return [];
-  const choices = line.quiz ? quizChoices(line.translation, line.quiz) : undefined;
-  const others = [
-    ...new Set(
-      getLyrics(song.id)
-        .sentences.map((item) => item.translation)
-        .filter((text): text is string => !!text && text !== line.translation),
-    ),
-  ];
-  const shuffle = <T>(texts: T[]) => {
-    for (let i = texts.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
-      [texts[i], texts[j]] = [texts[j]!, texts[i]!];
-    }
-    return texts;
-  };
-  return shuffle(
-    choices ??
-      [line.translation, ...shuffle(others).slice(0, 2)].map((text) => ({
-        text,
-        parts: [{ text, marked: false }],
-        correct: text === line.translation,
-      })),
-  );
-}
-
 /** Reuse translations by Japanese text after loading or rescanning lyrics. */
 function applyTranslations(
   lyrics: LibraryInput['lyrics'],

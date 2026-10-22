@@ -1,5 +1,6 @@
 import { cancelAnalyses, loadAnalysisToken } from '@/analysis/fetcher';
 import { pauseTranslations, resumeTranslations } from '@/japanese/translate';
+import { pruneReview } from '@/lyrics/review';
 import { carryLyrics, libraryStore } from '@/store/libraryStore';
 import { appStore, fetchLibraryAnalyses } from '@/store/appStore';
 import { settingsStore } from '@/store/settingsStore';
@@ -118,7 +119,7 @@ export function syncLibrary(
     await (await import('@/downloads/queue')).pruneDownloads();
     if (!valid()) return;
     const ids = new Set(songs.map((song) => song.id));
-    appStore.setState((state) => ({ reviewList: state.reviewList.filter((item) => ids.has(item.songId)) }));
+    appStore.setState((state) => ({ reviewList: pruneReview(state.reviewList, ids) }));
     settingsStore.setState({ lastSyncAt: Date.now() });
     await scan(session, false, valid);
   });
