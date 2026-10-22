@@ -68,7 +68,7 @@ A breakdown contains `{fingerprint, start, model, createdAt, chunks}`; each chun
 
 The initial migration was regenerated for a fresh database. Wipe the existing VPS database before deploying this schema.
 
-`lines` are the song's lyric lines as `lyricLines` from `@kashi-koi/shared` returns them, so the fingerprint matches the app's.
+`lines` are the song's lyric lines as `lyricLines` from `@kashi-koi/shared/lyrics` returns them, so the fingerprint matches the app's.
 
 ## Backfill
 

@@ -1,7 +1,7 @@
 import { setTimeout } from 'node:timers/promises';
-import { analysisAdvice, dropInvalidQuizzes, songAnalysisDraftSchema, songAnalysisSchema } from '@kashi-koi/shared';
-import { type Analyzer, UsageLimitError } from './analyzer/index.ts';
-import { validateDraft } from './analyzer/validate.ts';
+import { songAnalysisDraftSchema, songAnalysisSchema } from '@kashi-koi/shared/analysis';
+import { analyzeWithRetry } from './analyzer/attempts.ts';
+import { type Analyzer, errorMessage, UsageLimitError } from './analyzer/index.ts';
 import type { Store } from './db/index.ts';
 
 const MIN_USAGE_DELAY = 15 * 60 * 1000;
@@ -31,45 +31,33 @@ export class Worker {
     }
     this.busy = true;
     try {
-      let feedback: string[] | undefined;
-      for (let attempt = 0; attempt < 2; attempt++) {
-        const output = await this.analyzer.analyze({
-          title: job.title,
-          artist: job.artist ?? undefined,
-          lines: job.lines,
-          feedback,
-        });
-        const draft = attempt === 0 ? output : dropInvalidQuizzes(output, job.lines);
-        const errors = validateDraft(draft, job.lines.length, job.lines);
-        const advice = attempt === 0 ? analysisAdvice(draft) : [];
-        if (errors.length || advice.length) {
-          if (errors.length) console.error('Analysis validation failed');
-          if (attempt === 0) {
-            feedback = [...errors, ...advice];
-            continue;
-          }
-          this.store.fail(job.fingerprint, 'Analysis validation failed');
-          return true;
-        }
-        const analysis = songAnalysisSchema.parse({
-          ...songAnalysisDraftSchema.parse(draft),
-          schemaVersion: 3,
-          fingerprint: job.fingerprint,
-          model: this.analyzer.model,
-          createdAt: new Date(this.now()).toISOString(),
-        });
-        this.store.complete(analysis, job.lines);
-        this.usageDelay = MIN_USAGE_DELAY;
+      const { draft, errors, limited } = await analyzeWithRetry(this.analyzer, {
+        title: job.title,
+        artist: job.artist ?? undefined,
+        lines: job.lines,
+      });
+      if (errors.length) {
+        console.error('Analysis validation failed');
+        this.store.fail(job.fingerprint, 'Analysis validation failed');
         return true;
       }
+      const analysis = songAnalysisSchema.parse({
+        ...songAnalysisDraftSchema.parse(draft),
+        schemaVersion: 3,
+        fingerprint: job.fingerprint,
+        model: this.analyzer.model,
+        createdAt: new Date(this.now()).toISOString(),
+      });
+      this.store.complete(analysis, job.lines);
+      if (limited) this.pause();
+      else this.usageDelay = MIN_USAGE_DELAY;
     } catch (error) {
       const message = errorMessage(error, job.lines);
       console.error(message);
       // Usage limits pause the queue. Other failures keep a bounded message without Japanese script.
       if (error instanceof UsageLimitError) {
         this.store.retry(job.fingerprint, 'Usage limit reached', true);
-        this.pausedUntil = this.now() + this.usageDelay;
-        this.usageDelay = Math.min(this.usageDelay * 2, MAX_USAGE_DELAY);
+        this.pause();
       } else if (job.attempts >= 3) {
         this.store.fail(job.fingerprint, exhaustedMessage(message));
       } else {
@@ -79,6 +67,12 @@ export class Worker {
       this.busy = false;
     }
     return true;
+  }
+
+  /** Usage limits pause the whole queue, doubling the delay each time up to the cap. */
+  private pause() {
+    this.pausedUntil = this.now() + this.usageDelay;
+    this.usageDelay = Math.min(this.usageDelay * 2, MAX_USAGE_DELAY);
   }
 
   async run(signal: AbortSignal): Promise<void> {
@@ -91,14 +85,6 @@ export class Worker {
       }
     }
   }
-}
-
-/** Keep bounded failure details while removing source lines and Japanese text. */
-export function errorMessage(error: unknown, lines: string[]) {
-  if (!(error instanceof Error)) return 'Unknown analyzer error';
-  let message = error.message;
-  for (const line of lines) message = message.split(line).join('…');
-  return message.replace(/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]+/gu, '…').slice(0, 400);
 }
 
 function exhaustedMessage(lastError: string | null) {

@@ -1,5 +1,5 @@
 export type Session = { url: string; username: string; token: string; salt: string };
-export type Params = Record<string, string | number | boolean>;
+type Params = Record<string, string | number | boolean>;
 export type StructuredLyrics = {
   lang?: string;
   kind?: string;

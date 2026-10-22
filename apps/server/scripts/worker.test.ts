@@ -428,3 +428,48 @@ test('final quiz dropping checks Japanese presence and English already visible i
     assert.equal(store.getAnalysis(input.fingerprint)?.sentences[0]?.quiz, null);
   }
 });
+
+test('a valid first draft with advice is kept when the retry is invalid, throws or hits a usage limit', async (t) => {
+  const source = ['朝', '窓', '風', '空'];
+  const first = {
+    ...draft,
+    lines: source.map(() => 'A translated line'),
+    sentences: [
+      {
+        start: 0,
+        end: 3,
+        translation: 'Morning window and wind in the sky',
+        quiz: testQuiz('Morning window and wind in the sky'),
+      },
+    ],
+  };
+  const retries: Array<() => unknown> = [
+    () => ({ ...first, lines: [] }),
+    () => {
+      throw new Error('Codex timed out after 300s');
+    },
+    () => {
+      throw new UsageLimitError('Usage limit');
+    },
+  ];
+  for (const [index, retry] of retries.entries()) {
+    const { store } = testStore(t);
+    store.enqueue({ ...input, lines: source });
+    store.enqueue({ ...input, fingerprint: 'second' });
+    let calls = 0;
+    const worker = new Worker(store, {
+      model,
+      async analyze(request) {
+        if (++calls === 1) return first;
+        assert.match(request.feedback?.join('\n') ?? '', /at most 3/);
+        return retry();
+      },
+    });
+    await worker.runNext();
+    assert.equal(calls, 2);
+    assert.equal(store.getJob(input.fingerprint)?.status, 'done');
+    assert.deepEqual(store.getAnalysis(input.fingerprint)?.sentences, first.sentences);
+    // A usage limit on the retry still pauses the queue before the second job.
+    if (index === 2) assert.equal(await worker.runNext(), false);
+  }
+});

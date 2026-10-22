@@ -1,4 +1,5 @@
-import type { Breakdown, SongAnalysis } from '@kashi-koi/shared';
+import type { SongAnalysis } from '@kashi-koi/shared/analysis';
+import type { Breakdown } from '@kashi-koi/shared/breakdown';
 import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const analyses = sqliteTable('analyses', {
@@ -37,5 +38,6 @@ export const jobs = sqliteTable(
   (table) => [index('jobs_queue_idx').on(table.status, table.priority, table.updatedAt)],
 );
 
-export type Job = typeof jobs.$inferSelect;
-export type EnqueueInput = Pick<Job, 'fingerprint' | 'title' | 'lines' | 'priority'> & { artist?: string };
+export type EnqueueInput = Pick<typeof jobs.$inferSelect, 'fingerprint' | 'title' | 'lines' | 'priority'> & {
+  artist?: string;
+};

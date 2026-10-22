@@ -2,7 +2,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { TestContext } from 'node:test';
-import { fingerprint, type SongAnalysis, type SongAnalysisDraft } from '@kashi-koi/shared';
+import type { SongAnalysis, SongAnalysisDraft } from '@kashi-koi/shared/analysis';
+import { fingerprint } from '@kashi-koi/shared/fingerprint';
 import { openDatabase } from '../src/db/index.ts';
 
 export const lines = ['朝の窓を開ける', '風に名前を呼ぶ'];

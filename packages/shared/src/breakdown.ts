@@ -23,7 +23,6 @@ export const breakdownSchema = breakdownDraftSchema.extend({
 });
 export const breakdownDraftJsonSchema = z.toJSONSchema(breakdownDraftSchema);
 export type Breakdown = z.infer<typeof breakdownSchema>;
-export type BreakdownDraft = z.infer<typeof breakdownDraftSchema>;
 
 /** Check chunk coverage and learner-sized steps against the sentence's source text. */
 export function validateBreakdown(draft: unknown, sentenceText: string, translation: string): string[] {
