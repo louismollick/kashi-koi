@@ -1036,6 +1036,8 @@ libraryStore.subscribe((state, previous) => {
         : null,
     });
   } else if (reviewList !== current.reviewList) appStore.setState({ reviewList });
+  // Retimed lyrics can move the current line onto an uncached sentence without touching the review list.
+  else if (current.quizToggle && !current.clipPlayback) current.ensureChoices();
   const before = previous.lyrics[current.songId ?? ''],
     after = state.lyrics[current.songId ?? ''];
   if (after !== before && JSON.stringify(after?.sentences) !== JSON.stringify(before?.sentences)) {

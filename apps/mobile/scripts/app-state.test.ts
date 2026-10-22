@@ -2079,3 +2079,16 @@ test('native EOF preserves results for an analysis-only quiz', async (t) => {
     native.detach();
   }
 });
+
+test('retimed lyrics cache choices for the sentence now under the current line', () => {
+  const source = songLyrics[firstSong.id]!;
+  const [first, ...rest] = source.timeline;
+  // A repeated first line is removed on rescan, so line 1 moves onto the next sentence.
+  const repeated = withSentences({ ...source, timeline: [first!, first!, ...rest] });
+  libraryStore.getState().setLyricsResult(firstSong.id, 'synced', repeated);
+  appStore.setState({ quizToggle: true, lineIndex: 1, run: { ...appStore.getState().run, choices: {} } });
+  libraryStore.getState().setLyricsResult(firstSong.id, 'synced', withSentences(source));
+  const sentence = currentSentence(firstSong.id, 1)?.sentence;
+  assert.ok(sentence?.translation);
+  assert.ok(appStore.getState().run.choices[sentence.id]?.length);
+});
