@@ -173,7 +173,8 @@ function testRuntime(headers: Partial<Record<DownloadMedia, Uint8Array>> = {}) {
     clear: async () => {
       rows = {};
     },
-    exists: async (uri: string) => files.has(uri),
+    listAudio: async () =>
+      [...files.keys()].filter((uri) => uri.startsWith(`${root}/audio/`)).map((uri) => uri.split('/').pop()!),
     remove: async (uri: string) => {
       files.delete(uri);
     },

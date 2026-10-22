@@ -49,7 +49,7 @@ const defaults = {
   detect: async (_uri: string): Promise<string | undefined> => undefined,
   move: unconfigured as (from: string, to: string) => Promise<void>,
   remove: unconfigured as (uri: string) => Promise<void>,
-  exists: unconfigured as (uri: string) => Promise<boolean>,
+  listAudio: unconfigured as () => Promise<string[]>,
   clearFiles: unconfigured as () => Promise<void>,
   load: unconfigured as () => Promise<DownloadEntries>,
   save: unconfigured as (id: string, entry: DownloadEntry) => Promise<void>,
@@ -377,11 +377,12 @@ export function loadDownloadState() {
   return operation(async () => {
     await prepare();
     downloadStore.setState({ entries: await runtime.load() });
+    // One directory listing instead of a file check per finished song.
+    const audio = new Set(await runtime.listAudio());
     for (const [id, entry] of Object.entries(downloadStore.getState().entries)) {
       if (
         entry.status === 'downloading' ||
-        (entry.status === 'done' &&
-          (!entry.fileName || !(await runtime.exists(`${downloadStore.getState().root}/audio/${entry.fileName}`))))
+        (entry.status === 'done' && !(entry.fileName && audio.has(entry.fileName)))
       ) {
         if (entry.fileName) await runtime.remove(`${downloadStore.getState().root}/audio/${entry.fileName}`);
         await publish(id, { ...entry, status: 'queued', fileName: undefined, bytes: undefined, updatedAt: Date.now() });
