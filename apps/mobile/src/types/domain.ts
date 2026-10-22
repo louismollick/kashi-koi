@@ -23,6 +23,8 @@ export type SongLyrics = {
   fingerprint: string;
   lines: Line[];
   timeline: Occurrence[];
+  /** Some line has Japanese text. Derived with the sentences, so visibility checks stay O(1). */
+  hasJapanese: boolean;
   sentences: Sentence[];
   sentenceTimeline: SentenceOccurrence[];
   analysis?: {

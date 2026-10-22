@@ -105,6 +105,7 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
 /** Due, new and later sentences grouped by song, with clip review on top. */
 export default function ReviewScreen() {
   const router = useRouter();
+  // Every song in the list renders its sentences and readiness from lyrics, so any lyrics update re-renders.
   libraryStore((state) => state.lyrics);
   const reviewList = useAvailableReviewList();
   const now = useNow();

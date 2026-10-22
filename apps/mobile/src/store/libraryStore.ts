@@ -22,7 +22,13 @@ const empty: Library = { songs: [], albums: [], artists: [], lyrics: {} };
 /** Shared by every song without lyrics (and by no song at all), so reads never rebuild it. */
 const emptyLyrics = withSentences({ songId: '', lines: [], timeline: [] });
 
-/** The in-memory library is seeded from SQLite at boot, or fixtures in Node tests. */
+/**
+ * The in-memory library is seeded from SQLite at boot, or fixtures in Node tests.
+ *
+ * Visibility (Hidden song) depends on each song's `lyricsStatus` and whether its lyrics have Japanese. Both change
+ * only in `setLibrary` and `setLyricsResults`, which replace `songs` too. Translation and analysis updates replace
+ * `lyrics` alone, so visibility consumers subscribe to `songs` and never to `lyrics`.
+ */
 export const libraryStore = create<
   Library & {
     bySong: Record<string, Song>;
@@ -208,6 +214,7 @@ function applySongTranslations(
     song.fingerprint &&
     song.sentences &&
     song.sentenceTimeline &&
+    song.hasJapanese !== undefined &&
     !lines.some((line, index) => line !== song.lines[index]) &&
     !song.analysis &&
     !analyses[song.fingerprint]

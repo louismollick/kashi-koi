@@ -102,8 +102,7 @@ export default function FullPlayerScreen() {
     queueIndex = appStore((state) => state.queueIndex),
     autoplay = appStore((state) => state.autoplay);
   const filters = useLibraryFilters(),
-    library = libraryStore((state) => state.bySong),
-    lyrics = libraryStore((state) => state.lyrics);
+    library = libraryStore((state) => state.bySong);
   // Rows keep their playback position, so hidden or removed songs drop out without shifting what a tap plays.
   const { upNext, autoplayRows, queued } = useMemo(() => {
     const next = getUpNext(appStore.getState());
@@ -117,7 +116,7 @@ export default function FullPlayerScreen() {
       autoplayRows: rows(next.autoplay, next.queue.length).slice(0, AUTOPLAY_PREVIEW),
       queued: next.queue.length,
     };
-  }, [queue, queueIndex, autoplay, filters, library, lyrics]);
+  }, [queue, queueIndex, autoplay, filters, library]);
   const repeat = appStore((state) => !!songId && state.repeatSongId === songId);
   // The list reports indices into the rows it was dragging, which playback may have replaced before the drop.
   const latest = useRef(upNext),
