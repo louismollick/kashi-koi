@@ -3,16 +3,8 @@ import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import {
-  dueSentences,
-  getAlbum,
-  getSentenceText,
-  getSong,
-  getLyrics,
-  isDue,
-  libraryStore,
-  readyReviewSentences,
-} from '@/store/libraryStore';
+import { dueSentences, isDue, readyReviewSentences } from '@/lyrics/review';
+import { getAlbum, getSentenceText, getSong, getLyrics, libraryStore } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
 import { useNow } from '@/hooks/useNow';
 import { Header } from '@/components/Header';

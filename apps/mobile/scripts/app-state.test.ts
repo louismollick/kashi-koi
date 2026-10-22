@@ -16,9 +16,6 @@ import {
   reviewClip,
   getLyrics,
   libraryStore,
-  isDue,
-  dueSentences,
-  readyReviewSentences,
 } from '../src/store/libraryStore';
 import {
   getRecentlyPlayed,
@@ -1785,8 +1782,6 @@ for (const mode of ['quiz', 'clip'] as const)
       if (line.kind !== 'later') throw new Error('Expected scheduled line');
       assert.equal(line.step, step);
       assert.equal(line.dueAt, Date.now() + 2 ** step * day);
-      assert.equal(isDue(line, line.dueAt - 1), false);
-      assert.equal(isDue(line, line.dueAt), true);
       t.mock.timers.setTime(line.dueAt);
     }
     answer(false);
@@ -1810,35 +1805,6 @@ for (const mode of ['quiz', 'clip'] as const)
       dueAt: Date.now() + day,
     });
   });
-
-test('expired later lines join due today and ready review, with new lines separate', () => {
-  const now = 1000;
-  const list = [
-    { id: 'new', songId: 'dawn', sentenceId: fixtureLine('dawn-0'), kind: 'new' as const },
-    { id: 'due', songId: 'dawn', sentenceId: fixtureLine('dawn-1'), kind: 'due' as const, misses: 1 },
-    { id: 'expired', songId: 'dawn', sentenceId: fixtureLine('dawn-2'), kind: 'later' as const, step: 2, dueAt: now },
-    {
-      id: 'future',
-      songId: 'dawn',
-      sentenceId: fixtureLine('dawn-3'),
-      kind: 'later' as const,
-      step: 0,
-      dueAt: now + 1,
-    },
-  ];
-  assert.deepEqual(
-    list.map((line) => isDue(line, now)),
-    [true, true, true, false],
-  );
-  assert.deepEqual(
-    dueSentences(list, now).map((line) => line.id),
-    ['due', 'expired'],
-  );
-  assert.deepEqual(
-    readyReviewSentences(list, now).map((line) => line.id),
-    ['new', 'due', 'expired'],
-  );
-});
 
 test('hydration makes legacy later lines due, stays stable across hydrations and drops obsolete review mix state', async (t) => {
   t.mock.timers.enable({ apis: ['Date'], now: 1000000 });

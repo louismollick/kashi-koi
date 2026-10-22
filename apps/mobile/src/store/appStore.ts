@@ -1,7 +1,14 @@
 import { localAudioUri } from '@/downloads/store';
 import { normalizeBase } from '@/analysis/client';
 import { prefetchBreakdown, resetBreakdowns } from '@/analysis/breakdowns';
-import { remapReview } from '@/lyrics/review';
+import {
+  addLostMark,
+  moveReview,
+  scheduleReview,
+  readyReviewSentences,
+  recordAnswer,
+  remapChangedSongs,
+} from '@/lyrics/review';
 import { applyAnswer, quizSentences } from '@/lyrics/fog';
 import { prioritizeAnalyses, analysisRequests } from '@/analysis/fetcher';
 import { prioritizeTranslations } from '@/japanese/translate';
@@ -18,9 +25,8 @@ import {
   reviewClip,
   hasTranslations,
   libraryStore,
-  getAnswers,
-  readyReviewSentences,
 } from '@/store/libraryStore';
+import { getAnswers } from '@/lyrics/choices';
 import { getLibraryFilters, getVisibleSongs, isHiddenSong } from '@/data/libraryVisibility';
 import { changeAwareStorage } from '@/store/persistStorage';
 import { persistedSettingKeys, settingsStore } from '@/store/settingsStore';
@@ -104,16 +110,6 @@ function playReviewClip() {
   if (item && occurrence) state.playClip(item.songId, occurrence.startMs, occurrence.endMs);
 }
 
-const dayMs = 24 * 60 * 60 * 1000;
-
-/** Correct answers double the interval; a miss resets the schedule. */
-function scheduleReview(line: ReviewList[number], correct: boolean): ReviewList[number] {
-  const { id, songId, sentenceId } = line;
-  if (!correct) return { id, songId, sentenceId, kind: 'due', misses: line.kind === 'due' ? line.misses + 1 : 1 };
-  const step = line.kind === 'later' ? line.step + 1 : 0;
-  return { id, songId, sentenceId, kind: 'later', step, dueAt: Date.now() + 2 ** step * dayMs };
-}
-
 let nextRunId = 0;
 /** Every song play and clip session gets a distinct pass through the fog. */
 const newRunId = () => `${Date.now()}:${++nextRunId}`;
@@ -155,13 +151,9 @@ function scoreSentence(correct: boolean, choice: string | null): boolean {
       answers = { ...state.run.answers, [sentenceId]: { choice, correct } },
       sentences = quizSentences(getLyrics(state.songId)),
       perfect = correct && sentences.length > 0 && sentences.every((sentence) => answers[sentence.id]?.correct),
-      existing = state.reviewList.some((item) => item.songId === state.songId && item.sentenceId === sentenceId),
-      addedId = `miss-${state.nextReviewId}`;
-    const reviewList = state.reviewList.map((item) =>
-      item.songId === state.songId && item.sentenceId === sentenceId ? scheduleReview(item, correct) : item,
-    );
-    if (!correct && !existing)
-      reviewList.push({ id: addedId, songId: state.songId!, sentenceId, kind: 'due', misses: 1 });
+      addedId = `miss-${state.nextReviewId}`,
+      reviewList = recordAnswer(state.reviewList, state.songId!, sentenceId, correct, addedId),
+      added = reviewList.length > state.reviewList.length;
     return {
       fog: applyAnswer(state.fog, line.lineIds, correct, state.run.id),
       perfectRuns: perfect ? { ...state.perfectRuns, [state.songId!]: true as const } : state.perfectRuns,
@@ -173,9 +165,7 @@ function scoreSentence(correct: boolean, choice: string | null): boolean {
         perfect: state.run.perfect || perfect,
       },
       reviewList,
-      ...(!correct && !existing
-        ? { addedId, addedExpiresAt: Date.now() + 3000, nextReviewId: state.nextReviewId + 1 }
-        : {}),
+      ...(added ? { addedId, addedExpiresAt: Date.now() + 3000, nextReviewId: state.nextReviewId + 1 } : {}),
     };
   });
   const scored = appStore.getState().run !== before.run;
@@ -680,10 +670,11 @@ export const appStore = create<AppState>()(
           const line = currentSentence(state.songId, state.lineIndex)?.sentence;
           if (!line) return state;
           const sentenceId = line.id;
-          if (state.reviewList.some((line) => line.sentenceId === sentenceId)) return state;
-          const id = `lost-${state.nextReviewId}`;
+          const id = `lost-${state.nextReviewId}`,
+            reviewList = addLostMark(state.reviewList, id, state.songId!, sentenceId);
+          if (reviewList === state.reviewList) return state;
           return {
-            reviewList: [...state.reviewList, { id, songId: state.songId!, sentenceId, kind: 'new' as const }],
+            reviewList,
             addedId: id,
             addedExpiresAt: Date.now() + 3000,
             nextReviewId: state.nextReviewId + 1,
@@ -702,20 +693,12 @@ export const appStore = create<AppState>()(
       dismissToast: () => set({ addedId: null, addedExpiresAt: null }),
       moveReviewSentence: (id, sentenceId) =>
         set((state) => {
-          const item = state.reviewList.find((line) => line.id === id);
-          if (
-            !item ||
-            item.sentenceId === sentenceId ||
-            !getLyrics(item.songId).sentences.some((sentence) => sentence.id === sentenceId) ||
-            state.reviewList.some((line) => line.id !== id && line.sentenceId === sentenceId)
-          )
-            return state;
+          const reviewList = moveReview(state.reviewList, id, sentenceId);
+          if (reviewList === state.reviewList) return state;
           const clip = state.clipReview;
           if (clip?.ids[clip.index] === id) clearClipTimer();
           return {
-            reviewList: state.reviewList.map((line) =>
-              line.id === id ? { id: line.id, songId: line.songId, sentenceId, kind: 'new' as const } : line,
-            ),
+            reviewList,
             clipReview: clip
               ? { ...clip, answers: Object.fromEntries(Object.entries(clip.answers).filter(([key]) => key !== id)) }
               : clip,
@@ -916,11 +899,7 @@ export function setAnalysisServerUrl(url: string) {
 // Every lyric change uses the old sentence membership to remap review schedules.
 libraryStore.subscribe((state, previous) => {
   if (state.lyrics === previous.lyrics) return;
-  let reviewList = appStore.getState().reviewList;
-  for (const id of new Set([...Object.keys(previous.lyrics), ...Object.keys(state.lyrics)])) {
-    if (state.lyrics[id] !== previous.lyrics[id])
-      reviewList = remapReview(reviewList, id, previous.lyrics[id], state.lyrics[id]);
-  }
+  const reviewList = remapChangedSongs(appStore.getState().reviewList, previous.lyrics, state.lyrics);
   const current = appStore.getState();
   const clip = current.clipReview;
   if (clip) {

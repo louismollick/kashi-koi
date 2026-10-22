@@ -1,5 +1,6 @@
 import { useAvailableReviewList } from '@/data/reviewVisibility';
-import { isDue, libraryStore } from '@/store/libraryStore';
+import { isDue } from '@/lyrics/review';
+import { libraryStore } from '@/store/libraryStore';
 import { useNow } from '@/hooks/useNow';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';

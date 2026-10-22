@@ -5,7 +5,8 @@ import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { remapReview } from '../src/lyrics/review';
 import { toSongLyrics } from '../src/navidrome/lyrics';
 import { appStore, resetAppState, setTransport } from '../src/store/appStore';
-import { getAnswers, getLyrics, libraryStore } from '../src/store/libraryStore';
+import { getAnswers } from '../src/lyrics/choices';
+import { getLyrics, libraryStore } from '../src/store/libraryStore';
 import { songs } from './fixtures';
 
 const song = { ...songs[0]!, id: 'paper' };
