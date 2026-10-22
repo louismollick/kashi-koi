@@ -79,7 +79,7 @@ export default function ArtistDetailScreen() {
             </View>
             <PlayButtons
               noun="artist"
-              disabled={!visible.songs.length}
+              disabled={!artistAlbums.length}
               start={(shuffle) => appStore.getState().startArtist(artist.id, shuffle)}
             />
             <SectionHeader title="Albums" />
