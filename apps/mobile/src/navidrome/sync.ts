@@ -1,7 +1,8 @@
-import { fetchLibraryAnalyses, loadAnalysisToken } from '@/analysis/fetcher';
-import { resumeTranslations } from '@/japanese/translate';
+import { cancelAnalyses, loadAnalysisToken } from '@/analysis/fetcher';
+import { pauseTranslations, resumeTranslations } from '@/japanese/translate';
 import { carryLyrics, libraryStore } from '@/store/libraryStore';
-import { appStore } from '@/store/appStore';
+import { appStore, fetchLibraryAnalyses } from '@/store/appStore';
+import { settingsStore } from '@/store/settingsStore';
 import { sessionStore } from './session';
 import { pickEntry, toSongLyrics } from './lyrics';
 import {
@@ -23,16 +24,37 @@ export async function cancelSync() {
   await running;
 }
 
+let offlineTransition = Promise.resolve();
+
+/**
+ * Switch offline mode and run its network side effects. Turning it on cancels sync, analyses and translation;
+ * turning it off resumes them. Transitions run one after another, each acting on the setting's latest value.
+ */
+export function setOfflineMode(offlineMode: boolean) {
+  settingsStore.setState({ offlineMode });
+  offlineTransition = offlineTransition
+    .catch(() => {})
+    .then(async () => {
+      if (settingsStore.getState().offlineMode) {
+        await Promise.all([cancelSync(), cancelAnalyses(), pauseTranslations()]);
+      } else {
+        void resumeTranslations();
+        void fetchLibraryAnalyses();
+      }
+    });
+}
+
 /** Serialize library sync and lyrics scans, and keep failures visible in Settings. */
 function run(work: (session: Session, valid: () => boolean) => Promise<void>) {
   const session = sessionStore.getState().session,
     version = generation;
-  if (!session || appStore.getState().offlineMode) return Promise.resolve();
+  if (!session || settingsStore.getState().offlineMode) return Promise.resolve();
   if (running) return running;
   libraryStore.setState({ error: null });
   running = work(
     session,
-    () => version === generation && sessionStore.getState().session === session && !appStore.getState().offlineMode,
+    () =>
+      version === generation && sessionStore.getState().session === session && !settingsStore.getState().offlineMode,
   )
     .catch((error) => {
       libraryStore.setState({ error: error instanceof Error ? error.message : 'Library sync failed' });
@@ -96,10 +118,8 @@ export function syncLibrary(
     await (await import('@/downloads/queue')).pruneDownloads();
     if (!valid()) return;
     const ids = new Set(songs.map((song) => song.id));
-    appStore.setState((state) => ({
-      reviewList: state.reviewList.filter((item) => ids.has(item.songId)),
-      lastSyncAt: Date.now(),
-    }));
+    appStore.setState((state) => ({ reviewList: state.reviewList.filter((item) => ids.has(item.songId)) }));
+    settingsStore.setState({ lastSyncAt: Date.now() });
     await scan(session, false, valid);
   });
 }
@@ -112,8 +132,8 @@ export async function scan(
   save: (songId: string, status: LyricsStatus, lyrics?: SongLyrics) => Promise<void> = async (...args) =>
     (await import('./db')).saveLyricsResult(...args),
 ) {
-  if (appStore.getState().offlineMode) return;
-  const online = () => valid() && !appStore.getState().offlineMode;
+  if (settingsStore.getState().offlineMode) return;
+  const online = () => valid() && !settingsStore.getState().offlineMode;
   const targets = libraryStore
     .getState()
     .songs.filter((song) => all || ['unchecked', 'error'].includes(song.lyricsStatus))
@@ -178,7 +198,7 @@ export async function scan(
   flush();
   if (stopped) throw failure;
   if (online()) {
-    appStore.setState({ lastScanAt: Date.now() });
+    settingsStore.setState({ lastScanAt: Date.now() });
     void resumeTranslations();
     void fetchLibraryAnalyses();
     if (errors) libraryStore.setState({ error: `${errors} songs could not be checked. Rescan lyrics to retry.` });

@@ -26,7 +26,8 @@ import { downloadStore, isDownloaded, localAudioUri, localArtUri, type DownloadE
 import { downloadSummary } from '../src/downloads/selectors';
 import { validateMediaHeader, type DownloadMedia } from '../src/downloads/validation';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
-import { appStore, resetAppState, setTransport, hydrateAppState } from '../src/store/appStore';
+import { appStore, resetAppState, setTransport } from '../src/store/appStore';
+import { hydrateSettings, settingsStore } from '../src/store/settingsStore';
 import { libraryStore, readyReviewSentences, hasTranslations } from '../src/store/libraryStore';
 import { sessionStore } from '../src/navidrome/session';
 import { countedFilters, getVisibleLibrary, getVisibleSongs } from '../src/data/libraryVisibility';
@@ -91,7 +92,7 @@ test('eligibility uses synced Japanese lyrics for every target and album ownersh
       english: { ...songLyrics.glass!, songId: 'english', lines: [{ id: 'en', segments: [{ text: 'Hello' }] }] },
     },
   });
-  appStore.setState({ hideSongsWithoutSyncedLyrics: false, hideSongsWithoutJapanese: false });
+  settingsStore.setState({ hideSongsWithoutSyncedLyrics: false, hideSongsWithoutJapanese: false });
   assert.deepEqual(eligibleSongs({ kind: 'song', id: 'dawn' }), [credited]);
   assert.equal(eligibleSongs({ kind: 'song', id: 'english' }).length, 0);
   assert.equal(eligibleSongs({ kind: 'song', id: 'missing' }).length, 0);
@@ -307,7 +308,7 @@ test('offline visibility, lyric hidden counts, album queue steps and review read
     root,
     entries: { dawn: { ...entry('done'), fileName: 'dawn.mp3' }, rain: { ...entry('done'), fileName: 'rain.mp3' } },
   });
-  appStore.setState({ offlineMode: true });
+  settingsStore.setState({ offlineMode: true });
   await cancelDownloads();
   const filters = { hideUnsynced: false, hideNonJapanese: false, downloadedOnly: true };
   assert.deepEqual(
@@ -369,7 +370,7 @@ test('offline visibility, lyric hidden counts, album queue steps and review read
 });
 
 test('offline calls skip library sync, scans, analysis reads and generation, and download queueing', async () => {
-  appStore.setState({ offlineMode: true, analysisServerUrl: 'https://analysis.test', analysisToken: 'owner' });
+  settingsStore.setState({ offlineMode: true, analysisServerUrl: 'https://analysis.test', analysisToken: 'owner' });
   let calls = 0;
   const original = globalThis.fetch;
   globalThis.fetch = async () => {
@@ -415,7 +416,7 @@ test('granted background downloads wait for fallback translation persistence and
     },
   });
   libraryStore.setState({ translationStatus: 'installed' });
-  appStore.setState({ analysisServerUrl: 'https://analysis.test', analysisToken: 'owner' });
+  settingsStore.setState({ analysisServerUrl: 'https://analysis.test', analysisToken: 'owner' });
   setAnalysisRuntime({
     fetch: async (_url, init) => {
       calls.push(init?.method ?? 'GET');
@@ -518,15 +519,15 @@ test('adding a new target while the previous batch drains keeps its background t
 
 test('offline mode hydrates and persists alongside the lyric filters', async () => {
   let saved = '';
-  await hydrateAppState({
+  await hydrateSettings({
     getItem: () => JSON.stringify({ state: { offlineMode: true }, version: 0 }),
     setItem: (_key, value) => {
       saved = value;
     },
     removeItem() {},
   });
-  assert.equal(appStore.getState().offlineMode, true);
-  appStore.setState({ offlineMode: false });
+  assert.equal(settingsStore.getState().offlineMode, true);
+  settingsStore.setState({ offlineMode: false });
   const state = (JSON.parse(saved) as { state: { offlineMode: boolean } }).state;
   assert.equal(state.offlineMode, false);
 });
@@ -534,7 +535,7 @@ test('offline mode hydrates and persists alongside the lyric filters', async () 
 test('cancellation aborts the real analysis cache GET and releases persisted downloading rows', async () => {
   const started = gate();
   let requestSignal: AbortSignal | null | undefined;
-  appStore.setState({ analysisServerUrl: 'https://analysis.test' });
+  settingsStore.setState({ analysisServerUrl: 'https://analysis.test' });
   setAnalysisRuntime({
     fetch: async (_url, init) => {
       requestSignal = init?.signal;
@@ -633,7 +634,7 @@ function dawnAnalysis(): SongAnalysis {
 }
 
 test('analysis GET HTTP and network failures remain retryable; 404 is allowed', async () => {
-  appStore.setState({ analysisServerUrl: 'https://analysis.test' });
+  settingsStore.setState({ analysisServerUrl: 'https://analysis.test' });
   const { prepareText: _prepareText, ...adapters } = testRuntime();
   setDownloadRuntime(adapters);
   for (const fetcher of [
@@ -655,7 +656,7 @@ test('analysis GET HTTP and network failures remain retryable; 404 is allowed', 
 });
 
 test('analysis persistence failures fail the download and retry saves before marking done', async () => {
-  appStore.setState({ analysisServerUrl: 'https://analysis.test' });
+  settingsStore.setState({ analysisServerUrl: 'https://analysis.test' });
   const analysis = dawnAnalysis();
   setAnalysisRuntime({ fetch: async () => Response.json(analysis) });
   const { prepareText: _prepareText, ...adapters } = testRuntime();
@@ -682,7 +683,7 @@ test('analysis persistence failures fail the download and retry saves before mar
 });
 
 test('breakdown HTTP, network, read and save failures fail downloads; missing explanations allow retry', async () => {
-  appStore.setState({ analysisServerUrl: 'https://analysis.test' });
+  settingsStore.setState({ analysisServerUrl: 'https://analysis.test' });
   const analysis = dawnAnalysis();
   libraryStore.getState().setAnalysis(analysis);
   const { prepareText: _prepareText, ...adapters } = testRuntime();

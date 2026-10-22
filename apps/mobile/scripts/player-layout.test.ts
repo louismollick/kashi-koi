@@ -3,14 +3,37 @@ import { test } from 'node:test';
 import { createRequire, registerHooks } from 'node:module';
 import * as React from 'react';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
+import { analysisRequests, cancelAnalyses, setAnalysisRuntime } from '../src/analysis/fetcher';
 import { appStore, resetAppState } from '../src/store/appStore';
 import { libraryStore } from '../src/store/libraryStore';
+import { settingsStore } from '../src/store/settingsStore';
 import { albums, artists, songs, songLyrics } from './fixtures';
 
 const require = createRequire(import.meta.url);
 const { renderToStaticMarkup } = require('react-dom/server') as {
   renderToStaticMarkup: (element: React.ReactElement) => string;
 };
+
+const stores = [appStore, libraryStore, settingsStore, analysisRequests];
+
+/**
+ * Zustand's server snapshot uses each store's initial state, so static renders see the current state only after
+ * `snapshot()` copies it in. `restore()` puts the real initial states back.
+ */
+function pinInitialStates() {
+  const originals = stores.map((store) => ({ ...store.getInitialState() }));
+  return {
+    snapshot: () => {
+      for (const store of stores) Object.assign(store.getInitialState(), store.getState());
+    },
+    restore: () =>
+      stores.forEach((store, index) => {
+        const initial: Record<string, unknown> = store.getInitialState();
+        for (const key of Object.keys(initial)) delete initial[key];
+        Object.assign(initial, originals[index]);
+      }),
+  };
+}
 
 /** Load a real screen with native hosts and animation APIs replaced for Node. Song menu always shows `dawn`. */
 async function loadScreen(screen: 'player' | 'song-menu', presses = new Map<string, () => void>()) {
@@ -89,15 +112,9 @@ test('the actual quiz screen renders its musical gap before the first line witho
   appStore.setState({ loading: false });
   appStore.getState().updatePlayback(0, 238000, false);
   assert.equal(appStore.getState().lineIndex, -1);
-  // Zustand's server snapshot uses its initial state; supply the current fixture.
-  const appInitial = { ...appStore.getInitialState() },
-    libraryInitial = { ...libraryStore.getInitialState() };
-  Object.assign(appStore.getInitialState(), appStore.getState());
-  Object.assign(libraryStore.getInitialState(), libraryStore.getState());
-  t.after(() => {
-    Object.assign(appStore.getInitialState(), appInitial);
-    Object.assign(libraryStore.getInitialState(), libraryInitial);
-  });
+  const pinned = pinInitialStates();
+  pinned.snapshot();
+  t.after(pinned.restore);
   const { Screen: PlayerScreen, cleanup } = await loadScreen('player');
   t.after(cleanup);
   const html = renderToStaticMarkup(React.createElement(PlayerScreen));
@@ -119,23 +136,22 @@ test('the actual quiz screen renders its musical gap before the first line witho
 test('Song menu Retry preserves the failed request force flag', async (t) => {
   await resetAppState();
   libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics });
-  const calls: { songId: string; force: boolean | undefined }[] = [];
-  appStore.setState({
-    songId: 'dawn',
-    analysisToken: 'test-token',
-    analysisServerUrl: 'https://analysis.test',
-    analysisRequests: { dawn: { status: 'failed', error: 'Analyzer unavailable', force: true } },
-    analyzeSong: async (songId, options) => {
-      calls.push({ songId, force: options?.force });
+  const forces: unknown[] = [];
+  setAnalysisRuntime({
+    fetch: async (_url, options) => {
+      forces.push((JSON.parse(String(options?.body)) as { force?: boolean }).force);
+      return new Response(null, { status: 500 });
     },
   });
-  const appInitial = { ...appStore.getInitialState() },
-    libraryInitial = { ...libraryStore.getInitialState() };
-  Object.assign(appStore.getInitialState(), appStore.getState());
-  Object.assign(libraryStore.getInitialState(), libraryStore.getState());
+  settingsStore.setState({ analysisToken: 'test-token', analysisServerUrl: 'https://analysis.test' });
+  appStore.setState({ songId: 'dawn' });
+  analysisRequests.setState({ dawn: { status: 'failed', error: 'Analyzer unavailable', force: true } }, true);
+  const pinned = pinInitialStates();
+  pinned.snapshot();
   t.after(async () => {
-    Object.assign(appStore.getInitialState(), appInitial);
-    Object.assign(libraryStore.getInitialState(), libraryInitial);
+    pinned.restore();
+    setAnalysisRuntime();
+    await cancelAnalyses();
     await resetAppState();
   });
   const presses = new Map<string, () => void>();
@@ -144,22 +160,19 @@ test('Song menu Retry preserves the failed request force flag', async (t) => {
   renderToStaticMarkup(React.createElement(Screen));
   assert.ok(presses.has('Retry analysis'));
   presses.get('Retry analysis')!();
-  assert.deepEqual(calls, [{ songId: 'dawn', force: true }]);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.deepEqual(forces, [true]);
 });
 
 test('Song menu only offers source choices for analyzed songs and switches the player translations', async (t) => {
   await resetAppState();
   libraryStore.getState().setLibrary({ songs, albums, artists, lyrics: songLyrics });
-  appStore.setState({ songId: 'dawn', showTranslations: true, loading: false });
-  const appInitial = { ...appStore.getInitialState() },
-    libraryInitial = { ...libraryStore.getInitialState() };
-  const snapshot = () => {
-    Object.assign(appStore.getInitialState(), appStore.getState());
-    Object.assign(libraryStore.getInitialState(), libraryStore.getState());
-  };
+  settingsStore.setState({ showTranslations: true });
+  appStore.setState({ songId: 'dawn', loading: false });
+  const pinned = pinInitialStates();
+  const snapshot = pinned.snapshot;
   t.after(async () => {
-    Object.assign(appStore.getInitialState(), appInitial);
-    Object.assign(libraryStore.getInitialState(), libraryInitial);
+    pinned.restore();
     await resetAppState();
   });
   const presses = new Map<string, () => void>();

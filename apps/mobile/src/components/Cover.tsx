@@ -1,5 +1,5 @@
 import { downloadStore, localArtUri } from '@/downloads/store';
-import { appStore } from '@/store/appStore';
+import { settingsStore } from '@/store/settingsStore';
 import { memo, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -35,7 +35,7 @@ export async function prefetchCovers(coverArts: (string | undefined)[]) {
         session = sessionStore.getState().session;
       latest = null;
       for (let start = 0; session && start < ids.length; start += 8) {
-        if (latest || sessionStore.getState().session !== session || appStore.getState().offlineMode) break;
+        if (latest || sessionStore.getState().session !== session || settingsStore.getState().offlineMode) break;
         const urls = ids
           .slice(start, start + 8)
           .flatMap((id) => (localArtUri(id) ? [] : [coverUrl(session, id, 0), coverUrl(session, id, 600)]));
@@ -88,7 +88,7 @@ export const Cover = memo(function Cover({
   const palette = paletteFor(song.id),
     coverArt = song.coverArt;
   const session = sessionStore((state) => state.session),
-    offline = appStore((state) => state.offlineMode),
+    offline = settingsStore((state) => state.offlineMode),
     version = artStore((state) => state.version),
     local = downloadStore((state) => (coverArt && state.art[coverArt] ? localArtUri(coverArt) : undefined));
   const uri = local ?? (!offline && session && coverArt ? coverUrl(session, coverArt, size) : null);

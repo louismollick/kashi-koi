@@ -6,8 +6,9 @@ import { setDownloadRuntime } from '@/downloads/queue';
 import { nativeDownloadRuntime } from '@/downloads/native';
 import { libraryStore } from '@/store/libraryStore';
 import Storage from 'expo-sqlite/kv-store';
-import { appStore, getLibraryFilters, hydrateAppState, setTransport } from '@/store/appStore';
-import { getVisibleLibrary } from '@/data/libraryVisibility';
+import { appStore, hydrateAppState, setTransport } from '@/store/appStore';
+import { hydrateSettings, settingsStore } from '@/store/settingsStore';
+import { getLibraryFilters, getVisibleLibrary } from '@/data/libraryVisibility';
 import { prefetchCovers } from '@/components/Cover';
 import { setupTransport } from '@/audio/transport';
 import { loadLibrary, syncLibrary } from '@/navidrome/sync';
@@ -45,13 +46,16 @@ export default function RootLayout() {
   const ready = sessionStore((state) => state.ready);
   const { height } = useWindowDimensions();
   useEffect(() => {
-    void hydrateAppState({
-      getItem: (key) => Storage.getItemSync(key),
-      setItem: (key, value) => Storage.setItemSync(key, value),
-      removeItem: (key) => {
+    const storage = {
+      getItem: (key: string) => Storage.getItemSync(key),
+      setItem: (key: string, value: string) => Storage.setItemSync(key, value),
+      removeItem: (key: string) => {
         Storage.removeItemSync(key);
       },
-    })
+    };
+    // Settings first: it seeds itself from the learning blob before that store rewrites it.
+    void hydrateSettings(storage)
+      .then(() => hydrateAppState(storage))
       .then(loadLibrary)
       .then(loadSession)
       .catch(() => {
@@ -84,8 +88,8 @@ export default function RootLayout() {
         const status = await Japanese.translationStatus();
         if (cancelled) return;
         libraryStore.setState({ translationStatus: status });
-        if (!appStore.getState().translationPrompted && status === 'supported') {
-          appStore.setState({ translationPrompted: true });
+        if (!settingsStore.getState().translationPrompted && status === 'supported') {
+          settingsStore.setState({ translationPrompted: true });
           await prepareTranslation();
         }
       } catch {

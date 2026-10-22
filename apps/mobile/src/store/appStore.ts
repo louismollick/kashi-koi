@@ -1,30 +1,13 @@
-import { setOfflineModeReader } from '@/data/offlineMode';
-import { useMemo } from 'react';
-import { downloadStore, localAudioUri } from '@/downloads/store';
+import { localAudioUri } from '@/downloads/store';
 import { normalizeBase } from '@/analysis/client';
 import { prefetchBreakdown, resetBreakdowns } from '@/analysis/breakdowns';
 import { remapReview } from '@/lyrics/review';
 import { applyAnswer, quizSentences } from '@/lyrics/fog';
-import {
-  prioritizeAnalyses,
-  cancelAnalyses,
-  fetchLibraryAnalyses,
-  analyzeSong,
-  analysisServerUrl,
-  saveAnalysisToken,
-  setAnalysisStore,
-} from '@/analysis/fetcher';
-import { prioritizeTranslations, pauseTranslations, resumeTranslations } from '@/japanese/translate';
-import {
-  createJSONStorage,
-  persist,
-  type PersistStorage,
-  type StateStorage,
-  type StorageValue,
-} from 'zustand/middleware';
+import { prioritizeAnalyses, analysisRequests } from '@/analysis/fetcher';
+import { prioritizeTranslations } from '@/japanese/translate';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { currentOccurrence } from '@/navidrome/lyrics';
 import { create } from 'zustand';
-import { useShallow } from 'zustand/react/shallow';
 import {
   getAlbumSongs,
   getArtistSongs,
@@ -38,7 +21,9 @@ import {
   getAnswers,
   readyReviewSentences,
 } from '@/store/libraryStore';
-import { getVisibleSongs, isHiddenSong, type LibraryFilters } from '@/data/libraryVisibility';
+import { getLibraryFilters, getVisibleSongs, isHiddenSong } from '@/data/libraryVisibility';
+import { changeAwareStorage } from '@/store/persistStorage';
+import { persistedSettingKeys, settingsStore } from '@/store/settingsStore';
 import type { ClipReview, ReviewList, Run, Song, LineFog, RunEnd, SentenceOccurrence } from '@/types/domain';
 
 export type Transport = {
@@ -95,7 +80,7 @@ function clearClipTimer() {
 function playSong(id: string) {
   clearAnswerWait(true);
   clearClipTimer();
-  if (appStore.getState().offlineMode && !localAudioUri(id)) {
+  if (settingsStore.getState().offlineMode && !localAudioUri(id)) {
     transport.pause();
     appStore.setState({ loading: false, playing: false, playbackError: 'Song is not downloaded' });
     return;
@@ -118,8 +103,6 @@ function playReviewClip() {
   const occurrence = item && reviewClip(item);
   if (item && occurrence) state.playClip(item.songId, occurrence.startMs, occurrence.endMs);
 }
-
-let offlineTransition = Promise.resolve();
 
 const dayMs = 24 * 60 * 60 * 1000;
 
@@ -255,30 +238,13 @@ type AppState = {
   perfectRuns: Record<string, true>;
   runEnd: RunEnd | null;
   dismissRunEnd: () => void;
-  lastSyncAt: number | null;
-  lastScanAt: number | null;
   playing: boolean;
-  offlineMode: boolean;
-  setOfflineMode: (enabled: boolean) => void;
-  hideSongsWithoutSyncedLyrics: boolean;
-  hideSongsWithoutJapanese: boolean;
   queue: string[];
   queueIndex: number;
   autoplay: string[];
   reviewList: ReviewList;
   run: Run;
-  answerTime: number | null;
   answerWait: { occurrence: SentenceOccurrence; until: number | null } | null;
-  analysisServerUrl: string;
-  analysisToken: string;
-  analysisRequests: Record<
-    string,
-    { status: 'requesting' | 'queued' | 'running' | 'failed'; error?: string; force: boolean }
-  >;
-  setAnalysisServerUrl: (url: string) => void;
-  setAnalysisToken: (token: string) => Promise<void>;
-  analyzeSong: (songId: string, options?: { force?: boolean }) => Promise<void>;
-  cycleAnswerTime: () => void;
   clipPlayback: { songId: string; startMs: number; endMs: number; positionMs: number; ended: boolean } | null;
   clipReview: ClipReview | null;
   addedId: string | null;
@@ -301,16 +267,8 @@ type AppState = {
   nextSong: () => void;
   previousSong: () => void;
   skipBack: () => void;
-  showTranslations: boolean;
-  /** Per-song translation display in listen mode. Quiz and review always use analyzed sentences when available. */
-  lineByLineSongIds: string[];
-  setListenAnalysisEnabled: (songId: string, enabled: boolean) => void;
-  translationPrompted: boolean;
-  toggleTranslations: () => void;
   ensureChoices: () => void;
   ensureClipChoices: () => void;
-  toggleHideSongsWithoutSyncedLyrics: () => void;
-  toggleHideSongsWithoutJapanese: () => void;
   replayLine: () => void;
   seek: (positionMs: number) => void;
   jumpToLine: (index: number) => void;
@@ -332,16 +290,9 @@ type AppState = {
   jumpToClip: (index: number) => void;
 };
 
-/** Share the same filter mapping between queue actions and component selectors. */
-const libraryFilters = (state: AppState): LibraryFilters => ({
-  downloadedOnly: state.offlineMode,
-  hideUnsynced: state.hideSongsWithoutSyncedLyrics,
-  hideNonJapanese: state.hideSongsWithoutJapanese,
-});
-
 /** Shuffle optionally, then play visible songs as the queue. */
 function startList(songs: Song[], shuffle: boolean) {
-  const ids = getVisibleSongs(songs, libraryFilters(appStore.getState())).map((song) => song.id);
+  const ids = getVisibleSongs(songs, getLibraryFilters()).map((song) => song.id);
   if (!ids.length) return;
   if (shuffle) shuffled(ids);
   appStore.getState().startSong(ids[0]!, ids);
@@ -385,58 +336,7 @@ export const appStore = create<AppState>()(
       perfectRuns: {},
       runEnd: null,
       dismissRunEnd: () => set({ runEnd: null }),
-      lastSyncAt: null,
-      lastScanAt: null,
-      answerTime: null,
       answerWait: null,
-      analysisServerUrl: '',
-      analysisToken: '',
-      analysisRequests: {},
-      setAnalysisServerUrl: (url) => {
-        resetBreakdowns();
-        set({ analysisServerUrl: normalizeBase(url) });
-        void prioritizeAnalyses(
-          [
-            get().songId,
-            ...getUpNext(get()).queue,
-            ...get().autoplay,
-            ...libraryStore.getState().songs.map((song) => song.id),
-          ].filter((id): id is string => !!id),
-        );
-      },
-      setAnalysisToken: async (token) => {
-        const value = token.trim();
-        if (await saveAnalysisToken(value)) set({ analysisToken: value });
-      },
-      analyzeSong,
-      showTranslations: true,
-      lineByLineSongIds: [],
-      setListenAnalysisEnabled: (songId, enabled) => {
-        set((state) => ({
-          lineByLineSongIds: enabled
-            ? state.lineByLineSongIds.filter((id) => id !== songId)
-            : [...new Set([...state.lineByLineSongIds, songId])],
-        }));
-        if (!enabled) prioritizeTranslations([songId]);
-      },
-      translationPrompted: false,
-      offlineMode: false,
-      setOfflineMode: (offlineMode) => {
-        set({ offlineMode });
-        offlineTransition = offlineTransition
-          .catch(() => {})
-          .then(async () => {
-            if (get().offlineMode) {
-              const { cancelSync } = await import('@/navidrome/sync');
-              await Promise.all([cancelSync(), cancelAnalyses(), pauseTranslations()]);
-            } else {
-              void resumeTranslations();
-              void fetchLibraryAnalyses();
-            }
-          });
-      },
-      hideSongsWithoutSyncedLyrics: true,
-      hideSongsWithoutJapanese: true,
       queue: [],
       queueIndex: -1,
       autoplay: [],
@@ -461,7 +361,7 @@ export const appStore = create<AppState>()(
         set({
           queue,
           autoplay: shuffled(
-            getVisibleSongs(libraryStore.getState().songs, libraryFilters(get()))
+            getVisibleSongs(libraryStore.getState().songs, getLibraryFilters())
               .map((song) => song.id)
               .filter((id) => !queued.has(id)),
           ),
@@ -512,7 +412,7 @@ export const appStore = create<AppState>()(
           upcoming = getUpNext(state),
           songId = [...upcoming.queue, ...upcoming.autoplay][position];
         const song = songId && getSong(songId);
-        if (!song || isHiddenSong(song, libraryFilters(state))) return;
+        if (!song || isHiddenSong(song, getLibraryFilters())) return;
         if (position < upcoming.queue.length) playQueueSong(song.id, state.queueIndex + 1 + position);
         else {
           const index = position - upcoming.queue.length;
@@ -520,12 +420,6 @@ export const appStore = create<AppState>()(
           playQueueSong(song.id, state.queue.length);
         }
       },
-      // Cycle the fixed answer-time presets for future stops.
-      cycleAnswerTime: () => {
-        const presets = [null, 10, 5, 3, 0];
-        set({ answerTime: presets[(presets.indexOf(get().answerTime) + 1) % presets.length]! });
-      },
-      toggleTranslations: () => set((state) => ({ showTranslations: !state.showTranslations })),
       ensureChoices: () =>
         set((state) => {
           const line = currentSentence(state.songId, state.lineIndex)?.sentence,
@@ -546,10 +440,6 @@ export const appStore = create<AppState>()(
               ?.start ?? -1;
           return { clipReview: { ...clip, choices: { ...clip.choices, [item.sentenceId]: getAnswers(song, index) } } };
         }),
-      toggleHideSongsWithoutSyncedLyrics: () =>
-        set((state) => ({ hideSongsWithoutSyncedLyrics: !state.hideSongsWithoutSyncedLyrics })),
-      toggleHideSongsWithoutJapanese: () =>
-        set((state) => ({ hideSongsWithoutJapanese: !state.hideSongsWithoutJapanese })),
       restartRun: () => {
         clearAnswerWait(true);
         set({ lineIndex: 0, positionMs: 0, run: newRun() });
@@ -565,7 +455,7 @@ export const appStore = create<AppState>()(
       },
       nextSong: () => {
         const state = get(),
-          filters = libraryFilters(state);
+          filters = getLibraryFilters();
         for (let index = state.queueIndex + 1; index < state.queue.length; index++) {
           const song = getSong(state.queue[index]!);
           if (song && !isHiddenSong(song, filters)) {
@@ -598,7 +488,7 @@ export const appStore = create<AppState>()(
         const state = get();
         for (let index = state.queueIndex - 1; index >= 0; index--) {
           const song = getSong(state.queue[index]!);
-          if (song && !isHiddenSong(song, libraryFilters(state))) {
+          if (song && !isHiddenSong(song, getLibraryFilters())) {
             playQueueSong(song.id, index);
             return;
           }
@@ -641,7 +531,7 @@ export const appStore = create<AppState>()(
         get().setPlaying(true);
       },
       playClip: (songId, startMs, endMs) => {
-        if (get().offlineMode && !localAudioUri(songId)) {
+        if (settingsStore.getState().offlineMode && !localAudioUri(songId)) {
           transport.pause();
           set({ loading: false, playing: false, playbackError: 'Song is not downloaded' });
           return;
@@ -698,9 +588,10 @@ export const appStore = create<AppState>()(
           state.positionMs < timeline[occurrence.end]!.endMs &&
           positionMs >= timeline[occurrence.end]!.endMs
         ) {
-          if (state.answerTime === 0) scoreSentence(false, null);
+          const { answerTime } = settingsStore.getState();
+          if (answerTime === 0) scoreSentence(false, null);
           else {
-            const until = state.answerTime === null ? null : Date.now() + state.answerTime * 1000;
+            const until = answerTime === null ? null : Date.now() + answerTime * 1000;
             set({
               positionMs,
               durationMs,
@@ -709,7 +600,7 @@ export const appStore = create<AppState>()(
               answerWait: { occurrence, until },
             });
             transport.pause();
-            if (state.answerTime !== null) scheduleAnswerRelease(state.answerTime * 1000);
+            if (answerTime !== null) scheduleAnswerRelease(answerTime * 1000);
             return;
           }
         }
@@ -919,14 +810,18 @@ export const appStore = create<AppState>()(
       name: 'learning-state',
       skipHydration: true,
       storage: createJSONStorage(() => ({ getItem: () => null, setItem() {}, removeItem() {} })),
-      // Drop obsolete mix state. Legacy later lines have no schedule, so they're due now; a fixed value keeps repeat hydrations stable.
+      // Drop obsolete mix state and the settings this blob held before they moved to settingsStore.
+      // Legacy later lines have no schedule, so they're due now; a fixed value keeps repeat hydrations stable.
       merge: (persisted, current) => {
         const {
           reviewMix: _reviewMix,
           ranks: _ranks,
           playbackQueue: _playbackQueue,
-          ...saved
+          ...rest
         } = (persisted ?? {}) as Partial<AppState> & { reviewMix?: unknown; ranks?: unknown; playbackQueue?: unknown };
+        const saved: Partial<AppState> = Object.fromEntries(
+          Object.entries(rest).filter(([key]) => !persistedSettingKeys.includes(key)),
+        );
         const reviewList = (saved.reviewList ?? current.reviewList).map((entry) => {
           const { lineId, ...line } = entry as ReviewList[number] & { lineId?: string };
           const migrated = { ...line, sentenceId: line.sentenceId ?? lineId ?? '' };
@@ -947,83 +842,32 @@ export const appStore = create<AppState>()(
         };
       },
       partialize: (state) => ({
-        offlineMode: state.offlineMode,
-        analysisServerUrl: state.analysisServerUrl,
-        answerTime: state.answerTime,
         reviewList: state.reviewList,
         fog: state.fog,
         perfectRuns: state.perfectRuns,
         quizToggle: state.quizToggle,
-        showTranslations: state.showTranslations,
-        lineByLineSongIds: state.lineByLineSongIds,
-        translationPrompted: state.translationPrompted,
-        hideSongsWithoutSyncedLyrics: state.hideSongsWithoutSyncedLyrics,
-        hideSongsWithoutJapanese: state.hideSongsWithoutJapanese,
-        lastSyncAt: state.lastSyncAt,
-        lastScanAt: state.lastScanAt,
         nextReviewId: state.nextReviewId,
       }),
     },
   ),
 );
 
-setAnalysisStore(appStore);
-setOfflineModeReader(() => appStore.getState().offlineMode);
-
-/** In offline mode, download changes invalidate memoized browsing; online they don't affect visibility. */
-export const getLibraryFilters = () => libraryFilters(appStore.getState());
-export function useLibraryFilters() {
-  const filters = appStore(useShallow(libraryFilters));
-  const entries = downloadStore((state) => (filters.downloadedOnly ? state.entries : null));
-  return useMemo(() => ({ ...filters, downloadEntries: entries }), [filters, entries]);
-}
-
-/**
- * JSON persistence that skips the stringify and write when no persisted field changed by reference,
- * so frequent playback ticks (which only touch transient fields) cost a shallow compare.
- */
-function changeAwareStorage(storage: StateStorage): PersistStorage<unknown> {
-  let last: StorageValue<unknown> | null = null;
-  // Persisted state is always the plain object from `partialize`.
-  const fields = (value: StorageValue<unknown>) => value.state as Record<string, unknown>;
-  const unchanged = (next: StorageValue<unknown>) => {
-    if (!last || last.version !== next.version) return false;
-    const before = fields(last),
-      after = fields(next),
-      keys = Object.keys(after);
-    return keys.length === Object.keys(before).length && keys.every((key) => Object.is(before[key], after[key]));
-  };
-  const parse = (text: string | null) => (text === null ? null : (JSON.parse(text) as StorageValue<unknown>));
-  return {
-    getItem: (key) => {
-      const text = storage.getItem(key);
-      return text instanceof Promise ? text.then(parse) : parse(text);
-    },
-    setItem: (key, value) => {
-      if (unchanged(value)) return;
-      last = value;
-      return storage.setItem(key, JSON.stringify(value));
-    },
-    removeItem: (key) => {
-      last = null;
-      return storage.removeItem(key);
-    },
-  };
-}
-
-/** Native storage is injected at boot so store imports stay safe in plain Node. */
+/** Native storage is injected at boot so store imports stay safe in plain Node. Hydrate after `hydrateSettings`, which seeds from this blob first. */
 export async function hydrateAppState(storage: StateStorage) {
   appStore.persist.setOptions({ storage: changeAwareStorage(storage) });
   await appStore.persist.rehydrate();
 }
 
+/** Log out: back to a fresh install, in memory and in storage. */
 export function resetAppState() {
   resetBreakdowns();
   clearAnswerWait(true);
   clearClipTimer();
   transport.pause();
   appStore.setState(appStore.getInitialState(), true);
-  return appStore.persist.clearStorage();
+  settingsStore.setState(settingsStore.getInitialState(), true);
+  analysisRequests.setState({}, true);
+  return Promise.all([appStore.persist.clearStorage(), settingsStore.persist.clearStorage()]);
 }
 
 /** Cache choices as the current sentence changes, including repeated occurrences and edited clips. */
@@ -1049,8 +893,25 @@ appStore.subscribe((state, previous) => {
   }
 });
 
-/** Admin requests are available only with both a URL and a SecureStore token. */
-export const canAnalyze = () => !!analysisServerUrl() && !!appStore.getState().analysisToken;
+/** Fetch the whole library's analyses, with the current song and queue first. */
+export function fetchLibraryAnalyses() {
+  const state = appStore.getState();
+  return prioritizeAnalyses(
+    [
+      state.songId,
+      ...getUpNext(state).queue,
+      ...state.autoplay,
+      ...libraryStore.getState().songs.map((song) => song.id),
+    ].filter((id): id is string => !!id),
+  );
+}
+
+/** Point the app at another analysis server: drop its cached breakdowns, then refetch analyses from it. */
+export function setAnalysisServerUrl(url: string) {
+  resetBreakdowns();
+  settingsStore.setState({ analysisServerUrl: normalizeBase(url) });
+  void fetchLibraryAnalyses();
+}
 
 // Every lyric change uses the old sentence membership to remap review schedules.
 libraryStore.subscribe((state, previous) => {

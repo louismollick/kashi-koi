@@ -14,7 +14,8 @@ import {
   prefetchBreakdown,
 } from '../src/analysis/breakdowns';
 import { cancelAnalyses, setAnalysisRuntime } from '../src/analysis/fetcher';
-import { appStore, resetAppState } from '../src/store/appStore';
+import { appStore, resetAppState, setAnalysisServerUrl } from '../src/store/appStore';
+import { settingsStore } from '../src/store/settingsStore';
 import { getLineText, getLyrics, libraryStore } from '../src/store/libraryStore';
 import { toSongLyrics } from '../src/navidrome/lyrics';
 import { songs, testQuiz } from './fixtures';
@@ -65,7 +66,7 @@ beforeEach(async () => {
   });
   await cancelAnalyses();
   await resetAppState();
-  appStore.setState({ analysisServerUrl: 'https://analysis.test/api', analysisToken: '' });
+  settingsStore.setState({ analysisServerUrl: 'https://analysis.test/api', analysisToken: '' });
   persisted.clear();
   removed.length = 0;
   const lyrics = toSongLyrics(
@@ -116,7 +117,7 @@ test('targets use the first occurrence, fallback songs cannot explain, and URL g
   assert.equal(target.translation, analysis.sentences[0]!.translation);
   assert.equal(canExplain(songId), true);
   assert.equal(breakdownTarget(songId, 'missing'), undefined);
-  appStore.setState({ analysisServerUrl: '' });
+  settingsStore.setState({ analysisServerUrl: '' });
   assert.equal(canExplain(songId), false);
   libraryStore
     .getState()
@@ -165,7 +166,7 @@ test('404 becomes missing without a token; adding a token allows synchronous gen
   });
   await loadBreakdown(songId, sentenceId);
   assert.equal(breakdownStore.getState().states[key]?.status, 'missing');
-  appStore.setState({ analysisToken: 'owner' });
+  settingsStore.setState({ analysisToken: 'owner' });
   await loadBreakdown(songId, sentenceId);
   assert.equal(breakdownStore.getState().states[key]?.status, 'ready');
   assert.deepEqual(methods, ['GET', 'GET', 'POST']);
@@ -177,7 +178,7 @@ test('failed and invalid responses are retryable, and a POST 404 remains missing
     await loadBreakdown(songId, sentenceId);
     assert.equal(breakdownStore.getState().states[key]?.status, 'failed');
   }
-  appStore.setState({ analysisToken: 'owner' });
+  settingsStore.setState({ analysisToken: 'owner' });
   await loadBreakdown(songId, sentenceId);
   assert.equal(breakdownStore.getState().states[key]?.status, 'failed');
   setAnalysisRuntime({ fetch: async () => new Response(null, { status: 404 }) });
@@ -186,7 +187,7 @@ test('failed and invalid responses are retryable, and a POST 404 remains missing
 });
 
 test('logout invalidates a pending GET before it can generate or publish', async () => {
-  appStore.setState({ analysisToken: 'owner' });
+  settingsStore.setState({ analysisToken: 'owner' });
   const gate = deferred();
   let calls = 0;
   setAnalysisRuntime({
@@ -207,7 +208,7 @@ test('logout invalidates a pending GET before it can generate or publish', async
 
 test('logout invalidates a pending POST and server changes cannot publish old responses', async () => {
   for (const cancel of [true, false]) {
-    appStore.setState({ analysisToken: 'owner', analysisServerUrl: 'https://analysis.test/api' });
+    settingsStore.setState({ analysisToken: 'owner', analysisServerUrl: 'https://analysis.test/api' });
     const gate = deferred(),
       started = deferred(),
       data = response();
@@ -222,7 +223,7 @@ test('logout invalidates a pending POST and server changes cannot publish old re
     const work = loadBreakdown(songId, sentenceId);
     await started.promise;
     if (cancel) await cancelAnalyses();
-    else appStore.getState().setAnalysisServerUrl('https://other.test');
+    else setAnalysisServerUrl('https://other.test');
     gate.resolve();
     await work;
     assert.equal(breakdownStore.getState().states[key], undefined);
@@ -249,7 +250,8 @@ test('prefetch needs a token, and a miss or lost mark shares the same quiet requ
   });
   prefetchBreakdown(songId, sentenceId);
   assert.equal(calls, 0);
-  appStore.setState({ songId, lineIndex: 0, analysisToken: 'owner', quizToggle: true });
+  settingsStore.setState({ analysisToken: 'owner' });
+  appStore.setState({ songId, lineIndex: 0, quizToggle: true });
   appStore.getState().answer('wrong');
   appStore.getState().addLostMark();
   appStore.getState().startClipReview();
@@ -263,7 +265,7 @@ test('prefetch needs a token, and a miss or lost mark shares the same quiet requ
 });
 
 test('busy and usage limits show short failure messages, other errors stay generic', async () => {
-  appStore.setState({ analysisToken: 'owner' });
+  settingsStore.setState({ analysisToken: 'owner' });
   for (const [status, error] of [
     [503, 'Server busy, try again'],
     [429, 'Usage limit reached, try later'],
@@ -290,7 +292,7 @@ test('loads without a target or URL do not fetch or update state', async () => {
   try {
     await loadBreakdown(songId, 'missing');
     await loadBreakdown(null, null);
-    appStore.setState({ analysisServerUrl: '' });
+    settingsStore.setState({ analysisServerUrl: '' });
     await loadBreakdown(songId, sentenceId);
     await loadBreakdown(songId, sentenceId);
     assert.equal(calls, 0);
@@ -345,7 +347,7 @@ test('English spans assign repeated words to chunks in order and keep pieces apa
 test('persisted breakdowns read through after transient reset, even offline with no server URL', async () => {
   const data = response();
   persisted.set(key, data);
-  appStore.setState({ offlineMode: true, analysisServerUrl: '' });
+  settingsStore.setState({ offlineMode: true, analysisServerUrl: '' });
   let calls = 0;
   setAnalysisRuntime({
     fetch: async () => {
@@ -369,7 +371,7 @@ test('online reads persist and replacement deletes the obsolete fingerprint befo
 });
 
 test('download breakdown misses use GET only even with an owner token', async () => {
-  appStore.setState({ analysisToken: 'owner' });
+  settingsStore.setState({ analysisToken: 'owner' });
   const methods: string[] = [];
   setAnalysisRuntime({
     fetch: async (_url, init) => {

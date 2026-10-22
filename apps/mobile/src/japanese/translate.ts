@@ -1,4 +1,4 @@
-import { isOfflineMode } from '@/data/offlineMode';
+import { settingsStore } from '@/store/settingsStore';
 import { getLineText, getLyrics, libraryStore, type Translations } from '@/store/libraryStore';
 import { alignReading, isJapanese } from './text';
 
@@ -64,7 +64,7 @@ libraryStore.subscribe((state, previous) => {
 
 /** Playback's song and remaining queue go ahead of the library backlog. */
 export function prioritizeTranslations(ids: string[]) {
-  if (isOfflineMode()) return;
+  if (settingsStore.getState().offlineMode) return;
   priority = [...new Set([...ids, ...priority])];
   queueDirty = true;
   if (active) void work();
@@ -85,7 +85,7 @@ function work() {
   const version = generation,
     service = translator,
     persist = save;
-  const valid = () => active && version === generation && !isOfflineMode();
+  const valid = () => active && version === generation && !settingsStore.getState().offlineMode;
   queueDirty = true;
   running = (async () => {
     let completed = 0;
@@ -145,7 +145,7 @@ function work() {
 
 /** Retry skipped batches after launch, a scan, or a return to the foreground. */
 export async function resumeTranslations() {
-  if ((!foreground && !background) || isOfflineMode()) return;
+  if ((!foreground && !background) || settingsStore.getState().offlineMode) return;
   active = true;
   failed.clear();
   queueDirty = true;
@@ -180,7 +180,7 @@ export async function pauseTranslations(reset = false) {
 }
 
 export async function prepareTranslation() {
-  if (isOfflineMode()) return translator.translationStatus();
+  if (settingsStore.getState().offlineMode) return translator.translationStatus();
   const version = generation;
   const status = await translator.prepareTranslation();
   if (version === generation) {
@@ -215,7 +215,7 @@ export function setTranslationBackground(value: boolean) {
 
 /** Keep a download pending until its installed on-device fallback has saved, or cancellation stops it. */
 export async function ensureSongTranslation(songId: string, signal: AbortSignal) {
-  if (signal.aborted || isOfflineMode()) throw new Error('Download cancelled');
+  if (signal.aborted || settingsStore.getState().offlineMode) throw new Error('Download cancelled');
   failed.delete(songId);
   prioritizeTranslations([songId]);
   if (libraryStore.getState().translationStatus === null) {
@@ -223,7 +223,7 @@ export async function ensureSongTranslation(songId: string, signal: AbortSignal)
     libraryStore.setState({ translationStatus: status });
   }
   if (!needsTranslation(songId) || libraryStore.getState().translationStatus !== 'installed') return;
-  if (signal.aborted || isOfflineMode()) throw new Error('Download cancelled');
+  if (signal.aborted || settingsStore.getState().offlineMode) throw new Error('Download cancelled');
   await new Promise<void>((resolve, reject) => {
     let unsubscribe = () => {};
     const finish = (error?: Error) => {

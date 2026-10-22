@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 import { beforeEach, test, type TestContext } from 'node:test';
 import { appStore, resetAppState } from '../src/store/appStore';
+import { settingsStore } from '../src/store/settingsStore';
 import { downloadStore } from '../src/downloads/store';
 import { libraryStore } from '../src/store/libraryStore';
 import { sessionStore } from '../src/navidrome/session';
@@ -144,7 +145,7 @@ test('online playback always uses pinned audio and lock-screen artwork', async (
 });
 test('offline playback saves played times locally without announcing or scrobbling', async (t) => {
   downloaded();
-  appStore.setState({ offlineMode: true });
+  settingsStore.setState({ offlineMode: true });
   const { network, played, status } = await setup(t);
   appStore.getState().startSong('dawn');
   status(0);
@@ -158,7 +159,7 @@ test('switching offline unloads a remote source for an undownloaded song', async
   const { sources } = await setup(t);
   appStore.getState().startSong('dawn');
   assert.ok(sources[0]?.uri?.startsWith('https:'));
-  appStore.setState({ offlineMode: true });
+  settingsStore.setState({ offlineMode: true });
   assert.equal(sources.at(-1), null);
   assert.equal(appStore.getState().playbackError, 'Song is not downloaded');
   assert.equal(appStore.getState().playing, false);
@@ -171,7 +172,7 @@ test('switching offline reloads a song downloaded since playback began and prese
   status(30);
   downloaded();
   const requests = network.length;
-  appStore.setState({ offlineMode: true });
+  settingsStore.setState({ offlineMode: true });
   assert.deepEqual(sources.at(-1), { uri: 'file:///downloads/audio/dawn.flac' });
   assert.equal(appStore.getState().positionMs, 30000);
   assert.equal(appStore.getState().playbackError, null);
@@ -234,12 +235,12 @@ for (const clip of [false, true])
     const saved = appStore.getState(),
       positionMs = saved.clipPlayback?.positionMs ?? saved.positionMs;
     if (clip) assert.notEqual(positionMs, saved.positionMs);
-    appStore.setState({ offlineMode: true });
+    settingsStore.setState({ offlineMode: true });
     assert.equal(sources.at(-1), null);
     assert.equal(appStore.getState().playbackError, 'Song is not downloaded');
     assert.equal(appStore.getState().playing, false);
     const before = plays.length;
-    appStore.setState({ offlineMode: false });
+    settingsStore.setState({ offlineMode: false });
     appStore.getState().setPlaying(true);
     assert.equal(sources.length, 3);
     assert.deepEqual(sources.at(-1), sources[0]);

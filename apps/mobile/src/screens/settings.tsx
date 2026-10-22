@@ -1,13 +1,15 @@
+import { setAnalysisToken } from '@/analysis/fetcher';
 import { prepareTranslation } from '@/japanese/translate';
 import { useMemo, useState } from 'react';
 import { Alert, ScrollView, TextInput, View } from 'react-native';
 import { colors } from '@/constants/theme';
 import { libraryStore } from '@/store/libraryStore';
 import { hasJapaneseLyrics } from '@/data/libraryVisibility';
-import { appStore } from '@/store/appStore';
+import { setAnalysisServerUrl } from '@/store/appStore';
+import { settingsStore } from '@/store/settingsStore';
 import { refreshAlbumArt } from '@/store/artStore';
 import { sessionStore, logout } from '@/navidrome/session';
-import { syncLibrary, scanLyrics } from '@/navidrome/sync';
+import { syncLibrary, scanLyrics, setOfflineMode } from '@/navidrome/sync';
 import {
   deleteAllDownloads,
   queueDownloads,
@@ -26,7 +28,7 @@ const size = (bytes: number) =>
 
 /** Offline mode, whole-library downloads and the pinned download storage. */
 function OfflineSection() {
-  const offline = appStore((state) => state.offlineMode);
+  const offline = settingsStore((state) => state.offlineMode);
   const library = useDownloadSummary({ kind: 'library' }),
     storage = useDownloadStorage(),
     progress = useDownloadProgress();
@@ -36,7 +38,7 @@ function OfflineSection() {
       <SectionHeader title="Offline" />
       <View style={styles.row}>
         <Label style={{ flex: 1 }}>Offline mode</Label>
-        <PixelToggle label="Offline mode" on={offline} onPress={() => appStore.getState().setOfflineMode(!offline)} />
+        <PixelToggle label="Offline mode" on={offline} onPress={() => setOfflineMode(!offline)} />
       </View>
       <Label muted>
         {storage.songs} of {library.eligible} songs downloaded{storage.bytes ? ` · ${size(storage.bytes)}` : ''}
@@ -129,16 +131,16 @@ export default function SettingsScreen() {
     [accountError, setAccountError] = useState<string | null>(null);
   const [refreshingArt, setRefreshingArt] = useState(false),
     [artMessage, setArtMessage] = useState<string | null>(null);
-  const answerTime = appStore((state) => state.answerTime);
-  const hiding = appStore((state) => state.hideSongsWithoutSyncedLyrics),
-    hidingNonJapanese = appStore((state) => state.hideSongsWithoutJapanese),
-    lastSync = appStore((state) => state.lastSyncAt),
-    lastScan = appStore((state) => state.lastScanAt);
+  const answerTime = settingsStore((state) => state.answerTime);
+  const hiding = settingsStore((state) => state.hideSongsWithoutSyncedLyrics),
+    hidingNonJapanese = settingsStore((state) => state.hideSongsWithoutJapanese),
+    lastSync = settingsStore((state) => state.lastSyncAt),
+    lastScan = settingsStore((state) => state.lastScanAt);
   const songs = libraryStore((state) => state.songs),
     progress = libraryStore((state) => state.progress),
     error = libraryStore((state) => state.error);
-  const analysisServerUrl = appStore((state) => state.analysisServerUrl),
-    analysisToken = appStore((state) => state.analysisToken),
+  const analysisServerUrl = settingsStore((state) => state.analysisServerUrl),
+    analysisToken = settingsStore((state) => state.analysisToken),
     analyzed = libraryStore((state) => Object.values(state.lyrics).filter((lyrics) => lyrics.analysis).length);
   const lyrics = libraryStore((state) => state.lyrics);
   const session = sessionStore((state) => state.session);
@@ -178,7 +180,7 @@ export default function SettingsScreen() {
         <SectionHeader title="Quiz" />
         <View style={styles.row}>
           <Label style={{ flex: 1 }}>Answer time</Label>
-          <Button label="Answer time" onPress={() => appStore.getState().cycleAnswerTime()}>
+          <Button label="Answer time" onPress={() => settingsStore.getState().cycleAnswerTime()}>
             <Label>{answerTime === null ? 'No limit' : `${answerTime}s`}</Label>
           </Button>
         </View>
@@ -187,7 +189,7 @@ export default function SettingsScreen() {
           label="Server"
           value={analysisServerUrl}
           placeholder={process.env.EXPO_PUBLIC_KASHI_SERVER_URL || 'https://'}
-          onCommit={(url) => appStore.getState().setAnalysisServerUrl(url)}
+          onCommit={setAnalysisServerUrl}
         />
         <Field
           key={analysisToken ? 'token' : 'empty'}
@@ -195,7 +197,7 @@ export default function SettingsScreen() {
           value={analysisToken}
           placeholder="Only needed to analyze songs"
           secure
-          onCommit={(token) => void appStore.getState().setAnalysisToken(token)}
+          onCommit={(token) => void setAnalysisToken(token)}
         />
         <Label muted>
           {analyzed} {analyzed === 1 ? 'song' : 'songs'} analyzed
@@ -206,7 +208,7 @@ export default function SettingsScreen() {
           <PixelToggle
             label="Hide songs without synced lyrics"
             on={hiding}
-            onPress={() => appStore.getState().toggleHideSongsWithoutSyncedLyrics()}
+            onPress={() => settingsStore.getState().toggleHideSongsWithoutSyncedLyrics()}
           />
         </View>
         <View style={styles.row}>
@@ -214,7 +216,7 @@ export default function SettingsScreen() {
           <PixelToggle
             label="Hide songs without Japanese lyrics"
             on={hidingNonJapanese}
-            onPress={() => appStore.getState().toggleHideSongsWithoutJapanese()}
+            onPress={() => settingsStore.getState().toggleHideSongsWithoutJapanese()}
           />
         </View>
         <Button

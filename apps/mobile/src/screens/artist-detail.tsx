@@ -2,8 +2,15 @@ import { useMemo } from 'react';
 import { FlatList, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { getArtist, libraryStore } from '@/store/libraryStore';
-import { countBy, countedFilters, getVisibleLibrary, getVisibleSongs, syncedIds } from '@/data/libraryVisibility';
-import { appStore, useLibraryFilters } from '@/store/appStore';
+import {
+  countBy,
+  countedFilters,
+  getVisibleLibrary,
+  getVisibleSongs,
+  syncedIds,
+  useLibraryFilters,
+} from '@/data/libraryVisibility';
+import { appStore } from '@/store/appStore';
 import { AlbumTile } from '@/components/AlbumTile';
 import { HiddenSongsRow } from '@/components/HiddenSongsRow';
 import { Cover } from '@/components/Cover';

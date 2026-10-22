@@ -6,6 +6,7 @@ import { withSentences } from '../src/lyrics/sentences';
 import { currentOccurrence } from '../src/navidrome/lyrics';
 import { sessionStore } from '../src/navidrome/session';
 import { appStore, finishSong, setTransport, hydrateAppState, resetAppState } from '../src/store/appStore';
+import { hydrateSettings, settingsStore } from '../src/store/settingsStore';
 import { albums, artists, firstSong, songs, songLyrics, fixtureLine, fixtureReviewList } from './fixtures';
 import {
   getAlbumSongs,
@@ -326,8 +327,8 @@ test('artists group their albums and account for the entire library', () => {
 });
 
 test('a no-lyrics song starts safely in listen and quiz modes with working transport', () => {
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  appStore.setState({ hideSongsWithoutJapanese: false });
+  settingsStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  settingsStore.setState({ hideSongsWithoutJapanese: false });
   const song = songs.find((song) => song.lyricsStatus !== 'synced')!;
   for (const quiz of [false, true]) {
     appStore.getState().setQuizToggle(quiz);
@@ -434,13 +435,13 @@ test('search does not reveal a hidden-only match until hiding is turned off', ()
 });
 
 test('the default-on filter preserves a current song hidden during playback', () => {
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  appStore.setState({ hideSongsWithoutJapanese: false });
+  settingsStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  settingsStore.setState({ hideSongsWithoutJapanese: false });
   const hiddenSong = songs[6]!;
   appStore.getState().startSong(hiddenSong.id, ['summer', hiddenSong.id, 'dawn']);
   appStore.getState().setPlaying(false);
   const before = appStore.getState();
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  settingsStore.getState().toggleHideSongsWithoutSyncedLyrics();
   assert.equal(appStore.getState().songId, hiddenSong.id);
   assert.equal(appStore.getState().playing, false);
   assert.equal(appStore.getState().run, before.run);
@@ -485,8 +486,8 @@ test('album Play and Shuffle build visible queues and skip songs hidden after st
   assert.equal(appStore.getState().songId, autoplay);
   appStore.getState().previousSong();
   assert.equal(appStore.getState().songId, 'dawn');
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
-  appStore.setState({ hideSongsWithoutJapanese: false });
+  settingsStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  settingsStore.setState({ hideSongsWithoutJapanese: false });
   appStore.getState().startAlbum('dawn');
   assert.deepEqual(
     appStore.getState().queue,
@@ -494,14 +495,14 @@ test('album Play and Shuffle build visible queues and skip songs hidden after st
   );
   appStore.getState().nextSong();
   assert.equal(appStore.getState().songId, 'dawn-song-2');
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  settingsStore.getState().toggleHideSongsWithoutSyncedLyrics();
   const next = appStore.getState().autoplay[0];
   appStore.getState().nextSong();
   assert.equal(appStore.getState().songId, next);
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  settingsStore.getState().toggleHideSongsWithoutSyncedLyrics();
   appStore.getState().startAlbum('dawn', true);
   assert.deepEqual(appStore.getState().queue, ['dawn-song-2', 'dawn-song-3', 'dawn-song-4', 'dawn']);
-  appStore.getState().toggleHideSongsWithoutSyncedLyrics();
+  settingsStore.getState().toggleHideSongsWithoutSyncedLyrics();
   appStore.getState().nextSong();
   assert.equal(appStore.getState().songId, 'dawn');
   const before = appStore.getState();
@@ -536,15 +537,17 @@ test('audio status follows occurrence boundaries and instrumental gaps', () => {
   assert.equal(appStore.getState().playing, false);
 });
 
-test('playback ticks do not rewrite persisted learning state', async () => {
+test('playback ticks do not rewrite persisted state', async () => {
   const writes: string[] = [];
-  await hydrateAppState({
+  const storage = {
     getItem: () => null,
-    setItem: (_key, value) => {
+    setItem: (_key: string, value: string) => {
       writes.push(value);
     },
     removeItem: () => {},
-  });
+  };
+  await hydrateSettings(storage);
+  await hydrateAppState(storage);
   appStore.getState().startSong('dawn');
   appStore.getState().updatePlayback(1000, 238000, true);
   const settled = writes.length;
@@ -552,7 +555,7 @@ test('playback ticks do not rewrite persisted learning state', async () => {
   appStore.getState().updatePlayback(1400, 238000, true);
   appStore.getState().setPlaying(false);
   assert.equal(writes.length, settled);
-  appStore.getState().toggleHideSongsWithoutJapanese();
+  settingsStore.getState().toggleHideSongsWithoutJapanese();
   assert.equal(writes.length, settled + 1);
   assert.equal(
     (JSON.parse(writes.at(-1)!) as { state: Record<string, unknown> }).state.hideSongsWithoutJapanese,
@@ -572,6 +575,7 @@ test('learning state survives hydration while playback stays transient, and rese
       values.delete(key);
     },
   };
+  await hydrateSettings(storage);
   await hydrateAppState(storage);
   appStore.getState().jumpToLine(5);
   appStore.getState().addLostMark();
@@ -579,6 +583,8 @@ test('learning state survives hydration while playback stays transient, and rese
   appStore.setState({
     fog: { [fixtureLine('dawn-0')]: { state: 'clear' } },
     perfectRuns: { dawn: true },
+  });
+  settingsStore.setState({
     lastSyncAt: 1234,
     hideSongsWithoutSyncedLyrics: false,
     hideSongsWithoutJapanese: false,
@@ -590,24 +596,31 @@ test('learning state survives hydration while playback stays transient, and rese
   assert.equal('songId' in data.state, false);
   assert.equal('positionMs' in data.state, false);
   assert.equal('run' in data.state, false);
+  assert.equal('hideSongsWithoutJapanese' in data.state, false);
+  const savedSettings = values.get('settings')!;
+  assert.equal((JSON.parse(savedSettings) as { state: Record<string, unknown> }).state.lastSyncAt, 1234);
   appStore.setState(appStore.getInitialState(), true);
+  settingsStore.setState(settingsStore.getInitialState(), true);
   values.set('learning-state', saved);
+  values.set('settings', savedSettings);
   await appStore.persist.rehydrate();
+  await settingsStore.persist.rehydrate();
   assert.ok(appStore.getState().reviewList.some((item) => item.id === mark.id && item.sentenceId === mark.sentenceId));
   assert.deepEqual(appStore.getState().fog[fixtureLine('dawn-0')], { state: 'clear' });
   assert.equal(appStore.getState().perfectRuns.dawn, true);
-  assert.equal(appStore.getState().showTranslations, true);
-  assert.equal(appStore.getState().translationPrompted, true);
+  assert.equal(settingsStore.getState().showTranslations, true);
+  assert.equal(settingsStore.getState().translationPrompted, true);
   assert.equal(appStore.getState().songId, null);
-  assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, false);
-  assert.equal(appStore.getState().hideSongsWithoutJapanese, false);
+  assert.equal(settingsStore.getState().hideSongsWithoutSyncedLyrics, false);
+  assert.equal(settingsStore.getState().hideSongsWithoutJapanese, false);
   await resetAppState();
-  assert.equal(appStore.getState().hideSongsWithoutJapanese, true);
-  assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, true);
+  assert.equal(settingsStore.getState().hideSongsWithoutJapanese, true);
+  assert.equal(settingsStore.getState().hideSongsWithoutSyncedLyrics, true);
   assert.equal(values.has('learning-state'), false);
+  assert.equal(values.has('settings'), false);
   assert.deepEqual(appStore.getState().reviewList, []);
-  assert.equal(appStore.getState().showTranslations, true);
-  assert.equal(appStore.getState().translationPrompted, false);
+  assert.equal(settingsStore.getState().showTranslations, true);
+  assert.equal(settingsStore.getState().translationPrompted, false);
 });
 
 test('a lost mark between occurrences still marks the current Japanese line', () => {
@@ -875,7 +888,7 @@ function pacingRun(answerTime: number | null = null) {
   const fake = clipTransport();
   appStore.getState().startSong('dawn');
   appStore.getState().setQuizToggle(true);
-  appStore.setState({ answerTime });
+  settingsStore.setState({ answerTime });
   fake.calls.length = 0;
   return fake;
 }
@@ -940,7 +953,7 @@ for (const skip of ['answered', 'repeated', 'English', 'listen', 'zero', 'no cho
         });
       }
       if (skip === 'listen') appStore.getState().setQuizToggle(false);
-      if (skip === 'zero') appStore.setState({ answerTime: 0 });
+      if (skip === 'zero') settingsStore.setState({ answerTime: 0 });
       if (skip === 'no choices')
         appStore.setState({ run: { ...appStore.getState().run, choices: { [fixtureLine('dawn-0')]: [] } } });
       if (skip === 'clip') appStore.getState().playClip('dawn', 0, 12000);
@@ -1101,7 +1114,7 @@ for (const eof of ['before wait', 'during wait'] as const) {
 
 test('answer-time presets persist without the wait and logout restores no limit', async () => {
   const values = new Map<string, string>();
-  await hydrateAppState({
+  await hydrateSettings({
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => {
       values.set(key, value);
@@ -1111,18 +1124,18 @@ test('answer-time presets persist without the wait and logout restores no limit'
     },
   });
   for (const value of [10, 5, 3, 0, null]) {
-    appStore.getState().cycleAnswerTime();
-    assert.equal(appStore.getState().answerTime, value);
+    settingsStore.getState().cycleAnswerTime();
+    assert.equal(settingsStore.getState().answerTime, value);
   }
-  appStore.getState().cycleAnswerTime();
-  const saved = values.get('learning-state')!;
+  settingsStore.getState().cycleAnswerTime();
+  const saved = values.get('settings')!;
   assert.equal('answerWait' in (JSON.parse(saved) as { state: Record<string, unknown> }).state, false);
-  appStore.setState(appStore.getInitialState(), true);
-  values.set('learning-state', saved);
-  await appStore.persist.rehydrate();
-  assert.equal(appStore.getState().answerTime, 10);
+  settingsStore.setState(settingsStore.getInitialState(), true);
+  values.set('settings', saved);
+  await settingsStore.persist.rehydrate();
+  assert.equal(settingsStore.getState().answerTime, 10);
   await resetAppState();
-  assert.equal(appStore.getState().answerTime, null);
+  assert.equal(settingsStore.getState().answerTime, null);
   assert.equal(appStore.getState().answerWait, null);
 });
 
@@ -1151,7 +1164,7 @@ test('a wrong answer cancels a finite answer deadline and continue finishes the 
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   const { detach } = pacingRun();
   try {
-    appStore.setState({ answerTime: 3 });
+    settingsStore.setState({ answerTime: 3 });
     stopFirstLine();
     appStore.getState().answer('wrong');
     t.mock.timers.tick(3001);
@@ -1288,7 +1301,7 @@ test('acknowledged native pause permits external resume and playback resumes aft
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const { calls, status, detach } = await nativePacingRun(t);
   try {
-    appStore.setState({ answerTime: 3 });
+    settingsStore.setState({ answerTime: 3 });
     status(9000, true);
     status(9050, false);
     assert.ok(appStore.getState().answerWait);
@@ -1380,7 +1393,8 @@ for (const answerTime of [0, 3])
       appStore.getState().jumpToLine(index);
       await Promise.resolve();
       const sentenceId = currentSentence('dawn', index)!.sentence.id;
-      appStore.setState({ answerTime, queue: ['dawn', 'glass'], queueIndex: 0 });
+      settingsStore.setState({ answerTime });
+      appStore.setState({ queue: ['dawn', 'glass'], queueIndex: 0 });
       status(237990, false, true);
       if (answerTime !== 0) {
         assert.equal(appStore.getState().answerWait?.occurrence.end, index);
@@ -2007,8 +2021,8 @@ test('Japanese filtering skips non-Japanese songs in library and album queues', 
       ]),
     ),
   });
-  assert.equal(appStore.getState().hideSongsWithoutJapanese, true);
-  appStore.setState({ hideSongsWithoutSyncedLyrics: false });
+  assert.equal(settingsStore.getState().hideSongsWithoutJapanese, true);
+  settingsStore.setState({ hideSongsWithoutSyncedLyrics: false });
   for (const queue of [[first.id], source.map((song) => song.id)]) {
     appStore.getState().startSong(first.id);
     appStore.setState({ queue, queueIndex: 0 });
@@ -2019,8 +2033,8 @@ test('Japanese filtering skips non-Japanese songs in library and album queues', 
   }
   appStore.getState().startAlbum(first.albumId);
   assert.deepEqual(appStore.getState().queue, [first.id, last.id]);
-  appStore.getState().toggleHideSongsWithoutJapanese();
-  assert.equal(appStore.getState().hideSongsWithoutJapanese, false);
+  settingsStore.getState().toggleHideSongsWithoutJapanese();
+  assert.equal(settingsStore.getState().hideSongsWithoutJapanese, false);
   appStore.getState().startAlbum(first.albumId);
   assert.deepEqual(
     appStore.getState().queue,
@@ -2029,7 +2043,7 @@ test('Japanese filtering skips non-Japanese songs in library and album queues', 
   appStore.getState().nextSong();
   assert.equal(appStore.getState().songId, english.id);
   const before = appStore.getState();
-  appStore.getState().toggleHideSongsWithoutJapanese();
+  settingsStore.getState().toggleHideSongsWithoutJapanese();
   assert.equal(appStore.getState().songId, english.id);
   assert.equal(appStore.getState().playing, before.playing);
   appStore.getState().nextSong();
@@ -2040,13 +2054,64 @@ test('Japanese filtering skips non-Japanese songs in library and album queues', 
 });
 
 test('legacy saved state defaults the Japanese filter on', async () => {
-  await hydrateAppState({
+  await hydrateSettings({
     getItem: () => JSON.stringify({ state: { hideSongsWithoutSyncedLyrics: false }, version: 0 }),
     setItem() {},
     removeItem() {},
   });
-  assert.equal(appStore.getState().hideSongsWithoutJapanese, true);
-  assert.equal(appStore.getState().hideSongsWithoutSyncedLyrics, false);
+  assert.equal(settingsStore.getState().hideSongsWithoutJapanese, true);
+  assert.equal(settingsStore.getState().hideSongsWithoutSyncedLyrics, false);
+});
+
+test('settings seed once from the pre-split learning blob, and stay out of the learning store', async () => {
+  const legacy = {
+    reviewList: fixtureReviewList().slice(0, 1),
+    nextReviewId: 7,
+    offlineMode: true,
+    answerTime: 5,
+    showTranslations: false,
+    lineByLineSongIds: ['dawn'],
+    translationPrompted: true,
+    hideSongsWithoutJapanese: false,
+    lastSyncAt: 1234,
+    analysisServerUrl: 'https://legacy.test',
+  };
+  const values = new Map([['learning-state', JSON.stringify({ state: legacy, version: 0 })]]);
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      values.set(key, value);
+    },
+    removeItem: (key: string) => {
+      values.delete(key);
+    },
+  };
+  await hydrateSettings(storage);
+  await hydrateAppState(storage);
+  const settings = settingsStore.getState();
+  assert.equal(settings.offlineMode, true);
+  assert.equal(settings.answerTime, 5);
+  assert.equal(settings.showTranslations, false);
+  assert.deepEqual(settings.lineByLineSongIds, ['dawn']);
+  assert.equal(settings.translationPrompted, true);
+  assert.equal(settings.hideSongsWithoutJapanese, false);
+  assert.equal(settings.hideSongsWithoutSyncedLyrics, true);
+  assert.equal(settings.lastSyncAt, 1234);
+  assert.equal(settings.analysisServerUrl, 'https://legacy.test');
+  const seeded = (JSON.parse(values.get('settings')!) as { state: Record<string, unknown> }).state;
+  assert.equal(seeded.offlineMode, true);
+  assert.equal('hideSongsWithoutSyncedLyrics' in seeded, false);
+  assert.equal(appStore.getState().nextReviewId, 7);
+  assert.equal(appStore.getState().reviewList.length, 1);
+  assert.equal('offlineMode' in appStore.getState(), false);
+  assert.equal('answerTime' in appStore.getState(), false);
+  // Once the settings key exists, a stale copy in the learning blob no longer overrides it.
+  settingsStore.getState().cycleAnswerTime();
+  assert.equal(settingsStore.getState().answerTime, 3);
+  await hydrateSettings(storage);
+  assert.equal(settingsStore.getState().answerTime, 3);
+  assert.equal(settingsStore.getState().offlineMode, true);
+  await resetAppState();
 });
 
 test('native EOF preserves results for an analysis-only quiz', async (t) => {

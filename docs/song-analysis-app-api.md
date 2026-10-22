@@ -38,7 +38,7 @@ appStore.getState().continueAfterAnswer() // void, release a held wrong answer
 appStore.getState().setAnalysisServerUrl(url: string) // void
 appStore.getState().setAnalysisToken(token: string) // Promise<void>
 appStore.getState().analyzeSong(songId: string, options?: { force?: boolean }) // Promise<void>
-canAnalyze() // boolean, exported by appStore.ts
+canAnalyze() // boolean, exported by analysis/fetcher.ts
 appStore.getState().moveReviewSentence(reviewId: string, sentenceId: string) // void
 appStore.getState().removeReviewSentence(reviewId: string) // void
 ```

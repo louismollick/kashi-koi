@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { getAlbum } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
+import { settingsStore } from '@/store/settingsStore';
 import { Cover } from './Cover';
 import { FogBadge } from './Fog';
 import { songMenu } from '@/screens/song-menu';
@@ -33,7 +34,7 @@ export const SongRow = memo(function SongRow({
   accessory?: ReactNode;
 }) {
   const router = useRouter();
-  const hideUnsynced = appStore((state) => state.hideSongsWithoutSyncedLyrics),
+  const hideUnsynced = settingsStore((state) => state.hideSongsWithoutSyncedLyrics),
     downloaded = useIsDownloaded(song.id);
   const duration = `${Math.floor(song.duration / 60)}:${String(Math.floor(song.duration) % 60).padStart(2, '0')}`;
   return (

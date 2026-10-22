@@ -1,6 +1,7 @@
 import { Pressable } from 'react-native';
 import { colors } from '@/constants/theme';
-import { appStore, useLibraryFilters } from '@/store/appStore';
+import { useLibraryFilters } from '@/data/libraryVisibility';
+import { settingsStore } from '@/store/settingsStore';
 import { Label } from './ui';
 
 /** Thin row that turns the library filters (synced, Japanese) off together, or back on. */
@@ -28,7 +29,7 @@ export function HiddenSongsRow({
       accessibilityRole="button"
       accessibilityLabel={`${description} · ${action}`}
       onPress={() => {
-        const state = appStore.getState();
+        const state = settingsStore.getState();
         if (state.hideSongsWithoutSyncedLyrics === hiding) state.toggleHideSongsWithoutSyncedLyrics();
         if (state.hideSongsWithoutJapanese === hiding) state.toggleHideSongsWithoutJapanese();
       }}

@@ -1,7 +1,9 @@
-import { isOfflineMode } from './offlineMode';
-import { isDownloaded } from '@/downloads/store';
+import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { downloadStore, isDownloaded } from '@/downloads/store';
 import { isJapanese } from '@/japanese/text';
 import { getLineText, libraryStore } from '@/store/libraryStore';
+import { settingsStore } from '@/store/settingsStore';
 import type { Album, Artist, Song } from '@/types/domain';
 
 export type LibraryFilters = {
@@ -11,7 +13,24 @@ export type LibraryFilters = {
   /** Count lyric-hidden songs against the downloaded set without counting unavailable songs. */
   countHiddenOnly?: boolean;
 };
-export const isSongAvailable = (songId: string) => !isOfflineMode() || isDownloaded(songId);
+export const isSongAvailable = (songId: string) => !settingsStore.getState().offlineMode || isDownloaded(songId);
+
+/** Share the same filter mapping between queue actions and component selectors. */
+const filtersFromSettings = (state: ReturnType<typeof settingsStore.getState>): LibraryFilters => ({
+  downloadedOnly: state.offlineMode,
+  hideUnsynced: state.hideSongsWithoutSyncedLyrics,
+  hideNonJapanese: state.hideSongsWithoutJapanese,
+});
+
+/** The current settings as filters, for code outside React. */
+export const getLibraryFilters = () => filtersFromSettings(settingsStore.getState());
+
+/** In offline mode, download changes invalidate memoized browsing; online they don't affect visibility. */
+export function useLibraryFilters() {
+  const filters = settingsStore(useShallow(filtersFromSettings));
+  const entries = downloadStore((state) => (filters.downloadedOnly ? state.entries : null));
+  return useMemo(() => ({ ...filters, downloadEntries: entries }), [filters, entries]);
+}
 
 /** Stop at the first Japanese line without allocating a filtered list. */
 export function hasJapaneseLyrics(songId: string) {
@@ -32,7 +51,8 @@ export const countedFilters = (filters: LibraryFilters): LibraryFilters => ({
 
 /** Either enabled filter can hide a song. */
 export function isHiddenSong(song: Song, filters: LibraryFilters) {
-  if ((filters.downloadedOnly ?? isOfflineMode()) && !isDownloaded(song.id)) return !filters.countHiddenOnly;
+  if ((filters.downloadedOnly ?? settingsStore.getState().offlineMode) && !isDownloaded(song.id))
+    return !filters.countHiddenOnly;
   return (
     (filters.hideUnsynced && song.lyricsStatus !== 'synced') ||
     (filters.hideNonJapanese && (song.lyricsStatus !== 'synced' || !hasJapaneseLyrics(song.id)))

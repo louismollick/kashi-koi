@@ -10,8 +10,8 @@ import {
   getVisibleSongs,
   groupBy,
   syncedIds,
+  useLibraryFilters,
 } from '@/data/libraryVisibility';
-import { useLibraryFilters } from '@/store/appStore';
 import { Header } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { AlbumTile } from '@/components/AlbumTile';
