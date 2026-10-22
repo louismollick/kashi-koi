@@ -71,7 +71,7 @@ The songs that play after the current one: the list a song, album or artist was 
 _Avoid_: Playlist, up next (that's the view, not the list)
 
 **Repeat song**:
-A song menu switch on the playing song that replays it from the start, as a new run, each time it ends. Skipping or playing another song turns it off.
+A song menu switch on the playing song that replays it from the start, as a new run, each time it ends. Skipping or starting any song turns it off.
 _Avoid_: Loop, repeat one
 
 ### Modes

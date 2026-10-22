@@ -372,17 +372,18 @@ test('queue actions with nothing playing start the songs', async () => {
 
 test('Up next edits remove, move and clear upcoming songs without touching history or the current song', () => {
   appStore.setState({ queue: ['dawn', 'glass', 'rain', 'dream'], queueIndex: 1, autoplay: ['bluebird', 'summer'] });
-  appStore.getState().moveUpNext(0, 1);
+  appStore.getState().moveUpNext(0, 1, 'rain');
   assert.deepEqual(appStore.getState().queue, ['dawn', 'glass', 'dream', 'rain']);
-  appStore.getState().moveUpNext(1, 0);
+  appStore.getState().moveUpNext(1, 0, 'rain');
   assert.deepEqual(appStore.getState().queue, ['dawn', 'glass', 'rain', 'dream']);
   const before = appStore.getState();
-  for (const [from, to] of [
-    [0, 2],
-    [-1, 0],
-    [0, 0.5],
+  for (const [from, to, id] of [
+    [0, 1, 'dream'],
+    [0, 2, 'rain'],
+    [-1, 0, 'glass'],
+    [0, 0.5, 'rain'],
   ] as const)
-    appStore.getState().moveUpNext(from, to);
+    appStore.getState().moveUpNext(from, to, id);
   assert.equal(appStore.getState(), before);
   appStore.getState().removeUpNext(3, 'summer');
   assert.deepEqual(appStore.getState().autoplay, ['bluebird']);
@@ -428,6 +429,12 @@ test('a repeated song replays with a new run when it ends and turns off when ano
   appStore.getState().setRepeatSong('glass', false);
   finishSong();
   assert.notEqual(appStore.getState().songId, 'glass');
+  // Skipping to another queued play of the same song still turns it off.
+  appStore.setState({ queue: ['dawn', 'dawn'], queueIndex: 0, songId: 'dawn' });
+  appStore.getState().setRepeatSong('dawn', true);
+  appStore.getState().nextSong();
+  assert.equal(appStore.getState().songId, 'dawn');
+  assert.equal(appStore.getState().repeatSongId, null);
 });
 
 test('next enters autoplay, appends its song and previous returns through queue history', () => {

@@ -220,18 +220,18 @@ export function finishSong() {
         at: Date.now(),
       },
     });
-  if (state.songId && state.repeatSongId === state.songId) playQueueSong(state.songId, state.queueIndex);
+  if (state.songId && state.repeatSongId === state.songId) playQueueSong(state.songId, state.queueIndex, true);
   else state.nextSong();
 }
 
-/** Start another queued play without rebuilding the queue or autoplay. */
-function playQueueSong(songId: string, queueIndex: number) {
+/** Start another queued play without rebuilding the queue or autoplay. Only the automatic replay keeps Repeat song. */
+function playQueueSong(songId: string, queueIndex: number, repeat = false) {
   const state = appStore.getState(),
     quizToggle = state.quizToggle && hasTranslations(songId);
   appStore.setState({
     songId,
     queueIndex,
-    ...(songId !== state.repeatSongId ? { repeatSongId: null } : {}),
+    ...(repeat ? {} : { repeatSongId: null }),
     lineIndex: 0,
     positionMs: 0,
     durationMs: getSong(songId)!.duration * 1000,
@@ -289,11 +289,11 @@ type AppState = {
   addToQueue: (songIds: string[]) => void;
   playUpNext: (position: number) => void;
   removeUpNext: (position: number, songId: string) => void;
-  moveUpNext: (from: number, to: number) => void;
+  moveUpNext: (from: number, to: number, songId: string) => void;
   clearUpNext: () => void;
   startAlbum: (albumId: string, shuffle?: boolean) => void;
   startArtist: (artistId: string, shuffle?: boolean) => void;
-  /** The song that replays when it ends instead of advancing; playing any other song turns it off. */
+  /** The song that replays when it ends instead of advancing; skipping or starting any song turns it off. */
   repeatSongId: string | null;
   setRepeatSong: (songId: string, enabled: boolean) => void;
   restartRun: () => void;
@@ -354,8 +354,8 @@ function startIdle(songIds: string[]) {
 }
 
 /**
- * Put songs into the upcoming queue at `at` (an index into the whole queue). Songs already upcoming move instead of
- * repeating, and leave autoplay.
+ * Put songs right after the current one or at the end of the queue. Songs already upcoming move instead of repeating,
+ * and leave autoplay. Play next skips the current song; Add to queue may queue it again.
  */
 function insertUpcoming(state: AppState, songIds: string[], at: 'next' | 'end') {
   const ids = [...new Set(songIds)].filter((id) => getSong(id) && (at === 'end' || id !== state.songId));
@@ -490,12 +490,12 @@ export const appStore = create<AppState>()(
           if (position < queued) return { queue: state.queue.filter((_, index) => index !== start + position) };
           return { autoplay: state.autoplay.filter((_, index) => index !== position - queued) };
         }),
-      // Reorders the upcoming queue only; autoplay keeps its shuffle.
-      moveUpNext: (from, to) =>
+      // Reorders the upcoming queue only; autoplay keeps its shuffle. The id guards against a stale position.
+      moveUpNext: (from, to, songId) =>
         set((state) => {
           const upcoming = state.queue.slice(state.queueIndex + 1);
           const valid = (position: number) => Number.isInteger(position) && position >= 0 && position < upcoming.length;
-          if (from === to || !valid(from) || !valid(to)) return state;
+          if (from === to || upcoming[from] !== songId || !valid(to)) return state;
           const [id] = upcoming.splice(from, 1);
           upcoming.splice(to, 0, id!);
           return { queue: [...state.queue.slice(0, state.queueIndex + 1), ...upcoming] };

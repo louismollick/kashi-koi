@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo, useRef } from 'react';
 import { Pressable, View, useWindowDimensions } from 'react-native';
 import ReorderableList, { useReorderableDrag, type ReorderableListReorderEvent } from 'react-native-reorderable-list';
 import { useRouter } from 'expo-router';
@@ -16,12 +16,29 @@ import { IconButton, Label, styles } from '@/components/ui';
 import { songMenu } from './song-menu';
 import type { Song } from '@/types/domain';
 
-type Item =
-  | { kind: 'heading'; title: 'UP NEXT' | 'AUTOPLAY' }
-  | { kind: 'song'; song: Song; position: number; queued: boolean };
+/** A visible song in Up next or autoplay, keeping its position in `[...upcoming queue, ...autoplay]`. */
+type Row = { song: Song; position: number };
+
+/** Autoplay is a shuffle of the whole library, so the full player previews only its start. */
+const AUTOPLAY_PREVIEW = 20;
+
+function Heading({ title, onClear }: { title: string; onClear?: () => void }) {
+  return (
+    <View style={[styles.row, { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 4 }]}>
+      <Label muted style={{ flex: 1, fontSize: 12, fontWeight: '800', letterSpacing: 1 }}>
+        {title}
+      </Label>
+      {onClear && (
+        <Pressable accessibilityRole="button" accessibilityLabel={`Clear ${title}`} hitSlop={12} onPress={onClear}>
+          <Label style={{ color: colors.lavender, fontSize: 13, fontWeight: '700' }}>Clear</Label>
+        </Pressable>
+      )}
+    </View>
+  );
+}
 
 /** An Up next song: drag its handle to reorder, long-press for the song menu with Remove from queue. */
-const QueuedRow = memo(function QueuedRow({ song, position }: { song: Song; position: number }) {
+const QueuedRow = memo(function QueuedRow({ song, position, onDragStart }: Row & { onDragStart: () => void }) {
   const router = useRouter();
   const drag = useReorderableDrag();
   return (
@@ -34,7 +51,10 @@ const QueuedRow = memo(function QueuedRow({ song, position }: { song: Song; posi
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Reorder ${song.title}`}
-            onPressIn={drag}
+            onPressIn={() => {
+              onDragStart();
+              drag();
+            }}
             hitSlop={8}
             style={{ width: 32, height: 44, alignItems: 'flex-end', justifyContent: 'center' }}
           >
@@ -69,7 +89,7 @@ function Scrubber() {
   );
 }
 
-/** The slim bar grown up: cover, fog, scrubber, transport, then a reorderable Up next and autoplay. */
+/** The slim bar grown up: cover, fog, scrubber, transport, then a reorderable Up next and the start of autoplay. */
 export default function FullPlayerScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -85,33 +105,33 @@ export default function FullPlayerScreen() {
     library = libraryStore((state) => state.bySong),
     lyrics = libraryStore((state) => state.lyrics);
   // Rows keep their playback position, so hidden or removed songs drop out without shifting what a tap plays.
-  const items = useMemo(() => {
+  const { upNext, autoplayRows, queued } = useMemo(() => {
     const next = getUpNext(appStore.getState());
-    const songs = [...next.queue, ...next.autoplay].map(getSong);
-    const rows = (start: number, count: number): Item[] =>
-      songs
-        .slice(start, start + count)
-        .flatMap((song, offset) =>
-          song && !isHiddenSong(song, filters)
-            ? [{ kind: 'song' as const, song, position: start + offset, queued: start + offset < next.queue.length }]
-            : [],
-        );
-    return [
-      ...(next.queue.length ? [{ kind: 'heading' as const, title: 'UP NEXT' }, ...rows(0, next.queue.length)] : []),
-      ...(next.autoplay.length
-        ? [{ kind: 'heading' as const, title: 'AUTOPLAY' }, ...rows(next.queue.length, next.autoplay.length)]
-        : []),
-    ];
+    const rows = (ids: string[], start: number): Row[] =>
+      ids.flatMap((id, offset) => {
+        const song = getSong(id);
+        return song && !isHiddenSong(song, filters) ? [{ song, position: start + offset }] : [];
+      });
+    return {
+      upNext: rows(next.queue, 0),
+      autoplayRows: rows(next.autoplay, next.queue.length).slice(0, AUTOPLAY_PREVIEW),
+      queued: next.queue.length,
+    };
   }, [queue, queueIndex, autoplay, filters, library, lyrics]);
   const repeat = appStore((state) => !!songId && state.repeatSongId === songId);
-  // Drops land on the Up next row they cover; past either end of Up next they clamp to its first or last place.
+  // The list reports indices into the rows it was dragging, which playback may have replaced before the drop.
+  const latest = useRef(upNext),
+    dragging = useRef<Row[] | null>(null);
+  latest.current = upNext;
+  const startDrag = useCallback(() => {
+    dragging.current = latest.current;
+  }, []);
   const reorder = ({ from, to }: ReorderableListReorderEvent) => {
-    const source = items[from],
-      target = items[to],
-      length = getUpNext(appStore.getState()).queue.length;
-    if (source?.kind !== 'song' || !source.queued) return;
-    const position = target?.kind === 'song' && target.queued ? target.position : to < from ? 0 : length - 1;
-    appStore.getState().moveUpNext(source.position, position);
+    const rows = dragging.current ?? upNext,
+      source = rows[from],
+      target = rows[to];
+    dragging.current = null;
+    if (source && target) appStore.getState().moveUpNext(source.position, target.position, source.song.id);
   };
   if (!song)
     return (
@@ -179,42 +199,34 @@ export default function FullPlayerScreen() {
         right={<IconButton name="more" label="Song menu" onPress={() => router.push(songMenu(song.id))} />}
       />
       <ReorderableList
-        data={items}
+        data={upNext}
         onReorder={reorder}
-        ListHeaderComponent={header}
-        keyExtractor={(item) =>
-          item.kind === 'heading' ? item.title : `${item.queued ? 'queue' : 'autoplay'}:${item.song.id}`
+        ListHeaderComponent={
+          <>
+            {header}
+            {queued > 0 && <Heading title="UP NEXT" onClear={() => appStore.getState().clearUpNext()} />}
+          </>
         }
+        ListFooterComponent={
+          autoplayRows.length > 0 ? (
+            <>
+              <Heading title="AUTOPLAY" />
+              {autoplayRows.map((row) => (
+                <View key={row.song.id} style={{ paddingHorizontal: 16 }}>
+                  <SongRow
+                    song={row.song}
+                    onPress={() => appStore.getState().playUpNext(row.position)}
+                    onLongPress={() => router.push(songMenu(row.song.id, row.position))}
+                  />
+                </View>
+              ))}
+            </>
+          ) : null
+        }
+        // Upcoming songs can repeat after Previous, so positions keep keys unique.
+        keyExtractor={(row) => `${row.position}:${row.song.id}`}
         contentContainerStyle={{ paddingBottom: 32 }}
-        renderItem={({ item }) =>
-          item.kind === 'heading' ? (
-            <View style={[styles.row, { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 4 }]}>
-              <Label muted style={{ flex: 1, fontSize: 12, fontWeight: '800', letterSpacing: 1 }}>
-                {item.title}
-              </Label>
-              {item.title === 'UP NEXT' && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear Up next"
-                  hitSlop={12}
-                  onPress={() => appStore.getState().clearUpNext()}
-                >
-                  <Label style={{ color: colors.lavender, fontSize: 13, fontWeight: '700' }}>Clear</Label>
-                </Pressable>
-              )}
-            </View>
-          ) : item.queued ? (
-            <QueuedRow song={item.song} position={item.position} />
-          ) : (
-            <View style={{ paddingHorizontal: 16 }}>
-              <SongRow
-                song={item.song}
-                onPress={() => appStore.getState().playUpNext(item.position)}
-                onLongPress={() => router.push(songMenu(item.song.id, item.position))}
-              />
-            </View>
-          )
-        }
+        renderItem={({ item }) => <QueuedRow song={item.song} position={item.position} onDragStart={startDrag} />}
       />
     </View>
   );
