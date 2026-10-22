@@ -1,6 +1,7 @@
 import { useAvailableReviewList } from '@/data/reviewVisibility';
 import { isDue, libraryStore } from '@/store/libraryStore';
 import { useNow } from '@/hooks/useNow';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -20,14 +21,13 @@ import { Label, SectionHeader, styles } from '@/components/ui';
 export default function HomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  libraryStore((state) => state.songs);
-  libraryStore((state) => state.lyrics);
+  const songs = libraryStore((state) => state.songs);
   const filters = useLibraryFilters();
   const reviewList = useAvailableReviewList();
   const now = useNow();
   const count = reviewList.filter((line) => isDue(line, now)).length;
   const coverSize = (width - 56) / 3,
-    recent = getRecentlyPlayed(filters, 6);
+    recent = useMemo(() => getRecentlyPlayed(filters, 6, songs), [filters, songs]);
   return (
     <View style={styles.page}>
       <Header />

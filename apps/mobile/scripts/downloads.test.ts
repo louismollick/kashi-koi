@@ -89,7 +89,11 @@ test('eligibility uses synced Japanese lyrics for every target and album ownersh
     artists,
     lyrics: {
       ...songLyrics,
-      english: { ...songLyrics.glass!, songId: 'english', lines: [{ id: 'en', segments: [{ text: 'Hello' }] }] },
+      english: withSentences({
+        songId: 'english',
+        lines: [{ id: 'en', segments: [{ text: 'Hello' }] }],
+        timeline: [{ lineId: 'en', startMs: 0, endMs: 1000 }],
+      }),
     },
   });
   settingsStore.setState({ hideSongsWithoutSyncedLyrics: false, hideSongsWithoutJapanese: false });

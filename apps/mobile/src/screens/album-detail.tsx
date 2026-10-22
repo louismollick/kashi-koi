@@ -18,11 +18,10 @@ export default function AlbumDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const songs = libraryStore((state) => state.songs),
-    lyrics = libraryStore((state) => state.lyrics);
+  const songs = libraryStore((state) => state.songs);
   const filters = useLibraryFilters();
   const album = getAlbum(id);
-  // Visibility reads each song's lyrics; `queue` stays stable so the memoized rows don't re-render.
+  // Visibility reads each song's lyrics, which only change with `songs`; `queue` stays stable so the memoized rows don't re-render.
   const { tracks, queue, hiddenCount } = useMemo(() => {
     const allTracks = album ? getAlbumSongs(album.id) : [],
       tracks = getVisibleSongs(allTracks, filters);
@@ -31,7 +30,7 @@ export default function AlbumDetailScreen() {
       queue: tracks.map((song) => song.id),
       hiddenCount: allTracks.length - getVisibleSongs(allTracks, countedFilters(filters)).length,
     };
-  }, [album, songs, lyrics, filters]);
+  }, [album, songs, filters]);
   if (!album)
     return (
       <View style={styles.page}>

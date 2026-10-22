@@ -49,6 +49,7 @@ export function withSentences(lyrics: LyricsInput, analysis?: SongAnalysis): Son
   return {
     ...lyrics,
     fingerprint: hash,
+    hasJapanese: lyrics.lines.some((line) => isJapanese(text(line))),
     timeline: lyrics.timeline.map(({ translation: _old, ...occurrence }, index) =>
       accepted ? { ...occurrence, translation: accepted.lines[index] } : occurrence,
     ),

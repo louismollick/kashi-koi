@@ -14,8 +14,9 @@ export default function ClipReviewScreen() {
   const router = useRouter();
   const clip = appStore((state) => state.clipReview);
   const reviewList = appStore((state) => state.reviewList);
-  libraryStore((state) => state.lyrics);
   const item = reviewList.find((line) => line.id === clip?.ids[clip.index]);
+  // Re-render when this song's lyrics change (a translation or analysis lands); the helpers below read the store.
+  libraryStore((state) => state.lyrics[item?.songId ?? '']);
   useEffect(() => {
     if (!appStore.getState().clipReview) appStore.getState().setPlaying(false);
     return () => appStore.getState().stopClipReview();

@@ -35,7 +35,6 @@ export default function LibraryScreen() {
   const songs = libraryStore((state) => state.songs),
     albums = libraryStore((state) => state.albums),
     artists = libraryStore((state) => state.artists);
-  const lyrics = libraryStore((state) => state.lyrics);
   const progress = libraryStore((state) => state.progress),
     error = libraryStore((state) => state.error);
   const filters = useLibraryFilters(),
@@ -53,14 +52,14 @@ export default function LibraryScreen() {
       artists: artists.filter((artist) => artistIds.has(artist.id)),
     };
   }, [songs, albums, artists, query]);
-  // Visibility reads each song's lyrics, so these recompute only when the library, lyrics or filters change.
+  // Visibility reads each song's lyrics, which only change with `songs`, so these recompute when the library or filters change.
   const { albumCounts, synced } = useMemo(
     () => ({
       // Counts and badges describe the whole album or artist, not just the songs matching the search.
       albumCounts: countBy(getVisibleSongs(songs, filters), (song) => song.albumId),
       synced: syncedIds(songs),
     }),
-    [filters, songs, lyrics],
+    [filters, songs],
   );
   const { visible, hidden, artistAlbums } = useMemo(() => {
     const visible = getVisibleLibrary(filters, source);
@@ -69,7 +68,7 @@ export default function LibraryScreen() {
       hidden: getVisibleLibrary(countedFilters(filters), source),
       artistAlbums: groupBy(visible.albums, (album) => album.artistId),
     };
-  }, [filters, source, lyrics]);
+  }, [filters, source]);
   // Playing from the Songs list queues the list as shown.
   const queue = useMemo(() => visible.songs.map((song) => song.id), [visible.songs]);
   const kind = segment === 'Albums' ? 'albums' : segment === 'Artists' ? 'artists' : 'songs';

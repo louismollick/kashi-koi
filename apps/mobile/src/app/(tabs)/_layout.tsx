@@ -2,12 +2,12 @@ import { Tabs } from 'expo-router';
 import { TabBar } from '@/components/TabBar';
 import { colors } from '@/constants/theme';
 
-/** Native tab navigator with the shared mini player above its custom bar. */
+/** Native tab navigator with the shared mini player above its custom bar. Inactive tabs freeze instead of re-rendering unseen. */
 export default function TabsLayout() {
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}
-      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
+      screenOptions={{ headerShown: false, freezeOnBlur: true, sceneStyle: { backgroundColor: colors.bg } }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="library" options={{ title: 'Library' }} />

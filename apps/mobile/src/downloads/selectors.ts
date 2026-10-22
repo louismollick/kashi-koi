@@ -13,7 +13,6 @@ let cached:
       songs: Song[];
       byAlbum: LibraryState['byAlbum'];
       bySong: LibraryState['bySong'];
-      lyrics: LibraryState['lyrics'];
       entries: ReturnType<typeof downloadStore.getState>['entries'];
       summaries: Map<string, Summary>;
     }
@@ -24,13 +23,12 @@ const keyOf = (target: DownloadTarget) => (target.kind === 'library' ? 'library'
 export function downloadSummary(target: DownloadTarget): Summary {
   const library = libraryStore.getState(),
     { entries } = downloadStore.getState();
-  // Key on the fields this reads; progress and translation updates replace `library` without touching them.
+  // Key on the fields this reads. Eligibility (Japanese lyrics) changes only with `songs`; progress and translation updates replace `library` without touching them.
   if (
     !cached ||
     cached.songs !== library.songs ||
     cached.byAlbum !== library.byAlbum ||
     cached.bySong !== library.bySong ||
-    cached.lyrics !== library.lyrics ||
     cached.entries !== entries
   ) {
     const summaries = new Map<string, Summary>();
@@ -53,7 +51,6 @@ export function downloadSummary(target: DownloadTarget): Summary {
       songs: library.songs,
       byAlbum: library.byAlbum,
       bySong: library.bySong,
-      lyrics: library.lyrics,
       entries,
       summaries,
     };
@@ -64,7 +61,6 @@ export function downloadSummary(target: DownloadTarget): Summary {
 export function useDownloadSummary(target: DownloadTarget) {
   libraryStore((state) => state.songs);
   libraryStore((state) => state.albums);
-  libraryStore((state) => state.lyrics);
   downloadStore((state) => state.entries);
   return downloadSummary(target);
 }
