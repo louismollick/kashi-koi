@@ -124,13 +124,17 @@ export function syncLibrary(
   });
 }
 
-/** Four workers persist each result and publish them in batches; errors stay retryable on the next sync. */
+/**
+ * Four workers fetch lyrics; results are saved to SQLite in one transaction and then published to the store
+ * twice a second. An interrupted scan loses at most one flush window, and those songs are rescanned next launch.
+ * Errors stay retryable on the next sync.
+ */
 export async function scan(
   session: Session,
   all: boolean,
   valid: () => boolean,
-  save: (songId: string, status: LyricsStatus, lyrics?: SongLyrics) => Promise<void> = async (...args) =>
-    (await import('./db')).saveLyricsResult(...args),
+  save: (results: LyricsResult[]) => Promise<void> = async (results) =>
+    (await import('./db')).saveLyricsResults(results),
 ) {
   if (settingsStore.getState().offlineMode) return;
   const online = () => valid() && !settingsStore.getState().offlineMode;
@@ -144,47 +148,25 @@ export async function scan(
     errors = 0,
     stopped = false;
   let failure: unknown,
-    pending: LyricsResult[] = [];
-  // Every lyrics change makes Library, Home and review remapping walk the whole library, so publish twice a second.
+    pending: LyricsResult[] = [],
+    flushing = Promise.resolve();
   // Saved results stay true after going offline or cancelling; only a new session must not receive them.
+  const current = () => valid() || sessionStore.getState().session === session;
+  // Every lyrics change makes Library, Home and review remapping walk the whole library, so publish twice a second.
   const flush = () => {
-    if (pending.length && (valid() || sessionStore.getState().session === session))
-      libraryStore.getState().setLyricsResults(pending);
-    pending = [];
-    if (libraryStore.getState().progress?.completed !== completed)
-      libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
-  };
-  libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
-  // A timer, so saved results still appear while every worker waits on a slow request.
-  const timer = setInterval(flush, 500);
-  await Promise.allSettled(
-    Array.from({ length: 4 }, async () => {
+    flushing = flushing.then(async () => {
+      const state = libraryStore.getState();
+      // A failed check never replaces good synced lyrics. This is the only place that rule lives: filtering here
+      // keeps SQLite and the store in step.
+      const batch = pending.filter(
+        ({ songId, status }) =>
+          !(status === 'error' && state.bySong[songId]?.lyricsStatus === 'synced' && state.lyrics[songId]),
+      );
+      pending = [];
       try {
-        while (online() && !stopped) {
-          const song = targets[cursor++];
-          if (!song) break;
-          let status: LyricsStatus, lyrics: SongLyrics | undefined;
-          try {
-            const response = await request<{ lyricsList?: { structuredLyrics?: StructuredLyrics[] } }>(
-              session,
-              'getLyricsBySongId',
-              { id: song.id },
-            );
-            if (!response.lyricsList) throw new Error('Invalid lyrics response');
-            const entry = pickEntry(response.lyricsList.structuredLyrics ?? []);
-            lyrics = entry ? toSongLyrics(song.id, entry, song.duration * 1000) : undefined;
-            status = lyrics?.timeline.length ? 'synced' : 'none';
-          } catch {
-            status = 'error';
-            errors++;
-          }
-          if (!online() || stopped) break;
-          if (!(status === 'error' && song.lyricsStatus === 'synced' && libraryStore.getState().lyrics[song.id])) {
-            await save(song.id, status, lyrics);
-            pending.push({ songId: song.id, status, lyrics });
-            if (!online() || stopped) break;
-          }
-          completed++;
+        if (batch.length && !stopped && current()) {
+          await save(batch);
+          if (current()) libraryStore.getState().setLyricsResults(batch);
         }
       } catch (error) {
         if (!stopped) {
@@ -192,10 +174,42 @@ export async function scan(
           failure = error;
         }
       }
+      if (libraryStore.getState().progress?.completed !== completed)
+        libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
+    });
+    return flushing;
+  };
+  libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
+  // A timer, so saved results still appear while every worker waits on a slow request.
+  const timer = setInterval(() => void flush(), 500);
+  await Promise.allSettled(
+    Array.from({ length: 4 }, async () => {
+      while (online() && !stopped) {
+        const song = targets[cursor++];
+        if (!song) break;
+        let status: LyricsStatus, lyrics: SongLyrics | undefined;
+        try {
+          const response = await request<{ lyricsList?: { structuredLyrics?: StructuredLyrics[] } }>(
+            session,
+            'getLyricsBySongId',
+            { id: song.id },
+          );
+          if (!response.lyricsList) throw new Error('Invalid lyrics response');
+          const entry = pickEntry(response.lyricsList.structuredLyrics ?? []);
+          lyrics = entry ? toSongLyrics(song.id, entry, song.duration * 1000) : undefined;
+          status = lyrics?.timeline.length ? 'synced' : 'none';
+        } catch {
+          status = 'error';
+          errors++;
+        }
+        if (!online() || stopped) break;
+        pending.push({ songId: song.id, status, lyrics });
+        completed++;
+      }
     }),
   );
   clearInterval(timer);
-  flush();
+  await flush();
   if (stopped) throw failure;
   if (online()) {
     settingsStore.setState({ lastScanAt: Date.now() });

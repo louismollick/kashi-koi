@@ -45,9 +45,6 @@ test('failed rescans preserve synced lyrics and review entries but count errors'
       assert.deepEqual(appStore.getState().reviewList, [mark]);
       assert.match(libraryStore.getState().error!, /1 songs could not be checked/);
     }
-    libraryStore.getState().setLyricsResult(song.id, 'error');
-    assert.equal(libraryStore.getState().lyrics[song.id], cached);
-    assert.equal(libraryStore.getState().bySong[song.id]!.lyricsStatus, 'synced');
   } finally {
     globalThis.fetch = original;
   }
@@ -66,8 +63,8 @@ test('songs without good cached lyrics record retryable errors', async () => {
       session,
       true,
       () => true,
-      async (id, status) => {
-        saved.push(`${id}:${status}`);
+      async (results) => {
+        saved.push(...results.map(({ songId, status }) => `${songId}:${status}`));
       },
     );
     assert.deepEqual(saved, [`${song.id}:error`]);
@@ -140,42 +137,37 @@ test('successful refresh prunes removed review lines, preserves retimed lines, a
   }
 });
 
-test('a failed save stops new work and waits for all workers before rejecting', async () => {
+test('a failed batch save stops new work, waits for the workers and publishes nothing', async () => {
   const original = globalThis.fetch,
-    targets = Array.from({ length: 6 }, (_, index) => ({
+    targets = Array.from({ length: 12 }, (_, index) => ({
       ...songs[0]!,
       id: String(index),
       lyricsStatus: 'unchecked' as const,
     }));
   libraryStore.getState().setLibrary({ songs: targets, albums, artists, lyrics: {} });
   let release!: () => void,
-    entered!: () => void,
+    requests = 0,
     settled = false;
   const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    }),
-    allSaving = new Promise<void>((resolve) => {
-      entered = resolve;
-    });
-  const saved: string[] = [],
-    failure = new Error('SQLite write failed');
+    release = resolve;
+  });
+  const failure = new Error('SQLite write failed'),
+    saved: number[] = [];
   try {
-    globalThis.fetch = async () => Response.json({ 'subsonic-response': { status: 'ok', lyricsList: {} } });
-    const work = scan(
+    // The first four answer at once; the next four wait, so the 500ms flush sees four results and fails.
+    globalThis.fetch = async () => {
+      if (requests++ >= 4) await gate;
+      return Response.json({ 'subsonic-response': { status: 'ok', lyricsList: {} } });
+    };
+    const result = scan(
       session,
       true,
       () => true,
-      async (id) => {
-        saved.push(id);
-        if (saved.length === 4) entered();
-        if (id === '0') {
-          await allSaving;
-          throw failure;
-        }
-        await gate;
+      async (results) => {
+        saved.push(results.length);
+        throw failure;
       },
-    );
-    const result = work.then(
+    ).then(
       () => {
         settled = true;
       },
@@ -184,20 +176,47 @@ test('a failed save stops new work and waits for all workers before rejecting', 
         return error as unknown;
       },
     );
-    await allSaving;
+    while (!saved.length) await new Promise((resolve) => setTimeout(resolve, 50));
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(settled, false);
     release();
     assert.equal(await result, failure);
-    assert.deepEqual(saved, ['0', '1', '2', '3']);
-    // Saves that succeeded are published like their SQLite rows; the failed and unstarted songs stay unchecked.
-    assert.deepEqual(
-      libraryStore.getState().songs.map((song) => song.lyricsStatus),
-      ['unchecked', 'none', 'none', 'none', 'unchecked', 'unchecked'],
-    );
+    assert.deepEqual(saved, [4]);
+    assert.equal(requests, 8);
+    assert.ok(libraryStore.getState().songs.every((song) => song.lyricsStatus === 'unchecked'));
     assert.equal(settingsStore.getState().lastScanAt, null);
   } finally {
     release();
+    globalThis.fetch = original;
+  }
+});
+
+test('scan results are saved in one batch and never overwrite synced lyrics with errors', async () => {
+  const original = globalThis.fetch,
+    synced = songs[0]!,
+    others = [1, 2, 3].map((id) => ({ ...songs[0]!, id: `other${id}`, lyricsStatus: 'unchecked' as const }));
+  libraryStore
+    .getState()
+    .setLibrary({ songs: [synced, ...others], albums, artists, lyrics: { [synced.id]: songLyrics[synced.id]! } });
+  const batches: string[][] = [];
+  try {
+    globalThis.fetch = async () => {
+      throw new Error('offline');
+    };
+    await scan(
+      session,
+      true,
+      () => true,
+      async (results) => {
+        batches.push(results.map(({ songId, status }) => `${songId}:${status}`));
+      },
+    );
+    assert.equal(batches.length, 1);
+    assert.deepEqual(batches[0]!.sort(), ['other1:error', 'other2:error', 'other3:error']);
+    assert.equal(libraryStore.getState().bySong[synced.id]!.lyricsStatus, 'synced');
+    assert.equal(libraryStore.getState().lyrics[synced.id], songLyrics[synced.id]);
+    assert.ok(others.every((song) => libraryStore.getState().bySong[song.id]!.lyricsStatus === 'error'));
+  } finally {
     globalThis.fetch = original;
   }
 });
@@ -344,8 +363,8 @@ test('scans check recently played songs first and publish results together', asy
       session,
       true,
       () => true,
-      async (id) => {
-        saved.push(id);
+      async (results) => {
+        saved.push(...results.map(({ songId }) => songId));
       },
     );
     assert.deepEqual(saved.slice(0, 3), ['1', '3', '2']);
