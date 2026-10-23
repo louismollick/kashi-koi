@@ -1,8 +1,12 @@
 import { Outlet, useLocation } from '@tanstack/react-router';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useShortcuts } from '@/hooks/useShortcuts';
 import { NavRail } from './NavRail';
 import { PlayerPane } from './PlayerPane';
+import { SongMenuHost } from './SongMenu';
 import { TabBar } from './TabBar';
+
+const fullScreenPaths = ['/player', '/full-player', '/clip-review', '/breakdown', '/edit-line'];
 
 /**
  * The signed-in app frame. Phone: the screen, then the mini player and tab bar, like the iOS tabs. Desktop (1024px
@@ -10,8 +14,9 @@ import { TabBar } from './TabBar';
  * them and no mini player or tab bar.
  */
 export function Shell() {
-  // The full player covers the tab bar, like the iOS player screen above the tabs.
-  const fullScreen = useLocation({ select: (location) => location.pathname === '/player' });
+  // The player screens cover the tab bar, like the iOS player sheets above the tabs.
+  const fullScreen = useLocation({ select: (location) => fullScreenPaths.includes(location.pathname) });
+  useShortcuts();
   if (useIsDesktop())
     return (
       <div className="grid h-dvh grid-cols-[220px_minmax(0,1fr)_clamp(340px,28vw,400px)] bg-bg">
@@ -19,9 +24,10 @@ export function Shell() {
         <main className="flex min-h-0 min-w-0 flex-col border-x border-slate">
           <Outlet />
         </main>
-        <aside aria-label="Player" className="min-h-0 overflow-y-auto">
+        <aside aria-label="Player" className="flex min-h-0 flex-col overflow-hidden">
           <PlayerPane />
         </aside>
+        <SongMenuHost />
       </div>
     );
   return (
@@ -30,6 +36,7 @@ export function Shell() {
         <Outlet />
       </main>
       {!fullScreen && <TabBar />}
+      <SongMenuHost />
     </div>
   );
 }

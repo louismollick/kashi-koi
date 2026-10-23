@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/copy-dict.mjs",
     "dev": "vite --port 5191 --strictPort",
+    "prebuild": "node scripts/copy-dict.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

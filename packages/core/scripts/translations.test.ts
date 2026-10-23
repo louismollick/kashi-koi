@@ -262,6 +262,18 @@ test('playing song and album queue have priority over the library backlog', asyn
   assert.deepEqual(batches, [['月'], ['星'], ['日']]);
 });
 
+test('a platform without downloadable translation can word the hint itself', async () => {
+  setTranslator(
+    { ...fake, translationStatus: async () => 'unsupported', unavailableHint: 'No song analysis yet' },
+    async () => {},
+  );
+  await setTranslationForeground(true);
+  assert.equal(translationHint('0'), 'No song analysis yet');
+  // Without a custom hint the iOS wording stays.
+  setTranslator({ ...fake, translationStatus: async () => 'unsupported' }, async () => {});
+  assert.equal(translationHint('0'), 'Download Japanese translation in Settings');
+});
+
 test('queue waits for the language pack and never starts work in the background', async () => {
   let installed = false,
     calls = 0;

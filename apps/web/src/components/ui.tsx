@@ -1,5 +1,5 @@
 import { colors } from '@kashi-koi/design/tokens';
-import type { CSSProperties, ComponentProps, ReactNode } from 'react';
+import type { CSSProperties, ComponentProps, MouseEvent, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Icon } from './Icon';
 import { PixelFrame } from './PixelFrame';
@@ -102,7 +102,8 @@ export function IconButton({
   disabled = false,
 }: {
   name: ComponentProps<typeof Icon>['name'];
-  onPress: () => void;
+  /** Receives the click, so a "more" button can anchor a menu to itself. */
+  onPress: (event: MouseEvent<HTMLButtonElement>) => void;
   label: string;
   fill?: string;
   border?: string | null;

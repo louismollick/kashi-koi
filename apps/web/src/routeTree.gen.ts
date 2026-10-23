@@ -12,6 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppBreakdownRouteImport } from './routes/_app/breakdown'
+import { Route as AppClipReviewRouteImport } from './routes/_app/clip-review'
+import { Route as AppEditLineRouteImport } from './routes/_app/edit-line'
+import { Route as AppFullPlayerRouteImport } from './routes/_app/full-player'
 import { Route as AppPlayerRouteImport } from './routes/_app/player'
 import { Route as AppReviewRouteImport } from './routes/_app/review'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -32,6 +36,26 @@ const LoginRoute = LoginRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBreakdownRoute = AppBreakdownRouteImport.update({
+  id: '/breakdown',
+  path: '/breakdown',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClipReviewRoute = AppClipReviewRouteImport.update({
+  id: '/clip-review',
+  path: '/clip-review',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEditLineRoute = AppEditLineRouteImport.update({
+  id: '/edit-line',
+  path: '/edit-line',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFullPlayerRoute = AppFullPlayerRouteImport.update({
+  id: '/full-player',
+  path: '/full-player',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPlayerRoute = AppPlayerRouteImport.update({
@@ -73,6 +97,10 @@ const AppLibraryPlaylistIdRoute = AppLibraryPlaylistIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
+  '/breakdown': typeof AppBreakdownRoute
+  '/clip-review': typeof AppClipReviewRoute
+  '/edit-line': typeof AppEditLineRoute
+  '/full-player': typeof AppFullPlayerRoute
   '/player': typeof AppPlayerRoute
   '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
@@ -83,6 +111,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/breakdown': typeof AppBreakdownRoute
+  '/clip-review': typeof AppClipReviewRoute
+  '/edit-line': typeof AppEditLineRoute
+  '/full-player': typeof AppFullPlayerRoute
   '/player': typeof AppPlayerRoute
   '/review': typeof AppReviewRoute
   '/settings': typeof AppSettingsRoute
@@ -96,6 +128,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/breakdown': typeof AppBreakdownRoute
+  '/_app/clip-review': typeof AppClipReviewRoute
+  '/_app/edit-line': typeof AppEditLineRoute
+  '/_app/full-player': typeof AppFullPlayerRoute
   '/_app/player': typeof AppPlayerRoute
   '/_app/review': typeof AppReviewRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -110,6 +146,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/breakdown'
+    | '/clip-review'
+    | '/edit-line'
+    | '/full-player'
     | '/player'
     | '/review'
     | '/settings'
@@ -120,6 +160,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/breakdown'
+    | '/clip-review'
+    | '/edit-line'
+    | '/full-player'
     | '/player'
     | '/review'
     | '/settings'
@@ -132,6 +176,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/login'
+    | '/_app/breakdown'
+    | '/_app/clip-review'
+    | '/_app/edit-line'
+    | '/_app/full-player'
     | '/_app/player'
     | '/_app/review'
     | '/_app/settings'
@@ -168,6 +216,34 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/breakdown': {
+      id: '/_app/breakdown'
+      path: '/breakdown'
+      fullPath: '/breakdown'
+      preLoaderRoute: typeof AppBreakdownRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/clip-review': {
+      id: '/_app/clip-review'
+      path: '/clip-review'
+      fullPath: '/clip-review'
+      preLoaderRoute: typeof AppClipReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/edit-line': {
+      id: '/_app/edit-line'
+      path: '/edit-line'
+      fullPath: '/edit-line'
+      preLoaderRoute: typeof AppEditLineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/full-player': {
+      id: '/_app/full-player'
+      path: '/full-player'
+      fullPath: '/full-player'
+      preLoaderRoute: typeof AppFullPlayerRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/player': {
@@ -223,6 +299,10 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppBreakdownRoute: typeof AppBreakdownRoute
+  AppClipReviewRoute: typeof AppClipReviewRoute
+  AppEditLineRoute: typeof AppEditLineRoute
+  AppFullPlayerRoute: typeof AppFullPlayerRoute
   AppPlayerRoute: typeof AppPlayerRoute
   AppReviewRoute: typeof AppReviewRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -234,6 +314,10 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppBreakdownRoute: AppBreakdownRoute,
+  AppClipReviewRoute: AppClipReviewRoute,
+  AppEditLineRoute: AppEditLineRoute,
+  AppFullPlayerRoute: AppFullPlayerRoute,
   AppPlayerRoute: AppPlayerRoute,
   AppReviewRoute: AppReviewRoute,
   AppSettingsRoute: AppSettingsRoute,

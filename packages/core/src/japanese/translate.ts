@@ -10,6 +10,8 @@ export type Translator = {
   prepareTranslation(): Promise<TranslationStatus>;
   translate(texts: string[]): Promise<string[]>;
   tokenize(texts: string[]): Promise<Token[][]>;
+  /** What the player shows for a song without translations when this platform cannot download them (the web). */
+  unavailableHint?: string;
 };
 const noop: Translator = {
   translationStatus: async () => 'unsupported',
@@ -200,7 +202,7 @@ export function translationHint(id: string) {
   return state.translationSongIds.has(id)
     ? 'Translating…'
     : state.translationStatus !== 'installed'
-      ? 'Download Japanese translation in Settings'
+      ? (translator.unavailableHint ?? 'Download Japanese translation in Settings')
       : 'No translations yet';
 }
 

@@ -1,6 +1,7 @@
 import type { Album, Artist } from '@kashi-koi/core/types/domain';
 import { Link } from '@tanstack/react-router';
 import { memo } from 'react';
+import { openMenuAtPointer } from '@/lib/songMenu';
 import { Cover } from './Cover';
 import { NoLyricsBadge } from './NoLyricsBadge';
 import { Label } from './ui';
@@ -26,6 +27,7 @@ export const ArtistTile = memo(function ArtistTile({
       aria-label={`Open artist ${artist.name}`}
       className="block transition-[filter] active:opacity-70 hover:brightness-110"
       style={{ width: size }}
+      onContextMenu={(event) => openMenuAtPointer(event, { kind: 'artist', id: artist.id })}
     >
       <span className="relative block">
         <Cover song={cover ?? artist} size={size} />

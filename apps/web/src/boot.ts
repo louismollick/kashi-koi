@@ -11,15 +11,23 @@ import { webLibraryDb } from '@/platform/db';
 import { noDownloads } from '@/platform/downloads';
 import { webSecrets } from '@/platform/secrets';
 import { localState } from '@/platform/storage';
-import { discardTranslations, webTranslator } from '@/platform/translator';
+import { webTranslator } from '@/platform/translator';
 
 // Install the platform pieces core calls through: library database, secret storage, translator, downloads. This is
 // the web counterpart of the top of apps/mobile/src/app/_layout.tsx.
 setLibraryDb(webLibraryDb);
 setSecrets(webSecrets);
 setDefaultAnalysisServer(import.meta.env.VITE_KASHI_SERVER_URL);
-setTranslator(webTranslator, discardTranslations);
+setTranslator(webTranslator);
 setDownloadRuntime(noDownloads);
+
+// The service worker only exists in production builds. Preview shares dev's origin, so drop a leftover one rather
+// than let it serve a stale build over the dev server.
+if (import.meta.env.DEV) {
+  void navigator.serviceWorker
+    ?.getRegistrations()
+    .then((all) => all.forEach((registration) => void registration.unregister()));
+}
 
 let booted: Promise<void> | undefined;
 
