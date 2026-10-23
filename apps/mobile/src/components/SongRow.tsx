@@ -7,7 +7,7 @@ import { appStore } from '@kashi-koi/core/store/appStore';
 import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { Cover } from './Cover';
 import { FogBadge } from './Fog';
-import { songMenu } from '@/screens/song-menu';
+import { songMenu } from '@/routes';
 import { useIsDownloaded } from '@kashi-koi/core/downloads';
 import { Icon } from './Icon';
 import { Label, styles } from './ui';

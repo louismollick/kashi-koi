@@ -5,7 +5,8 @@ import { Label } from './ui';
 
 /**
  * A lyric line with furigana as `<ruby>`: readings at 10px over 12px of space above the text, centered over their
- * kanji and free to overhang 12px into neighbours (the iOS `FuriganaLine`). Without `furigana` the line is plain
+ * kanji. A reading wider than its kanji widens the run instead of overhanging, so neighbouring readings never collide
+ * or spill past the line's edges (the iOS `FuriganaLine`). Without `furigana` the line is plain
  * text. Characters from `highlightFrom` on (a ruby run counts if it reaches past it) take `highlightColor`, which
  * the breakdown uses to show what a step added. `compact` left-aligns and shrinks the default size.
  */
@@ -46,8 +47,8 @@ export function RubyLine({
             <ruby
               // biome-ignore lint/suspicious/noArrayIndexKey: segments never reorder
               key={index}
-              className="relative block"
-              style={{ paddingTop: furigana ? 12 : 0, rubyPosition: 'over' }}
+              className="flex flex-col-reverse items-center"
+              style={{ paddingTop: furigana && !segment.reading ? 12 : 0 }}
             >
               <Label
                 className={highlighted ? 'font-bold' : 'font-medium'}
@@ -61,7 +62,7 @@ export function RubyLine({
               </Label>
               {furigana && segment.reading && (
                 <rt
-                  className="absolute top-0 -right-3 -left-3 block text-center text-[10px] leading-3"
+                  className="block text-center text-[10px] leading-3 whitespace-nowrap"
                   style={{ color: color ?? '#d9d6ea' }}
                 >
                   {segment.reading}

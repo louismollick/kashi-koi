@@ -80,8 +80,7 @@ async function loadScreen(screen: 'player' | 'song-menu', presses = new Map<stri
     delete globals[pressKey];
   };
   try {
-    const module =
-      screen === 'player' ? await import('../src/screens/player') : await import('../src/screens/song-menu');
+    const module = screen === 'player' ? await import('../src/app/player') : await import('../src/app/song-menu');
     return { Screen: module.default, cleanup };
   } catch (error) {
     cleanup();

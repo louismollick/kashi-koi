@@ -245,7 +245,7 @@ function AnswerTimeBar({ until }: { until: number }) {
 /**
  * A fixed quiz column: the harbor stage, the sentence in a dialogue box over the dock, then the answers. `lines` is
  * the current sentence (or a gap line with no choices); before the first sentence an analysed song shows its intro,
- * or `runEnd`, the song that just finished, with PLAY AGAIN (`onReplay`). The sentence scrolls when it is long, so
+ * or `runEnd`, the song that just finished, with PLAY AGAIN (`onReplay`). The sentence scrolls only when it overflows, so
  * the answers and, after a miss, EXPLAIN (`onExplain`) and CONTINUE (`onContinue`, when the song is held) always
  * stay on screen. `toast` sits just above the answers, so it never covers the sentence.
  */
@@ -297,7 +297,7 @@ export function QuizColumn({
       tag={summary ? <Tag>RUN COMPLETE</Tag> : isNew ? <Tag>NEW</Tag> : undefined}
       dialog={
         <>
-          <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ gap: 14 }}>
+          <ScrollView bounces={false} style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ gap: 14 }}>
             {summary ? (
               <RunSummary runEnd={summary} />
             ) : !lines?.length && intro ? (

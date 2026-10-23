@@ -1,12 +1,8 @@
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { useDownloadSummary, type DownloadTarget } from '@kashi-koi/core/downloads';
+import { useDownloadSummary } from '@kashi-koi/core/downloads';
+import { downloadSheet, type SheetTarget } from '@/routes';
 import { IconButton } from './ui';
-
-type SheetTarget = Exclude<DownloadTarget, { kind: 'library' }>;
-
-/** Route to the download sheet, used by long presses and the page buttons. */
-export const downloadSheet = (target: SheetTarget) => ({ pathname: '/download' as const, params: target });
 
 /** Header button on album and artist pages; green once every eligible song is offline. */
 export function DownloadButton({ target }: { target: SheetTarget }) {
