@@ -78,7 +78,7 @@ function RunEndToast({ style }: { style?: ViewStyle }) {
             numberOfLines={1}
             style={{ fontSize: 13, fontWeight: '700', color: runEnd.perfect ? colors.combo : colors.text }}
           >
-            {runEnd.perfect ? 'PERFECT RUN' : title}
+            {runEnd.perfect ? 'Perfect' : title}
           </Label>
           <Label muted numberOfLines={1} style={{ fontSize: 13 }}>
             {runEnd.perfect && title ? `${title} · ` : ''}
@@ -106,7 +106,7 @@ export default function PlayerScreen() {
   const reviewList = appStore((state) => state.reviewList);
   const addedId = appStore((state) => state.addedId);
   const addedExpiresAt = appStore((state) => state.addedExpiresAt);
-  const runEnd = appStore((state) => !!state.runEnd);
+  const runEnd = appStore((state) => state.runEnd);
   const lyrics = libraryStore((state) => state.lyrics[songId ?? '']);
   const timeline = lyrics?.timeline ?? [];
   const lines = useMemo(
@@ -217,6 +217,8 @@ export default function PlayerScreen() {
           lines={current?.lines ?? (beforeLyrics || !lines[lineIndex] ? undefined : [lines[lineIndex]])}
           current={answerWait || !occurrence ? -1 : lineIndex - occurrence.start}
           intro={beforeLyrics ? info : undefined}
+          runEnd={beforeLyrics ? (runEnd ?? undefined) : undefined}
+          onReplay={runEnd && runEnd.songId !== songId ? () => appStore.getState().previousSong() : undefined}
           until={answerWait?.until}
           combo={run.combo}
           nice={!!sentenceId && run.answers[sentenceId]?.correct === true}
@@ -225,7 +227,7 @@ export default function PlayerScreen() {
           onAnswer={(choice) => appStore.getState().answer(choice)}
           onExplain={explainable && sentenceId ? () => explain(sentenceId) : undefined}
           onContinue={answerWait ? () => appStore.getState().continueAfterAnswer() : undefined}
-          toast={showToast ? <AddedToast /> : runEnd ? <RunEndToast /> : undefined}
+          toast={showToast ? <AddedToast /> : runEnd && !beforeLyrics ? <RunEndToast /> : undefined}
         />
       ) : !lines.length ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>

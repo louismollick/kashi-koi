@@ -15,6 +15,8 @@ export const colors = {
   track: '#3e3d5b',
   cream: '#fbf8c6',
   combo: '#ffc93c',
+  koi: '#e7834a',
+  night: '#0d0f22',
   mini: '#f8f0f1',
   text: '#ffffff',
   muted: '#9a9cb8',

@@ -1,6 +1,5 @@
 import { View } from 'react-native';
-import { PixelFrame } from './PixelFrame';
-import { Label, Tag } from './ui';
+import { Label } from './ui';
 import { colors } from '@/constants/theme';
 import { getLineText } from '@/store/libraryStore';
 import type { Line } from '@/types/domain';
@@ -81,40 +80,21 @@ export function FuriganaLine({
 }
 
 /**
- * The quiz card: every line of the current sentence, left-aligned so a clause split across lines reads as one
- * thought. `current` brightens the line being sung (-1 brightens all).
+ * The quiz sentence: every line, left-aligned so a clause split across lines reads as one thought. `current`
+ * brightens the line being sung (-1 brightens all).
  */
-export function SentenceCard({
-  lines,
-  current = -1,
-  isNew = false,
-}: {
-  lines: Line[];
-  current?: number;
-  isNew?: boolean;
-}) {
+export function SentenceLines({ lines, current = -1 }: { lines: Line[]; current?: number }) {
   return (
-    <View>
-      <PixelFrame
-        fill={colors.surface}
-        border="#363a5e"
-        contentStyle={{ paddingHorizontal: 16, paddingVertical: 14, gap: 4 }}
-      >
-        {lines.map((line, index) => (
-          <FuriganaLine
-            key={index}
-            compact
-            size={22}
-            line={line}
-            color={current < 0 || index === current ? colors.text : colors.muted}
-          />
-        ))}
-      </PixelFrame>
-      {isNew && (
-        <View style={{ position: 'absolute', top: -9, left: 12 }}>
-          <Tag>NEW</Tag>
-        </View>
-      )}
+    <View style={{ gap: 4 }}>
+      {lines.map((line, index) => (
+        <FuriganaLine
+          key={index}
+          compact
+          size={22}
+          line={line}
+          color={current < 0 || index === current ? colors.text : colors.muted}
+        />
+      ))}
     </View>
   );
 }

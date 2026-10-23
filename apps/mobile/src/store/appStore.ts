@@ -82,10 +82,10 @@ function playSong(id: string) {
   clearClipTimer();
   if (settingsStore.getState().offlineMode && !localAudioUri(id)) {
     transport.pause();
-    appStore.setState({ loading: false, playing: false, playbackError: 'Song is not downloaded' });
+    appStore.setState({ loading: false, playing: false, playbackError: 'Song is not downloaded', runEnd: null });
     return;
   }
-  appStore.setState({ clipPlayback: null, clipReview: null, loading: true });
+  appStore.setState({ clipPlayback: null, clipReview: null, loading: true, runEnd: null });
   prioritizeUpNext();
   const song = getSong(id);
   if (song) {
@@ -186,25 +186,26 @@ function scoreSentence(correct: boolean, choice: string | null): boolean {
   return scored;
 }
 
-/** Publish quiz feedback before advancing to the next song. */
+/** Advance to the next song, then publish the finished quiz run over it. Any other song start clears the summary. */
 export function finishSong() {
   if (appStore.getState().answerWait) scoreSentence(false, null);
   clearAnswerWait();
   const state = appStore.getState(),
     answers = Object.values(state.run.answers);
-  if (state.quizToggle && state.songId && answers.length)
-    appStore.setState({
-      runEnd: {
-        songId: state.songId,
-        hits: answers.filter((answer) => answer.correct).length,
-        answered: answers.length,
-        bestCombo: state.run.bestCombo,
-        perfect: state.run.perfect,
-        at: Date.now(),
-      },
-    });
+  const runEnd =
+    state.quizToggle && state.songId && answers.length
+      ? {
+          songId: state.songId,
+          hits: answers.filter((answer) => answer.correct).length,
+          answered: answers.length,
+          bestCombo: state.run.bestCombo,
+          perfect: state.run.perfect,
+          at: Date.now(),
+        }
+      : null;
   if (state.songId && state.repeatSongId === state.songId) playQueueSong(state.songId, state.queueIndex, true);
   else state.nextSong();
+  if (runEnd) appStore.setState({ runEnd });
 }
 
 /** Start another queued play without rebuilding the queue or autoplay. Only the automatic replay keeps Repeat song. */
@@ -442,7 +443,7 @@ export const appStore = create<AppState>()(
         }),
       restartRun: () => {
         clearAnswerWait(true);
-        set({ lineIndex: 0, positionMs: 0, run: newRun() });
+        set({ lineIndex: 0, positionMs: 0, run: newRun(), runEnd: null });
         if (!get().clipPlayback) transport.seek(0);
         get().setPlaying(true);
       },
