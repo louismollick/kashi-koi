@@ -62,13 +62,13 @@ export default function HomeScreen() {
               >
                 <Icon name="musicFilled" size={54} color={colors.cream} />
                 <View style={{ flex: 1, alignItems: 'center' }}>
-                  <Label pixel style={{ fontSize: 22, lineHeight: 26, fontWeight: '800', letterSpacing: 1 }}>
+                  <Label pixel style={{ fontSize: 29, letterSpacing: 1 }}>
                     REVIEW
                   </Label>
-                  <Label pixel style={{ fontSize: 34, lineHeight: 38, fontWeight: '800' }}>
+                  <Label pixel style={{ fontSize: 44 }}>
                     {count}
                   </Label>
-                  <Label pixel style={{ fontSize: 22, lineHeight: 26, fontWeight: '800', letterSpacing: 1 }}>
+                  <Label pixel style={{ fontSize: 29, letterSpacing: 1 }}>
                     LYRICS
                   </Label>
                 </View>
