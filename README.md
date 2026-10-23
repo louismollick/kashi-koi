@@ -19,11 +19,15 @@ npm test
 npm run sprites
 ```
 
-Sprite processing requires Pillow. Generated strips and metadata are included in `apps/mobile/assets/sprites/`.
+Sprite processing requires Pillow. Generated strips and metadata are included in `packages/design/sprites/`.
 
-The Expo app, local native module and app tests live in `apps/mobile/`. Run workspace checks from the repository root. SideStore builds use `scripts/build-sidestore-ipa.sh`; `assets/sidestore-icon.png` remains as a compatibility copy for installed sources.
+The Expo app, local native module and native-side tests live in `apps/mobile/`. Run workspace checks from the repository root. SideStore builds use `scripts/build-sidestore-ipa.sh`; `assets/sidestore-icon.png` remains as a compatibility copy for installed sources.
 
-`packages/shared/` exports lyric ordering, fingerprints, analysis schemas and the Subsonic client as `@kashi-koi/shared/*` subpath modules. Its exports point directly to TypeScript source, which Metro and `tsx` consume without a separate build. The client takes caller-created token and salt values; mobile keeps `expo-crypto`. `getLyricsBySongId` supports an optional `enhanced: true` parameter for future server callers. Mobile keeps its existing request without that parameter.
+`packages/shared/` exports lyric ordering, fingerprints, analysis schemas and the Subsonic client as `@kashi-koi/shared/*` subpath modules. Its exports point directly to TypeScript source, which Metro and `tsx` consume without a separate build. The client takes caller-created token and salt values. `getLyricsBySongId` supports an optional `enhanced: true` parameter for future server callers. Mobile keeps its existing request without that parameter.
+
+`packages/core/` holds everything platform-neutral in the app: domain types, lyrics, review and fog logic, the zustand stores, Navidrome sync and session, the analysis client, the downloads queue and the Node tests for all of it. It exports `@kashi-koi/core/<path under src>` (for example `store/appStore`) plus `fixtures` for tests. Each platform installs what core calls into at start: `setLibraryDb` (the library cache), `setSecrets` (secret storage and random bytes), `setTranslator`, `setDownloadRuntime`, `setAnalysisRuntime` and `setDefaultAnalysisServer`, and it supplies the transport. `audio/playback` has the play rules every transport shares (source choice, played at half or 240 s, scrobbles, going offline). Mobile installs SQLite, SecureStore and expo-audio versions in `apps/mobile/src/app/_layout.tsx`. Core imports nothing from React Native or Expo.
+
+`packages/design/` holds colors, font names, `tint`, `stepped` and `steppedPolygon` (the same pixel corners as a CSS `clip-path`), icon path data, the mascot sprite strips and a Tailwind v4 `@theme` generator (`npx tsx packages/design/scripts/tokens-css.ts <out.css>`). Fonts stay in `apps/mobile/assets/fonts/`.
 
 ## Install builds
 

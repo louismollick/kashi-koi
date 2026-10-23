@@ -9,7 +9,7 @@
   "assist": { "enabled": false },
   "overrides": [
     {
-      "includes": ["apps/mobile/**/*.ts", "apps/mobile/**/*.tsx"],
+      "includes": ["apps/mobile/**/*.ts", "apps/mobile/**/*.tsx", "packages/core/**/*.ts", "packages/design/**/*.ts"],
       "linter": {
         "rules": {
           // Existing indexed lookups assert invariants already covered by app tests.

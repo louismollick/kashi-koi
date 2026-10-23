@@ -8,7 +8,7 @@ Sentence IDs use the song ID and the full ordered text joined with newlines. Rep
 
 ## Library selectors
 
-Import these from `src/store/libraryStore.ts`. Select `state.lyrics[songId]` in React to subscribe to changes before calling a helper.
+Import these from `@kashi-koi/core/store/libraryStore` (`packages/core/src/store/libraryStore.ts`). Select `state.lyrics[songId]` in React to subscribe to changes before calling a helper.
 
 ```ts
 currentSentence(songId: string | null, lineIndex: number)
