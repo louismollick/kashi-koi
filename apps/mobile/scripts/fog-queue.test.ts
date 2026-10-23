@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { applyAnswer, lyricsFog } from '../src/lyrics/fog';
-import { appStore, finishSong, getUpNext, hydrateAppState, resetAppState, setTransport } from '../src/store/appStore';
+import {
+  appStore,
+  finishSong,
+  getUpNext,
+  hydrateAppState,
+  remoteSkip,
+  resetAppState,
+  resumePlayback,
+  setTransport,
+} from '../src/store/appStore';
 import { settingsStore } from '../src/store/settingsStore';
 import { getLyrics, libraryStore } from '../src/store/libraryStore';
 import type { LineFog } from '../src/types/domain';
@@ -490,7 +499,7 @@ test('empty quiz and listen songs advance without a run-end toast', () => {
   assert.equal(appStore.getState().runEnd, null);
 });
 
-test('fog and perfect runs persist, queue and run feedback do not, and old keys are ignored', async () => {
+test('fog and perfect runs persist, run feedback does not, and old keys are ignored', async () => {
   const values = new Map<string, string>();
   await hydrateAppState({
     getItem: (key) => values.get(key) ?? null,
@@ -505,8 +514,7 @@ test('fog and perfect runs persist, queue and run feedback do not, and old keys 
   const saved = JSON.parse(values.get('learning-state')!) as { state: Record<string, unknown>; version: number };
   assert.deepEqual(saved.state.fog, { line: { state: 'half', run: 'old' } });
   assert.deepEqual(saved.state.perfectRuns, { dawn: true });
-  for (const key of ['ranks', 'queue', 'queueIndex', 'autoplay', 'runEnd', 'run'])
-    assert.equal(key in saved.state, false);
+  for (const key of ['ranks', 'runEnd', 'run', 'positionMs']) assert.equal(key in saved.state, false);
   saved.state.ranks = { dawn: 'S' };
   saved.state.playbackQueue = ['obsolete'];
   values.set('learning-state', JSON.stringify(saved));
@@ -514,4 +522,103 @@ test('fog and perfect runs persist, queue and run feedback do not, and old keys 
   assert.equal('ranks' in appStore.getState(), false);
   assert.equal('playbackQueue' in appStore.getState(), false);
   assert.deepEqual(appStore.getState().fog, { line: { state: 'half', run: 'old' } });
+});
+
+test('the queue survives a relaunch, paused at the saved position, and a song that left the library drops it', async () => {
+  const values = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      values.set(key, value);
+    },
+    removeItem: (key: string) => {
+      values.delete(key);
+    },
+  };
+  await hydrateAppState(storage);
+  resumePlayback();
+  appStore.getState().startSong('glass', ['dawn', 'glass', 'rain']);
+  appStore.getState().setRepeatSong('glass', true);
+  appStore.getState().updatePlayback(42000, 238000, true);
+  appStore.getState().setPlaying(false);
+  const { autoplay } = appStore.getState(),
+    saved = new Map(values);
+  const relaunch = async () => {
+    appStore.setState(appStore.getInitialState(), true);
+    values.clear();
+    for (const [key, value] of saved) values.set(key, value);
+    await hydrateAppState(storage);
+    // Boot work may touch the store before the library finishes loading.
+    appStore.setState({ run: { ...appStore.getState().run } });
+  };
+  await relaunch();
+  resumePlayback();
+  const state = appStore.getState();
+  assert.equal(state.songId, 'glass');
+  assert.deepEqual(state.queue, ['dawn', 'glass', 'rain']);
+  assert.equal(state.queueIndex, 1);
+  assert.deepEqual(state.autoplay, autoplay);
+  assert.equal(state.repeatSongId, 'glass');
+  assert.equal(state.positionMs, 42000);
+  assert.equal(state.durationMs, libraryStore.getState().bySong.glass!.duration * 1000);
+  assert.equal(state.playing, false);
+  // A sync that removed the saved song clears the saved queue.
+  await relaunch();
+  libraryStore.getState().setLibrary({
+    songs: songs.filter((song) => song.id !== 'glass'),
+    albums,
+    artists,
+    lyrics: songLyrics,
+  });
+  resumePlayback();
+  assert.equal(appStore.getState().songId, null);
+  assert.deepEqual(appStore.getState().queue, []);
+  await resetAppState();
+  assert.equal(values.has('playback-position'), false);
+});
+
+test('Previous keeps the last 100 played songs', () => {
+  const ids = Array.from({ length: 150 }, (_, index) => songs[index % 3]!.id);
+  appStore.setState({ queue: ids, queueIndex: 0 });
+  appStore.getState().playUpNext(129);
+  assert.equal(appStore.getState().queueIndex, 100);
+  assert.deepEqual(appStore.getState().queue, ids.slice(30));
+  assert.equal(appStore.getState().songId, ids[130]);
+});
+
+test('lock-screen next and previous drive songs, or review clips while reviewing', () => {
+  remoteSkip('next');
+  assert.equal(appStore.getState().songId, 'glass');
+  remoteSkip('previous');
+  assert.equal(appStore.getState().songId, 'dawn');
+  appStore.setState({ positionMs: 10000 });
+  remoteSkip('previous');
+  assert.equal(appStore.getState().songId, 'dawn');
+  assert.equal(appStore.getState().positionMs, 0);
+  const clipAfter = (direction: 'next' | 'previous', index: number) => {
+    appStore.setState({ clipReview: { id: 'clips', ids: ['a', 'b', 'c'], index, answers: {}, choices: {}, combo: 0 } });
+    remoteSkip(direction);
+    return appStore.getState().clipReview?.index;
+  };
+  assert.equal(clipAfter('next', 0), 1);
+  assert.equal(clipAfter('previous', 2), 1);
+  assert.equal(clipAfter('previous', 0), 0);
+  assert.equal(clipAfter('next', 2), undefined);
+  assert.equal(appStore.getState().songId, 'dawn');
+});
+
+test('playing a playlist queues its visible songs in playlist order, repeats included', () => {
+  libraryStore.getState().setLibrary({
+    songs,
+    albums,
+    artists,
+    lyrics: songLyrics,
+    playlists: [{ id: 'mix', name: 'Mix', songIds: ['rain', 'missing', songs[6]!.id, 'dawn', 'rain'] }],
+  });
+  appStore.getState().startPlaylist('mix');
+  assert.deepEqual(appStore.getState().queue, ['rain', 'dawn', 'rain']);
+  assert.equal(appStore.getState().songId, 'rain');
+  const before = appStore.getState();
+  appStore.getState().startPlaylist('nope');
+  assert.equal(appStore.getState(), before);
 });

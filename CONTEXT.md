@@ -67,12 +67,20 @@ A setting that limits the app to downloaded songs and stops all network work. Do
 _Avoid_: Airplane mode, local mode
 
 **Queue**:
-The songs that play after the current one: the list a song, album or artist was started from, plus anything added with Play next or Add to queue. A song already in the queue moves instead of appearing twice. Up next can be reordered, trimmed or cleared. When the queue runs out, autoplay continues with a shuffle of the visible library.
-_Avoid_: Playlist, up next (that's the view, not the list)
+The songs that play after the current one: the list a song, album, artist or playlist was started from, plus anything added with Play next or Add to queue. A song already in the queue moves instead of appearing twice. Up next can be reordered, trimmed or cleared. When the queue runs out, autoplay continues with a shuffle of the visible library. The queue, the playing song and its position survive a relaunch, paused.
+_Avoid_: Playlist (that's a saved Navidrome list), up next (that's the view, not the list)
+
+**Playlist**:
+A Navidrome playlist, synced with the library and read-only in the app. It plays like an album, in its own order, without its hidden songs.
+_Avoid_: Mix, queue
 
 **Repeat song**:
 A song menu switch on the playing song that replays it from the start, as a new run, each time it ends. Skipping or starting any song turns it off.
 _Avoid_: Loop, repeat one
+
+**Playback speed**:
+1x, 0.75x or 0.5x for songs and review clips, cycled from either player's header. Pitch stays the same and lyrics stay in sync.
+_Avoid_: Tempo, rate
 
 ### Modes
 

@@ -7,6 +7,7 @@ import { getAlbum, getSong, libraryStore } from '@/store/libraryStore';
 import { appStore, getUpNext } from '@/store/appStore';
 import { isHiddenSong, useLibraryFilters } from '@/data/libraryVisibility';
 import { ScreenHeader } from '@/components/Header';
+import { SpeedButton } from '@/components/SpeedButton';
 import { Cover } from '@/components/Cover';
 import { FogBadge } from '@/components/Fog';
 import { ProgressLine, time } from '@/components/PlayerBar';
@@ -195,7 +196,12 @@ export default function FullPlayerScreen() {
     <View style={styles.page}>
       <ScreenHeader
         sheet
-        right={<IconButton name="more" label="Song menu" onPress={() => router.push(songMenu(song.id))} />}
+        right={
+          <View style={[styles.row, { gap: 14 }]}>
+            <SpeedButton />
+            <IconButton name="more" label="Song menu" onPress={() => router.push(songMenu(song.id))} />
+          </View>
+        }
       />
       <ReorderableList
         data={upNext}

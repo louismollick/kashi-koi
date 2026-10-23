@@ -130,7 +130,8 @@ test('SQLite atomically invalidates replacement breakdowns, rolls back interrupt
       { transactions: transactions - writes.transactions, statements: statements - writes.statements },
       {
         transactions: 1,
-        statements: 7,
+        // A delete and a set-based insert per table (songs, albums, artists, playlists), then the lyrics prune.
+        statements: 9,
       },
     );
     writes = { transactions, statements };

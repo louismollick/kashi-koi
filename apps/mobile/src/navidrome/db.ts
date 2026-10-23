@@ -4,6 +4,7 @@ import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { type SongAnalysis, songAnalysisSchema, validateAnalysis } from '@kashi-koi/shared/analysis';
 import type { LyricsInput } from '@/lyrics/sentences';
 import type { Library, LibraryInput, LyricsResult, Translations } from '@/store/libraryStore';
+import type { Playlist } from '@/types/domain';
 
 let pendingWrite = Promise.resolve();
 /** Serialize scan, translation and playback writes on SQLite. */
@@ -15,7 +16,7 @@ function writeTransaction(db: SQLiteDatabase, work: (tx: SQLiteDatabase) => Prom
 
 const database = openDatabaseAsync('navidrome.db').then(async (db) => {
   await db.execAsync(
-    'PRAGMA journal_mode = WAL; CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS albums (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS artists (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS lyrics (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS translations (text TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS analyses (fingerprint TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS downloads (id TEXT PRIMARY KEY, status TEXT NOT NULL, file_name TEXT, bytes INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, error TEXT); CREATE TABLE IF NOT EXISTS breakdowns (fingerprint TEXT NOT NULL, start INTEGER NOT NULL, data TEXT NOT NULL, PRIMARY KEY (fingerprint, start));',
+    'PRAGMA journal_mode = WAL; CREATE TABLE IF NOT EXISTS songs (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS albums (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS artists (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS playlists (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS lyrics (id TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS translations (text TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS analyses (fingerprint TEXT PRIMARY KEY, data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS downloads (id TEXT PRIMARY KEY, status TEXT NOT NULL, file_name TEXT, bytes INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, error TEXT); CREATE TABLE IF NOT EXISTS breakdowns (fingerprint TEXT NOT NULL, start INTEGER NOT NULL, data TEXT NOT NULL, PRIMARY KEY (fingerprint, start));',
   );
   return db;
 });
@@ -48,6 +49,7 @@ export async function loadAll(): Promise<LibraryInput> {
   const songs = await rows<Library['songs'][number]>('songs'),
     albums = await rows<Library['albums'][number]>('albums'),
     artists = await rows<Library['artists'][number]>('artists'),
+    playlists = await rows<Playlist>('playlists'),
     cachedLyrics = await rows<LyricsInput>('lyrics');
   const analyses: Record<string, SongAnalysis> = {};
   for (const row of await db.getAllAsync<{ fingerprint: string; data: string }>(
@@ -70,6 +72,7 @@ export async function loadAll(): Promise<LibraryInput> {
     songs,
     albums,
     artists,
+    playlists,
     translations,
     analyses,
     lyrics: Object.fromEntries(cachedLyrics.map((item) => [item.songId, rawLyrics(item)])),
@@ -80,14 +83,14 @@ export async function loadAll(): Promise<LibraryInput> {
  * Publish a complete library only after all server pages succeed: one statement per table, in one transaction.
  * Cached lyrics stay as they are (`carryLyrics` passes them through unchanged) and only lose rows for removed songs.
  */
-export async function replaceLibrary(library: Pick<Library, 'songs' | 'albums' | 'artists'>) {
+export async function replaceLibrary(library: Pick<Library, 'songs' | 'albums' | 'artists' | 'playlists'>) {
   const db = await database;
   await writeTransaction(db, async (tx) => {
-    for (const table of ['songs', 'albums', 'artists'] as const) {
+    for (const table of ['songs', 'albums', 'artists', 'playlists'] as const) {
       await tx.runAsync(`DELETE FROM ${table}`);
       await tx.runAsync(
         `INSERT INTO ${table} (id, data) SELECT json_extract(value, '$.id'), value FROM json_each(?)`,
-        JSON.stringify(library[table]),
+        JSON.stringify(library[table] ?? []),
       );
     }
     await tx.runAsync('DELETE FROM lyrics WHERE id NOT IN (SELECT id FROM songs)');
@@ -158,7 +161,7 @@ export async function clearLibrary() {
   const db = await database;
   await writeTransaction(db, (tx) =>
     tx.execAsync(
-      'DELETE FROM songs; DELETE FROM albums; DELETE FROM artists; DELETE FROM lyrics; DELETE FROM translations; DELETE FROM analyses; DELETE FROM breakdowns;',
+      'DELETE FROM songs; DELETE FROM albums; DELETE FROM artists; DELETE FROM playlists; DELETE FROM lyrics; DELETE FROM translations; DELETE FROM analyses; DELETE FROM breakdowns;',
     ),
   );
 }
@@ -221,11 +224,9 @@ export async function clearDownloads() {
 
 /** Shared breakdowns are cached for every online read, not just downloaded songs. */
 export async function readBreakdown(fp: string, start: number): Promise<Breakdown | undefined> {
-  const row = await (await database).getFirstAsync<{ data: string }>(
-    'SELECT data FROM breakdowns WHERE fingerprint = ? AND start = ?',
-    fp,
-    start,
-  );
+  const row = await (
+    await database
+  ).getFirstAsync<{ data: string }>('SELECT data FROM breakdowns WHERE fingerprint = ? AND start = ?', fp, start);
   if (!row) return undefined;
   try {
     const value = breakdownSchema.safeParse(JSON.parse(row.data));

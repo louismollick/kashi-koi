@@ -5,7 +5,7 @@ import { scan, scanLyrics, syncLibrary, cancelSync } from '../src/navidrome/sync
 import { sessionStore } from '../src/navidrome/session';
 import { appStore } from '../src/store/appStore';
 import { settingsStore } from '../src/store/settingsStore';
-import { libraryStore } from '../src/store/libraryStore';
+import { libraryStore, type Library } from '../src/store/libraryStore';
 import { songs, albums, artists, songLyrics } from './fixtures';
 import type { Session } from '../src/navidrome/subsonic';
 
@@ -393,6 +393,40 @@ test('switching offline after a save still publishes that saved result', async (
     );
     assert.equal(libraryStore.getState().bySong[song.id]!.lyricsStatus, 'none');
     assert.equal(settingsStore.getState().lastScanAt, null);
+  } finally {
+    sessionStore.setState({ session: null });
+    globalThis.fetch = original;
+  }
+});
+
+test('sync saves playlists with their song order, and servers without playlists sync none', async () => {
+  const original = globalThis.fetch,
+    song = songs[0]!;
+  let saved: Library | undefined;
+  const ok = (body: object) => Response.json({ 'subsonic-response': { status: 'ok', ...body } });
+  try {
+    sessionStore.setState({ session });
+    globalThis.fetch = async (input) => {
+      const path = new URL(String(input)).pathname;
+      if (path.includes('search3')) return ok({ searchResult3: { song: [{ ...song }], album: [] } });
+      if (path.includes('getPlaylists'))
+        return ok({ playlists: { playlist: [{ id: 'mix', name: 'Mix', coverArt: 'pl-mix' }] } });
+      if (path.includes('getPlaylist'))
+        return ok({ playlist: { entry: [{ id: song.id }, { id: 'gone' }, { id: song.id }] } });
+      return ok({ artists: { index: [] }, lyricsList: {} });
+    };
+    await syncLibrary(async (library) => {
+      saved = library;
+    });
+    const mix = { id: 'mix', name: 'Mix', coverArt: 'pl-mix', songIds: [song.id, 'gone', song.id] };
+    assert.deepEqual(saved?.playlists, [mix]);
+    assert.deepEqual(libraryStore.getState().playlists, [mix]);
+    globalThis.fetch = async (input) =>
+      new URL(String(input)).pathname.includes('search3')
+        ? ok({ searchResult3: { song: [{ ...song }], album: [] } })
+        : ok({ artists: { index: [] }, lyricsList: {} });
+    await syncLibrary(async () => {});
+    assert.deepEqual(libraryStore.getState().playlists, []);
   } finally {
     sessionStore.setState({ session: null });
     globalThis.fetch = original;
