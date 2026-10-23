@@ -13,7 +13,7 @@ import {
 import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import type { Song } from '@kashi-koi/core/types/domain';
 import { colors } from '@kashi-koi/design/tokens';
-import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
+import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { closeMenu, type MenuTarget, menuStore } from '@/lib/songMenu';
 import { router } from '@/router';
@@ -226,16 +226,17 @@ export function SongMenuHost() {
   const anchor = menuStore((state) => state.anchor);
   const desktop = useIsDesktop();
   const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const element = dialog.current;
-    if (!element) return;
-    if (target && !element.open) element.showModal();
-    else if (!target && element.open) element.close();
-  }, [target]);
-  // Place the desktop menu next to its anchor, kept inside the window.
+  // Open the dialog first, then place the desktop menu next to its anchor, kept inside the window: a closed dialog
+  // measures 0 by 0.
   useLayoutEffect(() => {
     const element = dialog.current;
-    if (!element || !target || !desktop || !anchor) return;
+    if (!element) return;
+    if (!target) {
+      if (element.open) element.close();
+      return;
+    }
+    if (!element.open) element.showModal();
+    if (!desktop || !anchor) return;
     const { width, height } = element.getBoundingClientRect();
     const left = anchor.align === 'end' ? anchor.x - width : anchor.x;
     element.style.left = `${Math.max(margin, Math.min(left, window.innerWidth - width - margin))}px`;

@@ -225,18 +225,24 @@ export function installWebTransport({ audio, session, clock, muted = false }: Tr
       stopTimer = () => clock.clearInterval(id);
       return;
     }
+    // `sync` can pause the transport (a quiz sentence end), which stops this loop from inside a frame, so each loop
+    // checks its own flag before scheduling the next frame.
     let last = clock.now(),
-      id = 0;
+      id = 0,
+      stopped = false;
     const frame = () => {
       const now = clock.now();
       if (now - last >= POLL_MS) {
         last = now;
         sync();
       }
-      id = clock.requestFrame(frame);
+      if (!stopped) id = clock.requestFrame(frame);
     };
     id = clock.requestFrame(frame);
-    stopTimer = () => clock.cancelFrame(id);
+    stopTimer = () => {
+      stopped = true;
+      clock.cancelFrame(id);
+    };
   };
   const setPolling = (on: boolean) => {
     if (polling === on) return;
@@ -326,6 +332,8 @@ export function installWebTransport({ audio, session, clock, muted = false }: Tr
     setPlaybackState();
   };
   const onPause = () => {
+    // A pause event delivered after a newer play() is stale: the element is playing again.
+    if (!audio.paused) return;
     setPolling(false);
     setPlaybackState();
     if (!song || awaitingStart || audio.ended || audio.seeking) return;

@@ -370,6 +370,34 @@ test('a hidden tab still stops the quiz at the end of a sentence', () => {
   assert.equal(appStore.getState().answerWait, null);
 });
 
+test('a visible tab stops its frame loop at a quiz pause and runs one loop after resuming', () => {
+  const { audio, time } = setup();
+  appStore.getState().startSong('dawn');
+  appStore.getState().setQuizToggle(true);
+  audio.ready(238);
+  audio.currentTime = 9.01;
+  time.frame(POLL_MS);
+  assert.notEqual(appStore.getState().answerWait, null);
+  assert.equal(time.frames.size, 0);
+  appStore.getState().continueAfterAnswer();
+  assert.equal(time.frames.size, 1);
+  dispose?.();
+  dispose = undefined;
+  assert.equal(time.frames.size, 0);
+});
+
+test('a pause event delivered after a newer play is ignored', () => {
+  const { audio } = setup();
+  appStore.getState().startSong(firstSong.id);
+  audio.ready(238);
+  appStore.getState().setPlaying(false);
+  appStore.getState().setPlaying(true);
+  // The earlier pause arrives late while the element is already playing again.
+  audio.fire('pause');
+  assert.equal(appStore.getState().playing, true);
+  assert.equal(audio.paused, false);
+});
+
 test('the end of a song advances the queue', () => {
   const { audio } = setup();
   appStore.getState().startSong(firstSong.id, [firstSong.id, songs[1]!.id]);
