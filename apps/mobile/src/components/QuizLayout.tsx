@@ -1,20 +1,35 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { useAnimatedStyle, useSharedValue, Easing, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
-import type { Choice, Line, SongLyrics } from '@/types/domain';
+import { libraryStore } from '@/store/libraryStore';
+import type { Choice, Line, RunEnd, SongLyrics } from '@/types/domain';
 import { PixelFrame } from './PixelFrame';
-import { SentenceCard } from './LineCard';
+import { SentenceLines } from './LineCard';
 import { SongIntro } from './SongIntro';
 import { Mascot } from './Mascot';
 import { Answers, GapSentence } from './Answers';
+import { FogStrip, useSongFog } from './Fog';
+import { Icon } from './Icon';
 import { gapOf } from '@/lyrics/choices';
-import { Button, Label, styles } from './ui';
+import { Button, Label, Tag, styles } from './ui';
 
-/** Sprite and feedback fill the space left between the sentence and answers, never shorter than an answer button. */
-function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
+const harbor = require('../../assets/background.png');
+/** A finished run's best combo, shown in place of the live one. */
+type Best = { combo: number; perfect: boolean };
+const harborAspect = 1498 / 1050;
+// How far the dialogue box rides up over the dock.
+const overlap = 24;
+
+/**
+ * The harbor behind the quiz: she fishes from the dock, NICE! pops by her head and the combo lands in her bucket as
+ * fish. The art and sprite stay pinned to the bottom, so a taller sentence only crops sky. `best` swaps the combo
+ * for a finished run's best combo, with a gold koi when it was perfect.
+ */
+function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Best }) {
   const pop = useSharedValue(0);
-  const [size, setSize] = useState(0);
+  const [{ width, height }, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
     pop.value = nice ? withSpring(1, { damping: 12 }) : withTiming(0, { duration: 140 });
   }, [nice, pop]);
@@ -22,6 +37,10 @@ function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
     opacity: pop.value,
     transform: [{ scale: 0.75 + pop.value * 0.25 }, { rotate: '-4deg' }],
   }));
+  // Zoomed past cover so the art's pixels read at phone size.
+  const artWidth = Math.max(width * 1.6, height * harborAspect);
+  const size = Math.max(0, Math.min(260, width * 0.62, height - 4));
+  const bottom = overlap - size * 0.06;
   const note = {
     position: 'absolute',
     color: colors.coral,
@@ -31,14 +50,24 @@ function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 0,
   } as const;
+  const count = best ? best.combo : combo;
   return (
     <View
-      onLayout={({ nativeEvent: { layout } }) =>
-        setSize(Math.max(0, Math.min(250, layout.height - 8, layout.width - 128)))
-      }
-      style={[styles.row, { flex: 1, minHeight: 72, paddingHorizontal: 4 }]}
+      onLayout={({ nativeEvent: { layout } }) => setSize({ width: layout.width, height: layout.height })}
+      style={{ flexGrow: 1, flexBasis: 0, minHeight: 72, overflow: 'hidden' }}
     >
-      <View>
+      <Image
+        source={harbor}
+        contentFit="fill"
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: -(artWidth - width) * 0.3,
+          width: artWidth,
+          height: artWidth / harborAspect,
+        }}
+      />
+      <View style={{ position: 'absolute', left: 4, bottom }}>
         <Mascot combo={combo} size={size} />
         {combo >= 3 && (
           <>
@@ -47,59 +76,152 @@ function ComboRow({ combo, nice }: { combo: number; nice: boolean }) {
           </>
         )}
       </View>
-      <View style={{ flex: 1, alignItems: 'flex-end' }}>
-        <View
+      <Animated.View
+        style={[
+          { position: 'absolute', left: size * 0.62, top: Math.max(8, height - bottom - size * 0.98) },
+          animatedStyle,
+        ]}
+      >
+        <PixelFrame
+          fill={colors.cream}
+          border={colors.coral}
+          contentStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
+        >
+          <Label pixel style={{ color: colors.coralDeep, fontWeight: '900', fontSize: 20, lineHeight: 24 }}>
+            NICE!
+          </Label>
+        </PixelFrame>
+      </Animated.View>
+      <PixelFrame
+        fill={colors.night}
+        border="#363a5e"
+        style={{ position: 'absolute', right: 14, bottom: overlap + 12 }}
+        contentStyle={{ alignItems: 'center', paddingHorizontal: 12, paddingTop: 6, paddingBottom: 8, minWidth: 92 }}
+      >
+        <Label pixel style={{ color: colors.combo, fontSize: 14, fontWeight: '700', letterSpacing: 1 }}>
+          {best ? 'BEST COMBO' : 'COMBO'}
+        </Label>
+        <Label
+          pixel
           style={{
-            width: 110,
-            height: 140,
-            justifyContent: 'flex-end',
-            alignItems: 'flex-end',
-            gap: 6,
-            transform: [{ scale: Math.min(1, size / 140) }],
-            transformOrigin: 'right center',
+            color: colors.cream,
+            fontSize: 40,
+            lineHeight: 44,
+            fontWeight: '900',
+            textShadowColor: colors.coralDeep,
+            textShadowOffset: { width: 3, height: 3 },
+            textShadowRadius: 0,
           }}
         >
-          <Animated.View style={animatedStyle}>
-            <PixelFrame
-              fill={colors.cream}
-              border={colors.coral}
-              contentStyle={{ paddingHorizontal: 14, paddingVertical: 6 }}
-            >
-              <Label style={{ color: colors.coralDeep, fontWeight: '900', fontSize: 22, lineHeight: 26 }}>NICE!</Label>
-            </PixelFrame>
-            <View
-              style={{
-                position: 'absolute',
-                bottom: -6,
-                left: 14,
-                width: 12,
-                height: 12,
-                backgroundColor: colors.cream,
-                borderRightWidth: 2,
-                borderBottomWidth: 2,
-                borderColor: colors.coral,
-                transform: [{ rotate: '45deg' }],
-              }}
-            />
-          </Animated.View>
-          <Label style={{ color: colors.combo, fontSize: 15, fontWeight: '800', letterSpacing: 1.5, marginTop: 6 }}>
-            COMBO
-          </Label>
-          <Label
-            style={{
-              color: colors.cream,
-              fontSize: 48,
-              lineHeight: 52,
-              fontWeight: '900',
-              textShadowColor: colors.coralDeep,
-              textShadowOffset: { width: 3, height: 3 },
-              textShadowRadius: 0,
-            }}
-          >
-            {combo}
-          </Label>
-        </View>
-      </View>
+          {count}
+        </Label>
+        {(best ? best.perfect : combo > 0) && (
+          <View style={{ flexDirection: 'row', gap: 3, marginTop: 2 }}>
+            {best ? (
+              <Icon name="koi" size={24} color={colors.combo} />
+            ) : (
+              Array.from({ length: Math.min(combo, 5) }, (_, index) => (
+                <Icon key={index} name="koi" size={14} color={colors.koi} />
+              ))
+            )}
+          </View>
+        )}
+      </PixelFrame>
+    </View>
+  );
+}
+
+/** RPG dialogue box: a cream border inside a dark ring, so it reads over the harbor art. `tag` sits on its top edge. */
+function Dialog({ children, tag, style }: { children: ReactNode; tag?: ReactNode; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[{ flexShrink: 1, minHeight: 0 }, style]}>
+      <PixelFrame
+        fill={colors.night}
+        border={null}
+        style={{ flexShrink: 1 }}
+        contentStyle={{ padding: 3, flexShrink: 1 }}
+      >
+        <PixelFrame
+          fill={colors.night}
+          border={colors.cream}
+          style={{ flexShrink: 1 }}
+          contentStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, gap: 8, flexShrink: 1 }}
+        >
+          {children}
+        </PixelFrame>
+      </PixelFrame>
+      {tag && <View style={{ position: 'absolute', top: -8, left: 14 }}>{tag}</View>}
+    </View>
+  );
+}
+
+/** A finished run's score: gold "Perfect" or the hit count, one muted line, then optional tiles below. */
+export function RunResult({
+  perfect,
+  score,
+  detail,
+  children,
+}: {
+  perfect: boolean;
+  score: string;
+  detail?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <View style={{ alignItems: 'center', gap: 4 }}>
+      <Label
+        pixel
+        style={{ fontSize: 28, lineHeight: 34, fontWeight: '700', color: perfect ? colors.combo : colors.cream }}
+      >
+        {perfect ? 'Perfect' : score}
+      </Label>
+      {(detail || perfect) && (
+        <Label muted numberOfLines={1}>
+          {[detail, perfect && score].filter(Boolean).join(' · ')}
+        </Label>
+      )}
+      {children && <View style={{ alignSelf: 'stretch', marginTop: 8 }}>{children}</View>}
+    </View>
+  );
+}
+
+/** The song that just finished, shown over the next song's intro, with its fog tiles. */
+function RunSummary({ runEnd }: { runEnd: RunEnd }) {
+  const title = libraryStore((state) => state.bySong[runEnd.songId]?.title);
+  const { tiles } = useSongFog(runEnd.songId);
+  return (
+    <RunResult perfect={runEnd.perfect} score={`${runEnd.hits} of ${runEnd.answered} right`} detail={title}>
+      <FogStrip tiles={tiles} />
+    </RunResult>
+  );
+}
+
+/**
+ * The harbor stage with a dialogue box riding over its dock and `children` (answers or actions) below. Quiz mode,
+ * clip review and the review's end screen share it.
+ */
+export function DockScene({
+  combo,
+  nice,
+  best,
+  tag,
+  dialog,
+  children,
+}: {
+  combo: number;
+  nice: boolean;
+  best?: Best;
+  tag?: ReactNode;
+  dialog: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <View style={{ flex: 1, minHeight: 0, paddingBottom: 16 }}>
+      <Stage combo={combo} nice={nice} best={best} />
+      <Dialog style={{ marginTop: -overlap, marginHorizontal: 16 }} tag={tag}>
+        {dialog}
+      </Dialog>
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>{children}</View>
     </View>
   );
 }
@@ -114,22 +236,25 @@ function AnswerTimeBar({ until }: { until: number }) {
   }, [until, remaining]);
   const animatedStyle = useAnimatedStyle(() => ({ width: `${remaining.value * 100}%` }));
   return (
-    <View style={{ height: 3, marginTop: 6, backgroundColor: colors.track }}>
+    <View style={{ height: 3, backgroundColor: colors.track }}>
       <Animated.View style={[{ height: 3, backgroundColor: colors.coral }, animatedStyle]} />
     </View>
   );
 }
 
 /**
- * A fixed quiz column. `lines` is the current sentence (or a gap line with no choices); before the first sentence
- * an analysed song shows its intro instead. The sentence scrolls when it is long, so the answers and, after a miss,
- * EXPLAIN (`onExplain`) and CONTINUE (`onContinue`, when the song is held) always stay on screen. `toast` sits just
- * above the answers, so it never covers the sentence.
+ * A fixed quiz column: the harbor stage, the sentence in a dialogue box over the dock, then the answers. `lines` is
+ * the current sentence (or a gap line with no choices); before the first sentence an analysed song shows its intro,
+ * or `runEnd`, the song that just finished, with PLAY AGAIN (`onReplay`). The sentence scrolls when it is long, so
+ * the answers and, after a miss, EXPLAIN (`onExplain`) and CONTINUE (`onContinue`, when the song is held) always
+ * stay on screen. `toast` sits just above the answers, so it never covers the sentence.
  */
 export function QuizColumn({
   lines,
   current,
   intro,
+  runEnd,
+  onReplay,
   choices,
   selected,
   combo,
@@ -145,6 +270,8 @@ export function QuizColumn({
   lines?: Line[];
   current?: number;
   intro?: SongLyrics['analysis'];
+  runEnd?: RunEnd;
+  onReplay?: () => void;
   choices: Choice[];
   selected: string | null;
   combo: number;
@@ -161,29 +288,50 @@ export function QuizColumn({
   const missed = selected !== null && !nice;
   const gap = gapOf(choices);
   const answer = selected === null ? undefined : choices.find((choice) => choice.correct);
+  const summary = !lines?.length && runEnd;
   return (
-    <View style={{ flex: 1, minHeight: 0, paddingHorizontal: 16, paddingBottom: 16 }}>
-      <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ gap: 18 }}>
-        {!lines?.length && intro ? (
-          <SongIntro info={intro} />
-        ) : (
-          <SentenceCard
-            lines={lines?.length ? lines : [{ id: 'gap', segments: [{ text: '♪' }] }]}
-            current={current}
-            isNew={isNew}
-          />
-        )}
-        {gap && <GapSentence gap={gap} answer={answer?.parts.find((part) => part.marked)?.text} />}
-      </ScrollView>
-      {until != null && <AnswerTimeBar until={until} />}
-      <ComboRow combo={combo} nice={nice} />
+    <DockScene
+      combo={combo}
+      nice={nice}
+      best={summary ? { combo: summary.bestCombo, perfect: summary.perfect } : undefined}
+      tag={summary ? <Tag>RUN COMPLETE</Tag> : isNew ? <Tag>NEW</Tag> : undefined}
+      dialog={
+        <>
+          <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ gap: 14 }}>
+            {summary ? (
+              <RunSummary runEnd={summary} />
+            ) : !lines?.length && intro ? (
+              <SongIntro info={intro} />
+            ) : (
+              <SentenceLines
+                lines={lines?.length ? lines : [{ id: 'gap', segments: [{ text: '♪' }] }]}
+                current={current}
+              />
+            )}
+            {gap && <GapSentence gap={gap} answer={answer?.parts.find((part) => part.marked)?.text} />}
+          </ScrollView>
+          {/* Always reserved, so the deadline appearing doesn't resize the stage. */}
+          <View style={{ height: 3 }}>{until != null && <AnswerTimeBar until={until} />}</View>
+        </>
+      }
+    >
       {toast && <View style={{ marginBottom: 12 }}>{toast}</View>}
-      <Answers choices={choices} selected={selected} onAnswer={onAnswer} />
+      {summary && onReplay ? (
+        <Button label="Play the finished song again" onPress={onReplay}>
+          <Label pixel style={{ fontSize: 18, fontWeight: '700' }}>
+            PLAY AGAIN
+          </Label>
+        </Button>
+      ) : (
+        <Answers choices={choices} selected={selected} onAnswer={onAnswer} />
+      )}
       {missed && (onExplain || onContinue) && (
         <View style={[styles.row, { marginTop: 12 }]}>
           {onExplain && (
             <Button label="Explain this sentence" style={{ flex: 1 }} onPress={onExplain}>
-              <Label style={{ fontWeight: '800' }}>EXPLAIN</Label>
+              <Label pixel style={{ fontSize: 18, fontWeight: '700' }}>
+                EXPLAIN
+              </Label>
             </Button>
           )}
           {onContinue && (
@@ -194,11 +342,13 @@ export function QuizColumn({
               border={colors.coralBorder}
               onPress={onContinue}
             >
-              <Label style={{ fontWeight: '800' }}>{continueLabel}</Label>
+              <Label pixel style={{ fontSize: 18, fontWeight: '700' }}>
+                {continueLabel}
+              </Label>
             </Button>
           )}
         </View>
       )}
-    </View>
+    </DockScene>
   );
 }

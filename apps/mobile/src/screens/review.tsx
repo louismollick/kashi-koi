@@ -81,7 +81,9 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
         onPress={() => setOpen(!open)}
         style={[styles.row, { paddingVertical: 6 }]}
       >
-        <Label style={[sectionTitle, { flex: 1 }]}>{title}</Label>
+        <Label pixel style={[sectionTitle, { flex: 1 }]}>
+          {title}
+        </Label>
         <Label muted style={{ fontSize: 13 }}>
           {plural(items.length, 'sentence')} from {plural(songIds.length, 'song')}
         </Label>
@@ -123,7 +125,9 @@ export default function ReviewScreen() {
         >
           <View style={styles.row}>
             <Icon name="play" size={28} color={colors.cream} />
-            <Label style={styles.title}>Review Lyrics</Label>
+            <Label pixel style={styles.title}>
+              Review Lyrics
+            </Label>
           </View>
           <Label style={{ fontSize: 13, marginTop: 2 }}>~4 min</Label>
         </Button>

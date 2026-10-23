@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, TextInput, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
-import { colors } from '@/constants/theme';
+import { colors, font } from '@/constants/theme';
 import { getPlaylistSongs, libraryStore } from '@/store/libraryStore';
 import {
   countBy,
@@ -132,7 +132,7 @@ export default function LibraryScreen() {
           placeholderTextColor={colors.muted}
           value={query}
           onChangeText={setQuery}
-          style={{ flex: 1, color: colors.text, height: 50, fontSize: 16 }}
+          style={{ ...font('body'), flex: 1, color: colors.text, height: 50, fontSize: 16 }}
           clearButtonMode="while-editing"
         />
       </PixelFrame>

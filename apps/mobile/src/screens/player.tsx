@@ -3,9 +3,10 @@ import { analysisRequests } from '@/analysis/fetcher';
 import { translationHint } from '@/japanese/translate';
 import { isJapanese } from '@/japanese/text';
 import { memo, useEffect, useMemo } from 'react';
-import { ActivityIndicator, Pressable, View, type ViewStyle } from 'react-native';
+import { Pressable, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
+import { PixelSpinner } from '@/components/PixelSpinner';
 import {
   currentSentence,
   getLineText,
@@ -41,7 +42,9 @@ function AddedToast({ style }: { style?: ViewStyle }) {
         contentStyle={{ minHeight: 40, paddingHorizontal: 12, paddingVertical: 8 }}
         onPress={() => appStore.getState().undoLostMark()}
       >
-        <Label style={{ fontSize: 12, color: colors.cream, fontWeight: '700' }}>UNDO</Label>
+        <Label pixel style={{ fontSize: 14, color: colors.cream, fontWeight: '700' }}>
+          UNDO
+        </Label>
       </Button>
     </PixelFrame>
   );
@@ -77,7 +80,7 @@ function RunEndToast({ style }: { style?: ViewStyle }) {
             numberOfLines={1}
             style={{ fontSize: 13, fontWeight: '700', color: runEnd.perfect ? colors.combo : colors.text }}
           >
-            {runEnd.perfect ? 'PERFECT RUN' : title}
+            {runEnd.perfect ? 'Perfect' : title}
           </Label>
           <Label muted numberOfLines={1} style={{ fontSize: 13 }}>
             {runEnd.perfect && title ? `${title} · ` : ''}
@@ -144,7 +147,7 @@ export default function PlayerScreen() {
   const reviewList = appStore((state) => state.reviewList);
   const addedId = appStore((state) => state.addedId);
   const addedExpiresAt = appStore((state) => state.addedExpiresAt);
-  const runEnd = appStore((state) => !!state.runEnd);
+  const runEnd = appStore((state) => state.runEnd);
   const lyrics = libraryStore((state) => state.lyrics[songId ?? '']);
   const timeline = lyrics?.timeline ?? [];
   const lines = useMemo(
@@ -201,7 +204,8 @@ export default function PlayerScreen() {
       <ScreenHeader
         sheet
         title={
-          quizToggle && occurrence ? `Sentence ${sentences.indexOf(occurrence) + 1} of ${sentences.length}` : undefined
+          // Just the count: the speed, QUIZ and menu controls leave no room for "Sentence".
+          quizToggle && occurrence ? `${sentences.indexOf(occurrence) + 1} of ${sentences.length}` : undefined
         }
         right={
           <View style={[styles.row, { gap: 14 }]}>
@@ -232,7 +236,7 @@ export default function PlayerScreen() {
             </Label>
           ) : (
             <>
-              <ActivityIndicator size="small" color={colors.lavender} />
+              <PixelSpinner color={colors.lavender} />
               <Label muted style={{ flex: 1 }}>
                 {request.status === 'running' ? 'Analyzing song' : 'Analysis queued'}
               </Label>
@@ -249,13 +253,15 @@ export default function PlayerScreen() {
       )}
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="small" color={colors.coral} accessibilityLabel="Loading song" />
+          <PixelSpinner color={colors.coral} accessibilityLabel="Loading song" />
         </View>
       ) : quizToggle ? (
         <QuizColumn
           lines={current?.lines ?? (beforeLyrics || !lines[lineIndex] ? undefined : [lines[lineIndex]])}
           current={answerWait || !occurrence ? -1 : lineIndex - occurrence.start}
           intro={beforeLyrics ? info : undefined}
+          runEnd={beforeLyrics ? (runEnd ?? undefined) : undefined}
+          onReplay={runEnd && runEnd.songId !== songId ? () => appStore.getState().replayRunEnd() : undefined}
           until={answerWait?.until}
           combo={run.combo}
           nice={!!sentenceId && run.answers[sentenceId]?.correct === true}
@@ -264,7 +270,7 @@ export default function PlayerScreen() {
           onAnswer={(choice) => appStore.getState().answer(choice)}
           onExplain={explainable && sentenceId ? () => explain(sentenceId) : undefined}
           onContinue={answerWait ? () => appStore.getState().continueAfterAnswer() : undefined}
-          toast={showToast ? <AddedToast /> : runEnd ? <RunEndToast /> : undefined}
+          toast={showToast ? <AddedToast /> : runEnd && !beforeLyrics ? <RunEndToast /> : undefined}
         />
       ) : !lines.length ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -315,7 +321,9 @@ export default function PlayerScreen() {
                   contentStyle={{ paddingVertical: 14, paddingHorizontal: 16 }}
                   onPress={() => explain(sentenceId)}
                 >
-                  <Label style={{ fontSize: 16, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>EXPLAIN</Label>
+                  <Label pixel style={{ fontSize: 16, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
+                    EXPLAIN
+                  </Label>
                 </Button>
               )}
               <Button
@@ -327,7 +335,7 @@ export default function PlayerScreen() {
                 contentStyle={{ paddingVertical: 14 }}
                 onPress={() => appStore.getState().addLostMark()}
               >
-                <Label style={{ fontSize: 22, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
+                <Label pixel style={{ fontSize: 22, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
                   {inReview ? 'IN REVIEW' : 'REVIEW LATER'}
                 </Label>
               </Button>

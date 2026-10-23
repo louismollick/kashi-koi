@@ -95,27 +95,25 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
               <View>
                 <Icon name={on ? tab.activeIcon : tab.icon} size={32} color={on ? colors.coral : colors.lavender} />
                 {tab.title === 'Review' && count > 0 && (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: -8,
-                      left: 22,
+                  <PixelFrame
+                    fill={colors.coral}
+                    border={colors.bg}
+                    style={{ position: 'absolute', top: -8, left: 22 }}
+                    contentStyle={{
                       minWidth: 24,
                       height: 24,
-                      paddingHorizontal: 5,
-                      borderRadius: 12,
-                      backgroundColor: colors.coral,
-                      borderWidth: 2,
-                      borderColor: colors.bg,
+                      paddingHorizontal: 6,
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <Label style={{ fontSize: 12, lineHeight: 15, fontWeight: '800' }}>{count}</Label>
-                  </View>
+                    <Label pixel style={{ fontSize: 12, lineHeight: 15, fontWeight: '800' }}>
+                      {count}
+                    </Label>
+                  </PixelFrame>
                 )}
               </View>
-              <Label style={{ color: on ? colors.coral : colors.lavender, fontSize: 14, fontWeight: '700' }}>
+              <Label pixel style={{ color: on ? colors.coral : colors.lavender, fontSize: 15, fontWeight: '700' }}>
                 {tab.title}
               </Label>
             </Pressable>

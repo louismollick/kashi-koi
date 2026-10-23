@@ -3,6 +3,7 @@ import { colors } from '@/constants/theme';
 import { gapOf } from '@/lyrics/choices';
 import type { Choice } from '@/types/domain';
 import { Icon } from './Icon';
+import { PixelFrame } from './PixelFrame';
 import { Button, Label } from './ui';
 
 /**
@@ -48,20 +49,14 @@ export function Answers({
                 )}
               </View>
               {correct && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    width: 30,
-                    height: 30,
-                    borderRadius: 15,
-                    backgroundColor: '#25b36b',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                <PixelFrame
+                  fill="#25b36b"
+                  border={null}
+                  style={{ position: 'absolute', right: 0 }}
+                  contentStyle={{ width: 30, height: 30, alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Icon name="check" color="#ffffff" size={22} />
-                </View>
+                </PixelFrame>
               )}
             </View>
           </Button>

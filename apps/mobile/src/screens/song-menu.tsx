@@ -1,68 +1,23 @@
 import { analysisRequests, analyzeSong, canAnalyze } from '@/analysis/fetcher';
 import { prioritizeTranslations, translationHint } from '@/japanese/translate';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
+import { PixelSpinner } from '@/components/PixelSpinner';
 import { queueDownloads, removeDownloads, useDownloadSummary } from '@/downloads';
 import { getAlbum, hasTranslations, libraryStore, songAnalysisInfo } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
 import { settingsStore } from '@/store/settingsStore';
 import { Cover } from '@/components/Cover';
 import { FogBadge, FogStrip, useSongFog } from '@/components/Fog';
-import { IconButton, Label, PixelToggle, styles } from '@/components/ui';
-import type { ReactNode } from 'react';
+import { IconButton, Label, PixelToggle, Row, styles } from '@/components/ui';
 
 /** Route to the song menu, for long presses and ⋯ buttons. Up next rows pass their `position` to offer removal. */
 export const songMenu = (id: string, position?: number) => ({
   pathname: '/song-menu' as const,
   params: position === undefined ? { id } : { id, position: String(position) },
 });
-
-/**
- * One full-width row: label left, detail or control right. Without `onPress` it's a plain row, so VoiceOver reaches
- * the control inside it.
- */
-function Row({
-  label,
-  detail,
-  onPress,
-  disabled = false,
-  color = colors.text,
-  children,
-}: {
-  label: string;
-  detail?: string;
-  onPress?: () => void;
-  disabled?: boolean;
-  color?: string;
-  children?: ReactNode;
-}) {
-  const row = [styles.row, { minHeight: 52, borderTopWidth: 1, borderTopColor: colors.track }],
-    content = (
-      <>
-        <Label style={{ flex: 1, fontSize: 16, color }}>{label}</Label>
-        {detail && (
-          <Label muted numberOfLines={1} style={{ fontSize: 14, maxWidth: '55%' }}>
-            {detail}
-          </Label>
-        )}
-        {children}
-      </>
-    );
-  if (!onPress) return <View style={[row, { opacity: disabled ? 0.45 : 1 }]}>{content}</View>;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [row, { opacity: disabled ? 0.45 : pressed ? 0.7 : 1 }]}
-    >
-      {content}
-    </Pressable>
-  );
-}
 
 /** Everything you can do with one song, from the player's ⋯, a long press, or the full player. */
 export default function SongMenuScreen() {
@@ -118,7 +73,7 @@ export default function SongMenuScreen() {
                 {song.artist}
               </Label>
               {info && (
-                <Label numberOfLines={1} style={{ fontSize: 13, fontStyle: 'italic', color: colors.lavender }}>
+                <Label numberOfLines={1} style={{ fontSize: 13, color: colors.lavender }}>
                   {info.title}
                 </Label>
               )}
@@ -167,7 +122,7 @@ export default function SongMenuScreen() {
               <Row label="Remove download" onPress={act(() => void removeDownloads({ kind: 'song', id }))} />
             ) : download.pending ? (
               <Row label="Cancel download" onPress={act(() => void removeDownloads({ kind: 'song', id }))}>
-                <ActivityIndicator size="small" color={colors.muted} />
+                <PixelSpinner color={colors.muted} />
               </Row>
             ) : (
               <Row
@@ -228,7 +183,7 @@ export default function SongMenuScreen() {
             />
           ) : request ? (
             <Row label={request.status === 'running' ? 'Analyzing song' : 'Analysis queued'} disabled>
-              <ActivityIndicator size="small" color={colors.lavender} />
+              <PixelSpinner color={colors.lavender} />
             </Row>
           ) : (
             canAnalyze() &&

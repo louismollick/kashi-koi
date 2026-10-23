@@ -9,7 +9,7 @@ type SettingsState = {
   hideSongsWithoutSyncedLyrics: boolean;
   hideSongsWithoutJapanese: boolean;
   /** Seconds to answer a stop; null waits forever. */
-  answerTime: number | null;
+  answerTime: AnswerTime;
   /** Audio speed for songs and clips, pitch kept. Lyrics follow the audio position, so they stay in sync. */
   playbackRate: number;
   showTranslations: boolean;
@@ -22,7 +22,7 @@ type SettingsState = {
   analysisServerUrl: string;
   /** Admin token from SecureStore, loaded at boot and never persisted here. */
   analysisToken: string;
-  cycleAnswerTime: () => void;
+  setAnswerTime: (seconds: AnswerTime) => void;
   cyclePlaybackRate: () => void;
   toggleTranslations: () => void;
   /** Choose the song analysis (true) or line-by-line translations (false) for one song's listen mode. */
@@ -31,7 +31,9 @@ type SettingsState = {
   toggleHideSongsWithoutJapanese: () => void;
 };
 
-const answerTimePresets = [null, 10, 5, 3, 0];
+/** Answer-time presets in seconds: null waits for an answer, 0 never stops the song (an unanswered sentence is a miss). */
+export const answerTimes = [null, 10, 5, 3, 0] as const;
+export type AnswerTime = (typeof answerTimes)[number];
 const playbackRatePresets = [1, 0.75, 0.5];
 
 /** The fields that survive a restart. */
@@ -66,11 +68,8 @@ export const settingsStore = create<SettingsState>()(
       lastScanAt: null,
       analysisServerUrl: '',
       analysisToken: '',
-      // Cycle the fixed answer-time presets for future stops.
-      cycleAnswerTime: () =>
-        set({
-          answerTime: answerTimePresets[(answerTimePresets.indexOf(get().answerTime) + 1) % answerTimePresets.length]!,
-        }),
+      // Applies to future stops; a wait already running keeps its deadline.
+      setAnswerTime: (answerTime) => set({ answerTime }),
       // An unknown saved rate restarts the cycle at 1x.
       cyclePlaybackRate: () =>
         set({

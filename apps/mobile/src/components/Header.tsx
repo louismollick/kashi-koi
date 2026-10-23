@@ -59,7 +59,7 @@ export function ScreenHeader({ title, sheet = false, right }: { title?: string; 
         />
         <View style={{ flex: 1 }}>
           {title && (
-            <Label numberOfLines={1} style={{ fontWeight: '700', fontSize: 19, lineHeight: 24 }}>
+            <Label pixel numberOfLines={1} style={{ fontWeight: '700', fontSize: 20, lineHeight: 24 }}>
               {title}
             </Label>
           )}

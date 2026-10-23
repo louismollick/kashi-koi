@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, ScrollView, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@/constants/theme';
+import { colors, font } from '@/constants/theme';
+import { Mascot } from '@/components/Mascot';
 import { PixelFrame } from '@/components/PixelFrame';
 import { Button, Label, styles } from '@/components/ui';
 import { login } from '@/navidrome/session';
@@ -16,64 +18,79 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState<string | null>(null);
   return (
-    <KeyboardAvoidingView behavior="padding" style={styles.page}>
+    <View style={styles.page}>
+      {/* The keyboard inset lets the form scroll above the keyboard; iOS keeps the focused field visible. */}
       <ScrollView
+        automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: 'center',
-          padding: 24,
-          paddingTop: insets.top + 24,
-          gap: 18,
-        }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
       >
-        <Label style={{ fontSize: 30, lineHeight: 38, fontWeight: '800' }}>Kashi-Koi!</Label>
-        <Label style={styles.title}>Log in to Navidrome</Label>
-        {(
-          [
-            { label: 'Server URL', value: url, change: setUrl },
-            { label: 'Username', value: username, change: setUsername },
-            { label: 'Password', value: password, change: setPassword },
-          ] as const
-        ).map((field) => (
-          <View key={field.label} style={{ gap: 6 }}>
-            <Label>{field.label}</Label>
-            <PixelFrame fill={colors.surface} contentStyle={{ padding: 12 }}>
-              <TextInput
-                accessibilityLabel={field.label}
-                value={field.value}
-                onChangeText={field.change}
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="off"
-                textContentType="none"
-                secureTextEntry={field.label === 'Password'}
-                keyboardType={field.label === 'Server URL' ? 'url' : 'default'}
-                style={{ color: colors.text, minHeight: 28, fontSize: 17 }}
-              />
-            </PixelFrame>
+        {/* The Home hero, so the first screen already looks like the app. */}
+        <View style={{ height: 230 + insets.top }}>
+          <Image source={require('../../assets/background.png')} contentFit="cover" style={StyleSheet.absoluteFill} />
+          <View style={{ position: 'absolute', bottom: 6, left: 20 }}>
+            <Mascot size={200} />
           </View>
-        ))}
-        {error && <Label style={{ color: colors.red }}>{error}</Label>}
-        <Button
-          label="Log in"
-          fill={colors.coral}
-          disabled={busy}
-          onPress={async () => {
-            setBusy(true);
-            setError(null);
-            try {
-              await login(url, username, password);
-            } catch (error) {
-              setError(loginError(error));
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          <Label style={{ fontWeight: '700' }}>{busy ? 'Connecting…' : 'Log in'}</Label>
-        </Button>
+        </View>
+        <View style={{ padding: 24, paddingTop: 20, gap: 18 }}>
+          <Image
+            source={require('../../assets/kashikoi-logo.png')}
+            contentFit="contain"
+            contentPosition="left"
+            style={{ width: 240, height: 72, marginLeft: -6 }}
+            accessibilityLabel="Kashi-Koi!"
+          />
+          <Label pixel style={styles.title}>
+            Log in to Navidrome
+          </Label>
+          {(
+            [
+              { label: 'Server URL', value: url, change: setUrl },
+              { label: 'Username', value: username, change: setUsername },
+              { label: 'Password', value: password, change: setPassword },
+            ] as const
+          ).map((field) => (
+            <View key={field.label} style={{ gap: 6 }}>
+              <Label>{field.label}</Label>
+              <PixelFrame fill={colors.surface} contentStyle={{ padding: 12 }}>
+                <TextInput
+                  accessibilityLabel={field.label}
+                  value={field.value}
+                  onChangeText={field.change}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  textContentType="none"
+                  secureTextEntry={field.label === 'Password'}
+                  keyboardType={field.label === 'Server URL' ? 'url' : 'default'}
+                  style={{ ...font('body'), color: colors.text, minHeight: 28, fontSize: 17 }}
+                />
+              </PixelFrame>
+            </View>
+          ))}
+          {error && <Label style={{ color: colors.red }}>{error}</Label>}
+          <Button
+            label="Log in"
+            fill={colors.coral}
+            disabled={busy}
+            onPress={async () => {
+              setBusy(true);
+              setError(null);
+              try {
+                await login(url, username, password);
+              } catch (error) {
+                setError(loginError(error));
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            <Label pixel style={{ fontSize: 17, fontWeight: '700' }}>
+              {busy ? 'Connecting…' : 'Log in'}
+            </Label>
+          </Button>
+        </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

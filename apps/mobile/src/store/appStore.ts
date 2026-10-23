@@ -89,10 +89,10 @@ function playSong(id: string) {
   clearClipTimer();
   if (settingsStore.getState().offlineMode && !localAudioUri(id)) {
     transport.pause();
-    appStore.setState({ loading: false, playing: false, playbackError: 'Song is not downloaded' });
+    appStore.setState({ loading: false, playing: false, playbackError: 'Song is not downloaded', runEnd: null });
     return;
   }
-  appStore.setState({ clipPlayback: null, clipReview: null, loading: true });
+  appStore.setState({ clipPlayback: null, clipReview: null, loading: true, runEnd: null });
   prioritizeUpNext();
   const song = getSong(id);
   if (song) {
@@ -177,25 +177,26 @@ function scoreSentence(correct: boolean, choice: string | null): boolean {
   return scored;
 }
 
-/** Publish quiz feedback before advancing to the next song. */
+/** Advance to the next song, then publish the finished quiz run over it. Any other song start clears the summary. */
 export function finishSong() {
   if (appStore.getState().answerWait) scoreSentence(false, null);
   clearAnswerWait();
   const state = appStore.getState(),
     answers = Object.values(state.run.answers);
-  if (state.quizToggle && state.songId && answers.length)
-    appStore.setState({
-      runEnd: {
-        songId: state.songId,
-        hits: answers.filter((answer) => answer.correct).length,
-        answered: answers.length,
-        bestCombo: state.run.bestCombo,
-        perfect: state.run.perfect,
-        at: Date.now(),
-      },
-    });
+  const runEnd =
+    state.quizToggle && state.songId && answers.length
+      ? {
+          songId: state.songId,
+          hits: answers.filter((answer) => answer.correct).length,
+          answered: answers.length,
+          bestCombo: state.run.bestCombo,
+          perfect: state.run.perfect,
+          at: Date.now(),
+        }
+      : null;
   if (state.songId && state.repeatSongId === state.songId) playQueueSong(state.songId, state.queueIndex, true);
   else state.nextSong();
+  if (runEnd) appStore.setState({ runEnd });
 }
 
 /** No song and no queue: a fresh install, an invalid saved queue, or a playing song that left the library. */
@@ -267,6 +268,7 @@ type AppState = {
   setQuizToggle: (enabled: boolean) => void;
   nextSong: () => void;
   previousSong: () => void;
+  replayRunEnd: () => void;
   skipBack: () => void;
   ensureChoices: () => void;
   ensureClipChoices: () => void;
@@ -444,7 +446,7 @@ export const appStore = create<AppState>()(
         }),
       restartRun: () => {
         clearAnswerWait(true);
-        set({ lineIndex: 0, positionMs: 0, run: newRun() });
+        set({ lineIndex: 0, positionMs: 0, run: newRun(), runEnd: null });
         if (!get().clipPlayback) transport.seek(0);
         get().setPlaying(true);
       },
@@ -496,6 +498,17 @@ export const appStore = create<AppState>()(
           }
         }
         state.restartRun();
+      },
+      // PLAY AGAIN on the run summary: the finished song itself, at its queue spot before the current song.
+      replayRunEnd: () => {
+        const { runEnd, queue, queueIndex } = get();
+        if (!runEnd || !getSong(runEnd.songId)) return;
+        const index = queue.lastIndexOf(runEnd.songId, queueIndex);
+        if (index >= 0) return playQueueSong(runEnd.songId, index);
+        // Not queued (autoplay order), so it goes back in just before the current song.
+        const at = Math.max(0, queueIndex);
+        set({ queue: [...queue.slice(0, at), runEnd.songId, ...queue.slice(at)] });
+        playQueueSong(runEnd.songId, at);
       },
       // Previous restarts the song after 3 s, like a music player; a second press goes to the previous song.
       skipBack: () => {

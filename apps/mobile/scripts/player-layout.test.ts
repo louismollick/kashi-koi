@@ -52,7 +52,7 @@ async function loadScreen(screen: 'player' | 'song-menu', presses = new Map<stri
     };`;
   const mocks: Record<string, string> = {
     'react-native': `${host}
-      module.exports = { View: host('native-view'), Text: host('native-text'), Pressable: host('native-button'), ScrollView: host('native-scroll'), ActivityIndicator: host('native-loading'), Modal: () => null,
+      module.exports = { View: host('native-view'), Text: host('native-text'), Pressable: host('native-button'), ScrollView: host('native-scroll'), Modal: () => null,
         StyleSheet: { create: styles => styles, flatten: style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean)), absoluteFill: {} }, PixelRatio: { get: () => 1 }, useWindowDimensions: () => ({ width: 390, height: 844 }), PanResponder: { create: () => ({ panHandlers: {} }) } };`,
     'react-native-svg': `${host} module.exports = { __esModule: true, default: host('native-svg'), Path: host('native-path'), Defs: host('native-defs'), LinearGradient: host('native-gradient'), Rect: host('native-rect'), Stop: host('native-stop') };`,
     'react-native-reanimated': `${host} module.exports = { __esModule: true, default: { View: host('native-animated') }, useAnimatedStyle: () => ({}), useSharedValue: value => ({ value }), Easing: { linear: value => value }, withSpring: value => value, withTiming: value => value, withDelay: (_, value) => value, withRepeat: value => value, withSequence: value => value, cancelAnimation() {}, useReducedMotion: () => true };`,
@@ -64,7 +64,7 @@ async function loadScreen(screen: 'player' | 'song-menu', presses = new Map<stri
   const hooks = registerHooks({
     resolve(specifier, context, nextResolve) {
       if (specifier in mocks) return { url: `test:ui:${specifier}`, shortCircuit: true };
-      if (specifier.endsWith('.png')) return { url: 'test:ui:asset', shortCircuit: true };
+      if (/\.(png|ttf)$/.test(specifier)) return { url: 'test:ui:asset', shortCircuit: true };
       return nextResolve(specifier, context);
     },
     load(url, context, nextLoad) {
