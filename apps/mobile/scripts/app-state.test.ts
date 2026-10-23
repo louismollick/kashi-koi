@@ -143,9 +143,13 @@ test('a full run publishes feedback, adds misses immediately and advances', () =
     appStore.getState().reviewList.some((line) => line.sentenceId === fixtureLine('dawn-0') && line.kind === 'due'),
   );
   // The summary rides over the autoplayed song, and any other song start clears it.
-  assert.notEqual(appStore.getState().songId, firstSong.id);
-  appStore.getState().startSong(firstSong.id);
+  const next = appStore.getState().songId;
+  assert.notEqual(next, firstSong.id);
+  appStore.getState().replayRunEnd();
+  assert.equal(appStore.getState().songId, firstSong.id);
   assert.equal(appStore.getState().runEnd, null);
+  // The song it replaced is up next again.
+  assert.equal(appStore.getState().queue[appStore.getState().queueIndex + 1], next);
 });
 
 test('an empty review list disables review entry points', () => {

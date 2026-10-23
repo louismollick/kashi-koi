@@ -54,7 +54,7 @@ function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Bes
   return (
     <View
       onLayout={({ nativeEvent: { layout } }) => setSize({ width: layout.width, height: layout.height })}
-      style={{ flexGrow: 1, flexBasis: 0, minHeight: 150, overflow: 'hidden' }}
+      style={{ flexGrow: 1, flexBasis: 0, minHeight: 72, overflow: 'hidden' }}
     >
       <Image
         source={harbor}

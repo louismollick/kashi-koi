@@ -267,6 +267,7 @@ type AppState = {
   setQuizToggle: (enabled: boolean) => void;
   nextSong: () => void;
   previousSong: () => void;
+  replayRunEnd: () => void;
   skipBack: () => void;
   ensureChoices: () => void;
   ensureClipChoices: () => void;
@@ -495,6 +496,17 @@ export const appStore = create<AppState>()(
           }
         }
         state.restartRun();
+      },
+      // PLAY AGAIN on the run summary: the finished song itself, at its queue spot before the current song.
+      replayRunEnd: () => {
+        const { runEnd, queue, queueIndex } = get();
+        if (!runEnd || !getSong(runEnd.songId)) return;
+        const index = queue.lastIndexOf(runEnd.songId, queueIndex);
+        if (index >= 0) return playQueueSong(runEnd.songId, index);
+        // Not queued (autoplay order), so it goes back in just before the current song.
+        const at = Math.max(0, queueIndex);
+        set({ queue: [...queue.slice(0, at), runEnd.songId, ...queue.slice(at)] });
+        playQueueSong(runEnd.songId, at);
       },
       // Previous restarts the song after 3 s, like a music player; a second press goes to the previous song.
       skipBack: () => {

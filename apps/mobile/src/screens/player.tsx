@@ -218,7 +218,7 @@ export default function PlayerScreen() {
           current={answerWait || !occurrence ? -1 : lineIndex - occurrence.start}
           intro={beforeLyrics ? info : undefined}
           runEnd={beforeLyrics ? (runEnd ?? undefined) : undefined}
-          onReplay={runEnd && runEnd.songId !== songId ? () => appStore.getState().previousSong() : undefined}
+          onReplay={runEnd && runEnd.songId !== songId ? () => appStore.getState().replayRunEnd() : undefined}
           until={answerWait?.until}
           combo={run.combo}
           nice={!!sentenceId && run.answers[sentenceId]?.correct === true}
