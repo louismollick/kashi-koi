@@ -204,7 +204,8 @@ export default function PlayerScreen() {
       <ScreenHeader
         sheet
         title={
-          quizToggle && occurrence ? `Sentence ${sentences.indexOf(occurrence) + 1} of ${sentences.length}` : undefined
+          // Just the count: the speed, QUIZ and menu controls leave no room for "Sentence".
+          quizToggle && occurrence ? `${sentences.indexOf(occurrence) + 1} of ${sentences.length}` : undefined
         }
         right={
           <View style={[styles.row, { gap: 14 }]}>
