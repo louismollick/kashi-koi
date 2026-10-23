@@ -1,8 +1,8 @@
 import { View } from 'react-native';
 import { Label } from './ui';
 import { colors } from '@/constants/theme';
-import { getLineText } from '@/store/libraryStore';
-import type { Line } from '@/types/domain';
+import { getLineText } from '@kashi-koi/core/store/libraryStore';
+import type { Line } from '@kashi-koi/core/types/domain';
 
 /**
  * Ruby stays together; every character reserves reading space on each wrapped row. `size` overrides the font

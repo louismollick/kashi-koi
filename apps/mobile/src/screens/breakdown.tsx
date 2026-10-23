@@ -5,9 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Breakdown } from '@kashi-koi/shared/breakdown';
 import { colors } from '@/constants/theme';
 import { PixelSpinner } from '@/components/PixelSpinner';
-import { englishSpans, loadBreakdown, useBreakdown } from '@/analysis/breakdowns';
-import { alignReading } from '@/japanese/text';
-import { currentSentence, libraryStore } from '@/store/libraryStore';
+import { englishSpans, loadBreakdown, useBreakdown } from '@kashi-koi/core/analysis/breakdowns';
+import { alignReading } from '@kashi-koi/core/japanese/text';
+import { currentSentence, libraryStore } from '@kashi-koi/core/store/libraryStore';
 import { FuriganaLine } from '@/components/LineCard';
 import { Button, IconButton, Label, styles } from '@/components/ui';
 

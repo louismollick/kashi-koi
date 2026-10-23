@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { canExplain } from '@/analysis/breakdowns';
-import { appStore } from '@/store/appStore';
-import { getSong, libraryStore, sentenceForReview } from '@/store/libraryStore';
-import type { ClipReview } from '@/types/domain';
+import { canExplain } from '@kashi-koi/core/analysis/breakdowns';
+import { appStore } from '@kashi-koi/core/store/appStore';
+import { getSong, libraryStore, sentenceForReview } from '@kashi-koi/core/store/libraryStore';
+import type { ClipReview } from '@kashi-koi/core/types/domain';
 import { ScreenHeader } from '@/components/Header';
 import { DockScene, QuizColumn, RunResult } from '@/components/QuizLayout';
 import { PlayerBar } from '@/components/PlayerBar';

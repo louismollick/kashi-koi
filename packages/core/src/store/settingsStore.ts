@@ -20,7 +20,7 @@ type SettingsState = {
   lastScanAt: number | null;
   /** Empty falls back to the bundled environment default. */
   analysisServerUrl: string;
-  /** Admin token from SecureStore, loaded at boot and never persisted here. */
+  /** Admin token from secret storage, loaded at boot and never persisted here. */
   analysisToken: string;
   setAnswerTime: (seconds: AnswerTime) => void;
   cyclePlaybackRate: () => void;

@@ -1,14 +1,14 @@
-import { downloadStore, localArtUri } from '@/downloads/store';
-import { settingsStore } from '@/store/settingsStore';
+import { downloadStore, localArtUri } from '@kashi-koi/core/downloads/store';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { memo, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import Svg, { Path } from 'react-native-svg';
-import { stepped, tint } from './PixelFrame';
+import { stepped, tint } from '@kashi-koi/design/shape';
 import { Icon } from './Icon';
-import { paletteFor } from '@/data/palette';
-import { sessionStore } from '@/navidrome/session';
-import { mediaUrl, type Session } from '@/navidrome/subsonic';
+import { paletteFor } from '@kashi-koi/core/data/palette';
+import { sessionStore } from '@kashi-koi/core/navidrome/session';
+import { mediaUrl, type Session } from '@kashi-koi/core/navidrome/subsonic';
 import { artStore } from '@/store/artStore';
 
 /**

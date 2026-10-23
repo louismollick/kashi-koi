@@ -1,4 +1,4 @@
-import type { Line } from '@/types/domain';
+import type { Line } from '../types/domain';
 
 const kanji = /[\p{Script=Han}々〆]/u;
 /** Repeat marks alone are not Japanese lyrics, even when Unicode assigns them Han script. */

@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 import { beforeEach, test, type TestContext } from 'node:test';
-import { appStore, resetAppState } from '../src/store/appStore';
-import { settingsStore } from '../src/store/settingsStore';
-import { downloadStore } from '../src/downloads/store';
-import { libraryStore } from '../src/store/libraryStore';
-import { sessionStore } from '../src/navidrome/session';
-import { songs, albums, artists, songLyrics } from './fixtures';
+import { setLibraryDb } from '@kashi-koi/core/navidrome/libraryDb';
+import { appStore, resetAppState } from '@kashi-koi/core/store/appStore';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
+import { downloadStore } from '@kashi-koi/core/downloads/store';
+import { libraryStore } from '@kashi-koi/core/store/libraryStore';
+import { sessionStore } from '@kashi-koi/core/navidrome/session';
+import { songs, albums, artists, songLyrics, fakeLibraryDb } from '@kashi-koi/core/fixtures';
 
 beforeEach(async () => {
   await resetAppState();
@@ -61,13 +62,18 @@ async function setup(t: TestContext) {
     },
   };
   const key = Symbol.for('kashi.offline.transport');
-  const globals = globalThis as typeof globalThis & { [key]: { player: typeof player; played: string[] } | undefined };
-  globals[key] = { player, played };
+  const globals = globalThis as typeof globalThis & { [key]: { player: typeof player } | undefined };
+  globals[key] = { player };
+  setLibraryDb(
+    fakeLibraryDb({
+      savePlayed: async (id) => {
+        played.push(id);
+      },
+    }),
+  );
   const hooks = registerHooks({
     resolve(specifier, context, next) {
       if (specifier === 'expo-audio') return { url: 'test:offline-audio', shortCircuit: true };
-      if (specifier === '@/navidrome/db' && context.parentURL?.includes('/src/audio/transport.ts'))
-        return { url: 'test:offline-db', shortCircuit: true };
       return next(specifier, context);
     },
     load(url, context, next) {
@@ -76,13 +82,6 @@ async function setup(t: TestContext) {
           format: 'commonjs',
           source:
             "exports.createAudioPlayer = () => globalThis[Symbol.for('kashi.offline.transport')].player; exports.setAudioModeAsync = async () => {}; exports.setIsAudioActiveAsync = async () => {};",
-          shortCircuit: true,
-        };
-      if (url === 'test:offline-db')
-        return {
-          format: 'commonjs',
-          source:
-            "exports.savePlayed = async (id) => { globalThis[Symbol.for('kashi.offline.transport')].played.push(id); };",
           shortCircuit: true,
         };
       return next(url, context);
@@ -101,6 +100,7 @@ async function setup(t: TestContext) {
   const cleanup = await transport.setupTransport();
   t.after(() => {
     cleanup();
+    setLibraryDb(undefined);
     delete globals[key];
     sessionStore.setState({ session: null });
   });

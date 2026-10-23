@@ -1,5 +1,5 @@
-export type { FogTile, LineFog } from '@/types/domain';
-import type { FogTile, LineFog, SongLyrics } from '@/types/domain';
+export type { FogTile, LineFog } from '../types/domain';
+import type { FogTile, LineFog, SongLyrics } from '../types/domain';
 
 /** Apply a tested sentence answer to its lines without changing the previous map. */
 export function applyAnswer(fog: Record<string, LineFog>, lineIds: string[], correct: boolean, runId: string) {

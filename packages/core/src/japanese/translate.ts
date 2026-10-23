@@ -1,5 +1,6 @@
-import { settingsStore } from '@/store/settingsStore';
-import { getLineText, getLyrics, libraryStore, type Translations } from '@/store/libraryStore';
+import { libraryDb } from '../navidrome/libraryDb';
+import { settingsStore } from '../store/settingsStore';
+import { getLineText, getLyrics, libraryStore, type Translations } from '../store/libraryStore';
 import { alignReading, isJapanese } from './text';
 
 export type TranslationStatus = 'installed' | 'supported' | 'unsupported';
@@ -30,8 +31,11 @@ let priority: string[] = [],
   cursor = 0,
   queueDirty = true;
 
-/** Inject native translation and persistence without importing either in Node. */
-export function setTranslator(next: Translator, persist: typeof save) {
+/** Inject the platform translator, and where translations are persisted (the installed library database by default). */
+export function setTranslator(
+  next: Translator,
+  persist: typeof save = async (translations) => libraryDb().saveTranslations(translations),
+) {
   translator = next;
   save = persist;
 }

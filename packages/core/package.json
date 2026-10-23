@@ -1,0 +1,26 @@
+{
+  "name": "@kashi-koi/core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./downloads": "./src/downloads/index.ts",
+    "./fixtures": "./scripts/fixtures.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test scripts/*.test.ts"
+  },
+  "dependencies": {
+    "@kashi-koi/shared": "^1.0.0",
+    "@noble/hashes": "^2.4.0",
+    "zustand": "5.0.15"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0"
+  }
+}

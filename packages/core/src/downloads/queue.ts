@@ -1,15 +1,15 @@
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import type { DownloadMedia } from './validation';
-import { fetchAnalysis } from '@/analysis/client';
-import { analysisSession } from '@/analysis/fetcher';
-import { cacheSongBreakdowns } from '@/analysis/breakdowns';
-import { prioritizeTranslations, ensureSongTranslation, setTranslationBackground } from '@/japanese/translate';
-import { hasJapaneseLyrics } from '@/data/libraryVisibility';
-import { settingsStore } from '@/store/settingsStore';
-import { libraryStore } from '@/store/libraryStore';
-import { sessionStore } from '@/navidrome/session';
-import { mediaUrl } from '@/navidrome/subsonic';
-import type { Song } from '@/types/domain';
+import { fetchAnalysis } from '../analysis/client';
+import { analysisSession } from '../analysis/fetcher';
+import { cacheSongBreakdowns } from '../analysis/breakdowns';
+import { prioritizeTranslations, ensureSongTranslation, setTranslationBackground } from '../japanese/translate';
+import { hasJapaneseLyrics } from '../data/libraryVisibility';
+import { settingsStore } from '../store/settingsStore';
+import { libraryStore } from '../store/libraryStore';
+import { sessionStore } from '../navidrome/session';
+import { mediaUrl } from '../navidrome/subsonic';
+import type { Song } from '../types/domain';
 import type { DownloadArt } from './store';
 import { downloadStore, type DownloadEntries, type DownloadEntry, type DownloadTarget } from './store';
 

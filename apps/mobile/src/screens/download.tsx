@@ -2,11 +2,18 @@ import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { queueDownloads, removeDownloads, useDownloadSummary, type DownloadTarget } from '@/downloads';
-import { appStore } from '@/store/appStore';
-import { settingsStore } from '@/store/settingsStore';
-import { getAlbum, getAlbumSongs, getArtist, getArtistAlbums, getArtistSongs, getSong } from '@/store/libraryStore';
-import { getLibraryFilters, getVisibleSongs } from '@/data/libraryVisibility';
+import { queueDownloads, removeDownloads, useDownloadSummary, type DownloadTarget } from '@kashi-koi/core/downloads';
+import { appStore } from '@kashi-koi/core/store/appStore';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
+import {
+  getAlbum,
+  getAlbumSongs,
+  getArtist,
+  getArtistAlbums,
+  getArtistSongs,
+  getSong,
+} from '@kashi-koi/core/store/libraryStore';
+import { getLibraryFilters, getVisibleSongs } from '@kashi-koi/core/data/libraryVisibility';
 import { Cover } from '@/components/Cover';
 import { Icon } from '@/components/Icon';
 import { Button, IconButton, Label, styles } from '@/components/ui';

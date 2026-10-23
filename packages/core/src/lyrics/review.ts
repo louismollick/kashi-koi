@@ -1,6 +1,6 @@
-import { isSongAvailable } from '@/data/libraryVisibility';
-import { getLyrics, hasTranslations } from '@/store/libraryStore';
-import type { ReviewList, SongLyrics } from '@/types/domain';
+import { isSongAvailable } from '../data/libraryVisibility';
+import { getLyrics, hasTranslations } from '../store/libraryStore';
+import type { ReviewList, SongLyrics } from '../types/domain';
 
 /**
  * The Review list rules: how a sentence enters (lost mark, miss), moves on (right or wrong answer, edit), becomes due

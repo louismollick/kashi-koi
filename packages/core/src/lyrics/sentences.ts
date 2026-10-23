@@ -1,7 +1,7 @@
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
 import { songAnalysisSchema, validateAnalysis, validateQuizzes, type SongAnalysis } from '@kashi-koi/shared/analysis';
-import { isJapanese } from '@/japanese/text';
-import type { Sentence, SentenceOccurrence, SongLyrics } from '@/types/domain';
+import { isJapanese } from '../japanese/text';
+import type { Sentence, SentenceOccurrence, SongLyrics } from '../types/domain';
 
 export type LyricsInput = Pick<SongLyrics, 'songId' | 'lines' | 'timeline'> & Partial<SongLyrics>;
 const text = (line: SongLyrics['lines'][number]) => line.segments.map((segment) => segment.text).join('');

@@ -1,6 +1,6 @@
 import { decoySentence, type Quiz } from '@kashi-koi/shared/analysis';
-import { currentSentence, getLyrics } from '@/store/libraryStore';
-import type { Choice, Song } from '@/types/domain';
+import { currentSentence, getLyrics } from '../store/libraryStore';
+import type { Choice, Song } from '../types/domain';
 
 /** Each gap choice changes one phrase and shares the same surrounding sentence. */
 export function quizChoices(translation: string, quiz: Quiz): Choice[] {

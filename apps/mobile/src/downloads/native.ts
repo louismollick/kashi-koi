@@ -1,8 +1,8 @@
 import { AppState } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
 import Downloads from '../../modules/kashi-downloads';
-import type { DownloadArt } from './store';
-import { audioFormat, validateMediaHeader, type DownloadMedia } from './validation';
+import type { DownloadArt } from '@kashi-koi/core/downloads/store';
+import { audioFormat, validateMediaHeader, type DownloadMedia } from '@kashi-koi/core/downloads/validation';
 import {
   loadDownloads,
   saveDownload,

@@ -1,7 +1,7 @@
-import { withSentences, type LyricsInput } from '@/lyrics/sentences';
+import { withSentences, type LyricsInput } from '../lyrics/sentences';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { create } from 'zustand';
-import type { Album, Artist, Line, LyricsStatus, Playlist, Song, SongLyrics, ReviewList } from '@/types/domain';
+import type { Album, Artist, Line, LyricsStatus, Playlist, Song, SongLyrics, ReviewList } from '../types/domain';
 
 export type Translations = Record<string, { translation: string; segments: Line['segments'] }>;
 export type Library = {

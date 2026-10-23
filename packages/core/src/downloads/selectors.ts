@@ -1,7 +1,7 @@
 import { useShallow } from 'zustand/react/shallow';
-import { libraryStore } from '@/store/libraryStore';
-import { hasJapaneseLyrics } from '@/data/libraryVisibility';
-import type { Song } from '@/types/domain';
+import { libraryStore } from '../store/libraryStore';
+import { hasJapaneseLyrics } from '../data/libraryVisibility';
+import type { Song } from '../types/domain';
 import { downloadStore, type DownloadTarget } from './store';
 
 type LibraryState = ReturnType<typeof libraryStore.getState>;

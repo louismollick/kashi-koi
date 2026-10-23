@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { FlatList, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { getPlaylistSongs, libraryStore } from '@/store/libraryStore';
-import { countedFilters, getVisibleSongs, useLibraryFilters } from '@/data/libraryVisibility';
-import { appStore } from '@/store/appStore';
+import { getPlaylistSongs, libraryStore } from '@kashi-koi/core/store/libraryStore';
+import { countedFilters, getVisibleSongs, useLibraryFilters } from '@kashi-koi/core/data/libraryVisibility';
+import { appStore } from '@kashi-koi/core/store/appStore';
 import { Cover } from '@/components/Cover';
 import { ScreenHeader } from '@/components/Header';
 import { PlayButtons } from '@/components/PlayButtons';

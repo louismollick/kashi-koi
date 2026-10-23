@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { useDownloadSummary, type DownloadTarget } from '@/downloads';
+import { useDownloadSummary, type DownloadTarget } from '@kashi-koi/core/downloads';
 import { IconButton } from './ui';
 
 type SheetTarget = Exclude<DownloadTarget, { kind: 'library' }>;

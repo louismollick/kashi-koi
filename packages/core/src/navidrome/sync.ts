@@ -1,9 +1,10 @@
-import { cancelAnalyses, loadAnalysisToken } from '@/analysis/fetcher';
-import { pauseTranslations, resumeTranslations } from '@/japanese/translate';
-import { pruneReview } from '@/lyrics/review';
-import { carryLyrics, libraryStore } from '@/store/libraryStore';
-import { appStore, dropRemovedSong, fetchLibraryAnalyses, resumePlayback } from '@/store/appStore';
-import { settingsStore } from '@/store/settingsStore';
+import { libraryDb } from './libraryDb';
+import { cancelAnalyses, loadAnalysisToken } from '../analysis/fetcher';
+import { pauseTranslations, resumeTranslations } from '../japanese/translate';
+import { pruneReview } from '../lyrics/review';
+import { carryLyrics, libraryStore } from '../store/libraryStore';
+import { appStore, dropRemovedSong, fetchLibraryAnalyses, resumePlayback } from '../store/appStore';
+import { settingsStore } from '../store/settingsStore';
 import { sessionStore } from './session';
 import { pickEntry, toSongLyrics } from './lyrics';
 import {
@@ -16,8 +17,8 @@ import {
   type Session,
   type StructuredLyrics,
 } from './subsonic';
-import type { Library, LyricsResult } from '@/store/libraryStore';
-import type { LyricsStatus, Playlist, Song, SongLyrics } from '@/types/domain';
+import type { Library, LyricsResult } from '../store/libraryStore';
+import type { LyricsStatus, Playlist, Song, SongLyrics } from '../types/domain';
 
 let running: Promise<void> | null = null;
 let generation = 0;
@@ -104,7 +105,7 @@ async function fetchPlaylists(session: Session, valid: () => boolean): Promise<P
 }
 
 export function syncLibrary(
-  replace: (library: Library) => Promise<void> = async (library) => (await import('./db')).replaceLibrary(library),
+  replace: (library: Library) => Promise<void> = async (library) => libraryDb().replaceLibrary(library),
 ) {
   return run(async (session, valid) => {
     libraryStore.setState({ progress: { kind: 'sync', completed: 0, total: libraryStore.getState().songs.length } });
@@ -156,7 +157,7 @@ export function syncLibrary(
     const { translations, analyses } = libraryStore.getState();
     libraryStore.getState().setLibrary({ ...library, translations, analyses });
     dropRemovedSong();
-    await (await import('@/downloads/queue')).pruneDownloads();
+    await (await import('../downloads/queue')).pruneDownloads();
     if (!valid()) return;
     const ids = new Set(songs.map((song) => song.id));
     appStore.setState((state) => ({ reviewList: pruneReview(state.reviewList, ids) }));
@@ -174,8 +175,7 @@ export async function scan(
   session: Session,
   all: boolean,
   valid: () => boolean,
-  save: (results: LyricsResult[]) => Promise<void> = async (results) =>
-    (await import('./db')).saveLyricsResults(results),
+  save: (results: LyricsResult[]) => Promise<void> = async (results) => libraryDb().saveLyricsResults(results),
 ) {
   if (settingsStore.getState().offlineMode) return;
   const online = () => valid() && !settingsStore.getState().offlineMode;
@@ -263,11 +263,10 @@ export async function scan(
 export const scanLyrics = ({ all = false }: { all?: boolean } = {}) =>
   run((session, valid) => scan(session, all, valid));
 export async function loadLibrary() {
-  const { loadAll } = await import('./db');
-  libraryStore.getState().setLibrary(await loadAll());
+  libraryStore.getState().setLibrary(await libraryDb().loadAll());
   resumePlayback();
   // Downloads are optional; a failure here must not keep the library or session from loading.
-  await (await import('@/downloads/queue')).loadDownloadState().catch(() => {
+  await (await import('../downloads/queue')).loadDownloadState().catch(() => {
     libraryStore.setState({ error: 'Could not load downloads' });
   });
   await loadAnalysisToken();

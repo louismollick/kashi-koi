@@ -3,9 +3,9 @@ import { Pressable, View, useWindowDimensions } from 'react-native';
 import ReorderableList, { useReorderableDrag, type ReorderableListReorderEvent } from 'react-native-reorderable-list';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { getAlbum, getSong, libraryStore } from '@/store/libraryStore';
-import { appStore, getUpNext } from '@/store/appStore';
-import { isHiddenSong, useLibraryFilters } from '@/data/libraryVisibility';
+import { getAlbum, getSong, libraryStore } from '@kashi-koi/core/store/libraryStore';
+import { appStore, getUpNext } from '@kashi-koi/core/store/appStore';
+import { isHiddenSong, useLibraryFilters } from '@kashi-koi/core/data/libraryVisibility';
 import { ScreenHeader } from '@/components/Header';
 import { SpeedButton } from '@/components/SpeedButton';
 import { Cover } from '@/components/Cover';
@@ -15,7 +15,7 @@ import { SongRow } from '@/components/SongRow';
 import { Icon } from '@/components/Icon';
 import { IconButton, Label, styles } from '@/components/ui';
 import { songMenu } from './song-menu';
-import type { Song } from '@/types/domain';
+import type { Song } from '@kashi-koi/core/types/domain';
 
 /** A visible song in Up next or autoplay, keeping its position in `[...upcoming queue, ...autoplay]`. */
 type Row = { song: Song; position: number };

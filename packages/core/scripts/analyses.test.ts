@@ -10,6 +10,7 @@ import {
   loadAnalysisToken,
   prioritizeAnalyses,
   setAnalysisRuntime,
+  setDefaultAnalysisServer,
   saveAnalysisToken,
   setAnalysisToken,
 } from '../src/analysis/fetcher';
@@ -303,8 +304,7 @@ test('cancellation waits for accepted persistence and prevents late publication'
   assert.deepEqual(libraryStore.getState().analyses, {});
 });
 
-test('disabled analyses make no requests, and the empty override uses the environment default', async () => {
-  const original = process.env.EXPO_PUBLIC_KASHI_SERVER_URL;
+test('disabled analyses make no requests, and the empty override uses the bundled default', async () => {
   let calls = 0;
   setAnalysisRuntime({
     fetch: async () => {
@@ -313,19 +313,18 @@ test('disabled analyses make no requests, and the empty override uses the enviro
     },
   });
   try {
-    delete process.env.EXPO_PUBLIC_KASHI_SERVER_URL;
+    setDefaultAnalysisServer(undefined);
     settingsStore.setState({ analysisServerUrl: '' });
     assert.equal(canAnalyze(), false);
     await prioritizeAnalyses(['0']);
     await analyzeSong('0');
     assert.equal(calls, 0);
-    process.env.EXPO_PUBLIC_KASHI_SERVER_URL = 'https://default.test';
+    setDefaultAnalysisServer('https://default.test');
     assert.equal(canAnalyze(), true);
     await prioritizeAnalyses(['0']);
     assert.equal(calls, 1);
   } finally {
-    if (original === undefined) delete process.env.EXPO_PUBLIC_KASHI_SERVER_URL;
-    else process.env.EXPO_PUBLIC_KASHI_SERVER_URL = original;
+    setDefaultAnalysisServer(undefined);
   }
 });
 

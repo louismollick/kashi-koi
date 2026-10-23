@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { appStore } from '@/store/appStore';
-import { settingsStore } from '@/store/settingsStore';
-import { downloadStore } from '@/downloads/store';
+import { appStore } from '../store/appStore';
+import { settingsStore } from '../store/settingsStore';
+import { downloadStore } from '../downloads/store';
 
 /** Subscribe to both availability and stored schedules without removing offline-hidden review entries. */
 export function useAvailableReviewList() {

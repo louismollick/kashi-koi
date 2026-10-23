@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { downloadStore, isDownloaded } from '@/downloads/store';
-import { libraryStore } from '@/store/libraryStore';
-import { settingsStore } from '@/store/settingsStore';
-import type { Album, Artist, Song } from '@/types/domain';
+import { downloadStore, isDownloaded } from '../downloads/store';
+import { libraryStore } from '../store/libraryStore';
+import { settingsStore } from '../store/settingsStore';
+import type { Album, Artist, Song } from '../types/domain';
 
 export type LibraryFilters = {
   hideUnsynced: boolean;

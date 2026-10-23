@@ -5,7 +5,7 @@ import { Cover } from './Cover';
 import { downloadSheet } from './DownloadButton';
 import { NoLyricsBadge } from './NoLyricsBadge';
 import { Label } from './ui';
-import type { Album } from '@/types/domain';
+import type { Album } from '@kashi-koi/core/types/domain';
 
 /** Shared album tile for the Library and an artist's album grid. Parents compute `count` and `noLyrics` once per list. */
 export const AlbumTile = memo(function AlbumTile({

@@ -1,20 +1,22 @@
+import { libraryDb } from '../navidrome/libraryDb';
+import { secrets } from '../navidrome/secrets';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { create } from 'zustand';
-import { settingsStore } from '@/store/settingsStore';
-import { getLyrics, getSong, libraryStore } from '@/store/libraryStore';
-import { timelineTexts } from '@/lyrics/sentences';
+import { settingsStore } from '../store/settingsStore';
+import { getLyrics, getSong, libraryStore } from '../store/libraryStore';
+import { timelineTexts } from '../lyrics/sentences';
 import { fetchAnalysis, normalizeBase, requestAnalysis } from './client';
 import { resetBreakdowns, flushBreakdowns } from './breakdowns';
 
 const defaults = {
   fetch: ((...args) => globalThis.fetch(...args)) as typeof fetch,
   sleep: (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)),
-  save: async (analysis: SongAnalysis) => (await import('@/navidrome/db')).saveAnalysis(analysis),
-  loadToken: async () => (await import('expo-secure-store')).getItemAsync('analysis-token'),
+  save: async (analysis: SongAnalysis) => libraryDb().saveAnalysis(analysis),
+  loadToken: async () => secrets().storage.get('analysis-token'),
   saveToken: async (token: string) => {
-    const secure = await import('expo-secure-store');
-    if (token) await secure.setItemAsync('analysis-token', token);
-    else await secure.deleteItemAsync('analysis-token');
+    const { storage } = secrets();
+    if (token) await storage.set('analysis-token', token);
+    else await storage.delete('analysis-token');
   },
 };
 let runtime = defaults;
@@ -35,9 +37,14 @@ export function setAnalysisRuntime(overrides: Partial<typeof defaults> = {}) {
   runtime = { ...defaults, ...overrides };
 }
 
-/** An empty override uses the bundled environment default; empty defaults disable reads. */
-export const analysisServerUrl = () =>
-  normalizeBase(settingsStore.getState().analysisServerUrl || process.env.EXPO_PUBLIC_KASHI_SERVER_URL || '');
+let defaultServerUrl = '';
+/** The server URL the build bundles (an env var on each platform), used while Settings has no override. */
+export function setDefaultAnalysisServer(url: string | undefined) {
+  defaultServerUrl = url ?? '';
+}
+
+/** An empty override uses the bundled default; empty defaults disable reads. */
+export const analysisServerUrl = () => normalizeBase(settingsStore.getState().analysisServerUrl || defaultServerUrl);
 
 /** Capture the current transport and login so transient breakdowns use the same cancellation rules. */
 export function analysisSession() {
@@ -47,7 +54,7 @@ export function analysisSession() {
   return { base, token, fetch: runtime.fetch, valid: () => version === generation && base === analysisServerUrl() };
 }
 
-/** Admin requests are available only with both a URL and a SecureStore token. */
+/** Admin requests are available only with both a URL and a stored token. */
 export const canAnalyze = () => !!analysisServerUrl() && !!settingsStore.getState().analysisToken;
 
 /** Load the admin token at boot; it is never included in persisted settings. */
@@ -60,7 +67,7 @@ export async function loadAnalysisToken() {
     if (version === generation) settingsStore.setState({ analysisToken: '' });
   }
 }
-/** Serialize SecureStore writes and report whether publication still belongs to this login. */
+/** Serialize secret storage writes and report whether publication still belongs to this login. */
 export async function saveAnalysisToken(token: string) {
   const version = generation,
     save = runtime.saveToken;
@@ -70,7 +77,7 @@ export async function saveAnalysisToken(token: string) {
   return version === generation;
 }
 
-/** Save the admin token to SecureStore, then publish it unless a logout intervened. */
+/** Save the admin token to secret storage, then publish it unless a logout intervened. */
 export async function setAnalysisToken(token: string) {
   const value = token.trim();
   if (await saveAnalysisToken(value)) settingsStore.setState({ analysisToken: value });

@@ -6,8 +6,8 @@ import { colors, font } from '@/constants/theme';
 import { Mascot } from '@/components/Mascot';
 import { PixelFrame } from '@/components/PixelFrame';
 import { Button, Label, styles } from '@/components/ui';
-import { login } from '@/navidrome/session';
-import { loginError } from '@/navidrome/subsonic';
+import { login } from '@kashi-koi/core/navidrome/session';
+import { loginError } from '@kashi-koi/core/navidrome/subsonic';
 
 /** Connect to the user's Navidrome library with token authentication. */
 export default function LoginScreen() {

@@ -1,7 +1,7 @@
-import { withSentences } from '@/lyrics/sentences';
+import { withSentences } from '../lyrics/sentences';
 import type { StructuredLyrics } from './subsonic';
 import { orderedLyricEntries } from '@kashi-koi/shared/lyrics';
-import type { Line, Occurrence, SongLyrics } from '@/types/domain';
+import type { Line, Occurrence, SongLyrics } from '../types/domain';
 
 export { pickEntry } from '@kashi-koi/shared/lyrics';
 

@@ -1,12 +1,12 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { colors } from '@/constants/theme';
-import { getLineText } from '@/store/libraryStore';
+import { getLineText } from '@kashi-koi/core/store/libraryStore';
 import { FuriganaLine } from './LineCard';
 import { Label } from './ui';
 import type { ReactNode } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
-import type { Line } from '@/types/domain';
+import type { Line } from '@kashi-koi/core/types/domain';
 
 /**
  * Plain lyric for listen mode and the edit drawer: white when current, gray otherwise. `marked` adds the

@@ -1,6 +1,6 @@
-import { localAudioUri } from '@/downloads/store';
-import { normalizeBase } from '@/analysis/client';
-import { prefetchBreakdown, resetBreakdowns } from '@/analysis/breakdowns';
+import { localAudioUri } from '../downloads/store';
+import { normalizeBase } from '../analysis/client';
+import { prefetchBreakdown, resetBreakdowns } from '../analysis/breakdowns';
 import {
   addLostMark,
   moveReview,
@@ -8,12 +8,12 @@ import {
   readyReviewSentences,
   recordAnswer,
   remapChangedSongs,
-} from '@/lyrics/review';
-import { applyAnswer, quizSentences } from '@/lyrics/fog';
-import { prioritizeAnalyses, analysisRequests } from '@/analysis/fetcher';
-import { prioritizeTranslations } from '@/japanese/translate';
+} from '../lyrics/review';
+import { applyAnswer, quizSentences } from '../lyrics/fog';
+import { prioritizeAnalyses, analysisRequests } from '../analysis/fetcher';
+import { prioritizeTranslations } from '../japanese/translate';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
-import { currentOccurrence } from '@/navidrome/lyrics';
+import { currentOccurrence } from '../navidrome/lyrics';
 import { create } from 'zustand';
 import {
   getAlbumSongs,
@@ -26,12 +26,12 @@ import {
   reviewClip,
   hasTranslations,
   libraryStore,
-} from '@/store/libraryStore';
-import { getAnswers } from '@/lyrics/choices';
-import { getLibraryFilters, getVisibleSongs, isHiddenSong } from '@/data/libraryVisibility';
-import { changeAwareStorage } from '@/store/persistStorage';
-import { persistedSettingKeys, settingsStore } from '@/store/settingsStore';
-import type { ClipReview, ReviewList, Run, Song, LineFog, RunEnd, SentenceOccurrence } from '@/types/domain';
+} from './libraryStore';
+import { getAnswers } from '../lyrics/choices';
+import { getLibraryFilters, getVisibleSongs, isHiddenSong } from '../data/libraryVisibility';
+import { changeAwareStorage } from './persistStorage';
+import { persistedSettingKeys, settingsStore } from './settingsStore';
+import type { ClipReview, ReviewList, Run, Song, LineFog, RunEnd, SentenceOccurrence } from '../types/domain';
 
 export type Transport = {
   load(song: Song, startMs?: number): void;

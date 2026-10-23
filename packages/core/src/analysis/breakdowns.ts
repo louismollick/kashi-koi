@@ -1,20 +1,21 @@
+import { libraryDb } from '../navidrome/libraryDb';
 import { validateBreakdown, type Breakdown } from '@kashi-koi/shared/breakdown';
 import { create } from 'zustand';
-import { settingsStore } from '@/store/settingsStore';
-import { timelineTexts } from '@/lyrics/sentences';
-import { getLyrics, libraryStore } from '@/store/libraryStore';
+import { settingsStore } from '../store/settingsStore';
+import { timelineTexts } from '../lyrics/sentences';
+import { getLyrics, libraryStore } from '../store/libraryStore';
 import { analysisServerUrl, analysisSession } from './fetcher';
 import { fetchBreakdown, requestBreakdown } from './client';
 
 const defaults = {
-  read: async (fp: string, start: number) => (await import('@/navidrome/db')).readBreakdown(fp, start),
-  save: async (value: Breakdown) => (await import('@/navidrome/db')).saveBreakdown(value),
-  remove: async (fp: string) => (await import('@/navidrome/db')).deleteBreakdowns(fp),
+  read: async (fp: string, start: number) => libraryDb().readBreakdown(fp, start),
+  save: async (value: Breakdown) => libraryDb().saveBreakdown(value),
+  remove: async (fp: string) => libraryDb().deleteBreakdowns(fp),
 };
 let runtime = defaults;
 let pendingPersistence = Promise.resolve();
 
-/** Inject the unified SQLite cache for plain Node tests. */
+/** Inject the breakdown cache; the default is the installed library database. */
 export function setBreakdownRuntime(overrides: Partial<typeof defaults> = {}) {
   runtime = { ...defaults, ...overrides };
 }

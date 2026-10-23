@@ -1,7 +1,7 @@
 import { Pressable } from 'react-native';
 import { colors } from '@/constants/theme';
-import { useLibraryFilters } from '@/data/libraryVisibility';
-import { settingsStore } from '@/store/settingsStore';
+import { useLibraryFilters } from '@kashi-koi/core/data/libraryVisibility';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { Label } from './ui';
 
 /** Thin row that turns the library filters (synced, Japanese) off together, or back on. */

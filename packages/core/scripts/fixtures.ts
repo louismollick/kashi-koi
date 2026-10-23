@@ -1,5 +1,6 @@
 import { withSentences } from '../src/lyrics/sentences';
-import type { Line, ReviewList, Song as LibrarySong, SongLyrics } from '@/types/domain';
+import type { LibraryDb } from '../src/navidrome/libraryDb';
+import type { Line, ReviewList, Song as LibrarySong, SongLyrics } from '../src/types/domain';
 
 type Song = Omit<LibrarySong, 'lyricsStatus'> & {
   color: string;
@@ -1163,4 +1164,27 @@ export const testQuiz = (translation: string) => ({
     { phrase: 'X', reason: 'Changes the sentence.' },
     { phrase: 'Y', reason: 'Changes the sentence differently.' },
   ],
+});
+
+/** A library database that stores nothing; pass the operations a test cares about as overrides. */
+export const fakeLibraryDb = (overrides: Partial<LibraryDb> = {}): LibraryDb => ({
+  loadAll: async () => ({
+    songs: [],
+    albums: [],
+    artists: [],
+    playlists: [],
+    translations: {},
+    analyses: {},
+    lyrics: {},
+  }),
+  replaceLibrary: async () => {},
+  saveLyricsResults: async () => {},
+  savePlayed: async () => {},
+  saveTranslations: async () => {},
+  saveAnalysis: async () => {},
+  clearLibrary: async () => {},
+  readBreakdown: async () => undefined,
+  saveBreakdown: async () => {},
+  deleteBreakdowns: async () => {},
+  ...overrides,
 });

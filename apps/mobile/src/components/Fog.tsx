@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { View } from 'react-native';
 import { colors } from '@/constants/theme';
-import { lyricsFog, type FogTile } from '@/lyrics/fog';
-import { appStore } from '@/store/appStore';
-import { getLyrics, libraryStore } from '@/store/libraryStore';
+import { lyricsFog, type FogTile } from '@kashi-koi/core/lyrics/fog';
+import { appStore } from '@kashi-koi/core/store/appStore';
+import { getLyrics, libraryStore } from '@kashi-koi/core/store/libraryStore';
 import { Icon } from './Icon';
 import { Label, styles } from './ui';
 

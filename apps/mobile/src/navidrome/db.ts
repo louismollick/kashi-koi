@@ -1,10 +1,11 @@
 import { type Breakdown, breakdownSchema } from '@kashi-koi/shared/breakdown';
-import type { DownloadEntries, DownloadEntry } from '@/downloads/store';
+import type { DownloadEntries, DownloadEntry } from '@kashi-koi/core/downloads/store';
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { type SongAnalysis, songAnalysisSchema, validateAnalysis } from '@kashi-koi/shared/analysis';
-import type { LyricsInput } from '@/lyrics/sentences';
-import type { Library, LibraryInput, LyricsResult, Translations } from '@/store/libraryStore';
-import type { Playlist } from '@/types/domain';
+import type { LyricsInput } from '@kashi-koi/core/lyrics/sentences';
+import type { Library, LibraryInput, LyricsResult, Translations } from '@kashi-koi/core/store/libraryStore';
+import type { LibraryDb } from '@kashi-koi/core/navidrome/libraryDb';
+import type { Playlist } from '@kashi-koi/core/types/domain';
 
 let pendingWrite = Promise.resolve();
 /** Serialize scan, translation and playback writes on SQLite. */
@@ -254,3 +255,17 @@ export async function deleteBreakdowns(fp: string) {
     await tx.runAsync('DELETE FROM breakdowns WHERE fingerprint = ?', fp);
   });
 }
+
+/** The SQLite implementation of core's library database seam; `_layout.tsx` installs it with `setLibraryDb`. */
+export const sqliteLibraryDb: LibraryDb = {
+  loadAll,
+  replaceLibrary,
+  saveLyricsResults,
+  savePlayed,
+  saveTranslations,
+  saveAnalysis,
+  clearLibrary,
+  readBreakdown,
+  saveBreakdown,
+  deleteBreakdowns,
+};

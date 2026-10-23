@@ -1,27 +1,40 @@
 import { AppState, useWindowDimensions } from 'react-native';
 import Japanese from '../../modules/kashi-japanese';
 import Remote from '../../modules/kashi-remote';
-import { setTranslator, pauseTranslations, prepareTranslation, setTranslationForeground } from '@/japanese/translate';
-import { saveTranslations } from '@/navidrome/db';
-import { setDownloadRuntime } from '@/downloads/queue';
+import {
+  setTranslator,
+  pauseTranslations,
+  prepareTranslation,
+  setTranslationForeground,
+} from '@kashi-koi/core/japanese/translate';
+import { sqliteLibraryDb } from '@/navidrome/db';
+import { nativeSecrets } from '@/navidrome/secrets';
+import { setDownloadRuntime } from '@kashi-koi/core/downloads/queue';
 import { nativeDownloadRuntime } from '@/downloads/native';
-import { libraryStore } from '@/store/libraryStore';
+import { libraryStore } from '@kashi-koi/core/store/libraryStore';
+import { setDefaultAnalysisServer } from '@kashi-koi/core/analysis/fetcher';
+import { setLibraryDb } from '@kashi-koi/core/navidrome/libraryDb';
+import { setSecrets } from '@kashi-koi/core/navidrome/secrets';
 import Storage from 'expo-sqlite/kv-store';
-import { appStore, hydrateAppState, remoteSkip, setTransport } from '@/store/appStore';
-import { hydrateSettings, settingsStore } from '@/store/settingsStore';
-import { getLibraryFilters, getVisibleLibrary } from '@/data/libraryVisibility';
+import { appStore, hydrateAppState, remoteSkip, setTransport } from '@kashi-koi/core/store/appStore';
+import { hydrateSettings, settingsStore } from '@kashi-koi/core/store/settingsStore';
+import { getLibraryFilters, getVisibleLibrary } from '@kashi-koi/core/data/libraryVisibility';
 import { prefetchCovers } from '@/components/Cover';
 import { setupTransport } from '@/audio/transport';
-import { loadLibrary, syncLibrary } from '@/navidrome/sync';
+import { loadLibrary, syncLibrary } from '@kashi-koi/core/navidrome/sync';
 import { useEffect, useState } from 'react';
-import { loadSession, sessionStore } from '@/navidrome/session';
+import { loadSession, sessionStore } from '@kashi-koi/core/navidrome/session';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
 import { colors, fontFiles } from '@/constants/theme';
 
-setTranslator(Japanese, saveTranslations);
+// Install the platform pieces core calls through: library database, secret storage, translator, downloads.
+setLibraryDb(sqliteLibraryDb);
+setSecrets(nativeSecrets);
+setDefaultAnalysisServer(process.env.EXPO_PUBLIC_KASHI_SERVER_URL);
+setTranslator(Japanese);
 setDownloadRuntime(nativeDownloadRuntime);
 // Warm visible album covers on disk whenever a sync or lyrics scan settles.
 libraryStore.subscribe((state, previous) => {

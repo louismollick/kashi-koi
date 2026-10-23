@@ -3,8 +3,8 @@ import { ScrollView, Text, View, type StyleProp, type ViewStyle } from 'react-na
 import { Image } from 'expo-image';
 import Animated, { useAnimatedStyle, useSharedValue, Easing, withSpring, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
-import { libraryStore } from '@/store/libraryStore';
-import type { Choice, Line, RunEnd, SongLyrics } from '@/types/domain';
+import { libraryStore } from '@kashi-koi/core/store/libraryStore';
+import type { Choice, Line, RunEnd, SongLyrics } from '@kashi-koi/core/types/domain';
 import { PixelFrame } from './PixelFrame';
 import { SentenceLines } from './LineCard';
 import { SongIntro } from './SongIntro';
@@ -12,7 +12,7 @@ import { Mascot } from './Mascot';
 import { Answers, GapSentence } from './Answers';
 import { FogStrip, useSongFog } from './Fog';
 import { Icon } from './Icon';
-import { gapOf } from '@/lyrics/choices';
+import { gapOf } from '@kashi-koi/core/lyrics/choices';
 import { Button, Label, Tag, styles } from './ui';
 
 const harbor = require('../../assets/background.png');

@@ -3,34 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
-
-/** Mix an opaque hex color toward white (amount > 0) or black (amount < 0). */
-export function tint(color: string, amount: number) {
-  const value = Number.parseInt(color.slice(1, 7), 16);
-  const channels = [value >> 16, (value >> 8) & 255, value & 255];
-  const target = amount > 0 ? 255 : 0;
-  return `#${channels
-    .map((channel) =>
-      Math.round(channel + (target - channel) * Math.abs(amount))
-        .toString(16)
-        .padStart(2, '0'),
-    )
-    .join('')}`;
-}
-
-/** Rectangle path whose corners step inward `steps` times by `size` points. */
-export function stepped(x0: number, y0: number, x1: number, y1: number, steps: number, size: number) {
-  const cut = steps * size;
-  let d = `M${x0 + cut} ${y0} H${x1 - cut}`;
-  for (let i = 1; i <= steps; i++) d += ` V${y0 + i * size} H${x1 - (steps - i) * size}`;
-  d += ` V${y1 - cut}`;
-  for (let i = 1; i <= steps; i++) d += ` H${x1 - i * size} V${y1 - (steps - i) * size}`;
-  d += ` H${x0 + cut}`;
-  for (let i = 1; i <= steps; i++) d += ` V${y1 - i * size} H${x0 + (steps - i) * size}`;
-  d += ` V${y0 + cut}`;
-  for (let i = 1; i <= steps; i++) d += ` H${x0 + i * size} V${y0 + (steps - i) * size}`;
-  return `${d} Z`;
-}
+import { stepped, tint } from '@kashi-koi/design/shape';
 
 /**
  * Shared pixel-cornered shape for every button, card, tag and cover.
