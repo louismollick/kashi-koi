@@ -63,7 +63,7 @@ function ClipReviewScreen() {
           }
         >
           <Button label="Back to review" onPress={back} className="w-full">
-            <Label pixel className="text-lg font-bold">
+            <Label pixel className="text-[23px]">
               BACK TO REVIEW
             </Label>
           </Button>

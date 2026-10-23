@@ -7,7 +7,8 @@ import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 
 /**
  * All app text. Rounded body type by default; `pixel` switches to the pixel face for titles, numbers and short labels.
- * `fontWeight` in `style` picks the face (see `font`).
+ * `fontWeight` in `style` picks the face (see `font`). Pixel text defaults its lineHeight to its fontSize, which is
+ * Jersey 15's whole line box, so a bigger pixel size never inherits the body's 21-point lineHeight.
  */
 export function Label({
   children,
@@ -22,7 +23,13 @@ export function Label({
   style?: StyleProp<TextStyle>;
   numberOfLines?: number;
 }) {
-  const flat: TextStyle = StyleSheet.flatten([styles.text, muted && { color: colors.muted }, style]);
+  const own: TextStyle | undefined = StyleSheet.flatten(style);
+  const flat: TextStyle = StyleSheet.flatten([
+    styles.text,
+    muted && { color: colors.muted },
+    pixel && { lineHeight: own?.fontSize ?? styles.text.fontSize },
+    style,
+  ]);
   return (
     <Text numberOfLines={numberOfLines} style={[flat, font(pixel ? 'pixel' : 'body', flat.fontWeight)]}>
       {children}
@@ -151,7 +158,7 @@ export function PixelToggle({
 export function Tag({ children, fill = colors.coral }: { children: ReactNode; fill?: string }) {
   return (
     <PixelFrame fill={fill} border={null} contentStyle={{ paddingHorizontal: 7, paddingVertical: 2 }}>
-      <Label pixel style={{ fontSize: 11, lineHeight: 15, fontWeight: '800' }}>
+      <Label pixel style={{ fontSize: 14 }}>
         {children}
       </Label>
     </PixelFrame>
@@ -235,7 +242,7 @@ export function Segmented<T>({
               border={on ? '#ff9aa5' : colors.track}
               contentStyle={{ minHeight: 40, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Label pixel style={{ fontSize: 15, fontWeight: '700', color: on ? colors.text : colors.muted }}>
+              <Label pixel style={{ fontSize: 19, color: on ? colors.text : colors.muted }}>
                 {option.label}
               </Label>
             </PixelFrame>
@@ -250,7 +257,7 @@ export function Segmented<T>({
 , Settings and artist pages. */
 export function SectionHeader({ title }: { title: string }) {
   return (
-    <Label pixel style={{ fontSize: 21, lineHeight: 26, fontWeight: '700' }}>
+    <Label pixel style={{ fontSize: 27 }}>
       {title}
     </Label>
   );

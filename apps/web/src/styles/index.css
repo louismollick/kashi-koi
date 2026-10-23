@@ -45,6 +45,11 @@
     font-size: 15px;
     line-height: 21px;
   }
+  /* Pixel Labels: Jersey 15's line box is its font size, and it has one weight, so the browser must not fake bold. */
+  .label-pixel {
+    line-height: 1;
+    font-synthesis: none;
+  }
   .pixelated {
     image-rendering: pixelated;
   }

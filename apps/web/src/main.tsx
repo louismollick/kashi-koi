@@ -1,9 +1,7 @@
 import '@fontsource/m-plus-rounded-1c/400.css';
 import '@fontsource/m-plus-rounded-1c/500.css';
 import '@fontsource/m-plus-rounded-1c/700.css';
-import '@fontsource/pixelify-sans/400.css';
-import '@fontsource/pixelify-sans/500.css';
-import '@fontsource/pixelify-sans/700.css';
+import '@fontsource/jersey-15/400.css';
 import './styles/index.css';
 import { sessionStore } from '@kashi-koi/core/navidrome/session';
 import { RouterProvider } from '@tanstack/react-router';

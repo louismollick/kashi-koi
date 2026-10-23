@@ -65,7 +65,7 @@ function LoginScreen() {
             height={72}
             className="-ml-1.5 h-[72px] w-[240px] object-contain object-left"
           />
-          <Label pixel className="block text-[22px] leading-7 font-bold">
+          <Label pixel className="block text-[29px]">
             Log in to Navidrome
           </Label>
           {fields.map((field) => (
@@ -93,7 +93,7 @@ function LoginScreen() {
             </Label>
           )}
           <Button type="submit" label="Log in" fill={colors.coral} disabled={busy}>
-            <Label pixel className="text-[17px] font-bold">
+            <Label pixel className="text-[22px]">
               {busy ? 'Connecting…' : 'Log in'}
             </Label>
           </Button>

@@ -87,7 +87,7 @@ function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Bes
           border={colors.coral}
           contentStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
         >
-          <Label pixel style={{ color: colors.coralDeep, fontWeight: '900', fontSize: 20, lineHeight: 24 }}>
+          <Label pixel style={{ color: colors.coralDeep, fontSize: 26 }}>
             NICE!
           </Label>
         </PixelFrame>
@@ -98,16 +98,14 @@ function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Bes
         style={{ position: 'absolute', right: 14, bottom: overlap + 12 }}
         contentStyle={{ alignItems: 'center', paddingHorizontal: 12, paddingTop: 6, paddingBottom: 8, minWidth: 92 }}
       >
-        <Label pixel style={{ color: colors.combo, fontSize: 14, fontWeight: '700', letterSpacing: 1 }}>
+        <Label pixel style={{ color: colors.combo, fontSize: 18, letterSpacing: 1 }}>
           {best ? 'BEST COMBO' : 'COMBO'}
         </Label>
         <Label
           pixel
           style={{
             color: colors.cream,
-            fontSize: 40,
-            lineHeight: 44,
-            fontWeight: '900',
+            fontSize: 52,
             textShadowColor: colors.coralDeep,
             textShadowOffset: { width: 3, height: 3 },
             textShadowRadius: 0,
@@ -169,10 +167,7 @@ export function RunResult({
 }) {
   return (
     <View style={{ alignItems: 'center', gap: 4 }}>
-      <Label
-        pixel
-        style={{ fontSize: 28, lineHeight: 34, fontWeight: '700', color: perfect ? colors.combo : colors.cream }}
-      >
+      <Label pixel style={{ fontSize: 36, color: perfect ? colors.combo : colors.cream }}>
         {perfect ? 'Perfect' : score}
       </Label>
       {(detail || perfect) && (
@@ -318,7 +313,7 @@ export function QuizColumn({
       {toast && <View style={{ marginBottom: 12 }}>{toast}</View>}
       {summary && onReplay ? (
         <Button label="Play the finished song again" onPress={onReplay}>
-          <Label pixel style={{ fontSize: 18, fontWeight: '700' }}>
+          <Label pixel style={{ fontSize: 23 }}>
             PLAY AGAIN
           </Label>
         </Button>
@@ -329,7 +324,7 @@ export function QuizColumn({
         <View style={[styles.row, { marginTop: 12 }]}>
           {onExplain && (
             <Button label="Explain this sentence" style={{ flex: 1 }} onPress={onExplain}>
-              <Label pixel style={{ fontSize: 18, fontWeight: '700' }}>
+              <Label pixel style={{ fontSize: 23 }}>
                 EXPLAIN
               </Label>
             </Button>
@@ -342,7 +337,7 @@ export function QuizColumn({
               border={colors.coralBorder}
               onPress={onContinue}
             >
-              <Label pixel style={{ fontSize: 18, fontWeight: '700' }}>
+              <Label pixel style={{ fontSize: 23 }}>
                 {continueLabel}
               </Label>
             </Button>

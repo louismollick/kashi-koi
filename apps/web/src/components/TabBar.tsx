@@ -33,7 +33,7 @@ export function DueBadge({ count, className }: { count: number; className?: stri
       className={className}
       contentClassName="flex h-6 min-w-6 items-center justify-center px-1.5"
     >
-      <Label pixel className="text-xs leading-[15px] font-bold">
+      <Label pixel className="text-[16px]">
         {count}
       </Label>
     </PixelFrame>
@@ -62,7 +62,7 @@ export function TabBar() {
                     <Icon name={isActive ? tab.activeIcon : tab.icon} size={32} color={color} />
                     {tab.title === 'Review' && <DueBadge count={count} className="absolute -top-2 left-[22px]" />}
                   </span>
-                  <Label pixel className="text-[15px] font-bold" style={{ color }}>
+                  <Label pixel className="text-[19px]" style={{ color }}>
                     {tab.title}
                   </Label>
                 </>

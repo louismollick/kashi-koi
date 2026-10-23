@@ -40,7 +40,7 @@ export default function LoginScreen() {
             style={{ width: 240, height: 72, marginLeft: -6 }}
             accessibilityLabel="Kashi-Koi!"
           />
-          <Label pixel style={styles.title}>
+          <Label pixel style={{ fontSize: 29 }}>
             Log in to Navidrome
           </Label>
           {(
@@ -85,7 +85,7 @@ export default function LoginScreen() {
               }
             }}
           >
-            <Label pixel style={{ fontSize: 17, fontWeight: '700' }}>
+            <Label pixel style={{ fontSize: 22 }}>
               {busy ? 'Connecting…' : 'Log in'}
             </Label>
           </Button>

@@ -28,7 +28,7 @@ export function NavRail() {
             return (
               <>
                 <Icon name={isActive ? tab.activeIcon : tab.icon} size={28} color={color} />
-                <Label pixel className="text-[18px] font-bold" style={{ color }}>
+                <Label pixel className="text-[23px]" style={{ color }}>
                   {tab.title}
                 </Label>
                 {tab.title === 'Review' && <DueBadge count={count} className="ml-auto" />}
@@ -43,7 +43,7 @@ export function NavRail() {
           return (
             <>
               <Icon name="settings" size={28} color={color} />
-              <Label pixel className="text-[18px] font-bold" style={{ color }}>
+              <Label pixel className="text-[23px]" style={{ color }}>
                 Settings
               </Label>
               {offline && (

@@ -18,7 +18,7 @@ export function AddedToast() {
         contentClassName="min-h-10! px-3! py-2!"
         onPress={() => appStore.getState().undoLostMark()}
       >
-        <Label pixel className="text-sm font-bold" style={{ color: colors.cream }}>
+        <Label pixel className="text-[18px]" style={{ color: colors.cream }}>
           UNDO
         </Label>
       </Button>

@@ -60,13 +60,13 @@ function HomeScreen() {
             >
               <Icon name="musicFilled" size={54} color={colors.cream} />
               <span className="flex flex-1 flex-col items-center">
-                <Label pixel className="text-[22px] leading-[26px] font-bold tracking-[1px]">
+                <Label pixel className="text-[29px] tracking-[1px]">
                   REVIEW
                 </Label>
-                <Label pixel className="text-[34px] leading-[38px] font-bold">
+                <Label pixel className="text-[44px]">
                   {count}
                 </Label>
-                <Label pixel className="text-[22px] leading-[26px] font-bold tracking-[1px]">
+                <Label pixel className="text-[29px] tracking-[1px]">
                   LYRICS
                 </Label>
               </span>

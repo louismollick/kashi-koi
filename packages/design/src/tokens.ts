@@ -26,18 +26,19 @@ export const colors = {
 
 /**
  * Typefaces, one face per weight because iOS can't pick weights out of a custom family. `body` (M PLUS Rounded 1c)
- * covers English and Japanese, so lyrics and UI share one voice. `pixel` (Pixelify Sans) is for titles, numbers and
- * short labels. `Label` maps `fontWeight` onto these; other text should spread `font(...)` into its style.
+ * covers English and Japanese, so lyrics and UI share one voice. `pixel` (Jersey 15) is for titles, numbers and short
+ * labels; it has one weight, so every pixel weight maps to Regular. `Label` maps `fontWeight` onto these; other text
+ * should spread `font(...)` into its style.
  */
 export const fonts = {
   body: { regular: 'MPLUSRounded1c-Regular', medium: 'MPLUSRounded1c-Medium', bold: 'MPLUSRounded1c-Bold' },
-  pixel: { regular: 'PixelifySans-Regular', medium: 'PixelifySans-Medium', bold: 'PixelifySans-Bold' },
+  pixel: { regular: 'Jersey15-Regular', medium: 'Jersey15-Regular', bold: 'Jersey15-Regular' },
 } as const;
 
 export type FontRole = keyof typeof fonts;
 
 /** The same two families by their CSS names (Fontsource), where weights come from `font-weight` instead of face names. */
-export const fontFamilies = { body: 'M PLUS Rounded 1c', pixel: 'Pixelify Sans' } as const satisfies Record<
+export const fontFamilies = { body: 'M PLUS Rounded 1c', pixel: 'Jersey 15' } as const satisfies Record<
   FontRole,
   string
 >;

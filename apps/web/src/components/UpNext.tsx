@@ -35,7 +35,7 @@ const AUTOPLAY_PREVIEW = 20;
 function Heading({ title, onClear }: { title: string; onClear?: () => void }) {
   return (
     <div className="flex items-center pt-5 pb-1">
-      <Label muted pixel className="flex-1 text-[13px] font-bold tracking-[1px]">
+      <Label muted pixel className="flex-1 text-[17px] tracking-[1px]">
         {title}
       </Label>
       {onClear && (

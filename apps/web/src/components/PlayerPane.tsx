@@ -62,7 +62,7 @@ const ListenRow = memo(function ListenRow({
 });
 
 /** Pixel-font action label on the big player buttons. */
-const bigLabel = 'text-lg font-black tracking-[0.5px]';
+const bigLabel = 'text-[23px] tracking-[0.5px]';
 
 /** ListenMode and QuizMode share one body: analysis status, lyrics or the quiz column, and the playback error. */
 function PlayerBody({ song }: { song: Song }) {
@@ -236,12 +236,12 @@ function PlayerBody({ song }: { song: Song }) {
               contentClassName="relative py-3.5!"
               onPress={() => appStore.getState().addLostMark()}
             >
-              <Label pixel className="text-[22px] leading-7 font-black tracking-[0.5px]">
+              <Label pixel className="text-[29px] tracking-[0.5px]">
                 {inReview ? 'IN REVIEW' : 'REVIEW LATER'}
               </Label>
               <Label
                 pixel
-                className="pointer-events-none absolute top-[3px] left-2 hidden text-[11px] leading-[14px] opacity-70 min-[1024px]:block"
+                className="pointer-events-none absolute top-[3px] left-2 hidden text-[14px] opacity-70 min-[1024px]:block"
               >
                 L
               </Label>
@@ -329,7 +329,7 @@ function PaneHeader({ song, tab, onTab }: { song: Song; tab: Tab; onTab: (tab: T
           >
             <Label
               pixel
-              className="text-sm font-bold tracking-[1px]"
+              className="text-[18px] tracking-[1px]"
               style={{ color: tab === id ? colors.text : colors.muted }}
             >
               {title}
@@ -358,7 +358,7 @@ export function PlayerPane() {
     return desktop ? (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-6 py-8 text-center">
         <Mascot size={200} />
-        <Label pixel className="text-[22px] leading-7 font-bold">
+        <Label pixel className="text-[29px]">
           Nothing playing
         </Label>
       </div>

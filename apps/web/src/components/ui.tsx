@@ -8,7 +8,8 @@ import { PixelFrame } from './PixelFrame';
  * All app text. Rounded body type by default; `pixel` switches to the pixel face for titles, numbers and short
  * labels. Size, weight and spacing come from utilities in `className` (`text-[13px] font-bold`); like iOS the
  * line height stays 21 unless a `leading-*` utility changes it. 600 and up on iOS is the bold face, so use
- * `font-bold`. `lines={1}` truncates the text to one line with an ellipsis.
+ * `font-bold`. Pixel text (Jersey 15) has one weight and a line height equal to its size, so give it only a size.
+ * `lines={1}` truncates the text to one line with an ellipsis.
  */
 export function Label({
   children,
@@ -29,7 +30,7 @@ export function Label({
     <span
       className={cn(
         'label',
-        pixel && 'font-pixel',
+        pixel && 'label-pixel font-pixel',
         muted && 'text-muted',
         lines === 1 && 'block min-w-0 truncate',
         className,
@@ -178,7 +179,7 @@ export function PixelToggle({
 export function Tag({ children, fill = colors.coral }: { children: ReactNode; fill?: string }) {
   return (
     <PixelFrame fill={fill} border={null} contentClassName="px-[7px] py-0.5">
-      <Label pixel className="text-[11px] leading-[15px] font-bold">
+      <Label pixel className="text-[14px]">
         {children}
       </Label>
     </PixelFrame>
@@ -262,7 +263,7 @@ export function Segmented<T>({
               border={on ? colors.coralBorder : colors.track}
               contentClassName="flex min-h-10 items-center justify-center"
             >
-              <Label pixel className="text-[15px] font-bold" style={{ color: on ? colors.text : colors.muted }}>
+              <Label pixel className="text-[19px]" style={{ color: on ? colors.text : colors.muted }}>
                 {option.label}
               </Label>
             </PixelFrame>
@@ -276,7 +277,7 @@ export function Segmented<T>({
 /** Section title on Home, Settings and artist pages. */
 export function SectionHeader({ title }: { title: string }) {
   return (
-    <Label pixel className="block text-[21px] leading-[26px] font-bold">
+    <Label pixel className="block text-[27px]">
       {title}
     </Label>
   );

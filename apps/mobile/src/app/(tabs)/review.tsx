@@ -14,7 +14,6 @@ import { Button, IconButton, Label, styles } from '@/components/ui';
 import type { ReviewList } from '@kashi-koi/core/types/domain';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
-const sectionTitle = { fontSize: 20, lineHeight: 26, fontWeight: '700' } as const;
 
 /** One song row, like Library's Songs, with its review sentences below. Tapping the song collapses them. */
 function SongGroup({ songId, items }: { songId: string; items: ReviewList }) {
@@ -81,7 +80,7 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
         onPress={() => setOpen(!open)}
         style={[styles.row, { paddingVertical: 6 }]}
       >
-        <Label pixel style={[sectionTitle, { flex: 1 }]}>
+        <Label pixel style={{ flex: 1, fontSize: 26 }}>
           {title}
         </Label>
         <Label muted style={{ fontSize: 13 }}>
@@ -125,7 +124,7 @@ export default function ReviewScreen() {
         >
           <View style={styles.row}>
             <Icon name="play" size={28} color={colors.cream} />
-            <Label pixel style={styles.title}>
+            <Label pixel style={{ fontSize: 29 }}>
               Review Lyrics
             </Label>
           </View>

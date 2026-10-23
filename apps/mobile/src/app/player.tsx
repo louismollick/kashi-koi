@@ -42,7 +42,7 @@ function AddedToast({ style }: { style?: ViewStyle }) {
         contentStyle={{ minHeight: 40, paddingHorizontal: 12, paddingVertical: 8 }}
         onPress={() => appStore.getState().undoLostMark()}
       >
-        <Label pixel style={{ fontSize: 14, color: colors.cream, fontWeight: '700' }}>
+        <Label pixel style={{ fontSize: 18, color: colors.cream }}>
           UNDO
         </Label>
       </Button>
@@ -321,7 +321,7 @@ export default function PlayerScreen() {
                   contentStyle={{ paddingVertical: 14, paddingHorizontal: 16 }}
                   onPress={() => explain(sentenceId)}
                 >
-                  <Label pixel style={{ fontSize: 16, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
+                  <Label pixel style={{ fontSize: 21, lineHeight: 29, letterSpacing: 0.5 }}>
                     EXPLAIN
                   </Label>
                 </Button>
@@ -335,7 +335,7 @@ export default function PlayerScreen() {
                 contentStyle={{ paddingVertical: 14 }}
                 onPress={() => appStore.getState().addLostMark()}
               >
-                <Label pixel style={{ fontSize: 22, lineHeight: 28, fontWeight: '900', letterSpacing: 0.5 }}>
+                <Label pixel style={{ fontSize: 29, letterSpacing: 0.5 }}>
                   {inReview ? 'IN REVIEW' : 'REVIEW LATER'}
                 </Label>
               </Button>

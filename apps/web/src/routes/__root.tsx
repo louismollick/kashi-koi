@@ -6,7 +6,7 @@ export const Route = createRootRoute({
   component: Root,
   notFoundComponent: () => (
     <div className="flex h-dvh flex-col items-center justify-center gap-3">
-      <Label pixel className="text-[22px] font-bold">
+      <Label pixel className="text-[29px]">
         Not found
       </Label>
       <Link to="/" className="text-coral">

@@ -78,7 +78,7 @@ function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Bes
         }}
       >
         <PixelFrame fill={colors.cream} border={colors.coral} contentClassName="px-3 py-1">
-          <Label pixel className="text-xl leading-6 font-black" style={{ color: colors.coralDeep }}>
+          <Label pixel className="text-[26px]" style={{ color: colors.coralDeep }}>
             NICE!
           </Label>
         </PixelFrame>
@@ -90,12 +90,12 @@ function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Bes
         style={{ bottom: overlap + 12 }}
         contentClassName="flex min-w-[92px] flex-col items-center px-3 pt-1.5 pb-2"
       >
-        <Label pixel className="text-sm font-bold tracking-[1px]" style={{ color: colors.combo }}>
+        <Label pixel className="text-[18px] tracking-[1px]" style={{ color: colors.combo }}>
           {best ? 'BEST COMBO' : 'COMBO'}
         </Label>
         <Label
           pixel
-          className="text-[40px] leading-[44px] font-black"
+          className="text-[52px]"
           style={{ color: colors.cream, textShadow: `3px 3px 0 ${colors.coralDeep}` }}
         >
           {count}
@@ -153,11 +153,7 @@ export function RunResult({
 }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <Label
-        pixel
-        className="text-[28px] leading-[34px] font-bold"
-        style={{ color: perfect ? colors.combo : colors.cream }}
-      >
+      <Label pixel className="text-[36px]" style={{ color: perfect ? colors.combo : colors.cream }}>
         {perfect ? 'Perfect' : score}
       </Label>
       {(detail || perfect) && (
@@ -228,7 +224,7 @@ function AnswerTimeBar({ until }: { until: number }) {
   );
 }
 
-const actionLabel = 'text-lg font-bold';
+const actionLabel = 'text-[23px]';
 
 /**
  * A fixed quiz column: the harbor stage, the sentence in a dialogue box over the dock, then the answers. `lines` is

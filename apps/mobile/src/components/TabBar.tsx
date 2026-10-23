@@ -107,13 +107,13 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
                       justifyContent: 'center',
                     }}
                   >
-                    <Label pixel style={{ fontSize: 12, lineHeight: 15, fontWeight: '800' }}>
+                    <Label pixel style={{ fontSize: 16 }}>
                       {count}
                     </Label>
                   </PixelFrame>
                 )}
               </View>
-              <Label pixel style={{ color: on ? colors.coral : colors.lavender, fontSize: 15, fontWeight: '700' }}>
+              <Label pixel style={{ color: on ? colors.coral : colors.lavender, fontSize: 19 }}>
                 {tab.title}
               </Label>
             </Pressable>

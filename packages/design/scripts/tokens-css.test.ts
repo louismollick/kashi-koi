@@ -15,7 +15,7 @@ test('tokensCss is one @theme block with a variable per color and font role', ()
   assert.match(css, /--color-scrim: #090a1699;/);
   assert.equal(css.match(/--color-/g)?.length, Object.keys(colors).length);
   assert.match(css, /--font-body: 'M PLUS Rounded 1c', sans-serif;/);
-  assert.match(css, /--font-pixel: 'Pixelify Sans', monospace;/);
+  assert.match(css, /--font-pixel: 'Jersey 15', monospace;/);
 });
 
 test('the CLI writes the CSS to the given path', () => {

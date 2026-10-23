@@ -81,7 +81,7 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
         onClick={() => setOpen(!open)}
         className="flex w-full items-center gap-[10px] py-1.5 text-left transition-[filter] active:opacity-70 hover:brightness-125"
       >
-        <Label pixel className="flex-1 text-xl leading-[26px] font-bold">
+        <Label pixel className="flex-1 text-[26px]">
           {title}
         </Label>
         <Label muted className="text-[13px]">
@@ -128,7 +128,7 @@ function ReviewScreen() {
           >
             <span className="flex items-center gap-[10px]">
               <Icon name="play" size={28} color={colors.cream} />
-              <Label pixel className="text-[22px] leading-7 font-bold">
+              <Label pixel className="text-[29px]">
                 Review Lyrics
               </Label>
             </span>

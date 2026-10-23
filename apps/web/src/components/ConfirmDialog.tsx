@@ -34,12 +34,12 @@ export function ConfirmDialog({
       className="m-auto w-[min(320px,calc(100vw-48px))] bg-transparent p-0 text-text backdrop:bg-scrim"
     >
       <PixelFrame fill={colors.panel} border={colors.track} contentClassName="flex flex-col gap-4 p-4">
-        <Label pixel className="block text-xl leading-6 font-bold">
+        <Label pixel className="block text-[26px]">
           {title}
         </Label>
         <div className="flex gap-2">
           <Button className="flex-1" label="Cancel" onPress={onCancel}>
-            <Label pixel className="text-[15px] font-bold">
+            <Label pixel className="text-[19px]">
               Cancel
             </Label>
           </Button>
@@ -50,7 +50,7 @@ export function ConfirmDialog({
             border={colors.coralBorder}
             onPress={onConfirm}
           >
-            <Label pixel className="text-[15px] font-bold">
+            <Label pixel className="text-[19px]">
               {confirmLabel}
             </Label>
           </Button>

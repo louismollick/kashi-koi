@@ -56,7 +56,7 @@ function Section({
 function Stat({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-1 flex-col gap-0.5">
-      <Label pixel className="text-[26px] leading-[30px] font-bold">
+      <Label pixel className="text-[34px]">
         {value.toLocaleString()}
       </Label>
       <Label muted className="text-xs leading-4">

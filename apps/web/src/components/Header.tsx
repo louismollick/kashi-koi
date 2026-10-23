@@ -59,7 +59,7 @@ export function ScreenHeader({ title, sheet = false, right }: { title?: string; 
         />
         <div className="min-w-0 flex-1">
           {title && (
-            <Label pixel lines={1} className="text-xl leading-6 font-bold">
+            <Label pixel lines={1} className="text-[26px]">
               {title}
             </Label>
           )}

@@ -43,7 +43,7 @@ export function Answers({
               <Label
                 pixel
                 muted
-                className="pointer-events-none absolute top-[3px] left-2 hidden text-[11px] leading-[14px] min-[1024px]:block"
+                className="pointer-events-none absolute top-[3px] left-2 hidden text-[14px] min-[1024px]:block"
               >
                 {index + 1}
               </Label>
