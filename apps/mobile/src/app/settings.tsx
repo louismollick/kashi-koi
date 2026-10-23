@@ -60,7 +60,7 @@ function Section({
 function Stat({ value, label }: { value: number; label: string }) {
   return (
     <View style={{ flex: 1, gap: 2 }}>
-      <Label pixel style={{ fontSize: 26, lineHeight: 30, fontWeight: '700' }}>
+      <Label pixel style={{ fontSize: 34 }}>
         {value.toLocaleString()}
       </Label>
       <Label muted style={{ fontSize: 12, lineHeight: 16 }}>

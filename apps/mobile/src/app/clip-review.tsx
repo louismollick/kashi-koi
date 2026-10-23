@@ -53,7 +53,7 @@ export default function ClipReviewScreen() {
           }
         >
           <Button label="Back to review" onPress={() => router.back()}>
-            <Label pixel style={{ fontSize: 18, fontWeight: '700' }}>
+            <Label pixel style={{ fontSize: 23 }}>
               BACK TO REVIEW
             </Label>
           </Button>
