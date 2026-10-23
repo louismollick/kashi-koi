@@ -1,8 +1,14 @@
 # Kashi-Koi!
 
-An iOS music player for a self-hosted Navidrome library, built to help you understand the Japanese songs you already listen to, line by line.
+A music player for a self-hosted Navidrome library, on iOS and the web, built to help you understand the Japanese songs you already listen to, line by line.
 
 ## Language
+
+### App
+
+**Device**:
+One install of the app: the iOS app on a phone, or the web app in one browser. Each device keeps its own library copy, review list, fog maps and perfect runs; nothing is shared between devices, even for the same Navidrome account.
+_Avoid_: Client, account (Navidrome owns the account)
 
 ### Lyrics
 
@@ -35,11 +41,11 @@ A wrong phrase for a sentence's gap, with a reason it does not fit the Japanese 
 _Avoid_: Distractor, fake answer
 
 **Translation**:
-A machine translation of a line or sentence into English. It comes from the song analysis when there is one, otherwise it is made on the phone one line at a time without the rest of the song. It is the right answer in Meaning Match, but it can miss what the line actually means.
+A machine translation of a line or sentence into English. It comes from the song analysis when there is one, otherwise the iOS app makes one on the phone, one line at a time without the rest of the song. The web app has no such fallback, so there a song without a song analysis has no translations and can't be quizzed or reviewed. It is the right answer in Meaning Match, but it can miss what the line actually means.
 _Avoid_: Meaning, gloss
 
 **Furigana**:
-Kana readings shown above the kanji in a line, guessed on the phone. Quiz mode and Clip review always show them; listen mode shows them with the Translations toggle. They are dictionary readings and can miss how a word is actually sung.
+Kana readings shown above the kanji in a line, guessed on the device. Quiz mode and Clip review always show them; listen mode shows them with the Translations toggle. They are dictionary readings and can miss how a word is actually sung.
 _Avoid_: Ruby, readings
 
 **Synced lyrics**:
@@ -51,19 +57,19 @@ A song without synced lyrics, left out of browsing, search, Recently played and 
 _Avoid_: Filtered song, unsupported song
 
 **Lyrics scan**:
-A pass over the whole library that checks each song for synced lyrics, translates them, and caches the result on the phone, so hidden songs can be known without asking the server each time.
+A pass over the whole library that checks each song for synced lyrics, translates them on iOS, and caches the result on the device, so hidden songs can be known without asking the server each time.
 _Avoid_: Sync, index
 
 **Library sync**:
-Re-fetching the song, album and artist list from Navidrome into the phone's copy of the library. It checks lyrics only for songs never scanned; a full Lyrics scan is separate.
+Re-fetching the song, album and artist list from Navidrome into the device's copy of the library. It checks lyrics only for songs never scanned; a full Lyrics scan is separate.
 _Avoid_: Refresh, import
 
 **Download**:
-A song's audio and cover art pinned on the phone, alongside whatever song analysis and breakdowns the server already has for it. Only songs with synced Japanese lyrics can be downloaded. Downloading an album, an artist or the library downloads each of its eligible songs.
+A song's audio and cover art pinned on the phone (iOS only), alongside whatever song analysis and breakdowns the server already has for it. Only songs with synced Japanese lyrics can be downloaded. Downloading an album, an artist or the library downloads each of its eligible songs.
 _Avoid_: Cache (reserve for the evictable copies kept while browsing), save, sync
 
 **Offline mode**:
-A setting that limits the app to downloaded songs and stops all network work. Downloaded files are used whenever they exist, online or not.
+An iOS setting that limits the app to downloaded songs and stops all network work. Downloaded files are used whenever they exist, online or not.
 _Avoid_: Airplane mode, local mode
 
 **Queue**:
