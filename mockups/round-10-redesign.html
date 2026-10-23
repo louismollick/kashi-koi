@@ -1,498 +1,526 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Kashi-Koi round 10: bigger redesigns</title>
     <style>
-      @font-face {
-        font-family: "Pixelify Sans";
-        font-weight: 400;
-        src: url("../apps/mobile/assets/fonts/PixelifySans-Regular.ttf");
-      }
-      @font-face {
-        font-family: "Pixelify Sans";
-        font-weight: 700;
-        src: url("../apps/mobile/assets/fonts/PixelifySans-Bold.ttf");
-      }
-      @font-face {
-        font-family: "M PLUS Rounded 1c";
-        font-weight: 400;
-        src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Regular.ttf");
-      }
-      @font-face {
-        font-family: "M PLUS Rounded 1c";
-        font-weight: 700;
-        src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Bold.ttf");
-      }
-      :root {
-        --bg: #000;
-        --fg: #fff;
-        --muted: #9a9cb8;
-        --track: #3e3d5b;
-        --surface: #1d1f35;
-        --slate: #272945;
-        --maroon: #4a3441;
-        --coral: #fb4a5e;
-        --coral-deep: #df475a;
-        --cream: #fbf8c6;
-        --combo: #ffc93c;
-        --green: #55ee9c;
-        --green-deep: #1c6747;
-        --lavender: #b4a6e6;
-        --wood: #9a6136;
-        --wood-light: #c98a4b;
-        --wood-dark: #5e3920;
-        --sea: #1f6fd1;
-        --pixel: "Pixelify Sans", monospace;
-      }
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        background: var(--bg);
-        color: var(--fg);
-        font: 15px/1.55 "M PLUS Rounded 1c", -apple-system, "Hiragino Sans", sans-serif;
-        padding: 40px 40px 120px;
-        max-width: 1400px;
-      }
-      h1,
-      h2 {
-        font-family: var(--pixel);
-        font-weight: 700;
-        line-height: 1.15;
-      }
-      h1 {
-        font-size: 40px;
-      }
-      h2 {
-        font-size: 30px;
-        margin-bottom: 8px;
-      }
-      p {
-        max-width: 72ch;
-      }
-      .lede {
-        color: var(--muted);
-        margin: 8px 0 8px;
-      }
-      section {
-        border-top: 2px solid var(--track);
-        padding: 36px 0 44px;
-        display: grid;
-        grid-template-columns: minmax(260px, 400px) 1fr;
-        gap: 36px;
-      }
-      section ul {
-        margin-top: 12px;
-        padding-left: 18px;
-        color: #d9d6ea;
-      }
-      section li + li {
-        margin-top: 4px;
-      }
-      .cost {
-        margin-top: 14px;
-        color: var(--muted);
-        font-size: 14px;
-      }
-      .phones {
-        display: flex;
-        gap: 24px;
-        flex-wrap: wrap;
-        align-items: flex-start;
-      }
-      .phone {
-        width: 300px;
-        height: 650px;
-        border: 2px solid var(--track);
-        background: #000;
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-      .cap {
-        font-size: 13px;
-        color: var(--muted);
-        margin-top: 6px;
-      }
-      .pix {
-        image-rendering: pixelated;
-      }
-      .px {
-        clip-path: polygon(
-          6px 0,
-          calc(100% - 6px) 0,
-          calc(100% - 6px) 2px,
-          calc(100% - 4px) 2px,
-          calc(100% - 4px) 4px,
-          calc(100% - 2px) 4px,
-          calc(100% - 2px) 6px,
-          100% 6px,
-          100% calc(100% - 6px),
-          calc(100% - 2px) calc(100% - 6px),
-          calc(100% - 2px) calc(100% - 4px),
-          calc(100% - 4px) calc(100% - 4px),
-          calc(100% - 4px) calc(100% - 2px),
-          calc(100% - 6px) calc(100% - 2px),
-          calc(100% - 6px) 100%,
-          6px 100%,
-          6px calc(100% - 2px),
-          4px calc(100% - 2px),
-          4px calc(100% - 4px),
-          2px calc(100% - 4px),
-          2px calc(100% - 6px),
-          0 calc(100% - 6px),
-          0 6px,
-          2px 6px,
-          2px 4px,
-          4px 4px,
-          4px 2px,
-          6px 2px
-        );
-      }
-      .status {
-        height: 30px;
-        flex: none;
-      }
-      .hdr {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 4px 12px 8px;
-        font: 700 14px var(--pixel);
-        flex: none;
-      }
-      .chip {
-        width: 30px;
-        height: 30px;
-        display: grid;
-        place-items: center;
-        background: var(--surface);
-        color: var(--fg);
-        flex: none;
-      }
-      .ja {
-        font-weight: 700;
-      }
-      ruby rt {
-        font-size: 8px;
-        color: #d9d6ea;
-      }
-      .tabs {
-        margin-top: auto;
-        display: flex;
-        justify-content: space-around;
-        padding: 8px 0 18px;
-        font: 700 11px var(--pixel);
-        color: var(--lavender);
-        flex: none;
-      }
-      .tabs span {
-        text-align: center;
-      }
-      .tabs svg {
-        display: block;
-        margin: 0 auto 2px;
-      }
-      .on {
-        color: var(--coral);
-      }
+    @font-face {
+      font-family: "Pixelify Sans";
+      font-weight: 400;
+      src: url("../apps/mobile/assets/fonts/PixelifySans-Regular.ttf");
+    }
+    @font-face {
+      font-family: "Pixelify Sans";
+      font-weight: 700;
+      src: url("../apps/mobile/assets/fonts/PixelifySans-Bold.ttf");
+    }
+    @font-face {
+      font-family: "M PLUS Rounded 1c";
+      font-weight: 400;
+      src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Regular.ttf");
+    }
+    @font-face {
+      font-family: "M PLUS Rounded 1c";
+      font-weight: 700;
+      src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Bold.ttf");
+    }
+    :root {
+      --bg: #000;
+      --fg: #fff;
+      --muted: #9a9cb8;
+      --track: #3e3d5b;
+      --surface: #1d1f35;
+      --slate: #272945;
+      --maroon: #4a3441;
+      --coral: #fb4a5e;
+      --coral-deep: #df475a;
+      --cream: #fbf8c6;
+      --combo: #ffc93c;
+      --green: #55ee9c;
+      --green-deep: #1c6747;
+      --lavender: #b4a6e6;
+      --wood: #9a6136;
+      --wood-light: #c98a4b;
+      --wood-dark: #5e3920;
+      --sea: #1f6fd1;
+      --pixel: "Pixelify Sans", monospace;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font:
+        15px / 1.55 "M PLUS Rounded 1c",
+        -apple-system,
+        "Hiragino Sans",
+        sans-serif;
+      padding: 40px 40px 120px;
+      max-width: 1400px;
+    }
+    h1,
+    h2 {
+      font-family: var(--pixel);
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    h1 {
+      font-size: 40px;
+    }
+    h2 {
+      font-size: 30px;
+      margin-bottom: 8px;
+    }
+    p {
+      max-width: 72ch;
+    }
+    .lede {
+      color: var(--muted);
+      margin: 8px 0 8px;
+    }
+    section {
+      border-top: 2px solid var(--track);
+      padding: 36px 0 44px;
+      display: grid;
+      grid-template-columns: minmax(260px, 400px) 1fr;
+      gap: 36px;
+    }
+    section ul {
+      margin-top: 12px;
+      padding-left: 18px;
+      color: #d9d6ea;
+    }
+    section li + li {
+      margin-top: 4px;
+    }
+    .cost {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .phones {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .phone {
+      width: 300px;
+      height: 650px;
+      border: 2px solid var(--track);
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .cap {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .pix {
+      image-rendering: pixelated;
+    }
+    .px {
+      clip-path: polygon(
+        6px 0,
+        calc(100% - 6px) 0,
+        calc(100% - 6px) 2px,
+        calc(100% - 4px) 2px,
+        calc(100% - 4px) 4px,
+        calc(100% - 2px) 4px,
+        calc(100% - 2px) 6px,
+        100% 6px,
+        100% calc(100% - 6px),
+        calc(100% - 2px) calc(100% - 6px),
+        calc(100% - 2px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 2px),
+        calc(100% - 6px) calc(100% - 2px),
+        calc(100% - 6px) 100%,
+        6px 100%,
+        6px calc(100% - 2px),
+        4px calc(100% - 2px),
+        4px calc(100% - 4px),
+        2px calc(100% - 4px),
+        2px calc(100% - 6px),
+        0 calc(100% - 6px),
+        0 6px,
+        2px 6px,
+        2px 4px,
+        4px 4px,
+        4px 2px,
+        6px 2px
+      );
+    }
+    .status {
+      height: 30px;
+      flex: none;
+    }
+    .hdr {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px 8px;
+      font: 700 14px var(--pixel);
+      flex: none;
+    }
+    .chip {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      background: var(--surface);
+      color: var(--fg);
+      flex: none;
+    }
+    .ja {
+      font-weight: 700;
+    }
+    ruby rt {
+      font-size: 8px;
+      color: #d9d6ea;
+    }
+    .tabs {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 18px;
+      font: 700 11px var(--pixel);
+      color: var(--lavender);
+      flex: none;
+    }
+    .tabs span {
+      text-align: center;
+    }
+    .tabs svg {
+      display: block;
+      margin: 0 auto 2px;
+    }
+    .on {
+      color: var(--coral);
+    }
 
-      /* 1. On the dock */
-      .stage {
-        position: relative;
-        height: 250px;
-        flex: none;
-        background: url("round-10/harbor.jpg") 30% 100% / 560px auto;
-        image-rendering: pixelated;
-      }
-      .stage .girl {
-        position: absolute;
-        left: 6px;
-        bottom: -6px;
-        width: 170px;
-      }
-      .bucket {
-        position: absolute;
-        right: 10px;
-        bottom: 36px;
-        text-align: right;
-        font: 700 12px var(--pixel);
-        color: var(--combo);
-        text-shadow: 2px 2px 0 #000;
-      }
-      .bucket .fish {
-        display: flex;
-        gap: 2px;
-        justify-content: flex-end;
-        margin-top: 4px;
-      }
-      .bucket b {
-        display: block;
-        font-size: 30px;
-        line-height: 1;
-        color: var(--cream);
-        text-shadow: 3px 3px 0 var(--coral-deep);
-      }
-      .nice {
-        position: absolute;
-        left: 128px;
-        top: 34px;
-        background: var(--cream);
-        color: var(--coral-deep);
-        font: 700 15px var(--pixel);
-        padding: 4px 10px;
-        border: 2px solid var(--coral);
-        transform: rotate(-4deg);
-      }
-      .dialog {
-        margin: -26px 12px 0;
-        position: relative;
-        background: #0d0f22;
-        border: 3px solid var(--cream);
-        box-shadow: 0 0 0 3px #0d0f22;
-        padding: 12px 14px 12px;
-      }
-      .dialog .who {
-        position: absolute;
-        top: -14px;
-        left: 10px;
-        background: var(--coral);
-        font: 700 11px var(--pixel);
-        padding: 2px 8px;
-        border: 2px solid #0d0f22;
-      }
-      .dialog .ja {
-        font-size: 19px;
-        line-height: 1.6;
-      }
-      .menu {
-        margin: 14px 12px 0;
-        display: grid;
-        gap: 2px;
-      }
-      .menu div {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        padding: 9px 10px;
-        font-size: 14px;
-        color: #d9d6ea;
-      }
-      .menu .cursor {
-        width: 10px;
-        flex: none;
-        color: var(--coral);
-        font: 700 14px var(--pixel);
-      }
-      .menu .sel {
-        background: var(--surface);
-        color: var(--fg);
-      }
-      .menu .right {
-        background: var(--green-deep);
-        color: var(--fg);
-      }
-      .bar {
-        margin-top: auto;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        padding: 12px 12px 22px;
-        background: var(--surface);
-        border-top: 3px solid var(--coral);
-        flex: none;
-        font-size: 12px;
-      }
-      .bar img {
-        width: 38px;
-      }
-      .bar b {
-        display: block;
-        font-size: 13px;
-      }
-      .bar .play {
-        margin-left: auto;
-        width: 38px;
-        height: 38px;
-        background: var(--coral);
-        display: grid;
-        place-items: center;
-      }
+    /* 1. On the dock */
+    .stage {
+      position: relative;
+      height: 250px;
+      flex: none;
+      background: url("round-10/harbor.jpg") 30% 100% / 560px auto;
+      image-rendering: pixelated;
+    }
+    .stage .girl {
+      position: absolute;
+      left: 6px;
+      bottom: -6px;
+      width: 170px;
+    }
+    .bucket {
+      position: absolute;
+      right: 10px;
+      bottom: 36px;
+      text-align: right;
+      font: 700 12px var(--pixel);
+      color: var(--combo);
+      text-shadow: 2px 2px 0 #000;
+    }
+    .bucket .fish {
+      display: flex;
+      gap: 2px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+    .bucket b {
+      display: block;
+      font-size: 30px;
+      line-height: 1;
+      color: var(--cream);
+      text-shadow: 3px 3px 0 var(--coral-deep);
+    }
+    .nice {
+      position: absolute;
+      left: 128px;
+      top: 34px;
+      background: var(--cream);
+      color: var(--coral-deep);
+      font: 700 15px var(--pixel);
+      padding: 4px 10px;
+      border: 2px solid var(--coral);
+      transform: rotate(-4deg);
+    }
+    .dialog {
+      margin: -26px 12px 0;
+      position: relative;
+      background: #0d0f22;
+      border: 3px solid var(--cream);
+      box-shadow: 0 0 0 3px #0d0f22;
+      padding: 12px 14px 12px;
+    }
+    .dialog .who {
+      position: absolute;
+      top: -14px;
+      left: 10px;
+      background: var(--coral);
+      font: 700 11px var(--pixel);
+      padding: 2px 8px;
+      border: 2px solid #0d0f22;
+    }
+    .dialog .ja {
+      font-size: 19px;
+      line-height: 1.6;
+    }
+    .menu {
+      margin: 14px 12px 0;
+      display: grid;
+      gap: 2px;
+    }
+    .menu div {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 9px 10px;
+      font-size: 14px;
+      color: #d9d6ea;
+    }
+    .menu .cursor {
+      width: 10px;
+      flex: none;
+      color: var(--coral);
+      font: 700 14px var(--pixel);
+    }
+    .menu .sel {
+      background: var(--surface);
+      color: var(--fg);
+    }
+    .menu .right {
+      background: var(--green-deep);
+      color: var(--fg);
+    }
+    .bar {
+      margin-top: auto;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 12px 22px;
+      background: var(--surface);
+      border-top: 3px solid var(--coral);
+      flex: none;
+      font-size: 12px;
+    }
+    .bar img {
+      width: 38px;
+    }
+    .bar b {
+      display: block;
+      font-size: 13px;
+    }
+    .bar .play {
+      margin-left: auto;
+      width: 38px;
+      height: 38px;
+      background: var(--coral);
+      display: grid;
+      place-items: center;
+    }
 
-      /* 2. Signboards */
-      .sign {
-        position: relative;
-        background: var(--wood);
-        border: 3px solid var(--wood-dark);
-        box-shadow: inset 0 3px 0 var(--wood-light), inset 0 -3px 0 #7a4a28;
-        color: var(--cream);
-      }
-      .sign::before,
-      .sign::after {
-        content: "";
-        position: absolute;
-        top: -14px;
-        width: 4px;
-        height: 12px;
-        background: #3b2a1c;
-      }
-      .sign::before {
-        left: 22px;
-      }
-      .sign::after {
-        right: 22px;
-      }
-      .sign.flat::before,
-      .sign.flat::after {
-        display: none;
-      }
-      .plank {
-        background: repeating-linear-gradient(
-          to bottom,
-          var(--wood) 0 14px,
-          #8b5530 14px 16px,
-          var(--wood) 16px 30px,
-          #7f4d2b 30px 32px
-        );
-        border-top: 3px solid var(--wood-dark);
-      }
-      .notice {
-        background: var(--cream);
-        color: #3b2a1c;
-        border: 3px solid var(--wood-dark);
-      }
-      .notice .r {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 10px;
-        border-top: 2px dashed #d8cf9a;
-        font-size: 12px;
-      }
-      .notice .r:first-of-type {
-        border-top: 0;
-      }
-      .notice .r span:last-child {
-        color: #8a6a4a;
-      }
-      .boardtitle {
-        display: inline-block;
-        font: 700 13px var(--pixel);
-        padding: 3px 10px;
-        margin: 0 0 -3px 12px;
-        position: relative;
-      }
+    /* 2. Signboards */
+    .sign {
+      position: relative;
+      background: var(--wood);
+      border: 3px solid var(--wood-dark);
+      box-shadow:
+        inset 0 3px 0 var(--wood-light),
+        inset 0 -3px 0 #7a4a28;
+      color: var(--cream);
+    }
+    .sign::before,
+    .sign::after {
+      content: "";
+      position: absolute;
+      top: -14px;
+      width: 4px;
+      height: 12px;
+      background: #3b2a1c;
+    }
+    .sign::before {
+      left: 22px;
+    }
+    .sign::after {
+      right: 22px;
+    }
+    .sign.flat::before,
+    .sign.flat::after {
+      display: none;
+    }
+    .plank {
+      background: repeating-linear-gradient(
+        to bottom,
+        var(--wood) 0 14px,
+        #8b5530 14px 16px,
+        var(--wood) 16px 30px,
+        #7f4d2b 30px 32px
+      );
+      border-top: 3px solid var(--wood-dark);
+    }
+    .notice {
+      background: var(--cream);
+      color: #3b2a1c;
+      border: 3px solid var(--wood-dark);
+    }
+    .notice .r {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-top: 2px dashed #d8cf9a;
+      font-size: 12px;
+    }
+    .notice .r:first-of-type {
+      border-top: 0;
+    }
+    .notice .r span:last-child {
+      color: #8a6a4a;
+    }
+    .boardtitle {
+      display: inline-block;
+      font: 700 13px var(--pixel);
+      padding: 3px 10px;
+      margin: 0 0 -3px 12px;
+      position: relative;
+    }
 
-      /* 3. Sea chart */
-      .sea {
-        position: relative;
-        flex: 1;
-        background-color: #1754a8;
-        background-image:
-          linear-gradient(90deg, rgba(255, 255, 255, 0.05) 2px, transparent 2px),
-          linear-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px);
-        background-size: 20px 20px;
-      }
-      .island {
-        position: absolute;
-        text-align: center;
-        font: 700 10px var(--pixel);
-      }
-      .island .land {
-        position: relative;
-        width: 74px;
-        height: 54px;
-        background: #e9c97c;
-        box-shadow: inset 0 -6px 0 #c9a45c;
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 3px;
-        padding: 6px;
-      }
-      .island .land i {
-        background: #3fae5c;
-      }
-      .island .land i.fog {
-        background: #cdd3e6;
-        opacity: 0.85;
-      }
-      .island .land i.half {
-        background: #8bc7a0;
-      }
-      .island .land i.red {
-        background: var(--red, #f95362);
-      }
-      .island .name {
-        margin-top: 4px;
-        color: #fff;
-        text-shadow: 1px 1px 0 #0b2a57;
-        white-space: nowrap;
-      }
-      .island .flag {
-        position: absolute;
-        top: -18px;
-        right: 6px;
-      }
-      .cloud {
-        position: absolute;
-        background: #e8ecf7;
-        opacity: 0.92;
-      }
-      .boat {
-        position: absolute;
-        width: 26px;
-        height: 12px;
-        background: #fff;
-        box-shadow: 0 3px 0 #c0392b;
-      }
-      .legend {
-        display: flex;
-        gap: 10px;
-        padding: 10px 12px;
-        font-size: 11px;
-        color: var(--muted);
-        flex: none;
-      }
-      .legend i {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        margin-right: 4px;
-        vertical-align: -1px;
-      }
-      .tiles {
-        display: grid;
-        grid-template-columns: repeat(8, 1fr);
-        gap: 4px;
-        padding: 0 14px;
-      }
-      .tiles i {
-        aspect-ratio: 1;
-        background: #cdd3e6;
-      }
-      .tiles i.clear {
-        background: var(--cream);
-      }
-      .tiles i.half {
-        background: #6c6496;
-      }
-      .tiles i.red {
-        background: #f95362;
-      }
+    /* 3. Sea chart */
+    .sea {
+      position: relative;
+      flex: 1;
+      background-color: #1754a8;
+      background-image:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 2px, transparent 2px),
+        linear-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px);
+      background-size: 20px 20px;
+    }
+    .island {
+      position: absolute;
+      text-align: center;
+      font: 700 10px var(--pixel);
+    }
+    .island .land {
+      position: relative;
+      width: 74px;
+      height: 54px;
+      background: #e9c97c;
+      box-shadow: inset 0 -6px 0 #c9a45c;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
+      padding: 6px;
+    }
+    .island .land i {
+      background: #3fae5c;
+    }
+    .island .land i.fog {
+      background: #cdd3e6;
+      opacity: 0.85;
+    }
+    .island .land i.half {
+      background: #8bc7a0;
+    }
+    .island .land i.red {
+      background: var(--red, #f95362);
+    }
+    .island .name {
+      margin-top: 4px;
+      color: #fff;
+      text-shadow: 1px 1px 0 #0b2a57;
+      white-space: nowrap;
+    }
+    .island .flag {
+      position: absolute;
+      top: -18px;
+      right: 6px;
+    }
+    .cloud {
+      position: absolute;
+      background: #e8ecf7;
+      opacity: 0.92;
+    }
+    .boat {
+      position: absolute;
+      width: 26px;
+      height: 12px;
+      background: #fff;
+      box-shadow: 0 3px 0 #c0392b;
+    }
+    .legend {
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px;
+      font-size: 11px;
+      color: var(--muted);
+      flex: none;
+    }
+    .legend i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 4px;
+      vertical-align: -1px;
+    }
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+      padding: 0 14px;
+    }
+    .tiles i {
+      aspect-ratio: 1;
+      background: #cdd3e6;
+    }
+    .tiles i.clear {
+      background: var(--cream);
+    }
+    .tiles i.half {
+      background: #6c6496;
+    }
+    .tiles i.red {
+      background: #f95362;
+    }
     </style>
   </head>
   <body>
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
       <defs>
-        <symbol id="koi" viewBox="0 0 24 24"><path fill="currentColor" d="M9 5h8v2H9zM7 7h12v2H7zM5 9h10v2H5zM17 9h4v2h-4zM5 11h18v2H5zM5 13h16v2H5zM7 15h12v2H7zM9 17h8v2H9zM1 7h2v2H1zM1 9h4v2H1zM3 11h2v2H3zM1 13h4v2H1zM1 15h2v2H1z" /></symbol>
-        <symbol id="home" viewBox="0 0 24 24"><path fill="currentColor" d="M4 20h16v2H4zm16-10h2v10h-2zM2 10h2v10H2zm2-2h2v2H4zm2-2h2v2H6zm2-2h2v2H8zm2-2h4v2h-4zm4 2h2v2h-2zm2 2h2v2h-2zm2 2h2v2h-2zM8 14h2v6H8zm2-2h4v2h-4zm4 2h2v6h-2z" /></symbol>
-        <symbol id="music" viewBox="0 0 24 24"><path fill="currentColor" d="M4 12h4v2H4zm-2 2h2v4H2zm2 4h4v2H4zM8 6h2v12H8zm10 0h2v12h-2zm-6 8h2v4h-2zm2-2h4v2h-4zm0 6h4v2h-4zM10 4h8v2h-8z" /></symbol>
-        <symbol id="book" viewBox="0 0 24 24"><path fill="currentColor" d="M2 4h8v2H2zm12 0h8v2h-8zM2 6h2v12H2zm18 0h2v12h-2zM10 6h4v14h-4zM4 18h6v2H4zm10 0h6v2h-6z" /></symbol>
-        <symbol id="play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5h2v14H8zm2 2h2v10h-2zm2 2h2v6h-2zm2 2h2v2h-2z" /></symbol>
+        <symbol id="koi" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M9 5h8v2H9zM7 7h12v2H7zM5 9h10v2H5zM17 9h4v2h-4zM5 11h18v2H5zM5 13h16v2H5zM7 15h12v2H7zM9 17h8v2H9zM1 7h2v2H1zM1 9h4v2H1zM3 11h2v2H3zM1 13h4v2H1zM1 15h2v2H1z"
+          />
+        </symbol>
+        <symbol id="home" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M4 20h16v2H4zm16-10h2v10h-2zM2 10h2v10H2zm2-2h2v2H4zm2-2h2v2H6zm2-2h2v2H8zm2-2h4v2h-4zm4 2h2v2h-2zm2 2h2v2h-2zm2 2h2v2h-2zM8 14h2v6H8zm2-2h4v2h-4zm4 2h2v6h-2z"
+          />
+        </symbol>
+        <symbol id="music" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M4 12h4v2H4zm-2 2h2v4H2zm2 4h4v2H4zM8 6h2v12H8zm10 0h2v12h-2zm-6 8h2v4h-2zm2-2h4v2h-4zm0 6h4v2h-4zM10 4h8v2h-8z"
+          />
+        </symbol>
+        <symbol id="book" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M2 4h8v2H2zm12 0h8v2h-8zM2 6h2v12H2zm18 0h2v12h-2zM10 6h4v14h-4zM4 18h6v2H4zm10 0h6v2h-6z"
+          />
+        </symbol>
+        <symbol id="play" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M8 5h2v14H8zm2 2h2v10h-2zm2 2h2v6h-2zm2 2h2v2h-2z" />
+        </symbol>
       </defs>
     </svg>
 
@@ -522,10 +550,12 @@
           <div class="phone">
             <div class="status"></div>
             <div class="hdr">
-              <span class="chip px">⌄</span>Sentence 4 of 8<span style="margin-left: auto; color: var(--green)">QUIZ ON</span>
+              <span class="chip px">⌄</span>Sentence 4 of 8<span style="margin-left: auto; color: var(--green)"
+                >QUIZ ON</span
+              >
             </div>
             <div class="stage">
-              <img class="girl pix" src="round-10/mascot-headbang.gif" alt="" />
+              <img class="girl pix" src="round-10/mascot-headbang.gif" alt="">
               <div class="nice">NICE!</div>
               <div class="bucket">
                 Combo<b>3</b>
@@ -538,7 +568,9 @@
             </div>
             <div class="dialog">
               <span class="who">ミナミ</span>
-              <div class="ja"><ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを</div>
+              <div class="ja">
+                <ruby>遠<rt>とお</rt></ruby>ざかる<ruby>街<rt>まち</rt></ruby>の<ruby>灯<rt>あか</rt></ruby>りを
+              </div>
             </div>
             <div class="menu">
               <div><span class="cursor"></span>I meant to get off at the next stop</div>
@@ -546,9 +578,11 @@
               <div><span class="cursor"></span>Unsaid words sleep in my chest</div>
             </div>
             <div class="bar">
-              <img class="pix" src="round-10/cover-0.png" alt="" />
+              <img class="pix" src="round-10/cover-0.png" alt="">
               <div><b>夜明けのバス</b><span style="color: var(--muted)">ミナミ</span></div>
-              <span class="play px"><svg width="22" height="22"><use href="#play" /></svg></span>
+              <span class="play px"
+                ><svg width="22" height="22"><use href="#play" /></svg></span
+              >
             </div>
           </div>
           <div class="cap">Quiz, answering</div>
@@ -558,10 +592,12 @@
             <div class="status"></div>
             <div class="hdr"><span class="chip px">⌄</span>夜明けのバス</div>
             <div class="stage" style="height: 200px; background-position: 70% 100%">
-              <img class="girl pix" src="round-10/mascot-bobbing.gif" alt="" style="width: 150px" />
+              <img class="girl pix" src="round-10/mascot-bobbing.gif" alt="" style="width: 150px">
               <div class="bucket">
                 Best combo<b>12</b>
-                <div class="fish"><svg width="22" height="22" style="color: var(--combo)"><use href="#koi" /></svg></div>
+                <div class="fish">
+                  <svg width="22" height="22" style="color: var(--combo)"><use href="#koi" /></svg>
+                </div>
               </div>
             </div>
             <div class="dialog" style="text-align: center">
@@ -570,7 +606,8 @@
               <div style="color: var(--muted); font-size: 13px">8 of 8 right · you caught the gold koi</div>
             </div>
             <div class="tiles" style="margin-top: 18px">
-              <i class="clear"></i><i class="clear"></i><i class="clear"></i><i class="clear"></i><i class="clear"></i><i class="clear"></i><i class="clear"></i><i class="clear"></i>
+              <i class="clear"></i><i class="clear"></i><i class="clear"></i><i class="clear"></i><i class="clear"></i
+              ><i class="clear"></i><i class="clear"></i><i class="clear"></i>
             </div>
             <div class="menu" style="margin-top: 16px">
               <div class="sel"><span class="cursor">▶</span>Next song</div>
@@ -578,9 +615,11 @@
               <div><span class="cursor"></span>Review 2 lines</div>
             </div>
             <div class="bar">
-              <img class="pix" src="round-10/cover-0.png" alt="" />
+              <img class="pix" src="round-10/cover-0.png" alt="">
               <div><b>春のまにまに</b><span style="color: var(--muted)">Up next</span></div>
-              <span class="play px"><svg width="22" height="22"><use href="#play" /></svg></span>
+              <span class="play px"
+                ><svg width="22" height="22"><use href="#play" /></svg></span
+              >
             </div>
           </div>
           <div class="cap">End of a song</div>
@@ -601,43 +640,59 @@
           <li>Cream notice cards read well for dense text like settings and the review list.</li>
           <li>The navy slate is retired, except as the night sky in clip review.</li>
         </ul>
-        <p class="cost">Cost: medium. A second frame style next to PixelFrame and a palette pass; no layout logic changes.</p>
+        <p class="cost">
+          Cost: medium. A second frame style next to PixelFrame and a palette pass; no layout logic changes.
+        </p>
       </div>
       <div class="phones">
         <div>
           <div class="phone">
             <div class="status"></div>
             <div class="hdr" style="padding-bottom: 6px">
-              <img src="round-10/logo.png" alt="Kashi-Koi!" style="height: 34px" />
+              <img src="round-10/logo.png" alt="Kashi-Koi!" style="height: 34px">
             </div>
             <div class="stage" style="height: 196px; background-position: 20% 100%">
-              <img class="girl pix" src="round-10/mascot-bobbing.gif" alt="" style="width: 160px; bottom: -8px" />
+              <img class="girl pix" src="round-10/mascot-bobbing.gif" alt="" style="width: 160px; bottom: -8px">
             </div>
-            <div class="sign px" style="margin: 18px 14px 0; padding: 14px 16px; display: flex; align-items: center; gap: 14px">
+            <div
+              class="sign px"
+              style="margin: 18px 14px 0; padding: 14px 16px; display: flex; align-items: center; gap: 14px"
+            >
               <svg width="40" height="40" style="color: var(--cream)"><use href="#music" /></svg>
               <div style="flex: 1; text-align: center; font: 700 16px/1.15 var(--pixel)">
-                Review<br /><span style="font-size: 34px">12</span><br />lyrics
+                Review<br><span style="font-size: 34px">12</span><br>lyrics
               </div>
-              <span class="px" style="background: var(--cream); color: var(--wood-dark); width: 40px; height: 40px; display: grid; place-items: center"
-                ><svg width="24" height="24"><use href="#play" /></svg
-              ></span>
+              <span
+                class="px"
+                style="background: var(--cream); color: var(--wood-dark); width: 40px; height: 40px; display: grid; place-items: center"
+                ><svg width="24" height="24"><use href="#play" /></svg></span
+              >
             </div>
             <div style="margin: 18px 14px 8px; font: 700 16px var(--pixel)">Recently played</div>
             <div style="display: flex; gap: 10px; padding: 0 14px">
               <div style="width: 82px; font-size: 11px">
-                <img class="pix px" src="round-10/cover-0.png" alt="" style="width: 82px; display: block" /><b>夜明けのバス</b>
+                <img class="pix px" src="round-10/cover-0.png" alt="" style="width: 82px; display: block">
+                <b>夜明けのバス</b>
               </div>
               <div style="width: 82px; font-size: 11px">
-                <img class="pix px" src="round-10/cover-3.png" alt="" style="width: 82px; display: block" /><b>春のまにまに</b>
+                <img class="pix px" src="round-10/cover-3.png" alt="" style="width: 82px; display: block">
+                <b>春のまにまに</b>
               </div>
               <div style="width: 82px; font-size: 11px">
-                <img class="pix px" src="round-10/cover-1.png" alt="" style="width: 82px; display: block" /><b>月とコーヒー</b>
+                <img class="pix px" src="round-10/cover-1.png" alt="" style="width: 82px; display: block">
+                <b>月とコーヒー</b>
               </div>
             </div>
             <div class="tabs plank" style="color: var(--cream)">
-              <span class="on" style="color: var(--combo)"><svg width="24" height="24"><use href="#home" /></svg>Home</span>
-              <span><svg width="24" height="24"><use href="#music" /></svg>Library</span>
-              <span><svg width="24" height="24"><use href="#book" /></svg>Review</span>
+              <span class="on" style="color: var(--combo)"
+                ><svg width="24" height="24"><use href="#home" /></svg>Home</span
+              >
+              <span
+                ><svg width="24" height="24"><use href="#music" /></svg>Library</span
+              >
+              <span
+                ><svg width="24" height="24"><use href="#book" /></svg>Review</span
+              >
             </div>
           </div>
           <div class="cap">Home</div>
@@ -650,19 +705,48 @@
               <div class="sign flat boardtitle">Answer time</div>
               <div class="notice px" style="padding: 8px">
                 <div style="display: flex; gap: 4px">
-                  <span class="px" style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: var(--coral); color: #fff">No limit</span>
-                  <span class="px" style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: #eadf9f">10s</span>
-                  <span class="px" style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: #eadf9f">5s</span>
-                  <span class="px" style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: #eadf9f">3s</span>
-                  <span class="px" style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: #eadf9f">0s</span>
+                  <span
+                    class="px"
+                    style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: var(--coral); color: #fff"
+                    >No limit</span
+                  >
+                  <span
+                    class="px"
+                    style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: #eadf9f"
+                    >10s</span
+                  >
+                  <span
+                    class="px"
+                    style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: #eadf9f"
+                    >5s</span
+                  >
+                  <span
+                    class="px"
+                    style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: #eadf9f"
+                    >3s</span
+                  >
+                  <span
+                    class="px"
+                    style="flex: 1; text-align: center; font: 700 11px var(--pixel); padding: 5px 0; background: #eadf9f"
+                    >0s</span
+                  >
                 </div>
               </div>
               <div class="sign flat boardtitle" style="margin-top: 16px">Library</div>
               <div class="notice px">
                 <div style="display: flex; padding: 10px 10px 6px">
-                  <div style="flex: 1"><b style="font: 700 20px var(--pixel)">182</b><div style="font-size: 10px; color: #8a6a4a">Ready to learn</div></div>
-                  <div style="flex: 1"><b style="font: 700 20px var(--pixel)">21</b><div style="font-size: 10px; color: #8a6a4a">Not Japanese</div></div>
-                  <div style="flex: 1"><b style="font: 700 20px var(--pixel)">48</b><div style="font-size: 10px; color: #8a6a4a">No lyrics</div></div>
+                  <div style="flex: 1">
+                    <b style="font: 700 20px var(--pixel)">182</b>
+                    <div style="font-size: 10px; color: #8a6a4a">Ready to learn</div>
+                  </div>
+                  <div style="flex: 1">
+                    <b style="font: 700 20px var(--pixel)">21</b>
+                    <div style="font-size: 10px; color: #8a6a4a">Not Japanese</div>
+                  </div>
+                  <div style="flex: 1">
+                    <b style="font: 700 20px var(--pixel)">48</b>
+                    <div style="font-size: 10px; color: #8a6a4a">No lyrics</div>
+                  </div>
                 </div>
                 <div class="r"><span>Hide songs without synced lyrics</span><span>On</span></div>
                 <div class="r"><span>Hide songs without Japanese</span><span>On</span></div>
@@ -673,13 +757,21 @@
               <div class="notice px">
                 <div class="r"><span>Offline mode</span><span>Off</span></div>
                 <div class="r"><span>Downloaded</span><span>12 of 182 songs</span></div>
-                <div class="r"><span style="color: var(--coral-deep)">Download library</span><span>170 songs</span></div>
+                <div class="r">
+                  <span style="color: var(--coral-deep)">Download library</span><span>170 songs</span>
+                </div>
               </div>
             </div>
             <div class="tabs plank" style="color: var(--cream)">
-              <span><svg width="24" height="24"><use href="#home" /></svg>Home</span>
-              <span><svg width="24" height="24"><use href="#music" /></svg>Library</span>
-              <span><svg width="24" height="24"><use href="#book" /></svg>Review</span>
+              <span
+                ><svg width="24" height="24"><use href="#home" /></svg>Home</span
+              >
+              <span
+                ><svg width="24" height="24"><use href="#music" /></svg>Library</span
+              >
+              <span
+                ><svg width="24" height="24"><use href="#book" /></svg>Review</span
+              >
             </div>
           </div>
           <div class="cap">Settings</div>
@@ -692,8 +784,8 @@
         <h2>3. Sea chart</h2>
         <p>
           The fog map grows into an actual map. Each song is an island; its sentences are the island's tiles, under fog
-          until you clear them. Albums are archipelagos, perfect runs plant a koi flag, and Review shows the islands where
-          fog is rolling back in today.
+          until you clear them. Albums are archipelagos, perfect runs plant a koi flag, and Review shows the islands
+          where fog is rolling back in today.
         </p>
         <ul>
           <li>Progress you can see at a glance, across the whole library.</li>
@@ -720,23 +812,37 @@
                 <div class="name">夜明けのバス</div>
               </div>
               <div class="island" style="left: 160px; top: 60px">
-                <div class="land px"><i></i><i></i><i class="half"></i><i class="red"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i></div>
+                <div class="land px">
+                  <i></i><i></i><i class="half"></i><i class="red"></i><i class="fog"></i><i class="fog"></i
+                  ><i class="fog"></i><i class="fog"></i>
+                </div>
                 <div class="name">春のまにまに</div>
               </div>
               <div class="island" style="left: 60px; top: 190px">
-                <div class="land px"><i class="half"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i></div>
+                <div class="land px">
+                  <i class="half"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i
+                  ><i class="fog"></i><i class="fog"></i><i class="fog"></i>
+                </div>
                 <div class="name">月とコーヒー</div>
               </div>
               <div class="island" style="left: 190px; top: 230px">
-                <div class="land px"><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i></div>
+                <div class="land px">
+                  <i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i
+                  ><i class="fog"></i><i class="fog"></i><i class="fog"></i>
+                </div>
                 <div class="name">帰り道</div>
               </div>
               <div class="island" style="left: 26px; top: 340px">
-                <div class="land px"><i></i><i></i><i></i><i></i><i></i><i class="half"></i><i class="fog"></i><i class="fog"></i></div>
+                <div class="land px">
+                  <i></i><i></i><i></i><i></i><i></i><i class="half"></i><i class="fog"></i><i class="fog"></i>
+                </div>
                 <div class="name">風にまかせて</div>
               </div>
               <div class="island" style="left: 170px; top: 380px">
-                <div class="land px"><i class="red"></i><i></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i></div>
+                <div class="land px">
+                  <i class="red"></i><i></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i
+                  ><i class="fog"></i><i class="fog"></i>
+                </div>
                 <div class="name">小さな願い</div>
               </div>
               <div class="cloud" style="left: 228px; top: 168px; width: 60px; height: 14px"></div>
@@ -744,14 +850,20 @@
               <div class="boat" style="left: 128px; top: 150px"></div>
             </div>
             <div class="legend">
-              <span><i style="background: #3fae5c"></i>Cleared</span><span><i style="background: #cdd3e6"></i>Fog</span><span
-                ><i style="background: #f95362"></i>Slipped</span
+              <span><i style="background: #3fae5c"></i>Cleared</span><span><i style="background: #cdd3e6"></i>Fog</span
+              ><span><i style="background: #f95362"></i>Slipped</span
               ><span style="color: var(--combo)">Koi: perfect run</span>
             </div>
             <div class="tabs">
-              <span><svg width="24" height="24"><use href="#home" /></svg>Home</span>
-              <span class="on"><svg width="24" height="24"><use href="#music" /></svg>Library</span>
-              <span><svg width="24" height="24"><use href="#book" /></svg>Review</span>
+              <span
+                ><svg width="24" height="24"><use href="#home" /></svg>Home</span
+              >
+              <span class="on"
+                ><svg width="24" height="24"><use href="#music" /></svg>Library</span
+              >
+              <span
+                ><svg width="24" height="24"><use href="#book" /></svg>Review</span
+              >
             </div>
           </div>
           <div class="cap">Library as a chart</div>
@@ -763,25 +875,52 @@
             <div class="sea" style="flex: none; height: 230px; display: grid; place-items: center">
               <div class="island" style="position: relative">
                 <div class="land px" style="width: 200px; height: 120px; gap: 6px; padding: 12px">
-                  <i></i><i></i><i class="half"></i><i class="red"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i><i class="fog"></i>
+                  <i></i><i></i><i class="half"></i><i class="red"></i><i class="fog"></i><i class="fog"></i
+                  ><i class="fog"></i><i class="fog"></i>
                 </div>
                 <div class="name" style="font-size: 13px">38% clear · 1 slipped</div>
               </div>
             </div>
             <div style="padding: 14px; display: grid; gap: 10px; font-size: 13px">
-              <div style="display: flex; gap: 10px"><i style="width: 14px; height: 14px; background: #3fae5c; flex: none; margin-top: 3px"></i><span class="ja">桜が舞う坂道で</span></div>
-              <div style="display: flex; gap: 10px"><i style="width: 14px; height: 14px; background: #3fae5c; flex: none; margin-top: 3px"></i><span class="ja">君の名前を呼んだ</span></div>
-              <div style="display: flex; gap: 10px"><i style="width: 14px; height: 14px; background: #8bc7a0; flex: none; margin-top: 3px"></i><span class="ja">風に消えた声だけが</span></div>
-              <div style="display: flex; gap: 10px"><i style="width: 14px; height: 14px; background: #f95362; flex: none; margin-top: 3px"></i><span class="ja">今も空に残ってる</span></div>
-              <div style="display: flex; gap: 10px; color: var(--muted)"><i style="width: 14px; height: 14px; background: #cdd3e6; flex: none; margin-top: 3px"></i>4 sentences under fog</div>
+              <div style="display: flex; gap: 10px">
+                <i style="width: 14px; height: 14px; background: #3fae5c; flex: none; margin-top: 3px"></i
+                ><span class="ja">桜が舞う坂道で</span>
+              </div>
+              <div style="display: flex; gap: 10px">
+                <i style="width: 14px; height: 14px; background: #3fae5c; flex: none; margin-top: 3px"></i
+                ><span class="ja">君の名前を呼んだ</span>
+              </div>
+              <div style="display: flex; gap: 10px">
+                <i style="width: 14px; height: 14px; background: #8bc7a0; flex: none; margin-top: 3px"></i
+                ><span class="ja">風に消えた声だけが</span>
+              </div>
+              <div style="display: flex; gap: 10px">
+                <i style="width: 14px; height: 14px; background: #f95362; flex: none; margin-top: 3px"></i
+                ><span class="ja">今も空に残ってる</span>
+              </div>
+              <div style="display: flex; gap: 10px; color: var(--muted)">
+                <i style="width: 14px; height: 14px; background: #cdd3e6; flex: none; margin-top: 3px"></i>4 sentences
+                under fog
+              </div>
             </div>
             <div style="padding: 0 14px">
-              <div class="px" style="background: var(--coral); text-align: center; padding: 12px; font: 700 16px var(--pixel)">Clear the fog</div>
+              <div
+                class="px"
+                style="background: var(--coral); text-align: center; padding: 12px; font: 700 16px var(--pixel)"
+              >
+                Clear the fog
+              </div>
             </div>
             <div class="tabs">
-              <span><svg width="24" height="24"><use href="#home" /></svg>Home</span>
-              <span class="on"><svg width="24" height="24"><use href="#music" /></svg>Library</span>
-              <span><svg width="24" height="24"><use href="#book" /></svg>Review</span>
+              <span
+                ><svg width="24" height="24"><use href="#home" /></svg>Home</span
+              >
+              <span class="on"
+                ><svg width="24" height="24"><use href="#music" /></svg>Library</span
+              >
+              <span
+                ><svg width="24" height="24"><use href="#book" /></svg>Review</span
+              >
             </div>
           </div>
           <div class="cap">One song's island</div>

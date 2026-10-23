@@ -1,331 +1,354 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Kashi-Koi round 10: design audit</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     <style>
-      /* The app's own font files; DotGothic16 (option B only) comes from Google Fonts. */
-      @font-face {
-        font-family: "Pixelify Sans";
-        font-weight: 400;
-        src: url("../apps/mobile/assets/fonts/PixelifySans-Regular.ttf");
-      }
-      @font-face {
-        font-family: "Pixelify Sans";
-        font-weight: 500;
-        src: url("../apps/mobile/assets/fonts/PixelifySans-Medium.ttf");
-      }
-      @font-face {
-        font-family: "Pixelify Sans";
-        font-weight: 700;
-        src: url("../apps/mobile/assets/fonts/PixelifySans-Bold.ttf");
-      }
-      @font-face {
-        font-family: "M PLUS Rounded 1c";
-        font-weight: 400;
-        src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Regular.ttf");
-      }
-      @font-face {
-        font-family: "M PLUS Rounded 1c";
-        font-weight: 500;
-        src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Medium.ttf");
-      }
-      @font-face {
-        font-family: "M PLUS Rounded 1c";
-        font-weight: 700;
-        src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Bold.ttf");
-      }
-      :root {
-        --bg: #000;
-        --fg: #fff;
-        --muted: #9a9cb8;
-        --track: #3e3d5b;
-        --surface: #1d1f35;
-        --slate: #272945;
-        --coral: #fb4a5e;
-        --cream: #fbf8c6;
-        --green: #55ee9c;
-        --combo: #ffc93c;
-        --lavender: #b4a6e6;
-      }
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        background: var(--bg);
-        color: var(--fg);
-        font: 15px/1.55 "M PLUS Rounded 1c", -apple-system, "Hiragino Sans", sans-serif;
-        padding: 40px 40px 120px;
-        max-width: 1400px;
-      }
-      h1,
-      h2,
-      h3 {
-        font-family: "Pixelify Sans", monospace;
-        font-weight: 700;
-        line-height: 1.15;
-      }
-      h1 {
-        font-size: 40px;
-      }
-      h2 {
-        font-size: 28px;
-        margin-bottom: 6px;
-      }
-      h3 {
-        font-size: 19px;
-        margin-bottom: 4px;
-      }
-      p {
-        max-width: 72ch;
-      }
-      .lede {
-        color: var(--muted);
-        margin: 8px 0 18px;
-      }
-      nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 18px;
-        margin-bottom: 8px;
-        font-family: "Pixelify Sans", monospace;
-      }
-      a {
-        color: var(--lavender);
-      }
-      section {
-        border-top: 2px solid var(--track);
-        padding: 36px 0 40px;
-      }
-      section > p {
-        margin-bottom: 18px;
-      }
-      .row {
-        display: flex;
-        gap: 22px;
-        flex-wrap: wrap;
-        align-items: flex-start;
-      }
-      figure {
-        width: 268px;
-      }
-      figure img {
-        width: 268px;
-        display: block;
-        border: 2px solid var(--track);
-      }
-      figcaption {
-        font-size: 13px;
-        color: var(--muted);
-        margin-top: 6px;
-      }
-      .pair {
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
-      }
-      .pair figure,
-      .pair figure img {
-        width: 220px;
-      }
-      .change {
-        display: grid;
-        grid-template-columns: minmax(240px, 380px) 1fr;
-        gap: 28px;
-        padding: 26px 0;
-        border-top: 1px solid var(--track);
-      }
-      .change:first-of-type {
-        border-top: 0;
-      }
-      .change ul {
-        padding-left: 18px;
-        color: #d9d6ea;
-      }
-      .change li + li {
-        margin-top: 4px;
-      }
-      .option {
-        display: grid;
-        grid-template-columns: 260px 1fr;
-        gap: 28px;
-        padding: 26px 0;
-        border-top: 1px solid var(--track);
-      }
-      .option .row figure,
-      .option .row figure img {
-        width: 230px;
-      }
-      .verdict {
-        display: inline-block;
-        margin-top: 10px;
-        font-family: "Pixelify Sans", monospace;
-        font-size: 15px;
-        color: var(--bg);
-        background: var(--coral);
-        padding: 2px 8px;
-      }
-      .verdict.no {
-        background: var(--slate);
-        color: var(--muted);
-      }
-      .specimen {
-        margin-top: 12px;
-        padding: 12px 14px;
-        background: var(--surface);
-        border: 2px solid #363a5e;
-      }
-      .specimen .ja {
-        font-size: 22px;
-      }
-      .specimen .en {
-        font-size: 14px;
-        color: var(--muted);
-      }
-      .gifs img {
-        width: 232px;
-        image-rendering: pixelated;
-        border: 2px solid var(--track);
-        background: #000;
-      }
-      .zoom img {
-        width: 300px;
-        image-rendering: pixelated;
-      }
-      /* Settings alternative: framed menu panels, drawn at phone scale */
-      .phone {
-        width: 268px;
-        height: 582px;
-        border: 2px solid var(--track);
-        background: #000;
-        overflow: hidden;
-        font-size: 11px;
-        position: relative;
-      }
-      .phone .bar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 26px 10px 8px;
-        font-family: "Pixelify Sans", monospace;
-        font-size: 14px;
-        font-weight: 700;
-      }
-      .phone .back {
-        width: 28px;
-        height: 28px;
-        background: var(--surface);
-        clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
-        display: grid;
-        place-items: center;
-        color: var(--fg);
-      }
-      .panel {
-        margin: 8px 10px 0;
-        background: var(--surface);
-        border: 2px solid #363a5e;
-        clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
-      }
-      .panel .title {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 9px 5px;
-        background: #2b2e4f;
-        font-family: "Pixelify Sans", monospace;
-        font-weight: 700;
-        font-size: 12px;
-        color: var(--cream);
-      }
-      .panel .r {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 6px 9px;
-        border-top: 1px solid #2f3254;
-        min-height: 28px;
-      }
-      .panel .r span:last-child {
-        color: var(--muted);
-      }
-      .tog {
-        width: 30px;
-        height: 16px;
-        background: var(--green);
-        position: relative;
-      }
-      .tog::after {
-        content: "";
-        position: absolute;
-        right: 2px;
-        top: 2px;
-        width: 12px;
-        height: 12px;
-        background: #fff;
-      }
-      .tog.off {
-        background: var(--track);
-      }
-      .tog.off::after {
-        right: auto;
-        left: 2px;
-      }
-      .seg {
-        display: flex;
-        gap: 3px;
-        padding: 7px 9px;
-        border-top: 1px solid #2f3254;
-      }
-      .seg b {
-        flex: 1;
-        text-align: center;
-        font: 700 10px "Pixelify Sans", monospace;
-        padding: 4px 0;
-        background: var(--slate);
-        color: var(--muted);
-      }
-      .seg b.on {
-        background: var(--coral);
-        color: #fff;
-      }
-      .stats {
-        display: flex;
-        padding: 7px 9px;
-        border-top: 1px solid #2f3254;
-      }
-      .stats div {
-        flex: 1;
-      }
-      .stats b {
-        display: block;
-        font: 700 17px "Pixelify Sans", monospace;
-      }
-      .stats small {
-        color: var(--muted);
-        font-size: 9px;
-      }
-      .todo li {
-        margin: 8px 0 0 18px;
-        max-width: 80ch;
-      }
-      .todo li b {
-        font-weight: 700;
-      }
+    /* The app's own font files; DotGothic16 (option B only) comes from Google Fonts. */
+    @font-face {
+      font-family: "Pixelify Sans";
+      font-weight: 400;
+      src: url("../apps/mobile/assets/fonts/PixelifySans-Regular.ttf");
+    }
+    @font-face {
+      font-family: "Pixelify Sans";
+      font-weight: 500;
+      src: url("../apps/mobile/assets/fonts/PixelifySans-Medium.ttf");
+    }
+    @font-face {
+      font-family: "Pixelify Sans";
+      font-weight: 700;
+      src: url("../apps/mobile/assets/fonts/PixelifySans-Bold.ttf");
+    }
+    @font-face {
+      font-family: "M PLUS Rounded 1c";
+      font-weight: 400;
+      src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Regular.ttf");
+    }
+    @font-face {
+      font-family: "M PLUS Rounded 1c";
+      font-weight: 500;
+      src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Medium.ttf");
+    }
+    @font-face {
+      font-family: "M PLUS Rounded 1c";
+      font-weight: 700;
+      src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Bold.ttf");
+    }
+    :root {
+      --bg: #000;
+      --fg: #fff;
+      --muted: #9a9cb8;
+      --track: #3e3d5b;
+      --surface: #1d1f35;
+      --slate: #272945;
+      --coral: #fb4a5e;
+      --cream: #fbf8c6;
+      --green: #55ee9c;
+      --combo: #ffc93c;
+      --lavender: #b4a6e6;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font:
+        15px / 1.55 "M PLUS Rounded 1c",
+        -apple-system,
+        "Hiragino Sans",
+        sans-serif;
+      padding: 40px 40px 120px;
+      max-width: 1400px;
+    }
+    h1,
+    h2,
+    h3 {
+      font-family: "Pixelify Sans", monospace;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    h1 {
+      font-size: 40px;
+    }
+    h2 {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+    h3 {
+      font-size: 19px;
+      margin-bottom: 4px;
+    }
+    p {
+      max-width: 72ch;
+    }
+    .lede {
+      color: var(--muted);
+      margin: 8px 0 18px;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-bottom: 8px;
+      font-family: "Pixelify Sans", monospace;
+    }
+    a {
+      color: var(--lavender);
+    }
+    section {
+      border-top: 2px solid var(--track);
+      padding: 36px 0 40px;
+    }
+    section > p {
+      margin-bottom: 18px;
+    }
+    .row {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    figure {
+      width: 268px;
+    }
+    figure img {
+      width: 268px;
+      display: block;
+      border: 2px solid var(--track);
+    }
+    figcaption {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .pair {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .pair figure,
+    .pair figure img {
+      width: 220px;
+    }
+    .change {
+      display: grid;
+      grid-template-columns: minmax(240px, 380px) 1fr;
+      gap: 28px;
+      padding: 26px 0;
+      border-top: 1px solid var(--track);
+    }
+    .change:first-of-type {
+      border-top: 0;
+    }
+    .change ul {
+      padding-left: 18px;
+      color: #d9d6ea;
+    }
+    .change li + li {
+      margin-top: 4px;
+    }
+    .option {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 28px;
+      padding: 26px 0;
+      border-top: 1px solid var(--track);
+    }
+    .option .row figure,
+    .option .row figure img {
+      width: 230px;
+    }
+    .verdict {
+      display: inline-block;
+      margin-top: 10px;
+      font-family: "Pixelify Sans", monospace;
+      font-size: 15px;
+      color: var(--bg);
+      background: var(--coral);
+      padding: 2px 8px;
+    }
+    .verdict.no {
+      background: var(--slate);
+      color: var(--muted);
+    }
+    .specimen {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 2px solid #363a5e;
+    }
+    .specimen .ja {
+      font-size: 22px;
+    }
+    .specimen .en {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .gifs img {
+      width: 232px;
+      image-rendering: pixelated;
+      border: 2px solid var(--track);
+      background: #000;
+    }
+    .zoom img {
+      width: 300px;
+      image-rendering: pixelated;
+    }
+    /* Settings alternative: framed menu panels, drawn at phone scale */
+    .phone {
+      width: 268px;
+      height: 582px;
+      border: 2px solid var(--track);
+      background: #000;
+      overflow: hidden;
+      font-size: 11px;
+      position: relative;
+    }
+    .phone .bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 26px 10px 8px;
+      font-family: "Pixelify Sans", monospace;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .phone .back {
+      width: 28px;
+      height: 28px;
+      background: var(--surface);
+      clip-path: polygon(
+        4px 0,
+        calc(100% - 4px) 0,
+        100% 4px,
+        100% calc(100% - 4px),
+        calc(100% - 4px) 100%,
+        4px 100%,
+        0 calc(100% - 4px),
+        0 4px
+      );
+      display: grid;
+      place-items: center;
+      color: var(--fg);
+    }
+    .panel {
+      margin: 8px 10px 0;
+      background: var(--surface);
+      border: 2px solid #363a5e;
+      clip-path: polygon(
+        4px 0,
+        calc(100% - 4px) 0,
+        100% 4px,
+        100% calc(100% - 4px),
+        calc(100% - 4px) 100%,
+        4px 100%,
+        0 calc(100% - 4px),
+        0 4px
+      );
+    }
+    .panel .title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 9px 5px;
+      background: #2b2e4f;
+      font-family: "Pixelify Sans", monospace;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--cream);
+    }
+    .panel .r {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 9px;
+      border-top: 1px solid #2f3254;
+      min-height: 28px;
+    }
+    .panel .r span:last-child {
+      color: var(--muted);
+    }
+    .tog {
+      width: 30px;
+      height: 16px;
+      background: var(--green);
+      position: relative;
+    }
+    .tog::after {
+      content: "";
+      position: absolute;
+      right: 2px;
+      top: 2px;
+      width: 12px;
+      height: 12px;
+      background: #fff;
+    }
+    .tog.off {
+      background: var(--track);
+    }
+    .tog.off::after {
+      right: auto;
+      left: 2px;
+    }
+    .seg {
+      display: flex;
+      gap: 3px;
+      padding: 7px 9px;
+      border-top: 1px solid #2f3254;
+    }
+    .seg b {
+      flex: 1;
+      text-align: center;
+      font:
+        700 10px "Pixelify Sans",
+        monospace;
+      padding: 4px 0;
+      background: var(--slate);
+      color: var(--muted);
+    }
+    .seg b.on {
+      background: var(--coral);
+      color: #fff;
+    }
+    .stats {
+      display: flex;
+      padding: 7px 9px;
+      border-top: 1px solid #2f3254;
+    }
+    .stats div {
+      flex: 1;
+    }
+    .stats b {
+      display: block;
+      font:
+        700 17px "Pixelify Sans",
+        monospace;
+    }
+    .stats small {
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .todo li {
+      margin: 8px 0 0 18px;
+      max-width: 80ch;
+    }
+    .todo li b {
+      font-weight: 700;
+    }
     </style>
   </head>
   <body>
     <h1>Round 10: design audit</h1>
     <p class="lede">
-      What looked off next to the pixel art, what this PR fixes, and the choices left for you. Every phone image is a real
-      simulator screenshot unless it says mockup.
+      What looked off next to the pixel art, what this PR fixes, and the choices left for you. Every phone image is a
+      real simulator screenshot unless it says mockup.
     </p>
     <nav>
       <a href="#changes">Changes in the PR</a>
@@ -344,15 +367,30 @@
         <div>
           <h3>Type with a voice</h3>
           <ul>
-            <li>Body text and lyrics use M PLUS Rounded 1c. It covers Japanese, so kana, kanji and English share one soft, round voice instead of SF Pro plus Hiragino.</li>
-            <li>Titles, tabs, numbers and short buttons use Pixelify Sans, a readable pixel face that matches the logo and the art.</li>
-            <li>Lyrics and song titles stay in the rounded face: a pixel face has no Japanese and gets hard to read at furigana size.</li>
+            <li>
+              Body text and lyrics use M PLUS Rounded 1c. It covers Japanese, so kana, kanji and English share one soft,
+              round voice instead of SF Pro plus Hiragino.
+            </li>
+            <li>
+              Titles, tabs, numbers and short buttons use Pixelify Sans, a readable pixel face that matches the logo and
+              the art.
+            </li>
+            <li>
+              Lyrics and song titles stay in the rounded face: a pixel face has no Japanese and gets hard to read at
+              furigana size.
+            </li>
             <li>Italics are gone. The rounded face has none, and a faked slant looked cheap.</li>
           </ul>
         </div>
         <div class="pair">
-          <figure><img src="round-10/before-quiz.jpg" alt="Quiz on main" /><figcaption>Main</figcaption></figure>
-          <figure><img src="round-10/after-quiz-miss.jpg" alt="Quiz on this branch" /><figcaption>This branch</figcaption></figure>
+          <figure>
+            <img src="round-10/before-quiz.jpg" alt="Quiz on main">
+            <figcaption>Main</figcaption>
+          </figure>
+          <figure>
+            <img src="round-10/after-quiz-miss.jpg" alt="Quiz on this branch">
+            <figcaption>This branch</figcaption>
+          </figure>
         </div>
       </div>
 
@@ -360,16 +398,33 @@
         <div>
           <h3>Settings, rebuilt</h3>
           <ul>
-            <li>Every setting is a row: name on the left, value or control on the right, like the song menu. No more stacks of full-width gray buttons.</li>
-            <li>Answer time is a segmented control with a one-line explanation, instead of a button that cycles through hidden values.</li>
+            <li>
+              Every setting is a row: name on the left, value or control on the right, like the song menu. No more
+              stacks of full-width gray buttons.
+            </li>
+            <li>
+              Answer time is a segmented control with a one-line explanation, instead of a button that cycles through
+              hidden values.
+            </li>
             <li>The lyrics scan result is three big pixel numbers instead of a run-on sentence.</li>
-            <li>Sync, rescan and album art rows show when they last ran. Errors sit under the section they belong to.</li>
+            <li>
+              Sync, rescan and album art rows show when they last ran. Errors sit under the section they belong to.
+            </li>
           </ul>
         </div>
         <div class="pair">
-          <figure><img src="round-10/before-settings.jpg" alt="Settings on main" /><figcaption>Main</figcaption></figure>
-          <figure><img src="round-10/after-settings.jpg" alt="Settings on this branch" /><figcaption>This branch</figcaption></figure>
-          <figure><img src="round-10/after-settings3.jpg" alt="Settings on this branch, scrolled" /><figcaption>Scrolled</figcaption></figure>
+          <figure>
+            <img src="round-10/before-settings.jpg" alt="Settings on main">
+            <figcaption>Main</figcaption>
+          </figure>
+          <figure>
+            <img src="round-10/after-settings.jpg" alt="Settings on this branch">
+            <figcaption>This branch</figcaption>
+          </figure>
+          <figure>
+            <img src="round-10/after-settings3.jpg" alt="Settings on this branch, scrolled">
+            <figcaption>Scrolled</figcaption>
+          </figure>
         </div>
       </div>
 
@@ -382,8 +437,14 @@
           </ul>
         </div>
         <div class="pair">
-          <figure><img src="round-10/before-login.jpg" alt="Login on main" /><figcaption>Main</figcaption></figure>
-          <figure><img src="round-10/after-login.jpg" alt="Login on this branch" /><figcaption>This branch</figcaption></figure>
+          <figure>
+            <img src="round-10/before-login.jpg" alt="Login on main">
+            <figcaption>Main</figcaption>
+          </figure>
+          <figure>
+            <img src="round-10/after-login.jpg" alt="Login on this branch">
+            <figcaption>This branch</figcaption>
+          </figure>
         </div>
       </div>
 
@@ -391,15 +452,24 @@
         <div>
           <h3>Small pixel fixes</h3>
           <ul>
-            <li>The three round shapes became stepped pixel squares: Home's review arrow, the Review tab badge and the right-answer check.</li>
+            <li>
+              The three round shapes became stepped pixel squares: Home's review arrow, the Review tab badge and the
+              right-answer check.
+            </li>
             <li>The iOS spinner became three pixel blocks that light up in turn.</li>
             <li>Home hides "Recently played" until something has been played, instead of a header over nothing.</li>
             <li>The combo label, Continue, Explain and Undo use the pixel face at a readable size.</li>
           </ul>
         </div>
         <div class="pair">
-          <figure><img src="round-10/before-home.jpg" alt="Home on main" /><figcaption>Main, nothing played yet</figcaption></figure>
-          <figure><img src="round-10/after-home.jpg" alt="Home on this branch" /><figcaption>This branch</figcaption></figure>
+          <figure>
+            <img src="round-10/before-home.jpg" alt="Home on main">
+            <figcaption>Main, nothing played yet</figcaption>
+          </figure>
+          <figure>
+            <img src="round-10/after-home.jpg" alt="Home on this branch">
+            <figcaption>This branch</figcaption>
+          </figure>
         </div>
       </div>
     </section>
@@ -407,14 +477,19 @@
     <section id="fonts">
       <h2>Pick a font</h2>
       <p>
-        The same three screens with each font pair, captured in the app. The PR ships A. Swapping is a two-line change in
-        <code>src/constants/theme.ts</code> plus the font files.
+        The same three screens with each font pair, captured in the app. The PR ships A. Swapping is a two-line change
+        in
+        <code>src/constants/theme.ts</code>
+        plus the font files.
       </p>
 
       <div class="option">
         <div>
           <h3>A. Pixelify Sans + M PLUS Rounded 1c</h3>
-          <p>Pixel titles, rounded body and lyrics. The pixel face only shows up where it reads well: short, large, Latin.</p>
+          <p>
+            Pixel titles, rounded body and lyrics. The pixel face only shows up where it reads well: short, large,
+            Latin.
+          </p>
           <div class="specimen" style="font-family: 'M PLUS Rounded 1c'">
             <div style="font: 700 20px 'Pixelify Sans'">Review 12 lyrics</div>
             <div class="ja">遠ざかる街の灯りを</div>
@@ -423,16 +498,19 @@
           <span class="verdict">In the PR</span>
         </div>
         <div class="row">
-          <figure><img src="round-10/font-a-pixelify-mplus-home.jpg" alt="Option A home" /></figure>
-          <figure><img src="round-10/font-a-pixelify-mplus-quiz.jpg" alt="Option A quiz" /></figure>
-          <figure><img src="round-10/font-a-pixelify-mplus-settings.jpg" alt="Option A settings" /></figure>
+          <figure><img src="round-10/font-a-pixelify-mplus-home.jpg" alt="Option A home"></figure>
+          <figure><img src="round-10/font-a-pixelify-mplus-quiz.jpg" alt="Option A quiz"></figure>
+          <figure><img src="round-10/font-a-pixelify-mplus-settings.jpg" alt="Option A settings"></figure>
         </div>
       </div>
 
       <div class="option">
         <div>
           <h3>B. DotGothic16 everywhere</h3>
-          <p>A Japanese pixel font, so even the lyrics are pixels. The most retro by far. One thin weight only, so titles lose emphasis, and small kanji get blotchy.</p>
+          <p>
+            A Japanese pixel font, so even the lyrics are pixels. The most retro by far. One thin weight only, so titles
+            lose emphasis, and small kanji get blotchy.
+          </p>
           <div class="specimen" style="font-family: 'DotGothic16'">
             <div style="font-size: 20px">Review 12 lyrics</div>
             <div class="ja">遠ざかる街の灯りを</div>
@@ -441,48 +519,57 @@
           <span class="verdict no">Runner-up</span>
         </div>
         <div class="row">
-          <figure><img src="round-10/font-b-dotgothic-home.jpg" alt="Option B home" /></figure>
-          <figure><img src="round-10/font-b-dotgothic-quiz.jpg" alt="Option B quiz" /></figure>
-          <figure><img src="round-10/font-b-dotgothic-settings.jpg" alt="Option B settings" /></figure>
+          <figure><img src="round-10/font-b-dotgothic-home.jpg" alt="Option B home"></figure>
+          <figure><img src="round-10/font-b-dotgothic-quiz.jpg" alt="Option B quiz"></figure>
+          <figure><img src="round-10/font-b-dotgothic-settings.jpg" alt="Option B settings"></figure>
         </div>
       </div>
 
       <div class="option">
         <div>
           <h3>C. Silkscreen + Nunito</h3>
-          <p>Arcade caps for titles, Latin-only rounded body. Silkscreen is uppercase-only and wide, so "No limit" wraps and the quiz header truncates. Japanese falls back to Hiragino.</p>
+          <p>
+            Arcade caps for titles, Latin-only rounded body. Silkscreen is uppercase-only and wide, so "No limit" wraps
+            and the quiz header truncates. Japanese falls back to Hiragino.
+          </p>
           <span class="verdict no">Too loud</span>
         </div>
         <div class="row">
-          <figure><img src="round-10/font-c-silkscreen-nunito-home.jpg" alt="Option C home" /></figure>
-          <figure><img src="round-10/font-c-silkscreen-nunito-quiz.jpg" alt="Option C quiz" /></figure>
-          <figure><img src="round-10/font-c-silkscreen-nunito-settings.jpg" alt="Option C settings" /></figure>
+          <figure><img src="round-10/font-c-silkscreen-nunito-home.jpg" alt="Option C home"></figure>
+          <figure><img src="round-10/font-c-silkscreen-nunito-quiz.jpg" alt="Option C quiz"></figure>
+          <figure><img src="round-10/font-c-silkscreen-nunito-settings.jpg" alt="Option C settings"></figure>
         </div>
       </div>
 
       <div class="option">
         <div>
           <h3>D. M PLUS Rounded 1c only</h3>
-          <p>Friendly and very readable, closest to the banner's interface text. No pixel type at all, so the screens lean on the art for character.</p>
+          <p>
+            Friendly and very readable, closest to the banner's interface text. No pixel type at all, so the screens
+            lean on the art for character.
+          </p>
           <span class="verdict no">Safe</span>
         </div>
         <div class="row">
-          <figure><img src="round-10/font-d-mplus-only-home.jpg" alt="Option D home" /></figure>
-          <figure><img src="round-10/font-d-mplus-only-quiz.jpg" alt="Option D quiz" /></figure>
-          <figure><img src="round-10/font-d-mplus-only-settings.jpg" alt="Option D settings" /></figure>
+          <figure><img src="round-10/font-d-mplus-only-home.jpg" alt="Option D home"></figure>
+          <figure><img src="round-10/font-d-mplus-only-quiz.jpg" alt="Option D quiz"></figure>
+          <figure><img src="round-10/font-d-mplus-only-settings.jpg" alt="Option D settings"></figure>
         </div>
       </div>
 
       <div class="option">
         <div>
           <h3>E. Pixelify Sans + system</h3>
-          <p>Pixel titles over the old SF Pro body. Smallest change and no 10 MB Japanese font, but the body still reads serious next to the art.</p>
+          <p>
+            Pixel titles over the old SF Pro body. Smallest change and no 10 MB Japanese font, but the body still reads
+            serious next to the art.
+          </p>
           <span class="verdict no">Halfway</span>
         </div>
         <div class="row">
-          <figure><img src="round-10/font-e-pixelify-system-home.jpg" alt="Option E home" /></figure>
-          <figure><img src="round-10/font-e-pixelify-system-quiz.jpg" alt="Option E quiz" /></figure>
-          <figure><img src="round-10/font-e-pixelify-system-settings.jpg" alt="Option E settings" /></figure>
+          <figure><img src="round-10/font-e-pixelify-system-home.jpg" alt="Option E home"></figure>
+          <figure><img src="round-10/font-e-pixelify-system-quiz.jpg" alt="Option E quiz"></figure>
+          <figure><img src="round-10/font-e-pixelify-system-settings.jpg" alt="Option E settings"></figure>
         </div>
       </div>
 
@@ -492,9 +579,9 @@
           <p>SF Pro and Hiragino, for reference.</p>
         </div>
         <div class="row">
-          <figure><img src="round-10/before-home.jpg" alt="Main home" /></figure>
-          <figure><img src="round-10/before-quiz.jpg" alt="Main quiz" /></figure>
-          <figure><img src="round-10/before-settings.jpg" alt="Main settings" /></figure>
+          <figure><img src="round-10/before-home.jpg" alt="Main home"></figure>
+          <figure><img src="round-10/before-quiz.jpg" alt="Main quiz"></figure>
+          <figure><img src="round-10/before-settings.jpg" alt="Main settings"></figure>
         </div>
       </div>
     </section>
@@ -502,21 +589,34 @@
     <section id="mascot">
       <h2>Mascot</h2>
       <p>
-        The headbang sheet was drawn out of order, so she snapped forward, back, back, forward with jumps of up to 72 pixels.
-        The strip now plays the frames back to front and back, one smooth sweep per beat. Frames also step on the UI thread,
-        so quiz scoring can no longer make her stutter. Both strips stay loaded, so the first combo of three doesn't flash.
+        The headbang sheet was drawn out of order, so she snapped forward, back, back, forward with jumps of up to 72
+        pixels. The strip now plays the frames back to front and back, one smooth sweep per beat. Frames also step on
+        the UI thread, so quiz scoring can no longer make her stutter. Both strips stay loaded, so the first combo of
+        three doesn't flash.
       </p>
       <div class="row gifs">
-        <figure><img src="round-10/mascot-headbang-before.gif" alt="Headbang before" /><figcaption>Main frame order</figcaption></figure>
-        <figure><img src="round-10/mascot-headbang-after.gif" alt="Headbang after" /><figcaption>New frame order</figcaption></figure>
+        <figure>
+          <img src="round-10/mascot-headbang-before.gif" alt="Headbang before">
+          <figcaption>Main frame order</figcaption>
+        </figure>
+        <figure>
+          <img src="round-10/mascot-headbang-after.gif" alt="Headbang after">
+          <figcaption>New frame order</figcaption>
+        </figure>
       </div>
       <p style="margin-top: 26px">
-        The light fringe came from the gray backdrop blending into her dark outline, plus gray left inside the chair frame.
-        The sprite script now clears enclosed backdrop and peels the blended edge pixels.
+        The light fringe came from the gray backdrop blending into her dark outline, plus gray left inside the chair
+        frame. The sprite script now clears enclosed backdrop and peels the blended edge pixels.
       </p>
       <div class="row zoom">
-        <figure style="width: 300px"><img src="round-10/mascot-edge-before.png" alt="Outline before" /><figcaption>Main: gray halo, gray chair gaps</figcaption></figure>
-        <figure style="width: 300px"><img src="round-10/mascot-edge-after.png" alt="Outline after" /><figcaption>This branch</figcaption></figure>
+        <figure style="width: 300px">
+          <img src="round-10/mascot-edge-before.png" alt="Outline before">
+          <figcaption>Main: gray halo, gray chair gaps</figcaption>
+        </figure>
+        <figure style="width: 300px">
+          <img src="round-10/mascot-edge-after.png" alt="Outline after">
+          <figcaption>This branch</figcaption>
+        </figure>
       </div>
     </section>
 
@@ -527,7 +627,10 @@
         title bar, closer to a game's options menu and the banner's panels.
       </p>
       <div class="row">
-        <figure><img src="round-10/after-settings.jpg" alt="Settings as rows" /><figcaption>Rows, in the PR</figcaption></figure>
+        <figure>
+          <img src="round-10/after-settings.jpg" alt="Settings as rows">
+          <figcaption>Rows, in the PR</figcaption>
+        </figure>
         <figure>
           <div class="phone" role="img" aria-label="Settings as framed panels, mockup">
             <div class="bar"><span class="back">‹</span>Settings</div>
@@ -567,11 +670,29 @@
       <h2>Still rough</h2>
       <p>Judgment calls I left alone. Each would change how the app feels, so they are yours.</p>
       <ul class="todo">
-        <li><b>The quiz has a big black void.</b> The mascot floats between the sentence and the answers with nothing behind her. The redesign page puts her on the dock.</li>
-        <li><b>Slate panels against pure black.</b> The navy cards come from the banner, where they sit on a sunny harbor. On true black they feel like a different game. A wood-and-cream panel style would tie back to the art.</li>
-        <li><b>The mini player is the only light surface.</b> It matches the banner, but on black it pulls the eye more than the review card does.</li>
-        <li><b>Hairlines are 1 point.</b> Pixel frames are 2 points, so list dividers look thinner than everything else.</li>
-        <li><b>Bundle size.</b> M PLUS Rounded is about 10 MB for three weights because it carries kanji. Option E avoids that if size matters.</li>
+        <li>
+          <b>The quiz has a big black void.</b>
+          The mascot floats between the sentence and the answers with nothing behind her. The redesign page puts her on
+          the dock.
+        </li>
+        <li>
+          <b>Slate panels against pure black.</b>
+          The navy cards come from the banner, where they sit on a sunny harbor. On true black they feel like a
+          different game. A wood-and-cream panel style would tie back to the art.
+        </li>
+        <li>
+          <b>The mini player is the only light surface.</b>
+          It matches the banner, but on black it pulls the eye more than the review card does.
+        </li>
+        <li>
+          <b>Hairlines are 1 point.</b>
+          Pixel frames are 2 points, so list dividers look thinner than everything else.
+        </li>
+        <li>
+          <b>Bundle size.</b>
+          M PLUS Rounded is about 10 MB for three weights because it carries kanji. Option E avoids that if size
+          matters.
+        </li>
       </ul>
     </section>
   </body>
