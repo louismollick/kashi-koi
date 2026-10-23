@@ -5,9 +5,10 @@ import { getLineText } from '@/store/libraryStore';
 import type { Line } from '@/types/domain';
 
 /**
- * Ruby stays together; every character reserves reading space on each wrapped row. `size` overrides the font
- * size. Characters from `highlightFrom` on (a ruby run counts if it reaches past it) take `highlightColor`, which
- * the explain sheet uses to show what a step added.
+ * Ruby stays together; every run reserves a reading row, so wrapped rows line up. A reading wider than its
+ * kanji widens the run instead of overhanging, so neighbouring readings never collide or spill past the line's
+ * edges. `size` overrides the font size. Characters from `highlightFrom` on (a ruby run counts if it reaches past
+ * it) take `highlightColor`, which the explain sheet uses to show what a step added.
  */
 export function FuriganaLine({
   line,
@@ -45,21 +46,11 @@ export function FuriganaLine({
       {segments.map((segment, index) => {
         const highlighted = highlightFrom !== undefined && ends[index]! > highlightFrom;
         return (
-          <View key={index} style={{ paddingTop: furigana ? 12 : 0 }}>
-            {furigana && segment.reading && (
-              <Label
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: -12,
-                  right: -12,
-                  fontSize: 10,
-                  lineHeight: 12,
-                  textAlign: 'center',
-                  color: color ?? '#d9d6ea',
-                }}
-              >
-                {segment.reading}
+          <View key={index} style={{ alignItems: 'center' }}>
+            {/* A blank reading on bare kana keeps every run's reading row the same height, even with larger text. */}
+            {furigana && (
+              <Label style={{ fontSize: 10, lineHeight: 12, color: color ?? '#d9d6ea' }}>
+                {segment.reading ?? ' '}
               </Label>
             )}
             <Label
