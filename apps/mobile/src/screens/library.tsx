@@ -141,8 +141,12 @@ export default function LibraryScreen() {
             fill={segment === value ? colors.coral : colors.slate}
             onPress={() => setSegment(value)}
             style={{ flex: 1 }}
+            // Four segments leave little width; tighter padding keeps "Playlists" on one line.
+            contentStyle={{ paddingHorizontal: 4 }}
           >
-            <Label style={{ fontWeight: '700' }}>{value}</Label>
+            <Label numberOfLines={1} style={{ fontWeight: '700' }}>
+              {value}
+            </Label>
           </Button>
         ))}
       </View>
