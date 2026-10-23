@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
 import { hasJapanese } from '@kashi-koi/shared/lyrics';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { type BreakdownAnalyzer, CodexAnalyzer, errorMessage, UsageLimitError } from './analyzer/index.ts';
 import { BreakdownBusyError, createBreakdownGenerator } from './breakdowns.ts';
@@ -30,6 +31,8 @@ export function createApi(store: Store, adminToken: string, analyzer: BreakdownA
   };
   const generateBreakdown = createBreakdownGenerator(store, analyzer);
   const app = new Hono();
+  // The web app calls this API from the browser; the bearer token, not the origin, guards creation.
+  app.use('*', cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type'] }));
   app.onError(
     () =>
       new Response(JSON.stringify({ error: 'Internal server error' }), {
