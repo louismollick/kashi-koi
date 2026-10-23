@@ -2,7 +2,7 @@ import { canExplain } from '@/analysis/breakdowns';
 import { analysisRequests } from '@/analysis/fetcher';
 import { translationHint } from '@/japanese/translate';
 import { isJapanese } from '@/japanese/text';
-import { useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
@@ -18,6 +18,7 @@ import {
 import { appStore } from '@/store/appStore';
 import { settingsStore } from '@/store/settingsStore';
 import { ScreenHeader } from '@/components/Header';
+import { SpeedButton } from '@/components/SpeedButton';
 import { PixelFrame } from '@/components/PixelFrame';
 import { CenteredList, LyricRow } from '@/components/Lyrics';
 import { QuizColumn } from '@/components/QuizLayout';
@@ -25,6 +26,7 @@ import { PlayerBar } from '@/components/PlayerBar';
 import { SongIntro } from '@/components/SongIntro';
 import { Koi } from '@/components/Fog';
 import { songMenu } from './song-menu';
+import type { Line } from '@/types/domain';
 import { Button, IconButton, Label, PixelToggle, styles } from '@/components/ui';
 
 // Listen-mode toasts float just above REVIEW LATER.
@@ -89,6 +91,45 @@ function RunEndToast({ style }: { style?: ViewStyle }) {
     </Pressable>
   );
 }
+
+/**
+ * One tappable listen-mode lyric. Tap jumps to the line; long press (when `explainId` is set) opens that sentence's
+ * breakdown. It takes only primitives and stable objects and calls the stores itself, so the memo skips every row
+ * whose own props did not change when the current line moves.
+ */
+const ListenRow = memo(function ListenRow({
+  line,
+  index,
+  songId,
+  current,
+  furigana,
+  translation,
+  marked,
+  explainId,
+}: {
+  line: Line;
+  index: number;
+  songId: string;
+  current: boolean;
+  furigana: boolean;
+  translation?: string;
+  marked: boolean;
+  explainId?: string;
+}) {
+  const router = useRouter();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Play line ${index + 1}`}
+      onPress={() => appStore.getState().jumpToLine(index)}
+      onLongPress={
+        explainId ? () => router.push({ pathname: '/breakdown', params: { songId, sentenceId: explainId } }) : undefined
+      }
+    >
+      <LyricRow line={line} current={current} furigana={furigana} translation={translation} marked={marked} />
+    </Pressable>
+  );
+});
 
 /** ListenMode and QuizMode share one sheet: header toggles, lyrics or quiz column, and the PlayerBar. */
 export default function PlayerScreen() {
@@ -167,6 +208,7 @@ export default function PlayerScreen() {
         }
         right={
           <View style={[styles.row, { gap: 14 }]}>
+            <SpeedButton />
             <View style={[styles.row, { gap: 6 }]}>
               <Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label>
               <PixelToggle
@@ -254,21 +296,17 @@ export default function PlayerScreen() {
                         : undefined
                       : (timeline[index]?.translation ?? line.translation);
                 return (
-                  <Pressable
+                  <ListenRow
                     key={`${index}:${line.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Play line ${index + 1}`}
-                    onPress={() => appStore.getState().jumpToLine(index)}
-                    onLongPress={explainable && sentence ? () => explain(sentence.sentenceId) : undefined}
-                  >
-                    <LyricRow
-                      line={line}
-                      current={useAnalysis && sentence && occurrence ? sentence === occurrence : index === lineIndex}
-                      furigana={showTranslations}
-                      translation={translation}
-                      marked={!!sentence && reviewed.has(sentence.sentenceId)}
-                    />
-                  </Pressable>
+                    line={line}
+                    index={index}
+                    songId={song.id}
+                    current={useAnalysis && sentence && occurrence ? sentence === occurrence : index === lineIndex}
+                    furigana={showTranslations}
+                    translation={translation}
+                    marked={!!sentence && reviewed.has(sentence.sentenceId)}
+                    explainId={explainable && sentence ? sentence.sentenceId : undefined}
+                  />
                 );
               })}
             </CenteredList>

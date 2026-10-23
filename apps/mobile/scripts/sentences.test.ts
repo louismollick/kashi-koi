@@ -4,18 +4,17 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
-import { remapReview } from '../src/lyrics/review';
+import { getAnswers } from '../src/lyrics/choices';
+import { readyReviewSentences, remapReview } from '../src/lyrics/review';
 import { timelineTexts, withSentences } from '../src/lyrics/sentences';
 import { appStore, resetAppState, setTransport } from '../src/store/appStore';
 import { settingsStore } from '../src/store/settingsStore';
 import {
   carryLyrics,
   currentSentence,
-  getAnswers,
   getLyrics,
   hasTranslations,
   libraryStore,
-  readyReviewSentences,
   reviewClip,
   sentenceForReview,
 } from '../src/store/libraryStore';

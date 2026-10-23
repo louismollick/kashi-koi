@@ -15,8 +15,9 @@ export default function ClipReviewScreen() {
   const router = useRouter();
   const clip = appStore((state) => state.clipReview);
   const reviewList = appStore((state) => state.reviewList);
-  libraryStore((state) => state.lyrics);
   const item = reviewList.find((line) => line.id === clip?.ids[clip.index]);
+  // Re-render when this song's lyrics change (a translation or analysis lands); the helpers below read the store.
+  libraryStore((state) => state.lyrics[item?.songId ?? '']);
   // The last session, so the end screen can score it after the store clears `clipReview`.
   const last = useRef<ClipReview | null>(null);
   useEffect(() => {

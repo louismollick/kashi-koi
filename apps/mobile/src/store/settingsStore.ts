@@ -10,6 +10,8 @@ type SettingsState = {
   hideSongsWithoutJapanese: boolean;
   /** Seconds to answer a stop; null waits forever. */
   answerTime: AnswerTime;
+  /** Audio speed for songs and clips, pitch kept. Lyrics follow the audio position, so they stay in sync. */
+  playbackRate: number;
   showTranslations: boolean;
   /** Per-song translation display in listen mode. Quiz and review always use analyzed sentences when available. */
   lineByLineSongIds: string[];
@@ -21,6 +23,7 @@ type SettingsState = {
   /** Admin token from SecureStore, loaded at boot and never persisted here. */
   analysisToken: string;
   setAnswerTime: (seconds: AnswerTime) => void;
+  cyclePlaybackRate: () => void;
   toggleTranslations: () => void;
   /** Choose the song analysis (true) or line-by-line translations (false) for one song's listen mode. */
   setListenAnalysisEnabled: (songId: string, enabled: boolean) => void;
@@ -31,6 +34,7 @@ type SettingsState = {
 /** Answer-time presets in seconds: null waits for an answer, 0 never stops the song (an unanswered sentence is a miss). */
 export const answerTimes = [null, 10, 5, 3, 0] as const;
 export type AnswerTime = (typeof answerTimes)[number];
+const playbackRatePresets = [1, 0.75, 0.5];
 
 /** The fields that survive a restart. */
 const persistedSettings = (state: SettingsState) => ({
@@ -38,6 +42,7 @@ const persistedSettings = (state: SettingsState) => ({
   hideSongsWithoutSyncedLyrics: state.hideSongsWithoutSyncedLyrics,
   hideSongsWithoutJapanese: state.hideSongsWithoutJapanese,
   answerTime: state.answerTime,
+  playbackRate: state.playbackRate,
   showTranslations: state.showTranslations,
   lineByLineSongIds: state.lineByLineSongIds,
   translationPrompted: state.translationPrompted,
@@ -50,11 +55,12 @@ const storageKey = 'settings';
 
 export const settingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       offlineMode: false,
       hideSongsWithoutSyncedLyrics: true,
       hideSongsWithoutJapanese: true,
       answerTime: null,
+      playbackRate: 1,
       showTranslations: true,
       lineByLineSongIds: [],
       translationPrompted: false,
@@ -64,6 +70,12 @@ export const settingsStore = create<SettingsState>()(
       analysisToken: '',
       // Applies to future stops; a wait already running keeps its deadline.
       setAnswerTime: (answerTime) => set({ answerTime }),
+      // An unknown saved rate restarts the cycle at 1x.
+      cyclePlaybackRate: () =>
+        set({
+          playbackRate:
+            playbackRatePresets[(playbackRatePresets.indexOf(get().playbackRate) + 1) % playbackRatePresets.length]!,
+        }),
       toggleTranslations: () => set((state) => ({ showTranslations: !state.showTranslations })),
       setListenAnalysisEnabled: (songId, enabled) =>
         set((state) => ({

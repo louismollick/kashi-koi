@@ -11,10 +11,11 @@ import { IconButton, Label, styles } from '@/components/ui';
 /** Drawer that moves a ReviewList entry to another sentence of its song, or removes it. */
 export default function EditLineScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  libraryStore((state) => state.lyrics);
   const reviewList = appStore((state) => state.reviewList);
   const showTranslations = settingsStore((state) => state.showTranslations);
   const item = reviewList.find((line) => line.id === id);
+  // Re-render when this song's lyrics change; the helpers below read the store.
+  libraryStore((state) => state.lyrics[item?.songId ?? '']);
   const router = useRouter();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();

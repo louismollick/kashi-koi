@@ -1,12 +1,13 @@
 import { AppState, useWindowDimensions } from 'react-native';
 import Japanese from '../../modules/kashi-japanese';
+import Remote from '../../modules/kashi-remote';
 import { setTranslator, pauseTranslations, prepareTranslation, setTranslationForeground } from '@/japanese/translate';
 import { saveTranslations } from '@/navidrome/db';
 import { setDownloadRuntime } from '@/downloads/queue';
 import { nativeDownloadRuntime } from '@/downloads/native';
 import { libraryStore } from '@/store/libraryStore';
 import Storage from 'expo-sqlite/kv-store';
-import { appStore, hydrateAppState, setTransport } from '@/store/appStore';
+import { appStore, hydrateAppState, remoteSkip, setTransport } from '@/store/appStore';
 import { hydrateSettings, settingsStore } from '@/store/settingsStore';
 import { getLibraryFilters, getVisibleLibrary } from '@/data/libraryVisibility';
 import { prefetchCovers } from '@/components/Cover';
@@ -103,9 +104,17 @@ export default function RootLayout() {
     const subscription = AppState.addEventListener('change', (state) => {
       void setTranslationForeground(state === 'active');
     });
+    // Lock screen and headphone next/previous drive the same queue as the in-app buttons.
+    Remote.enable();
+    const remote = [
+      Remote.addListener('onNext', () => remoteSkip('next')),
+      Remote.addListener('onPrevious', () => remoteSkip('previous')),
+    ];
     return () => {
       cancelled = true;
       subscription.remove();
+      for (const listener of remote) listener.remove();
+      Remote.disable();
       dispose?.();
       void pauseTranslations();
     };

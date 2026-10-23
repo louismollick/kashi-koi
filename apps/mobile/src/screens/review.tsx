@@ -3,16 +3,8 @@ import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import {
-  dueSentences,
-  getAlbum,
-  getSentenceText,
-  getSong,
-  getLyrics,
-  isDue,
-  libraryStore,
-  readyReviewSentences,
-} from '@/store/libraryStore';
+import { dueSentences, isDue, readyReviewSentences } from '@/lyrics/review';
+import { getAlbum, getSentenceText, getSong, getLyrics, libraryStore } from '@/store/libraryStore';
 import { appStore } from '@/store/appStore';
 import { useNow } from '@/hooks/useNow';
 import { Header } from '@/components/Header';
@@ -107,6 +99,7 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
 /** Due, new and later sentences grouped by song, with clip review on top. */
 export default function ReviewScreen() {
   const router = useRouter();
+  // Every song in the list renders its sentences and readiness from lyrics, so any lyrics update re-renders.
   libraryStore((state) => state.lyrics);
   const reviewList = useAvailableReviewList();
   const now = useNow();

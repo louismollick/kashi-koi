@@ -14,6 +14,9 @@ export async function setupTransport(valid = () => true) {
   await setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' });
   if (!valid()) return () => {};
   const player = createAudioPlayer(null, { updateInterval: 200, keepAudioSessionActive: true });
+  // Each new item needs the pitch-keeping algorithm again, so loads reapply the rate too.
+  const applyRate = () => player.setPlaybackRate(settingsStore.getState().playbackRate, 'high');
+  applyRate();
   let song: Song | null = null,
     sourceUri: string | null = null,
     failed = false,
@@ -35,10 +38,10 @@ export async function setupTransport(valid = () => true) {
       playing: false,
     });
   };
-  /** Pause through seeks; only the latest request may resume playback. */
+  /** Pause through seeks; only the latest request may resume playback. Without a song, the next play loads at the store's position. */
   const seek = (ms: number) => {
     startMs = ms;
-    if (awaitingStart) return;
+    if (awaitingStart || !song) return;
     const request = ++revision;
     seeking = true;
     player.pause();
@@ -132,6 +135,7 @@ export async function setupTransport(valid = () => true) {
     try {
       sourceUri = local ?? mediaUrl(session!, 'stream', next.id);
       player.replace({ uri: sourceUri });
+      applyRate();
       player.setActiveForLockScreen(
         true,
         {
@@ -183,8 +187,9 @@ export async function setupTransport(valid = () => true) {
     },
     seek,
   });
-  // Switching offline must release a streaming AVPlayer item, including its buffered network work.
-  const unsubscribeOffline = settingsStore.subscribe((settings, previous) => {
+  // Speed changes apply at once. Switching offline must release a streaming AVPlayer item, including its buffered network work.
+  const unsubscribeSettings = settingsStore.subscribe((settings, previous) => {
+    if (settings.playbackRate !== previous.playbackRate) applyRate();
     if (!settings.offlineMode || previous.offlineMode || !song) return;
     const state = appStore.getState();
     const local = localAudioUri(song.id);
@@ -207,7 +212,7 @@ export async function setupTransport(valid = () => true) {
     }
   });
   return () => {
-    unsubscribeOffline();
+    unsubscribeSettings();
     ++revision;
     wantsPlay = false;
     song = null;

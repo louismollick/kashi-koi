@@ -1,7 +1,8 @@
 import { cancelAnalyses, loadAnalysisToken } from '@/analysis/fetcher';
 import { pauseTranslations, resumeTranslations } from '@/japanese/translate';
+import { pruneReview } from '@/lyrics/review';
 import { carryLyrics, libraryStore } from '@/store/libraryStore';
-import { appStore, fetchLibraryAnalyses } from '@/store/appStore';
+import { appStore, dropRemovedSong, fetchLibraryAnalyses, resumePlayback } from '@/store/appStore';
 import { settingsStore } from '@/store/settingsStore';
 import { sessionStore } from './session';
 import { pickEntry, toSongLyrics } from './lyrics';
@@ -10,12 +11,13 @@ import {
   searchAll,
   type ServerAlbum,
   type ServerArtist,
+  type ServerPlaylist,
   type ServerSong,
   type Session,
   type StructuredLyrics,
 } from './subsonic';
 import type { Library, LyricsResult } from '@/store/libraryStore';
-import type { LyricsStatus, Song, SongLyrics } from '@/types/domain';
+import type { LyricsStatus, Playlist, Song, SongLyrics } from '@/types/domain';
 
 let running: Promise<void> | null = null;
 let generation = 0;
@@ -66,6 +68,41 @@ function run(work: (session: Session, valid: () => boolean) => Promise<void>) {
   return running;
 }
 
+/**
+ * Playlists never block the library: servers without them answer with none, a failed list keeps the saved
+ * playlists, and a playlist that fails to load keeps its saved songs or, if new or deleted meanwhile, is skipped.
+ */
+async function fetchPlaylists(session: Session, valid: () => boolean): Promise<Playlist[]> {
+  const previous = new Map(libraryStore.getState().playlists.map((playlist) => [playlist.id, playlist]));
+  let listed: ServerPlaylist[];
+  try {
+    listed =
+      (await request<{ playlists?: { playlist?: ServerPlaylist[] } }>(session, 'getPlaylists')).playlists?.playlist ??
+      [];
+  } catch {
+    return [...previous.values()];
+  }
+  const playlists: Playlist[] = [];
+  for (const playlist of listed) {
+    if (!valid()) break;
+    try {
+      const detail = await request<{ playlist?: { entry?: { id: string }[] } }>(session, 'getPlaylist', {
+        id: playlist.id,
+      });
+      playlists.push({
+        id: playlist.id,
+        name: playlist.name,
+        coverArt: playlist.coverArt,
+        songIds: detail.playlist?.entry?.map((entry) => entry.id) ?? [],
+      });
+    } catch {
+      const saved = previous.get(playlist.id);
+      if (saved) playlists.push({ ...saved, name: playlist.name, coverArt: playlist.coverArt });
+    }
+  }
+  return playlists;
+}
+
 export function syncLibrary(
   replace: (library: Library) => Promise<void> = async (library) => (await import('./db')).replaceLibrary(library),
 ) {
@@ -78,6 +115,8 @@ export function syncLibrary(
     if (!valid()) return;
     const response = await request<{ artists?: { index?: { artist?: ServerArtist[] }[] } }>(session, 'getArtists');
     if (!response.artists) throw new Error('Invalid artists response');
+    if (!valid()) return;
+    const playlists = await fetchPlaylists(session, valid);
     if (!valid()) return;
     const songs: Song[] = entries.map((song) => ({
       id: song.id,
@@ -108,6 +147,7 @@ export function syncLibrary(
           songCount: album.songCount,
         })),
         artists: response.artists.index?.flatMap((index) => index.artist ?? []) ?? [],
+        playlists,
       },
       libraryStore.getState(),
     );
@@ -115,22 +155,27 @@ export function syncLibrary(
     if (!valid()) return;
     const { translations, analyses } = libraryStore.getState();
     libraryStore.getState().setLibrary({ ...library, translations, analyses });
+    dropRemovedSong();
     await (await import('@/downloads/queue')).pruneDownloads();
     if (!valid()) return;
     const ids = new Set(songs.map((song) => song.id));
-    appStore.setState((state) => ({ reviewList: state.reviewList.filter((item) => ids.has(item.songId)) }));
+    appStore.setState((state) => ({ reviewList: pruneReview(state.reviewList, ids) }));
     settingsStore.setState({ lastSyncAt: Date.now() });
     await scan(session, false, valid);
   });
 }
 
-/** Four workers persist each result and publish them in batches; errors stay retryable on the next sync. */
+/**
+ * Four workers fetch lyrics; results are saved to SQLite in one transaction and then published to the store
+ * twice a second. An interrupted scan loses at most one flush window, and those songs are rescanned next launch.
+ * Errors stay retryable on the next sync.
+ */
 export async function scan(
   session: Session,
   all: boolean,
   valid: () => boolean,
-  save: (songId: string, status: LyricsStatus, lyrics?: SongLyrics) => Promise<void> = async (...args) =>
-    (await import('./db')).saveLyricsResult(...args),
+  save: (results: LyricsResult[]) => Promise<void> = async (results) =>
+    (await import('./db')).saveLyricsResults(results),
 ) {
   if (settingsStore.getState().offlineMode) return;
   const online = () => valid() && !settingsStore.getState().offlineMode;
@@ -144,47 +189,25 @@ export async function scan(
     errors = 0,
     stopped = false;
   let failure: unknown,
-    pending: LyricsResult[] = [];
-  // Every lyrics change makes Library, Home and review remapping walk the whole library, so publish twice a second.
+    pending: LyricsResult[] = [],
+    flushing = Promise.resolve();
   // Saved results stay true after going offline or cancelling; only a new session must not receive them.
+  const current = () => valid() || sessionStore.getState().session === session;
+  // Every lyrics change makes Library, Home and review remapping walk the whole library, so publish twice a second.
   const flush = () => {
-    if (pending.length && (valid() || sessionStore.getState().session === session))
-      libraryStore.getState().setLyricsResults(pending);
-    pending = [];
-    if (libraryStore.getState().progress?.completed !== completed)
-      libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
-  };
-  libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
-  // A timer, so saved results still appear while every worker waits on a slow request.
-  const timer = setInterval(flush, 500);
-  await Promise.allSettled(
-    Array.from({ length: 4 }, async () => {
+    flushing = flushing.then(async () => {
+      const state = libraryStore.getState();
+      // A failed check never replaces good synced lyrics. This is the only place that rule lives: filtering here
+      // keeps SQLite and the store in step.
+      const batch = pending.filter(
+        ({ songId, status }) =>
+          !(status === 'error' && state.bySong[songId]?.lyricsStatus === 'synced' && state.lyrics[songId]),
+      );
+      pending = [];
       try {
-        while (online() && !stopped) {
-          const song = targets[cursor++];
-          if (!song) break;
-          let status: LyricsStatus, lyrics: SongLyrics | undefined;
-          try {
-            const response = await request<{ lyricsList?: { structuredLyrics?: StructuredLyrics[] } }>(
-              session,
-              'getLyricsBySongId',
-              { id: song.id },
-            );
-            if (!response.lyricsList) throw new Error('Invalid lyrics response');
-            const entry = pickEntry(response.lyricsList.structuredLyrics ?? []);
-            lyrics = entry ? toSongLyrics(song.id, entry, song.duration * 1000) : undefined;
-            status = lyrics?.timeline.length ? 'synced' : 'none';
-          } catch {
-            status = 'error';
-            errors++;
-          }
-          if (!online() || stopped) break;
-          if (!(status === 'error' && song.lyricsStatus === 'synced' && libraryStore.getState().lyrics[song.id])) {
-            await save(song.id, status, lyrics);
-            pending.push({ songId: song.id, status, lyrics });
-            if (!online() || stopped) break;
-          }
-          completed++;
+        if (batch.length && !stopped && current()) {
+          await save(batch);
+          if (current()) libraryStore.getState().setLyricsResults(batch);
         }
       } catch (error) {
         if (!stopped) {
@@ -192,10 +215,42 @@ export async function scan(
           failure = error;
         }
       }
+      if (libraryStore.getState().progress?.completed !== completed)
+        libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
+    });
+    return flushing;
+  };
+  libraryStore.setState({ progress: { kind: 'scan', completed, total: targets.length } });
+  // A timer, so saved results still appear while every worker waits on a slow request.
+  const timer = setInterval(() => void flush(), 500);
+  await Promise.allSettled(
+    Array.from({ length: 4 }, async () => {
+      while (online() && !stopped) {
+        const song = targets[cursor++];
+        if (!song) break;
+        let status: LyricsStatus, lyrics: SongLyrics | undefined;
+        try {
+          const response = await request<{ lyricsList?: { structuredLyrics?: StructuredLyrics[] } }>(
+            session,
+            'getLyricsBySongId',
+            { id: song.id },
+          );
+          if (!response.lyricsList) throw new Error('Invalid lyrics response');
+          const entry = pickEntry(response.lyricsList.structuredLyrics ?? []);
+          lyrics = entry ? toSongLyrics(song.id, entry, song.duration * 1000) : undefined;
+          status = lyrics?.timeline.length ? 'synced' : 'none';
+        } catch {
+          status = 'error';
+          errors++;
+        }
+        if (!online() || stopped) break;
+        pending.push({ songId: song.id, status, lyrics });
+        completed++;
+      }
     }),
   );
   clearInterval(timer);
-  flush();
+  await flush();
   if (stopped) throw failure;
   if (online()) {
     settingsStore.setState({ lastScanAt: Date.now() });
@@ -210,6 +265,7 @@ export const scanLyrics = ({ all = false }: { all?: boolean } = {}) =>
 export async function loadLibrary() {
   const { loadAll } = await import('./db');
   libraryStore.getState().setLibrary(await loadAll());
+  resumePlayback();
   // Downloads are optional; a failure here must not keep the library or session from loading.
   await (await import('@/downloads/queue')).loadDownloadState().catch(() => {
     libraryStore.setState({ error: 'Could not load downloads' });

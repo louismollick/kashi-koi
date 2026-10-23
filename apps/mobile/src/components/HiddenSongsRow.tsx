@@ -11,7 +11,7 @@ export function HiddenSongsRow({
   album = false,
 }: {
   count: number;
-  kind?: 'songs' | 'albums' | 'artists';
+  kind?: 'songs' | 'albums' | 'artists' | 'playlists';
   album?: boolean;
 }) {
   const filters = useLibraryFilters();

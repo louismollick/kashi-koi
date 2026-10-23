@@ -24,11 +24,10 @@ export default function ArtistDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
   const songs = libraryStore((state) => state.songs),
-    albums = libraryStore((state) => state.albums),
-    lyrics = libraryStore((state) => state.lyrics);
+    albums = libraryStore((state) => state.albums);
   const filters = useLibraryFilters();
   const artist = getArtist(id);
-  // Visibility reads each song's lyrics, so recompute only when the library, lyrics or filters change.
+  // Visibility reads each song's lyrics, which only change with `songs`, so recompute only when the library or filters change.
   const { artistAlbums, albumCounts, synced, hiddenCount } = useMemo(() => {
     if (!artist)
       return { artistAlbums: [], albumCounts: new Map<string, number>(), synced: syncedIds([]), hiddenCount: 0 };
@@ -47,7 +46,7 @@ export default function ArtistDetailScreen() {
       synced: syncedIds(songs),
       hiddenCount: artistSongs.length - getVisibleSongs(artistSongs, countedFilters(filters)).length,
     };
-  }, [artist, songs, albums, lyrics, filters]);
+  }, [artist, songs, albums, filters]);
   if (!artist)
     return (
       <View style={styles.page}>

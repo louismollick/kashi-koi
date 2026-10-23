@@ -13,15 +13,15 @@ import {
 import { appStore } from '../src/store/appStore';
 import { settingsStore } from '../src/store/settingsStore';
 import {
-  getAnswers,
   getLineText,
   getLyrics,
   hasTranslations,
   libraryStore,
-  readyReviewSentences,
   type Library,
   type Translations,
 } from '../src/store/libraryStore';
+import { getAnswers } from '../src/lyrics/choices';
+import { readyReviewSentences } from '../src/lyrics/review';
 import { songs } from './fixtures';
 import { quizSentences } from '../src/lyrics/fog';
 import { withSentences } from '../src/lyrics/sentences';

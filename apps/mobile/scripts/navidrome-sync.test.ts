@@ -5,7 +5,7 @@ import { scan, scanLyrics, syncLibrary, cancelSync } from '../src/navidrome/sync
 import { sessionStore } from '../src/navidrome/session';
 import { appStore } from '../src/store/appStore';
 import { settingsStore } from '../src/store/settingsStore';
-import { libraryStore } from '../src/store/libraryStore';
+import { libraryStore, type Library } from '../src/store/libraryStore';
 import { songs, albums, artists, songLyrics } from './fixtures';
 import type { Session } from '../src/navidrome/subsonic';
 
@@ -45,9 +45,6 @@ test('failed rescans preserve synced lyrics and review entries but count errors'
       assert.deepEqual(appStore.getState().reviewList, [mark]);
       assert.match(libraryStore.getState().error!, /1 songs could not be checked/);
     }
-    libraryStore.getState().setLyricsResult(song.id, 'error');
-    assert.equal(libraryStore.getState().lyrics[song.id], cached);
-    assert.equal(libraryStore.getState().bySong[song.id]!.lyricsStatus, 'synced');
   } finally {
     globalThis.fetch = original;
   }
@@ -66,8 +63,8 @@ test('songs without good cached lyrics record retryable errors', async () => {
       session,
       true,
       () => true,
-      async (id, status) => {
-        saved.push(`${id}:${status}`);
+      async (results) => {
+        saved.push(...results.map(({ songId, status }) => `${songId}:${status}`));
       },
     );
     assert.deepEqual(saved, [`${song.id}:error`]);
@@ -140,42 +137,37 @@ test('successful refresh prunes removed review lines, preserves retimed lines, a
   }
 });
 
-test('a failed save stops new work and waits for all workers before rejecting', async () => {
+test('a failed batch save stops new work, waits for the workers and publishes nothing', async () => {
   const original = globalThis.fetch,
-    targets = Array.from({ length: 6 }, (_, index) => ({
+    targets = Array.from({ length: 12 }, (_, index) => ({
       ...songs[0]!,
       id: String(index),
       lyricsStatus: 'unchecked' as const,
     }));
   libraryStore.getState().setLibrary({ songs: targets, albums, artists, lyrics: {} });
   let release!: () => void,
-    entered!: () => void,
+    requests = 0,
     settled = false;
   const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    }),
-    allSaving = new Promise<void>((resolve) => {
-      entered = resolve;
-    });
-  const saved: string[] = [],
-    failure = new Error('SQLite write failed');
+    release = resolve;
+  });
+  const failure = new Error('SQLite write failed'),
+    saved: number[] = [];
   try {
-    globalThis.fetch = async () => Response.json({ 'subsonic-response': { status: 'ok', lyricsList: {} } });
-    const work = scan(
+    // The first four answer at once; the next four wait, so the 500ms flush sees four results and fails.
+    globalThis.fetch = async () => {
+      if (requests++ >= 4) await gate;
+      return Response.json({ 'subsonic-response': { status: 'ok', lyricsList: {} } });
+    };
+    const result = scan(
       session,
       true,
       () => true,
-      async (id) => {
-        saved.push(id);
-        if (saved.length === 4) entered();
-        if (id === '0') {
-          await allSaving;
-          throw failure;
-        }
-        await gate;
+      async (results) => {
+        saved.push(results.length);
+        throw failure;
       },
-    );
-    const result = work.then(
+    ).then(
       () => {
         settled = true;
       },
@@ -184,20 +176,47 @@ test('a failed save stops new work and waits for all workers before rejecting', 
         return error as unknown;
       },
     );
-    await allSaving;
+    while (!saved.length) await new Promise((resolve) => setTimeout(resolve, 50));
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(settled, false);
     release();
     assert.equal(await result, failure);
-    assert.deepEqual(saved, ['0', '1', '2', '3']);
-    // Saves that succeeded are published like their SQLite rows; the failed and unstarted songs stay unchecked.
-    assert.deepEqual(
-      libraryStore.getState().songs.map((song) => song.lyricsStatus),
-      ['unchecked', 'none', 'none', 'none', 'unchecked', 'unchecked'],
-    );
+    assert.deepEqual(saved, [4]);
+    assert.equal(requests, 8);
+    assert.ok(libraryStore.getState().songs.every((song) => song.lyricsStatus === 'unchecked'));
     assert.equal(settingsStore.getState().lastScanAt, null);
   } finally {
     release();
+    globalThis.fetch = original;
+  }
+});
+
+test('scan results are saved in one batch and never overwrite synced lyrics with errors', async () => {
+  const original = globalThis.fetch,
+    synced = songs[0]!,
+    others = [1, 2, 3].map((id) => ({ ...songs[0]!, id: `other${id}`, lyricsStatus: 'unchecked' as const }));
+  libraryStore
+    .getState()
+    .setLibrary({ songs: [synced, ...others], albums, artists, lyrics: { [synced.id]: songLyrics[synced.id]! } });
+  const batches: string[][] = [];
+  try {
+    globalThis.fetch = async () => {
+      throw new Error('offline');
+    };
+    await scan(
+      session,
+      true,
+      () => true,
+      async (results) => {
+        batches.push(results.map(({ songId, status }) => `${songId}:${status}`));
+      },
+    );
+    assert.equal(batches.length, 1);
+    assert.deepEqual(batches[0]!.sort(), ['other1:error', 'other2:error', 'other3:error']);
+    assert.equal(libraryStore.getState().bySong[synced.id]!.lyricsStatus, 'synced');
+    assert.equal(libraryStore.getState().lyrics[synced.id], songLyrics[synced.id]);
+    assert.ok(others.every((song) => libraryStore.getState().bySong[song.id]!.lyricsStatus === 'error'));
+  } finally {
     globalThis.fetch = original;
   }
 });
@@ -344,8 +363,8 @@ test('scans check recently played songs first and publish results together', asy
       session,
       true,
       () => true,
-      async (id) => {
-        saved.push(id);
+      async (results) => {
+        saved.push(...results.map(({ songId }) => songId));
       },
     );
     assert.deepEqual(saved.slice(0, 3), ['1', '3', '2']);
@@ -374,6 +393,84 @@ test('switching offline after a save still publishes that saved result', async (
     );
     assert.equal(libraryStore.getState().bySong[song.id]!.lyricsStatus, 'none');
     assert.equal(settingsStore.getState().lastScanAt, null);
+  } finally {
+    sessionStore.setState({ session: null });
+    globalThis.fetch = original;
+  }
+});
+
+test('sync saves playlists with their song order, and servers without playlists sync none', async () => {
+  const original = globalThis.fetch,
+    song = songs[0]!;
+  let saved: Library | undefined;
+  const ok = (body: object) => Response.json({ 'subsonic-response': { status: 'ok', ...body } });
+  try {
+    sessionStore.setState({ session });
+    globalThis.fetch = async (input) => {
+      const path = new URL(String(input)).pathname;
+      if (path.includes('search3')) return ok({ searchResult3: { song: [{ ...song }], album: [] } });
+      if (path.includes('getPlaylists'))
+        return ok({ playlists: { playlist: [{ id: 'mix', name: 'Mix', coverArt: 'pl-mix' }] } });
+      if (path.includes('getPlaylist'))
+        return ok({ playlist: { entry: [{ id: song.id }, { id: 'gone' }, { id: song.id }] } });
+      return ok({ artists: { index: [] }, lyricsList: {} });
+    };
+    await syncLibrary(async (library) => {
+      saved = library;
+    });
+    const mix = { id: 'mix', name: 'Mix', coverArt: 'pl-mix', songIds: [song.id, 'gone', song.id] };
+    assert.deepEqual(saved?.playlists, [mix]);
+    assert.deepEqual(libraryStore.getState().playlists, [mix]);
+    globalThis.fetch = async (input) =>
+      new URL(String(input)).pathname.includes('search3')
+        ? ok({ searchResult3: { song: [{ ...song }], album: [] } })
+        : ok({ artists: { index: [] }, lyricsList: {} });
+    await syncLibrary(async () => {});
+    assert.deepEqual(libraryStore.getState().playlists, []);
+  } finally {
+    sessionStore.setState({ session: null });
+    globalThis.fetch = original;
+  }
+});
+
+test('playlist failures never block the library sync', async () => {
+  const original = globalThis.fetch,
+    song = songs[0]!;
+  const ok = (body: object) => Response.json({ 'subsonic-response': { status: 'ok', ...body } });
+  const failed = () =>
+    Response.json({ 'subsonic-response': { status: 'failed', error: { code: 70, message: 'Playlist not found' } } });
+  const saved = { id: 'kept', name: 'Old name', songIds: [song.id] };
+  libraryStore.getState().setLibrary({ songs: [song], albums, artists, lyrics: songLyrics, playlists: [saved] });
+  try {
+    sessionStore.setState({ session });
+    let listFails = false;
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input)),
+        path = url.pathname;
+      if (path.includes('search3')) return ok({ searchResult3: { song: [{ ...song }], album: [] } });
+      if (path.includes('getPlaylists'))
+        return listFails
+          ? failed()
+          : ok({
+              playlists: {
+                playlist: [
+                  { id: 'kept', name: 'Renamed' },
+                  { id: 'gone', name: 'Deleted meanwhile' },
+                ],
+              },
+            });
+      if (path.includes('getPlaylist')) return failed();
+      return ok({ artists: { index: [] }, lyricsList: {} });
+    };
+    await syncLibrary(async () => {});
+    assert.equal(libraryStore.getState().error, null);
+    assert.ok(settingsStore.getState().lastSyncAt);
+    const renamed = { ...saved, name: 'Renamed', coverArt: undefined };
+    assert.deepEqual(libraryStore.getState().playlists, [renamed]);
+    listFails = true;
+    await syncLibrary(async () => {});
+    assert.equal(libraryStore.getState().error, null);
+    assert.deepEqual(libraryStore.getState().playlists, [renamed]);
   } finally {
     sessionStore.setState({ session: null });
     globalThis.fetch = original;

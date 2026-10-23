@@ -1,27 +1,37 @@
-import { isSongAvailable } from '@/data/libraryVisibility';
-import { quizChoices } from '@/lyrics/choices';
 import { withSentences, type LyricsInput } from '@/lyrics/sentences';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { create } from 'zustand';
-import type { Album, Artist, Choice, Line, LyricsStatus, Song, SongLyrics, ReviewList } from '@/types/domain';
+import type { Album, Artist, Line, LyricsStatus, Playlist, Song, SongLyrics, ReviewList } from '@/types/domain';
 
 export type Translations = Record<string, { translation: string; segments: Line['segments'] }>;
 export type Library = {
   songs: Song[];
   albums: Album[];
   artists: Artist[];
+  /** Missing in fixtures and before the first sync that fetched playlists. */
+  playlists?: Playlist[];
   lyrics: Record<string, SongLyrics>;
   translations?: Translations;
   analyses?: Record<string, SongAnalysis>;
 };
+/** A library as loaded from SQLite: lyrics are raw input that `setLibrary` derives sentences for. */
+export type LibraryInput = Omit<Library, 'lyrics'> & { lyrics: Record<string, LyricsInput> };
 export type LyricsResult = { songId: string; status: LyricsStatus; lyrics?: LyricsInput };
 export type Progress = { kind: 'sync' | 'scan'; completed: number; total: number };
 const empty: Library = { songs: [], albums: [], artists: [], lyrics: {} };
-const emptyLyrics = (songId: string): SongLyrics => withSentences({ songId, lines: [], timeline: [] });
+/** Shared by every song without lyrics (and by no song at all), so reads never rebuild it. */
+const emptyLyrics = withSentences({ songId: '', lines: [], timeline: [] });
 
-/** The in-memory library is seeded from SQLite at boot, or fixtures in Node tests. */
+/**
+ * The in-memory library is seeded from SQLite at boot, or fixtures in Node tests.
+ *
+ * Visibility (Hidden song) depends on each song's `lyricsStatus` and whether its lyrics have Japanese. Both change
+ * only in `setLibrary` and `setLyricsResults`, which replace `songs` too. Translation and analysis updates replace
+ * `lyrics` alone, so visibility consumers subscribe to `songs` and never to `lyrics`.
+ */
 export const libraryStore = create<
   Library & {
+    playlists: Playlist[];
     bySong: Record<string, Song>;
     byAlbum: Record<string, Album>;
     byArtist: Record<string, Artist>;
@@ -35,14 +45,15 @@ export const libraryStore = create<
     translationSongIds: Set<string>;
     translationError: string | null;
     applyTranslationsToSong: (songId: string, translations?: Translations) => void;
-    setLibrary: (library: Library) => void;
+    setLibrary: (library: LibraryInput) => void;
     setLyricsResult: (songId: string, status: LyricsStatus, lyrics?: LyricsInput) => void;
-    /** Publish many scan results in one update, so subscribers walk the library once per batch. */
+    /** Publish many scan results in one update, so subscribers walk the library once per batch. Applies them as given. */
     setLyricsResults: (results: LyricsResult[]) => void;
     markPlayed: (songId: string, at?: number) => void;
   }
 >((set, get) => ({
   ...empty,
+  playlists: [],
   translations: {},
   analyses: {},
   translationStatus: null,
@@ -57,6 +68,7 @@ export const libraryStore = create<
   setLibrary: (library) =>
     set({
       ...library,
+      playlists: library.playlists ?? [],
       translations: library.translations ?? {},
       analyses: library.analyses ?? {},
       lyrics: applyTranslations(library.lyrics, library.translations ?? {}, library.analyses ?? {}),
@@ -94,7 +106,7 @@ export const libraryStore = create<
     let changed = false;
     for (const { songId, status, lyrics: input } of results) {
       const song = bySong[songId];
-      if (!song || (status === 'error' && song.lyricsStatus === 'synced' && lyrics[songId])) continue;
+      if (!song) continue;
       bySong[songId] = { ...song, lyricsStatus: status };
       if (status === 'none') delete lyrics[songId];
       else if (input) lyrics[songId] = applySongTranslations(input, state.translations, state.analyses, true);
@@ -116,8 +128,7 @@ export const libraryStore = create<
 export const getSong = (id: string | null) => (id ? libraryStore.getState().bySong[id] : undefined);
 export const getAlbum = (id: string) => libraryStore.getState().byAlbum[id];
 export const getArtist = (id: string) => libraryStore.getState().byArtist[id];
-export const getLyrics = (id: string | null) =>
-  id ? (libraryStore.getState().lyrics[id] ?? emptyLyrics(id)) : emptyLyrics('');
+export const getLyrics = (id: string | null) => (id && libraryStore.getState().lyrics[id]) || emptyLyrics;
 export const getAlbumSongs = (id: string) =>
   libraryStore
     .getState()
@@ -128,6 +139,13 @@ export const getArtistAlbums = (id: string) =>
     .getState()
     .albums.filter((album) => album.artistId === id)
     .sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+export const getPlaylist = (id: string) => libraryStore.getState().playlists.find((playlist) => playlist.id === id);
+/** A playlist's songs in its order, skipping songs that left the library. */
+export const getPlaylistSongs = (id: string) =>
+  (getPlaylist(id)?.songIds ?? []).flatMap((songId) => {
+    const song = libraryStore.getState().bySong[songId];
+    return song ? [song] : [];
+  });
 /** Every song on the artist's albums, newest album first, in track order, as the artist page lists them. */
 export const getArtistSongs = (id: string) => getArtistAlbums(id).flatMap((album) => getAlbumSongs(album.id));
 export const getLineText = (line: Line) => line.segments.map((segment) => segment.text).join('');
@@ -135,53 +153,9 @@ export const hasTranslations = (id: string | null) => {
   const sentences = getLyrics(id).sentences;
   return !!sentences.length && sentences.every((sentence) => !!sentence.translation);
 };
-/** New and missed sentences are ready now; scheduled sentences return at their due time. */
-export const isDue = (line: ReviewList[number], now = Date.now()) => line.kind !== 'later' || line.dueAt <= now;
-/** Due today excludes the separate new-from-listening group. */
-export const dueSentences = (list: ReviewList, now = Date.now()) =>
-  list.filter((line) => line.kind !== 'new' && isDue(line, now));
-/** Review actions require a surviving sentence in a fully translated song. */
-export const readyReviewSentences = (list: ReviewList, now = Date.now()) =>
-  list.filter(
-    (item) =>
-      isSongAvailable(item.songId) &&
-      isDue(item, now) &&
-      hasTranslations(item.songId) &&
-      getLyrics(item.songId).sentences.some((sentence) => sentence.id === item.sentenceId),
-  );
-
-/** Shuffle analyzed decoys or distinct same-song translations once when a sentence becomes current. */
-export function getAnswers(song: Song, index: number, random = Math.random): Choice[] {
-  const line = currentSentence(song.id, index)?.sentence;
-  if (!line?.translation) return [];
-  const choices = line.quiz ? quizChoices(line.translation, line.quiz) : undefined;
-  const others = [
-    ...new Set(
-      getLyrics(song.id)
-        .sentences.map((item) => item.translation)
-        .filter((text): text is string => !!text && text !== line.translation),
-    ),
-  ];
-  const shuffle = <T>(texts: T[]) => {
-    for (let i = texts.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
-      [texts[i], texts[j]] = [texts[j]!, texts[i]!];
-    }
-    return texts;
-  };
-  return shuffle(
-    choices ??
-      [line.translation, ...shuffle(others).slice(0, 2)].map((text) => ({
-        text,
-        parts: [{ text, marked: false }],
-        correct: text === line.translation,
-      })),
-  );
-}
-
 /** Reuse translations by Japanese text after loading or rescanning lyrics. */
 function applyTranslations(
-  lyrics: Library['lyrics'],
+  lyrics: LibraryInput['lyrics'],
   translations: Translations,
   analyses: Record<string, SongAnalysis>,
 ): Library['lyrics'] {
@@ -206,6 +180,7 @@ function applySongTranslations(
     song.fingerprint &&
     song.sentences &&
     song.sentenceTimeline &&
+    song.hasJapanese !== undefined &&
     !lines.some((line, index) => line !== song.lines[index]) &&
     !song.analysis &&
     !analyses[song.fingerprint]

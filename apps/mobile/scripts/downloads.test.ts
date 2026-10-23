@@ -28,7 +28,8 @@ import { validateMediaHeader, type DownloadMedia } from '../src/downloads/valida
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { appStore, resetAppState, setTransport } from '../src/store/appStore';
 import { hydrateSettings, settingsStore } from '../src/store/settingsStore';
-import { libraryStore, readyReviewSentences, hasTranslations } from '../src/store/libraryStore';
+import { libraryStore, hasTranslations } from '../src/store/libraryStore';
+import { readyReviewSentences } from '../src/lyrics/review';
 import { sessionStore } from '../src/navidrome/session';
 import { countedFilters, getVisibleLibrary, getVisibleSongs } from '../src/data/libraryVisibility';
 import { scanLyrics, syncLibrary } from '../src/navidrome/sync';
@@ -89,7 +90,11 @@ test('eligibility uses synced Japanese lyrics for every target and album ownersh
     artists,
     lyrics: {
       ...songLyrics,
-      english: { ...songLyrics.glass!, songId: 'english', lines: [{ id: 'en', segments: [{ text: 'Hello' }] }] },
+      english: withSentences({
+        songId: 'english',
+        lines: [{ id: 'en', segments: [{ text: 'Hello' }] }],
+        timeline: [{ lineId: 'en', startMs: 0, endMs: 1000 }],
+      }),
     },
   });
   settingsStore.setState({ hideSongsWithoutSyncedLyrics: false, hideSongsWithoutJapanese: false });

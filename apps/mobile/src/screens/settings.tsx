@@ -177,16 +177,15 @@ export default function SettingsScreen() {
   const analysisServerUrl = settingsStore((state) => state.analysisServerUrl),
     analysisToken = settingsStore((state) => state.analysisToken),
     analyzed = libraryStore((state) => Object.values(state.lyrics).filter((lyrics) => lyrics.analysis).length);
-  const lyrics = libraryStore((state) => state.lyrics);
   const session = sessionStore((state) => state.session);
-  // Ready means synced Japanese lyrics, the same songs Download library counts. Scan and translation ticks don't change these.
+  // Ready means synced Japanese lyrics, the same songs Download library counts. Translations don't change these.
   const { synced, ready, unsynced } = useMemo(
     () => ({
       synced: library.filter((song) => song.lyricsStatus === 'synced').length,
       ready: library.filter((song) => hasJapaneseLyrics(song.id)).length,
       unsynced: library.filter((song) => song.lyricsStatus === 'none').length,
     }),
-    [library, lyrics],
+    [library],
   );
   const scanning = progress && `${progress.completed.toLocaleString()} / ${progress.total.toLocaleString()}`;
   return (

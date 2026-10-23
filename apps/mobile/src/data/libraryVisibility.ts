@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { downloadStore, isDownloaded } from '@/downloads/store';
-import { isJapanese } from '@/japanese/text';
-import { getLineText, libraryStore } from '@/store/libraryStore';
+import { libraryStore } from '@/store/libraryStore';
 import { settingsStore } from '@/store/settingsStore';
 import type { Album, Artist, Song } from '@/types/domain';
 
@@ -32,13 +31,10 @@ export function useLibraryFilters() {
   return useMemo(() => ({ ...filters, downloadEntries: entries }), [filters, entries]);
 }
 
-/** Stop at the first Japanese line without allocating a filtered list. */
+/** Synced lyrics with a Japanese line, read from the flag derived with the lyrics. */
 export function hasJapaneseLyrics(songId: string) {
   const state = libraryStore.getState();
-  return (
-    state.bySong[songId]?.lyricsStatus === 'synced' &&
-    !!state.lyrics[songId]?.lines.some((line) => isJapanese(getLineText(line)))
-  );
+  return state.bySong[songId]?.lyricsStatus === 'synced' && !!state.lyrics[songId]?.hasJapanese;
 }
 
 /** Filters behind the "hidden" count: the active ones, or both when showing everything so the row can offer to hide again. */

@@ -4,13 +4,13 @@ import { colors } from '@/constants/theme';
 import { Icon } from './Icon';
 import { Button, Label, styles } from './ui';
 
-/** Play and Shuffle for an album or artist page. `start` builds the queue; the player opens first. */
+/** Play and Shuffle for an album, artist or playlist page. `start` builds the queue; the player opens first. */
 export function PlayButtons({
   noun,
   disabled,
   start,
 }: {
-  noun: 'album' | 'artist';
+  noun: 'album' | 'artist' | 'playlist';
   disabled: boolean;
   start: (shuffle: boolean) => void;
 }) {
