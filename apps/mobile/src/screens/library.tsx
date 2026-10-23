@@ -111,8 +111,11 @@ export default function LibraryScreen() {
     return {
       shownPlaylists: matching.filter((playlist) => playlistCounts.get(playlist.id)),
       playlistCounts,
-      hiddenPlaylists: matching.filter((playlist) => !getVisibleSongs(getPlaylistSongs(playlist.id), counted).length)
-        .length,
+      // Empty playlists, or ones whose songs all left the library, aren't hidden by a filter, so they don't count.
+      hiddenPlaylists: matching.filter((playlist) => {
+        const songs = getPlaylistSongs(playlist.id);
+        return songs.length > 0 && !getVisibleSongs(songs, counted).length;
+      }).length,
     };
   }, [playlists, songs, filters, query]);
   // Playing from the Songs list queues the list as shown.
