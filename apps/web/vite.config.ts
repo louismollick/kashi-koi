@@ -67,8 +67,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path('./src'),
-      // Static art (harbor, logo) is shared with the iOS app in place instead of being copied.
-      '@assets': path('../mobile/assets'),
     },
   },
   server: { port: 5191, strictPort: true },

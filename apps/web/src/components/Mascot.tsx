@@ -1,8 +1,8 @@
 import { spriteFrames } from '@kashi-koi/design/sprites/metadata';
-import bobbing from '@kashi-koi/design/sprites/bobbing.png';
-import headbang from '@kashi-koi/design/sprites/headbang.png';
+import bobbing from '@/assets/bobbing.webp';
+import headbang from '@/assets/headbang.webp';
 import { useState } from 'react';
-import girl from '@assets/girl.png';
+import girl from '@/assets/girl.webp';
 
 const strips = { bobbing, headbang };
 

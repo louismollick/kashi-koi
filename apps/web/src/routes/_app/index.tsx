@@ -4,7 +4,7 @@ import { libraryStore } from '@kashi-koi/core/store/libraryStore';
 import { colors } from '@kashi-koi/design/tokens';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useMemo, useRef } from 'react';
-import background from '@assets/background.png';
+import background from '@/assets/background.webp';
 import { Cover } from '@/components/Cover';
 import { FogBadge } from '@/components/Fog';
 import { TabHeader } from '@/components/Header';

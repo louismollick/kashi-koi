@@ -3,7 +3,7 @@ import { libraryStore } from '@kashi-koi/core/store/libraryStore';
 import type { Choice, Line, RunEnd, SongLyrics } from '@kashi-koi/core/types/domain';
 import { colors } from '@kashi-koi/design/tokens';
 import { type ReactNode, useEffect, useRef } from 'react';
-import harbor from '@assets/background.png';
+import harbor from '@/assets/background.webp';
 import { useElementSize } from '@/hooks/useElementSize';
 import { Answers, GapSentence } from './Answers';
 import { FogStrip, useSongFog } from './Fog';

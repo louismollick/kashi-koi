@@ -2,7 +2,7 @@ import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { colors } from '@kashi-koi/design/tokens';
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import logo from '@assets/kashikoi-logo.png';
+import logo from '@/assets/kashikoi-logo.webp';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { IconButton, Label, Tag } from './ui';
 

@@ -1,7 +1,7 @@
 import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { colors } from '@kashi-koi/design/tokens';
 import { Link } from '@tanstack/react-router';
-import logo from '@assets/kashikoi-logo.png';
+import logo from '@/assets/kashikoi-logo.webp';
 import { Icon } from './Icon';
 import { DueBadge, tabs, useDueCount } from './TabBar';
 import { Label, Tag } from './ui';
