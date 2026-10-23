@@ -35,7 +35,7 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
         <View style={{ height: 250 }}>
           <Image
-            source={require('../../assets/background.png')}
+            source={require('../../../assets/background.png')}
             contentFit="cover"
             style={{ width: '100%', height: '100%' }}
           />
