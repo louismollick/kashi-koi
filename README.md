@@ -29,6 +29,17 @@ The Expo app, local native module and native-side tests live in `apps/mobile/`. 
 
 `packages/design/` holds colors, font names, `tint`, `stepped` and `steppedPolygon` (the same pixel corners as a CSS `clip-path`), icon path data, the mascot sprite strips and a Tailwind v4 `@theme` generator (`npx tsx packages/design/scripts/tokens-css.ts <out.css>`). Fonts stay in `apps/mobile/assets/fonts/`.
 
+## Web app
+
+`apps/web/` is a client-only React DOM app (Vite, TanStack Router, Tailwind v4) that reuses `@kashi-koi/core` and `@kashi-koi/design` and looks like the iOS app: the same colors, fonts and pixel corners, phone layout under 1024px and a three-column desktop layout above it (ADR 0005, `docs/web-plan.md`). Browsing works: login, library sync and lyrics scan, Home, Library, albums, artists and playlists. Playback, quiz, review and settings are still to come.
+
+```sh
+npm run web          # dev server on http://localhost:5191
+npm run web:build    # apps/web/dist
+```
+
+Set `VITE_KASHI_SERVER_URL` to read song analyses from a Kashi server (it must send CORS headers). An https page can only reach an https Navidrome server, except on localhost. The library cache is IndexedDB (`src/platform/db.ts`), learning state and the session are localStorage. After changing the design tokens, run `npm run tokens-css -w @kashi-koi/web`. Vercel uses `apps/web` as the project root, with `vercel.json` for the SPA rewrite and asset caching.
+
 ## Install builds
 
 Add this source in SideStore: `https://github.com/louismollick/kashi-koi/releases/download/ios-source/source.json`
