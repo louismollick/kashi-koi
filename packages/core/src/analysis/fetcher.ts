@@ -37,8 +37,11 @@ export function setAnalysisRuntime(overrides: Partial<typeof defaults> = {}) {
   runtime = { ...defaults, ...overrides };
 }
 
+/** The public Kashi server. Reads are open; creating analyses needs the admin token saved in Settings. */
+export const kashiServerUrl = 'https://kashi.louismollick.com';
+
 let defaultServerUrl = '';
-/** The server URL the build bundles (an env var on each platform), used while Settings has no override. */
+/** The server used while Settings has no override. Apps install `kashiServerUrl` at boot; tests leave it empty. */
 export function setDefaultAnalysisServer(url: string | undefined) {
   defaultServerUrl = url ?? '';
 }

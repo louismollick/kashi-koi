@@ -1,4 +1,4 @@
-import { setAnalysisToken } from '@kashi-koi/core/analysis/fetcher';
+import { kashiServerUrl, setAnalysisToken } from '@kashi-koi/core/analysis/fetcher';
 import { hasJapaneseLyrics } from '@kashi-koi/core/data/libraryVisibility';
 import { logout, sessionStore } from '@kashi-koi/core/navidrome/session';
 import { scanLyrics, syncLibrary } from '@kashi-koi/core/navidrome/sync';
@@ -217,7 +217,7 @@ function SettingsScreen() {
           <Field
             label="Server"
             value={analysisServerUrl}
-            placeholder={import.meta.env.VITE_KASHI_SERVER_URL || 'https://'}
+            placeholder={kashiServerUrl}
             onCommit={setAnalysisServerUrl}
           />
           <Field

@@ -63,6 +63,8 @@ beforeEach(() => {
     {
       ...initialState,
       songId: firstSong.id,
+      queue: [firstSong.id],
+      queueIndex: 0,
       durationMs: firstSong.duration * 1000,
       playing: true,
       lineIndex: 3,

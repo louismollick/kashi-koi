@@ -38,7 +38,7 @@ npm run web          # dev server on http://localhost:5191
 npm run web:build    # apps/web/dist
 ```
 
-Set `VITE_KASHI_SERVER_URL` to read song analyses from a Kashi server (it must send CORS headers). An https page can only reach an https Navidrome server, except on localhost. The library cache is IndexedDB (`src/platform/db.ts`), learning state and the session are localStorage. After changing the design tokens, run `npm run tokens-css -w @kashi-koi/web`. Vercel uses `apps/web` as the project root, with `vercel.json` for the SPA rewrite and asset caching.
+Song analyses come from the Kashi server in `kashiServerUrl` (`packages/core/src/analysis/fetcher.ts`); Settings can point elsewhere, and that server must send CORS headers. An https page can only reach an https Navidrome server, except on localhost. The library cache is IndexedDB (`src/platform/db.ts`), learning state and the session are localStorage. After changing the design tokens, run `npm run tokens-css -w @kashi-koi/web`. Vercel uses `apps/web` as the project root, with `vercel.json` for the SPA rewrite and asset caching.
 
 ## Install builds
 
@@ -57,7 +57,7 @@ It lists the latest `main` build plus one app per PR labeled `ios-build`. PR app
 - Results shows missed Lines and their translations. Review groups due, new and due-later Lines by song; edit one to study a different Line of its song or remove it. A right answer schedules a Line one day out and doubles the gap each time; a wrong answer makes it due again. Review Lyrics plays each translated due Line's clip in the quiz layout, keeps each first answer, and moves on 0.8 seconds after you answer. Its play button resumes a paused clip or replays a finished one.
 - Settings offers Sync library, Rescan lyrics and Log out. Sync library retries unchecked and failed songs. Rescan lyrics checks every song. Log out clears local account, library and learning state.
 
-Song analyses are fetched and cached when `EXPO_PUBLIC_KASHI_SERVER_URL` is set or a server URL is saved in Settings. They group lines into sentences and supply contextual translations for learning. Without an analysis, each Japanese line is its own sentence and Apple translations remain the fallback. With an admin token saved in Settings, the song menu offers Analyze song and Re-analyze song. The server is documented in `apps/server/README.md`.
+Song analyses are fetched and cached from https://kashi.louismollick.com, or the server URL saved in Settings. They group lines into sentences and supply contextual translations for learning. Without an analysis, each Japanese line is its own sentence and Apple translations remain the fallback. With an admin token saved in Settings, the song menu offers Analyze song and Re-analyze song. The server is documented in `apps/server/README.md`.
 
 Translations and furigana are cached by Japanese text and survive Rescan lyrics. Apple translates each Line without the rest of the song; translations and dictionary readings can miss what is sung. The Simulator uses `EN: <Japanese text>` translations with the native furigana tokenizer. Real translations and language downloads require a phone.
 

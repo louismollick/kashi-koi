@@ -1,4 +1,4 @@
-import { setDefaultAnalysisServer } from '@kashi-koi/core/analysis/fetcher';
+import { kashiServerUrl, setDefaultAnalysisServer } from '@kashi-koi/core/analysis/fetcher';
 import { setDownloadRuntime } from '@kashi-koi/core/downloads/queue';
 import { setTranslator } from '@kashi-koi/core/japanese/translate';
 import { setLibraryDb } from '@kashi-koi/core/navidrome/libraryDb';
@@ -17,7 +17,7 @@ import { webTranslator } from '@/platform/translator';
 // the web counterpart of the top of apps/mobile/src/app/_layout.tsx.
 setLibraryDb(webLibraryDb);
 setSecrets(webSecrets);
-setDefaultAnalysisServer(import.meta.env.VITE_KASHI_SERVER_URL);
+setDefaultAnalysisServer(kashiServerUrl);
 setTranslator(webTranslator);
 setDownloadRuntime(noDownloads);
 

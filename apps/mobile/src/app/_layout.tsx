@@ -12,7 +12,7 @@ import { nativeSecrets } from '@/navidrome/secrets';
 import { setDownloadRuntime } from '@kashi-koi/core/downloads/queue';
 import { nativeDownloadRuntime } from '@/downloads/native';
 import { libraryStore } from '@kashi-koi/core/store/libraryStore';
-import { setDefaultAnalysisServer } from '@kashi-koi/core/analysis/fetcher';
+import { kashiServerUrl, setDefaultAnalysisServer } from '@kashi-koi/core/analysis/fetcher';
 import { setLibraryDb } from '@kashi-koi/core/navidrome/libraryDb';
 import { setSecrets } from '@kashi-koi/core/navidrome/secrets';
 import Storage from 'expo-sqlite/kv-store';
@@ -33,7 +33,7 @@ import { colors, fontFiles } from '@/constants/theme';
 // Install the platform pieces core calls through: library database, secret storage, translator, downloads.
 setLibraryDb(sqliteLibraryDb);
 setSecrets(nativeSecrets);
-setDefaultAnalysisServer(process.env.EXPO_PUBLIC_KASHI_SERVER_URL);
+setDefaultAnalysisServer(kashiServerUrl);
 setTranslator(Japanese);
 setDownloadRuntime(nativeDownloadRuntime);
 // Warm visible album covers on disk whenever a sync or lyrics scan settles.

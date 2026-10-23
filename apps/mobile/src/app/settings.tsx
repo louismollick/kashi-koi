@@ -1,4 +1,4 @@
-import { setAnalysisToken } from '@kashi-koi/core/analysis/fetcher';
+import { kashiServerUrl, setAnalysisToken } from '@kashi-koi/core/analysis/fetcher';
 import { prepareTranslation } from '@kashi-koi/core/japanese/translate';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Alert, ScrollView, TextInput, View } from 'react-native';
@@ -322,7 +322,7 @@ export default function SettingsScreen() {
           <Field
             label="Server"
             value={analysisServerUrl}
-            placeholder={process.env.EXPO_PUBLIC_KASHI_SERVER_URL || 'https://'}
+            placeholder={kashiServerUrl}
             onCommit={setAnalysisServerUrl}
           />
           <Field

@@ -43,7 +43,7 @@ appStore.getState().moveReviewSentence(reviewId: string, sentenceId: string) // 
 appStore.getState().removeReviewSentence(reviewId: string) // void
 ```
 
-`analysisServerUrl` persists in learning state. An empty override uses `EXPO_PUBLIC_KASHI_SERVER_URL`; both empty disable network reads. `analysisToken` is transient store state loaded from SecureStore key `analysis-token`. An empty token removes it. `canAnalyze` requires a token and effective URL; the action also requires a song with synced lines.
+`analysisServerUrl` persists in learning state. An empty override uses `kashiServerUrl` (https://kashi.louismollick.com), which each app installs at boot. `analysisToken` is transient store state loaded from SecureStore key `analysis-token`. An empty token removes it. `canAnalyze` requires a token and effective URL; the action also requires a song with synced lines.
 
 `analysisRequests[songId]` is `{ status: 'requesting' | 'queued' | 'running' | 'failed', error?: string, force: boolean }`. Success removes it and publishes the cached analysis. Failed requests remain for display and Retry preserves their force flag. Concurrent requests for the same song share one job. Polling runs every five seconds for up to ten minutes.
 
