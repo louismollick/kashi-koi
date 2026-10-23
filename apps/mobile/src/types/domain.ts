@@ -59,6 +59,8 @@ export type Album = {
   songCount: number;
 };
 export type Artist = { id: string; name: string; coverArt?: string };
+/** A Navidrome playlist, read-only. Its songs may repeat and may include songs no longer in the library. */
+export type Playlist = { id: string; name: string; songIds: string[]; coverArt?: string };
 type ReviewSentence = { id: string; songId: string; sentenceId: string };
 export type NewSentence = ReviewSentence & { kind: 'new' };
 export type DueSentence = ReviewSentence & { kind: 'due'; misses: number };

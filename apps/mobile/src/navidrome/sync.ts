@@ -2,7 +2,7 @@ import { cancelAnalyses, loadAnalysisToken } from '@/analysis/fetcher';
 import { pauseTranslations, resumeTranslations } from '@/japanese/translate';
 import { pruneReview } from '@/lyrics/review';
 import { carryLyrics, libraryStore } from '@/store/libraryStore';
-import { appStore, fetchLibraryAnalyses } from '@/store/appStore';
+import { appStore, dropRemovedSong, fetchLibraryAnalyses, resumePlayback } from '@/store/appStore';
 import { settingsStore } from '@/store/settingsStore';
 import { sessionStore } from './session';
 import { pickEntry, toSongLyrics } from './lyrics';
@@ -11,12 +11,13 @@ import {
   searchAll,
   type ServerAlbum,
   type ServerArtist,
+  type ServerPlaylist,
   type ServerSong,
   type Session,
   type StructuredLyrics,
 } from './subsonic';
 import type { Library, LyricsResult } from '@/store/libraryStore';
-import type { LyricsStatus, Song, SongLyrics } from '@/types/domain';
+import type { LyricsStatus, Playlist, Song, SongLyrics } from '@/types/domain';
 
 let running: Promise<void> | null = null;
 let generation = 0;
@@ -67,6 +68,41 @@ function run(work: (session: Session, valid: () => boolean) => Promise<void>) {
   return running;
 }
 
+/**
+ * Playlists never block the library: servers without them answer with none, a failed list keeps the saved
+ * playlists, and a playlist that fails to load keeps its saved songs or, if new or deleted meanwhile, is skipped.
+ */
+async function fetchPlaylists(session: Session, valid: () => boolean): Promise<Playlist[]> {
+  const previous = new Map(libraryStore.getState().playlists.map((playlist) => [playlist.id, playlist]));
+  let listed: ServerPlaylist[];
+  try {
+    listed =
+      (await request<{ playlists?: { playlist?: ServerPlaylist[] } }>(session, 'getPlaylists')).playlists?.playlist ??
+      [];
+  } catch {
+    return [...previous.values()];
+  }
+  const playlists: Playlist[] = [];
+  for (const playlist of listed) {
+    if (!valid()) break;
+    try {
+      const detail = await request<{ playlist?: { entry?: { id: string }[] } }>(session, 'getPlaylist', {
+        id: playlist.id,
+      });
+      playlists.push({
+        id: playlist.id,
+        name: playlist.name,
+        coverArt: playlist.coverArt,
+        songIds: detail.playlist?.entry?.map((entry) => entry.id) ?? [],
+      });
+    } catch {
+      const saved = previous.get(playlist.id);
+      if (saved) playlists.push({ ...saved, name: playlist.name, coverArt: playlist.coverArt });
+    }
+  }
+  return playlists;
+}
+
 export function syncLibrary(
   replace: (library: Library) => Promise<void> = async (library) => (await import('./db')).replaceLibrary(library),
 ) {
@@ -79,6 +115,8 @@ export function syncLibrary(
     if (!valid()) return;
     const response = await request<{ artists?: { index?: { artist?: ServerArtist[] }[] } }>(session, 'getArtists');
     if (!response.artists) throw new Error('Invalid artists response');
+    if (!valid()) return;
+    const playlists = await fetchPlaylists(session, valid);
     if (!valid()) return;
     const songs: Song[] = entries.map((song) => ({
       id: song.id,
@@ -109,6 +147,7 @@ export function syncLibrary(
           songCount: album.songCount,
         })),
         artists: response.artists.index?.flatMap((index) => index.artist ?? []) ?? [],
+        playlists,
       },
       libraryStore.getState(),
     );
@@ -116,6 +155,7 @@ export function syncLibrary(
     if (!valid()) return;
     const { translations, analyses } = libraryStore.getState();
     libraryStore.getState().setLibrary({ ...library, translations, analyses });
+    dropRemovedSong();
     await (await import('@/downloads/queue')).pruneDownloads();
     if (!valid()) return;
     const ids = new Set(songs.map((song) => song.id));
@@ -225,6 +265,7 @@ export const scanLyrics = ({ all = false }: { all?: boolean } = {}) =>
 export async function loadLibrary() {
   const { loadAll } = await import('./db');
   libraryStore.getState().setLibrary(await loadAll());
+  resumePlayback();
   // Downloads are optional; a failure here must not keep the library or session from loading.
   await (await import('@/downloads/queue')).loadDownloadState().catch(() => {
     libraryStore.setState({ error: 'Could not load downloads' });

@@ -24,7 +24,8 @@ async function setup(t: TestContext) {
     played: string[] = [],
     network: string[] = [],
     plays: number[] = [],
-    seeks: number[] = [];
+    seeks: number[] = [],
+    rates: number[] = [];
   type Status = {
     playing: boolean;
     currentTime: number;
@@ -45,6 +46,9 @@ async function setup(t: TestContext) {
     },
     replace: (source: { uri?: string } | null) => {
       sources.push(source);
+    },
+    setPlaybackRate: (rate: number) => {
+      rates.push(rate);
     },
     setActiveForLockScreen: (_active: boolean, metadata: { artworkUrl?: string }) => {
       artworks.push(metadata.artworkUrl);
@@ -116,6 +120,7 @@ async function setup(t: TestContext) {
     network,
     plays,
     seeks,
+    rates,
     status,
     fail: () =>
       listener({
@@ -142,6 +147,29 @@ test('online playback always uses pinned audio and lock-screen artwork', async (
   appStore.getState().startSong('dawn');
   assert.deepEqual(sources, [{ uri: 'file:///downloads/audio/dawn.flac' }]);
   assert.deepEqual(artworks, ['file:///downloads/art/cover.jpg']);
+});
+test('the saved speed applies at setup, to every new song and whenever it changes', async (t) => {
+  settingsStore.setState({ playbackRate: 0.75 });
+  const { rates } = await setup(t);
+  assert.deepEqual(rates, [0.75]);
+  appStore.getState().startSong('dawn');
+  assert.deepEqual(rates, [0.75, 0.75]);
+  settingsStore.getState().cyclePlaybackRate();
+  assert.deepEqual(rates, [0.75, 0.75, 0.5]);
+  settingsStore.getState().cyclePlaybackRate();
+  assert.equal(settingsStore.getState().playbackRate, 1);
+});
+test('a resumed song loads on the first play at its saved position, including a seek made while unloaded', async (t) => {
+  const { sources, seeks, status } = await setup(t);
+  appStore.setState({ songId: 'dawn', queue: ['dawn'], queueIndex: 0, positionMs: 30000, durationMs: 238000 });
+  appStore.getState().seek(40000);
+  assert.deepEqual(seeks, []);
+  assert.equal(appStore.getState().playbackError, null);
+  appStore.getState().setPlaying(true);
+  assert.equal(sources.length, 1);
+  assert.ok(sources[0]?.uri?.startsWith('https:'));
+  status(0);
+  assert.deepEqual(seeks, [40]);
 });
 test('offline playback saves played times locally without announcing or scrobbling', async (t) => {
   downloaded();

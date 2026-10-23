@@ -5,7 +5,14 @@ import { registerHooks } from 'node:module';
 import { withSentences } from '../src/lyrics/sentences';
 import { currentOccurrence } from '../src/navidrome/lyrics';
 import { sessionStore } from '../src/navidrome/session';
-import { appStore, finishSong, setTransport, hydrateAppState, resetAppState } from '../src/store/appStore';
+import {
+  appStore,
+  finishSong,
+  setTransport,
+  hydrateAppState,
+  resetAppState,
+  resumePlayback,
+} from '../src/store/appStore';
 import { hydrateSettings, settingsStore } from '../src/store/settingsStore';
 import { albums, artists, firstSong, songs, songLyrics, fixtureLine, fixtureReviewList } from './fixtures';
 import {
@@ -534,28 +541,37 @@ test('audio status follows occurrence boundaries and instrumental gaps', () => {
   assert.equal(appStore.getState().playing, false);
 });
 
-test('playback ticks do not rewrite persisted state', async () => {
-  const writes: string[] = [];
+test('playback ticks do not rewrite persisted state; the position saves every 5 s and on pause', async () => {
+  const writes: { key: string; value: string }[] = [];
   const storage = {
     getItem: () => null,
-    setItem: (_key: string, value: string) => {
-      writes.push(value);
+    setItem: (key: string, value: string) => {
+      writes.push({ key, value });
     },
     removeItem: () => {},
   };
   await hydrateSettings(storage);
   await hydrateAppState(storage);
+  resumePlayback();
   appStore.getState().startSong('dawn');
   appStore.getState().updatePlayback(1000, 238000, true);
   const settled = writes.length;
   appStore.getState().updatePlayback(1200, 238000, true);
   appStore.getState().updatePlayback(1400, 238000, true);
-  appStore.getState().setPlaying(false);
   assert.equal(writes.length, settled);
+  appStore.getState().updatePlayback(6000, 238000, true);
+  appStore.getState().setPlaying(false);
+  assert.deepEqual(
+    writes.slice(settled).map(({ key, value }) => [key, JSON.parse(value)]),
+    [
+      ['playback-position', { songId: 'dawn', positionMs: 6000 }],
+      ['playback-position', { songId: 'dawn', positionMs: 6000 }],
+    ],
+  );
   settingsStore.getState().toggleHideSongsWithoutJapanese();
-  assert.equal(writes.length, settled + 1);
+  assert.equal(writes.length, settled + 3);
   assert.equal(
-    (JSON.parse(writes.at(-1)!) as { state: Record<string, unknown> }).state.hideSongsWithoutJapanese,
+    (JSON.parse(writes.at(-1)!.value) as { state: Record<string, unknown> }).state.hideSongsWithoutJapanese,
     false,
   );
   await resetAppState();
@@ -590,7 +606,6 @@ test('learning state survives hydration while playback stays transient, and rese
   });
   const saved = values.get('learning-state')!;
   const data = JSON.parse(saved) as { state: Record<string, unknown> };
-  assert.equal('songId' in data.state, false);
   assert.equal('positionMs' in data.state, false);
   assert.equal('run' in data.state, false);
   assert.equal('hideSongsWithoutJapanese' in data.state, false);
@@ -607,6 +622,7 @@ test('learning state survives hydration while playback stays transient, and rese
   assert.equal(appStore.getState().perfectRuns.dawn, true);
   assert.equal(settingsStore.getState().showTranslations, true);
   assert.equal(settingsStore.getState().translationPrompted, true);
+  // The fixture's song isn't in its (empty) queue, so the saved queue is invalid and playback starts empty.
   assert.equal(appStore.getState().songId, null);
   assert.equal(settingsStore.getState().hideSongsWithoutSyncedLyrics, false);
   assert.equal(settingsStore.getState().hideSongsWithoutJapanese, false);
@@ -1205,6 +1221,7 @@ async function nativePacingRun(t: TestContext) {
       calls.push(`seek:${seconds}`);
     },
     replace: () => {},
+    setPlaybackRate: () => {},
     setActiveForLockScreen: () => {},
     clearLockScreenControls: () => {},
     remove: () => {},

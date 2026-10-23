@@ -32,6 +32,7 @@ export type ServerAlbum = {
   songCount: number;
 };
 export type ServerArtist = { id: string; name: string; coverArt?: string };
+export type ServerPlaylist = { id: string; name: string; coverArt?: string };
 
 export class SubsonicError extends Error {
   constructor(

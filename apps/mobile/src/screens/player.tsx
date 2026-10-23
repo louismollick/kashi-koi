@@ -17,6 +17,7 @@ import {
 import { appStore } from '@/store/appStore';
 import { settingsStore } from '@/store/settingsStore';
 import { ScreenHeader } from '@/components/Header';
+import { SpeedButton } from '@/components/SpeedButton';
 import { PixelFrame } from '@/components/PixelFrame';
 import { CenteredList, LyricRow } from '@/components/Lyrics';
 import { QuizColumn } from '@/components/QuizLayout';
@@ -204,6 +205,7 @@ export default function PlayerScreen() {
         }
         right={
           <View style={[styles.row, { gap: 14 }]}>
+            <SpeedButton />
             <View style={[styles.row, { gap: 6 }]}>
               <Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label>
               <PixelToggle

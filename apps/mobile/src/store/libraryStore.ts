@@ -1,13 +1,15 @@
 import { withSentences, type LyricsInput } from '@/lyrics/sentences';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import { create } from 'zustand';
-import type { Album, Artist, Line, LyricsStatus, Song, SongLyrics, ReviewList } from '@/types/domain';
+import type { Album, Artist, Line, LyricsStatus, Playlist, Song, SongLyrics, ReviewList } from '@/types/domain';
 
 export type Translations = Record<string, { translation: string; segments: Line['segments'] }>;
 export type Library = {
   songs: Song[];
   albums: Album[];
   artists: Artist[];
+  /** Missing in fixtures and before the first sync that fetched playlists. */
+  playlists?: Playlist[];
   lyrics: Record<string, SongLyrics>;
   translations?: Translations;
   analyses?: Record<string, SongAnalysis>;
@@ -29,6 +31,7 @@ const emptyLyrics = withSentences({ songId: '', lines: [], timeline: [] });
  */
 export const libraryStore = create<
   Library & {
+    playlists: Playlist[];
     bySong: Record<string, Song>;
     byAlbum: Record<string, Album>;
     byArtist: Record<string, Artist>;
@@ -50,6 +53,7 @@ export const libraryStore = create<
   }
 >((set, get) => ({
   ...empty,
+  playlists: [],
   translations: {},
   analyses: {},
   translationStatus: null,
@@ -64,6 +68,7 @@ export const libraryStore = create<
   setLibrary: (library) =>
     set({
       ...library,
+      playlists: library.playlists ?? [],
       translations: library.translations ?? {},
       analyses: library.analyses ?? {},
       lyrics: applyTranslations(library.lyrics, library.translations ?? {}, library.analyses ?? {}),
@@ -134,6 +139,13 @@ export const getArtistAlbums = (id: string) =>
     .getState()
     .albums.filter((album) => album.artistId === id)
     .sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+export const getPlaylist = (id: string) => libraryStore.getState().playlists.find((playlist) => playlist.id === id);
+/** A playlist's songs in its order, skipping songs that left the library. */
+export const getPlaylistSongs = (id: string) =>
+  (getPlaylist(id)?.songIds ?? []).flatMap((songId) => {
+    const song = libraryStore.getState().bySong[songId];
+    return song ? [song] : [];
+  });
 /** Every song on the artist's albums, newest album first, in track order, as the artist page lists them. */
 export const getArtistSongs = (id: string) => getArtistAlbums(id).flatMap((album) => getAlbumSongs(album.id));
 export const getLineText = (line: Line) => line.segments.map((segment) => segment.text).join('');

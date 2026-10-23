@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { TextInput, View, useWindowDimensions } from 'react-native';
+import { Pressable, TextInput, View, useWindowDimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { colors } from '@/constants/theme';
-import { libraryStore } from '@/store/libraryStore';
+import { getPlaylistSongs, libraryStore } from '@/store/libraryStore';
 import {
   countBy,
   countedFilters,
@@ -19,9 +20,38 @@ import { ArtistTile } from '@/components/ArtistTile';
 import { SongRow } from '@/components/SongRow';
 import { HiddenSongsRow } from '@/components/HiddenSongsRow';
 import { Icon } from '@/components/Icon';
+import { Cover } from '@/components/Cover';
 import { Button, Label, styles } from '@/components/ui';
+import type { Playlist } from '@/types/domain';
 
-const segments = ['Albums', 'Artists', 'Songs'] as const;
+const segments = ['Albums', 'Artists', 'Songs', 'Playlists'] as const;
+
+/** A playlist with its visible song count; opens the playlist page. */
+function PlaylistRow({ playlist, count }: { playlist: Playlist; count: number }) {
+  const router = useRouter();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open playlist ${playlist.name}`}
+      onPress={() => router.push({ pathname: '/library/playlist/[id]', params: { id: playlist.id } })}
+      style={({ pressed }) => [
+        styles.row,
+        { minHeight: 64, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.track },
+        { opacity: pressed ? 0.7 : 1 },
+      ]}
+    >
+      <Cover song={playlist} size={48} />
+      <View style={{ flex: 1 }}>
+        <Label numberOfLines={1} style={{ fontSize: 16, fontWeight: '700' }}>
+          {playlist.name}
+        </Label>
+        <Label muted style={{ fontSize: 13 }}>
+          {count} {count === 1 ? 'song' : 'songs'}
+        </Label>
+      </View>
+    </Pressable>
+  );
+}
 /** Pin grid tiles to their column edge, so three fixed-size tiles keep 12pt gaps in equal columns. */
 const column = (index: number) => ({
   alignItems: (['flex-start', 'center', 'flex-end'] as const)[index % 3],
@@ -34,7 +64,8 @@ export default function LibraryScreen() {
     [query, setQuery] = useState('');
   const songs = libraryStore((state) => state.songs),
     albums = libraryStore((state) => state.albums),
-    artists = libraryStore((state) => state.artists);
+    artists = libraryStore((state) => state.artists),
+    playlists = libraryStore((state) => state.playlists);
   const progress = libraryStore((state) => state.progress),
     error = libraryStore((state) => state.error);
   const filters = useLibraryFilters(),
@@ -69,9 +100,28 @@ export default function LibraryScreen() {
       artistAlbums: groupBy(visible.albums, (album) => album.artistId),
     };
   }, [filters, source]);
+  // Playlists match by name and show only when some song in them is visible, like albums.
+  const { shownPlaylists, playlistCounts, hiddenPlaylists } = useMemo(() => {
+    const needle = query.toLowerCase(),
+      matching = playlists.filter((playlist) => playlist.name.toLowerCase().includes(needle)),
+      counted = countedFilters(filters);
+    const playlistCounts = new Map(
+      matching.map((playlist) => [playlist.id, getVisibleSongs(getPlaylistSongs(playlist.id), filters).length]),
+    );
+    return {
+      shownPlaylists: matching.filter((playlist) => playlistCounts.get(playlist.id)),
+      playlistCounts,
+      // Empty playlists, or ones whose songs all left the library, aren't hidden by a filter, so they don't count.
+      hiddenPlaylists: matching.filter((playlist) => {
+        const songs = getPlaylistSongs(playlist.id);
+        return songs.length > 0 && !getVisibleSongs(songs, counted).length;
+      }).length,
+    };
+  }, [playlists, songs, filters, query]);
   // Playing from the Songs list queues the list as shown.
   const queue = useMemo(() => visible.songs.map((song) => song.id), [visible.songs]);
-  const kind = segment === 'Albums' ? 'albums' : segment === 'Artists' ? 'artists' : 'songs';
+  const kind =
+    segment === 'Albums' ? 'albums' : segment === 'Artists' ? 'artists' : segment === 'Songs' ? 'songs' : null;
   const header = (
     <View style={{ gap: 16, paddingBottom: 16 }}>
       <PixelFrame fill={colors.surface} contentStyle={[styles.row, { paddingHorizontal: 12 }]}>
@@ -94,12 +144,20 @@ export default function LibraryScreen() {
             fill={segment === value ? colors.coral : colors.slate}
             onPress={() => setSegment(value)}
             style={{ flex: 1 }}
+            // Four segments leave little width; tighter padding keeps "Playlists" on one line.
+            contentStyle={{ paddingHorizontal: 4 }}
           >
-            <Label style={{ fontWeight: '700' }}>{value}</Label>
+            <Label numberOfLines={1} style={{ fontWeight: '700' }}>
+              {value}
+            </Label>
           </Button>
         ))}
       </View>
-      <HiddenSongsRow count={source[kind].length - hidden[kind].length} kind={kind} />
+      {kind ? (
+        <HiddenSongsRow count={source[kind].length - hidden[kind].length} kind={kind} />
+      ) : (
+        <HiddenSongsRow count={hiddenPlaylists} kind="playlists" />
+      )}
       {progress && (
         <Label muted>
           {progress.kind === 'sync' ? 'Syncing library' : 'Checking lyrics'}… {progress.completed.toLocaleString()} /{' '}
@@ -111,7 +169,13 @@ export default function LibraryScreen() {
   );
   const empty = (
     <Label muted>
-      {progress ? 'Your library will appear as lyrics are checked' : query ? 'No matches' : 'No visible songs'}
+      {progress
+        ? 'Your library will appear as lyrics are checked'
+        : query
+          ? 'No matches'
+          : segment === 'Playlists'
+            ? 'No playlists'
+            : 'No visible songs'}
     </Label>
   );
   return (
@@ -126,6 +190,17 @@ export default function LibraryScreen() {
           ListHeaderComponent={header}
           ListEmptyComponent={empty}
           renderItem={({ item }) => <SongRow song={item} queue={queue} />}
+          keyboardShouldPersistTaps="handled"
+        />
+      ) : segment === 'Playlists' ? (
+        <FlashList
+          key="playlists"
+          data={shownPlaylists}
+          keyExtractor={(playlist) => playlist.id}
+          contentContainerStyle={{ padding: 16 }}
+          ListHeaderComponent={header}
+          ListEmptyComponent={empty}
+          renderItem={({ item }) => <PlaylistRow playlist={item} count={playlistCounts.get(item.id) ?? 0} />}
           keyboardShouldPersistTaps="handled"
         />
       ) : segment === 'Albums' ? (

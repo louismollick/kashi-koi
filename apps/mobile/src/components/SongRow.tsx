@@ -22,6 +22,7 @@ export const SongRow = memo(function SongRow({
   song,
   number,
   queue,
+  queueIndex,
   onPress,
   onLongPress,
   accessory,
@@ -29,6 +30,8 @@ export const SongRow = memo(function SongRow({
   song: Song;
   number?: number;
   queue?: string[];
+  /** This row's position in `queue`, for lists that repeat a song. */
+  queueIndex?: number;
   onPress?: () => void;
   onLongPress?: () => void;
   accessory?: ReactNode;
@@ -45,7 +48,7 @@ export const SongRow = memo(function SongRow({
         onPress ??
         (() => {
           router.push('/player');
-          appStore.getState().startSong(song.id, queue);
+          appStore.getState().startSong(song.id, queue, queueIndex);
         })
       }
       onLongPress={onLongPress ?? (() => router.push(songMenu(song.id)))}

@@ -18,6 +18,7 @@ import { create } from 'zustand';
 import {
   getAlbumSongs,
   getArtistSongs,
+  getPlaylistSongs,
   getSong,
   getLyrics,
   currentSentence,
@@ -197,13 +198,21 @@ export function finishSong() {
   else state.nextSong();
 }
 
+/** No song and no queue: a fresh install, an invalid saved queue, or a playing song that left the library. */
+const emptyPlayback = { songId: null, queue: [], queueIndex: -1, autoplay: [], repeatSongId: null };
+
+/** Played songs kept for Previous; older ones drop off so the saved queue stays small. */
+const PLAYED_HISTORY = 100;
+
 /** Start another queued play without rebuilding the queue or autoplay. Only the automatic replay keeps Repeat song. */
 function playQueueSong(songId: string, queueIndex: number, repeat = false) {
   const state = appStore.getState(),
-    quizToggle = state.quizToggle && hasTranslations(songId);
+    quizToggle = state.quizToggle && hasTranslations(songId),
+    dropped = Math.max(0, queueIndex - PLAYED_HISTORY);
   appStore.setState({
     songId,
-    queueIndex,
+    ...(dropped ? { queue: state.queue.slice(dropped) } : {}),
+    queueIndex: queueIndex - dropped,
     ...(repeat ? {} : { repeatSongId: null }),
     lineIndex: 0,
     positionMs: 0,
@@ -240,7 +249,8 @@ type AppState = {
   addedId: string | null;
   addedExpiresAt: number | null;
   nextReviewId: number;
-  startSong: (songId: string, list?: string[]) => void;
+  /** `index` picks which occurrence of a song that appears twice in `list` plays. */
+  startSong: (songId: string, list?: string[], index?: number) => void;
   playNext: (songIds: string[]) => void;
   addToQueue: (songIds: string[]) => void;
   playUpNext: (position: number) => void;
@@ -249,6 +259,7 @@ type AppState = {
   clearUpNext: () => void;
   startAlbum: (albumId: string, shuffle?: boolean) => void;
   startArtist: (artistId: string, shuffle?: boolean) => void;
+  startPlaylist: (playlistId: string, shuffle?: boolean) => void;
   /** The song that replays when it ends instead of advancing; skipping or starting any song turns it off. */
   repeatSongId: string | null;
   setRepeatSong: (songId: string, enabled: boolean) => void;
@@ -337,7 +348,7 @@ export const appStore = create<AppState>()(
       addedId: null,
       addedExpiresAt: null,
       nextReviewId: 1,
-      startSong: (songId, list) => {
+      startSong: (songId, list, index) => {
         if (
           !getSong(songId) ||
           (get().loading &&
@@ -356,10 +367,11 @@ export const appStore = create<AppState>()(
               .filter((id) => !queued.has(id)),
           ),
         });
-        playQueueSong(songId, queue.indexOf(songId));
+        playQueueSong(songId, index !== undefined && queue[index] === songId ? index : queue.indexOf(songId));
       },
       startAlbum: (albumId, shuffle = false) => startList(getAlbumSongs(albumId), shuffle),
       startArtist: (artistId, shuffle = false) => startList(getArtistSongs(artistId), shuffle),
+      startPlaylist: (playlistId, shuffle = false) => startList(getPlaylistSongs(playlistId), shuffle),
       // With nothing playing, both start the songs instead.
       playNext: (songIds) => {
         if (!get().songId) return startIdle(songIds);
@@ -795,6 +807,7 @@ export const appStore = create<AppState>()(
       storage: createJSONStorage(() => ({ getItem: () => null, setItem() {}, removeItem() {} })),
       // Drop obsolete mix state and the settings this blob held before they moved to settingsStore.
       // Legacy later lines have no schedule, so they're due now; a fixed value keeps repeat hydrations stable.
+      // The saved queue comes back paused; `resumePlayback` checks it against the library once that loads.
       merge: (persisted, current) => {
         const {
           reviewMix: _reviewMix,
@@ -812,33 +825,147 @@ export const appStore = create<AppState>()(
             ? { ...migrated, step: 0, dueAt: 0 }
             : migrated;
         });
+        // A saved queue must be string ids with the current song at its index, or playback starts empty.
+        const ids = (value: unknown) =>
+          Array.isArray(value) && value.every((id) => typeof id === 'string') ? (value as string[]) : null;
+        const queue = ids(saved.queue),
+          autoplay = ids(saved.autoplay),
+          { songId, queueIndex, repeatSongId } = saved;
+        const playback =
+          queue &&
+          autoplay &&
+          typeof songId === 'string' &&
+          Number.isInteger(queueIndex) &&
+          queue[queueIndex!] === songId
+            ? {
+                songId,
+                queue,
+                queueIndex: queueIndex!,
+                autoplay,
+                repeatSongId: repeatSongId === songId ? songId : null,
+              }
+            : emptyPlayback;
         return {
           ...current,
           ...saved,
+          ...playback,
           reviewList,
           run: current.run,
           clipReview: current.clipReview,
           runEnd: current.runEnd,
-          queue: current.queue,
-          queueIndex: current.queueIndex,
-          autoplay: current.autoplay,
         };
       },
+      // Queue fields change only between songs or on edits, so persisting them costs nothing per tick.
       partialize: (state) => ({
         reviewList: state.reviewList,
         fog: state.fog,
         perfectRuns: state.perfectRuns,
         quizToggle: state.quizToggle,
         nextReviewId: state.nextReviewId,
+        songId: state.songId,
+        queue: state.queue,
+        queueIndex: state.queueIndex,
+        autoplay: state.autoplay,
+        repeatSongId: state.repeatSongId,
       }),
     },
   ),
 );
 
+/**
+ * The playing song's position lives under its own key, saved every few seconds and on pause, so ticks never rewrite
+ * the learning blob. Saving starts once `resumePlayback` has restored it, so boot work can't overwrite it first.
+ */
+const positionKey = 'playback-position';
+type SavedPosition = { songId: string | null; positionMs: number };
+let positionStorage: StateStorage | null = null,
+  savingPosition = false,
+  savedPosition: SavedPosition = { songId: null, positionMs: 0 };
+
+appStore.subscribe((state, previous) => {
+  if (!positionStorage || !savingPosition) return;
+  if (
+    state.songId === savedPosition.songId &&
+    Math.abs(state.positionMs - savedPosition.positionMs) < 5000 &&
+    !(previous.playing && !state.playing)
+  )
+    return;
+  savedPosition = { songId: state.songId, positionMs: Math.round(state.positionMs) };
+  void positionStorage.setItem(positionKey, JSON.stringify(savedPosition));
+});
+
 /** Native storage is injected at boot so store imports stay safe in plain Node. Hydrate after `hydrateSettings`, which seeds from this blob first. */
 export async function hydrateAppState(storage: StateStorage) {
+  savingPosition = false;
   appStore.persist.setOptions({ storage: changeAwareStorage(storage) });
   await appStore.persist.rehydrate();
+  const text = await storage.getItem(positionKey);
+  try {
+    const saved: unknown = text === null ? null : JSON.parse(text);
+    if (saved && typeof saved === 'object' && 'positionMs' in saved && typeof saved.positionMs === 'number')
+      savedPosition = {
+        songId: 'songId' in saved && typeof saved.songId === 'string' ? saved.songId : null,
+        positionMs: saved.positionMs,
+      };
+  } catch {
+    // A corrupt position only loses the resume point.
+  }
+  positionStorage = storage;
+}
+
+/**
+ * Once the library has loaded, show the saved song paused where it stopped. The transport loads it on the first
+ * play. A song that left the library drops the saved queue.
+ */
+export function resumePlayback() {
+  const state = appStore.getState(),
+    song = getSong(state.songId);
+  if (song) {
+    const durationMs = song.duration * 1000,
+      positionMs = savedPosition.songId === song.id ? Math.min(savedPosition.positionMs, durationMs) : 0;
+    appStore.setState({
+      durationMs,
+      positionMs,
+      lineIndex: currentOccurrence(getLyrics(song.id).timeline, positionMs),
+      quizToggle: state.quizToggle && hasTranslations(song.id),
+    });
+  } else dropRemovedSong();
+  savingPosition = true;
+}
+
+/** A sync or saved queue whose playing song left the library stops it and empties the queue. */
+export function dropRemovedSong() {
+  const state = appStore.getState();
+  if (!state.songId || getSong(state.songId)) return;
+  clearAnswerWait(true);
+  transport.pause();
+  loadedSongId = null;
+  appStore.setState({
+    ...emptyPlayback,
+    playing: false,
+    loading: false,
+    positionMs: 0,
+    durationMs: 0,
+    lineIndex: 0,
+    run: newRun(),
+    clipPlayback: state.clipPlayback?.songId === state.songId ? null : state.clipPlayback,
+  });
+}
+
+/**
+ * Next and previous from the lock screen or headphones: the song queue, or the review clips while reviewing.
+ * Previous restarts after 3 s like the in-app button.
+ */
+export function remoteSkip(direction: 'next' | 'previous') {
+  const state = appStore.getState(),
+    clip = state.clipReview;
+  if (clip) {
+    if (direction === 'next') state.nextClip();
+    else state.jumpToClip(Math.max(0, clip.index - 1));
+  } else if (state.songId) {
+    if (direction === 'next') state.nextSong();
+    else state.skipBack();
+  }
 }
 
 /** Log out: back to a fresh install, in memory and in storage. */
@@ -850,7 +977,12 @@ export function resetAppState() {
   appStore.setState(appStore.getInitialState(), true);
   settingsStore.setState(settingsStore.getInitialState(), true);
   analysisRequests.setState({}, true);
-  return Promise.all([appStore.persist.clearStorage(), settingsStore.persist.clearStorage()]);
+  savedPosition = { songId: null, positionMs: 0 };
+  return Promise.all([
+    appStore.persist.clearStorage(),
+    settingsStore.persist.clearStorage(),
+    positionStorage?.removeItem(positionKey),
+  ]);
 }
 
 /** Cache choices as the current sentence changes, including repeated occurrences and edited clips. */
