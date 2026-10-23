@@ -224,9 +224,11 @@ export async function clearDownloads() {
 
 /** Shared breakdowns are cached for every online read, not just downloaded songs. */
 export async function readBreakdown(fp: string, start: number): Promise<Breakdown | undefined> {
-  const row = await (
-    await database
-  ).getFirstAsync<{ data: string }>('SELECT data FROM breakdowns WHERE fingerprint = ? AND start = ?', fp, start);
+  const row = await (await database).getFirstAsync<{ data: string }>(
+    'SELECT data FROM breakdowns WHERE fingerprint = ? AND start = ?',
+    fp,
+    start,
+  );
   if (!row) return undefined;
   try {
     const value = breakdownSchema.safeParse(JSON.parse(row.data));
