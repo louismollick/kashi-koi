@@ -10,6 +10,7 @@ import {
 } from '@kashi-koi/core/store/libraryStore';
 import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import type { Line, Song } from '@kashi-koi/core/types/domain';
+import { cn } from '@/lib/cn';
 import { colors } from '@kashi-koi/design/tokens';
 import { memo, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -321,7 +322,10 @@ function PaneHeader({ song, tab, onTab }: { song: Song; tab: Tab; onTab: (tab: T
             role="tab"
             aria-selected={tab === id}
             onClick={() => onTab(id)}
-            className="shrink-0 py-2 whitespace-nowrap transition-[filter] hover:brightness-125"
+            className={cn(
+              'shrink-0 border-b-2 py-1.5 whitespace-nowrap transition-[filter] hover:brightness-125',
+              tab === id ? 'border-coral' : 'border-transparent',
+            )}
           >
             <Label
               pixel
