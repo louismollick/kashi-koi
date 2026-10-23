@@ -7,7 +7,7 @@ import { appStore } from '@/store/appStore';
 import { settingsStore } from '@/store/settingsStore';
 import { Cover } from './Cover';
 import { FogBadge } from './Fog';
-import { songMenu } from '@/screens/song-menu';
+import { songMenu } from '@/routes';
 import { useIsDownloaded } from '@/downloads';
 import { Icon } from './Icon';
 import { Label, styles } from './ui';
