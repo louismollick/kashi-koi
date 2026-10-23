@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Cover } from './Cover';
-import { downloadSheet } from './DownloadButton';
+import { downloadSheet } from '@/routes';
 import { NoLyricsBadge } from './NoLyricsBadge';
 import { Label } from './ui';
 import type { Album } from '@/types/domain';
