@@ -1,0 +1,19 @@
+{
+  "name": "@kashi-koi/design",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./icons": "./src/icons.ts",
+    "./shape": "./src/shape.ts",
+    "./tokens": "./src/tokens.ts",
+    "./tokens-css": "./scripts/tokens-css.ts",
+    "./sprites/metadata": "./sprites/metadata.ts",
+    "./sprites/*": "./sprites/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test scripts/*.test.ts",
+    "tokens-css": "tsx scripts/tokens-css.ts"
+  }
+}

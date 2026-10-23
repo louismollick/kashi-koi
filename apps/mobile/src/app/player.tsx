@@ -1,7 +1,7 @@
-import { canExplain } from '@/analysis/breakdowns';
-import { analysisRequests } from '@/analysis/fetcher';
-import { translationHint } from '@/japanese/translate';
-import { isJapanese } from '@/japanese/text';
+import { canExplain } from '@kashi-koi/core/analysis/breakdowns';
+import { analysisRequests } from '@kashi-koi/core/analysis/fetcher';
+import { translationHint } from '@kashi-koi/core/japanese/translate';
+import { isJapanese } from '@kashi-koi/core/japanese/text';
 import { memo, useEffect, useMemo } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -14,9 +14,9 @@ import {
   libraryStore,
   sentenceOccurrenceAt,
   songAnalysisInfo,
-} from '@/store/libraryStore';
-import { appStore } from '@/store/appStore';
-import { settingsStore } from '@/store/settingsStore';
+} from '@kashi-koi/core/store/libraryStore';
+import { appStore } from '@kashi-koi/core/store/appStore';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { ScreenHeader } from '@/components/Header';
 import { SpeedButton } from '@/components/SpeedButton';
 import { PixelFrame } from '@/components/PixelFrame';
@@ -26,7 +26,7 @@ import { PlayerBar } from '@/components/PlayerBar';
 import { SongIntro } from '@/components/SongIntro';
 import { Koi } from '@/components/Fog';
 import { songMenu } from '@/routes';
-import type { Line } from '@/types/domain';
+import type { Line } from '@kashi-koi/core/types/domain';
 import { Button, IconButton, Label, PixelToggle, styles } from '@/components/ui';
 
 // Listen-mode toasts float just above REVIEW LATER.

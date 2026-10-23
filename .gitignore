@@ -18,3 +18,9 @@ expo-env.d.ts
 # Local analysis server database
 /data/
 /apps/server/data/
+.vercel
+.env*
+
+# Tokenizer dictionary copied from node_modules by apps/web/scripts/copy-dict.mjs
+/apps/web/public/dict/
+/apps/web/.tanstack/

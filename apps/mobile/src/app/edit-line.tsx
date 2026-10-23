@@ -2,9 +2,9 @@ import { Pressable, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { appStore } from '@/store/appStore';
-import { settingsStore } from '@/store/settingsStore';
-import { currentSentence, getLineText, getLyrics, libraryStore } from '@/store/libraryStore';
+import { appStore } from '@kashi-koi/core/store/appStore';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
+import { currentSentence, getLineText, getLyrics, libraryStore } from '@kashi-koi/core/store/libraryStore';
 import { CenteredList, LyricRow } from '@/components/Lyrics';
 import { IconButton, Label, styles } from '@/components/ui';
 

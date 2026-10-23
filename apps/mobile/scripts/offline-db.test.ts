@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
 import type { Breakdown } from '@kashi-koi/shared/breakdown';
 import { fingerprint } from '@kashi-koi/shared/fingerprint';
-import { albums, artists, songLyrics, songs } from './fixtures';
+import { albums, artists, songLyrics, songs } from '@kashi-koi/core/fixtures';
 
 test('SQLite atomically invalidates replacement breakdowns, rolls back interruptions, keeps identical-analysis caches and writes the library in batches', async () => {
   const sqlite = new DatabaseSync(':memory:');

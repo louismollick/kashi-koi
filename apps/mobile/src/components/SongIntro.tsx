@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { colors } from '@/constants/theme';
-import type { SongLyrics } from '@/types/domain';
+import type { SongLyrics } from '@kashi-koi/core/types/domain';
 import { Label } from './ui';
 
 /**

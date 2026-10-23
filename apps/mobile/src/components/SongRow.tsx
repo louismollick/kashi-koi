@@ -2,16 +2,16 @@ import { memo, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { getAlbum } from '@/store/libraryStore';
-import { appStore } from '@/store/appStore';
-import { settingsStore } from '@/store/settingsStore';
+import { getAlbum } from '@kashi-koi/core/store/libraryStore';
+import { appStore } from '@kashi-koi/core/store/appStore';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { Cover } from './Cover';
 import { FogBadge } from './Fog';
 import { songMenu } from '@/routes';
-import { useIsDownloaded } from '@/downloads';
+import { useIsDownloaded } from '@kashi-koi/core/downloads';
 import { Icon } from './Icon';
 import { Label, styles } from './ui';
-import type { Song } from '@/types/domain';
+import type { Song } from '@kashi-koi/core/types/domain';
 
 /**
  * A song in the Library, an album's numbered list or Up next. Tapping plays it with `queue` (stable ids, default just

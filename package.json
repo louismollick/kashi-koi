@@ -10,6 +10,8 @@
     "start": "npm run start -w @kashi-koi/mobile --",
     "ios": "npm run ios -w @kashi-koi/mobile --",
     "sprites": "npm run sprites -w @kashi-koi/mobile",
+    "web": "npm run dev -w @kashi-koi/web --",
+    "web:build": "npm run build -w @kashi-koi/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "biome lint .",

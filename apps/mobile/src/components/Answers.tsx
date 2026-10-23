@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { colors } from '@/constants/theme';
-import { gapOf } from '@/lyrics/choices';
-import type { Choice } from '@/types/domain';
+import { gapOf } from '@kashi-koi/core/lyrics/choices';
+import type { Choice } from '@kashi-koi/core/types/domain';
 import { Icon } from './Icon';
 import { PixelFrame } from './PixelFrame';
 import { Button, Label } from './ui';

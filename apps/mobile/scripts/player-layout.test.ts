@@ -3,11 +3,11 @@ import { test } from 'node:test';
 import { createRequire, registerHooks } from 'node:module';
 import * as React from 'react';
 import type { SongAnalysis } from '@kashi-koi/shared/analysis';
-import { analysisRequests, cancelAnalyses, setAnalysisRuntime } from '../src/analysis/fetcher';
-import { appStore, resetAppState } from '../src/store/appStore';
-import { libraryStore } from '../src/store/libraryStore';
-import { settingsStore } from '../src/store/settingsStore';
-import { albums, artists, songs, songLyrics } from './fixtures';
+import { analysisRequests, cancelAnalyses, setAnalysisRuntime } from '@kashi-koi/core/analysis/fetcher';
+import { appStore, resetAppState } from '@kashi-koi/core/store/appStore';
+import { libraryStore } from '@kashi-koi/core/store/libraryStore';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
+import { albums, artists, songs, songLyrics } from '@kashi-koi/core/fixtures';
 
 const require = createRequire(import.meta.url);
 const { renderToStaticMarkup } = require('react-dom/server') as {

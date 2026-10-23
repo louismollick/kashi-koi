@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/constants/theme';
-import { settingsStore } from '@/store/settingsStore';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { IconButton, Label, Tag, styles } from './ui';
 import type { ReactNode } from 'react';
 

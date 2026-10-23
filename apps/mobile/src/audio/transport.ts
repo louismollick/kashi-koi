@@ -1,14 +1,21 @@
-import { localAudioUri, localArtUri } from '@/downloads/store';
+import {
+  announceNowPlaying,
+  offlineSwitch,
+  playbackBlock,
+  playbackSource,
+  reachedPlayed,
+  recordPlayed,
+} from '@kashi-koi/core/audio/playback';
 import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync } from 'expo-audio';
-import { appStore, finishSong, setTransport } from '@/store/appStore';
-import { libraryStore } from '@/store/libraryStore';
-import { settingsStore } from '@/store/settingsStore';
-import { sessionStore } from '@/navidrome/session';
-import { mediaUrl, request } from '@/navidrome/subsonic';
-import { savePlayed } from '@/navidrome/db';
-import type { Song } from '@/types/domain';
+import { appStore, finishSong, setTransport } from '@kashi-koi/core/store/appStore';
+import { libraryStore } from '@kashi-koi/core/store/libraryStore';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
+import type { Song } from '@kashi-koi/core/types/domain';
 
-/** One native player owns audio; appStore owns queue and learning state. */
+/**
+ * One native player owns audio; appStore owns queue and learning state. Which source plays, when a song counts as
+ * played and what Navidrome hears live in `@kashi-koi/core/audio/playback`, shared with the web transport.
+ */
 export async function setupTransport(valid = () => true) {
   await setIsAudioActiveAsync(true);
   await setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' });
@@ -91,16 +98,9 @@ export async function setupTransport(valid = () => true) {
     const clipPlaying = wantsPlay && (status.playing || status.isBuffering);
     appStore.getState().updatePlayback(playbackPositionMs, durationMs, clip ? clipPlaying : status.playing);
     if (clip) return;
-    if (!submitted && positionMs >= Math.min(durationMs / 2, 240000) && durationMs > 0) {
+    if (!submitted && reachedPlayed(positionMs, durationMs)) {
       submitted = true;
-      const session = sessionStore.getState().session,
-        at = Date.now();
-      libraryStore.getState().markPlayed(song.id, at);
-      void savePlayed(song.id, at).catch(() => appStore.setState({ playbackError: 'Could not save Recently played' }));
-      if (session && !settingsStore.getState().offlineMode)
-        void request(session, 'scrobble', { id: song.id, submission: true, time: at }).catch(() =>
-          appStore.setState({ playbackError: 'Could not scrobble this song' }),
-        );
+      recordPlayed(song);
     }
     if (status.didJustFinish && !finished && !appStore.getState().answerWait) {
       finished = true;
@@ -108,17 +108,14 @@ export async function setupTransport(valid = () => true) {
     }
   });
   const transportLoad = (next: Song, offset = 0) => {
-    const session = sessionStore.getState().session;
-    const local = localAudioUri(next.id);
-    if (settingsStore.getState().offlineMode && !local) {
-      song = null;
-      awaitingStart = false;
-      player.pause();
-      fail('Song is not downloaded');
-      return;
-    }
-    if (!local && !session) {
-      fail('No account is connected');
+    const blocked = playbackBlock(next);
+    if (blocked) {
+      if (blocked.release) {
+        song = null;
+        awaitingStart = false;
+        player.pause();
+      }
+      fail(blocked.error);
       return;
     }
     ++revision;
@@ -133,7 +130,8 @@ export async function setupTransport(valid = () => true) {
     finished = false;
     awaitingStart = true;
     try {
-      sourceUri = local ?? mediaUrl(session!, 'stream', next.id);
+      const source = playbackSource(next);
+      sourceUri = source.uri;
       player.replace({ uri: sourceUri });
       applyRate();
       player.setActiveForLockScreen(
@@ -142,19 +140,11 @@ export async function setupTransport(valid = () => true) {
           title: next.title,
           artist: next.artist,
           albumTitle: next.album,
-          artworkUrl: next.coverArt
-            ? (localArtUri(next.coverArt) ??
-              (session && !settingsStore.getState().offlineMode
-                ? mediaUrl(session, 'getCoverArt', next.coverArt, 600)
-                : undefined))
-            : undefined,
+          artworkUrl: source.artworkUrl,
         },
         { showSeekBackward: false, showSeekForward: false },
       );
-      if (session && !settingsStore.getState().offlineMode && !appStore.getState().clipPlayback)
-        void request(session, 'scrobble', { id: next.id, submission: false }).catch(() =>
-          appStore.setState({ playbackError: 'Could not announce this song to the server' }),
-        );
+      announceNowPlaying(next);
     } catch (error) {
       fail(error);
     }
@@ -192,9 +182,9 @@ export async function setupTransport(valid = () => true) {
     if (settings.playbackRate !== previous.playbackRate) applyRate();
     if (!settings.offlineMode || previous.offlineMode || !song) return;
     const state = appStore.getState();
-    const local = localAudioUri(song.id);
-    if (local && local === sourceUri) return;
-    if (local) {
+    const action = offlineSwitch(song, sourceUri);
+    if (action === 'keep') return;
+    if (action === 'reload') {
       const current = song,
         playing = state.playing;
       appStore.setState({ loading: true, playbackError: null });

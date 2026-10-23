@@ -1,4 +1,4 @@
-import type { DownloadTarget } from '@/downloads';
+import type { DownloadTarget } from '@kashi-koi/core/downloads';
 
 /** Download sheet targets: one album or artist, never the whole library. */
 export type SheetTarget = Exclude<DownloadTarget, { kind: 'library' }>;

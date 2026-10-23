@@ -1,17 +1,17 @@
-import { useAvailableReviewList } from '@/data/reviewVisibility';
+import { useAvailableReviewList } from '@kashi-koi/core/data/reviewVisibility';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { dueSentences, isDue, readyReviewSentences } from '@/lyrics/review';
-import { getAlbum, getSentenceText, getSong, getLyrics, libraryStore } from '@/store/libraryStore';
-import { appStore } from '@/store/appStore';
+import { dueSentences, isDue, readyReviewSentences } from '@kashi-koi/core/lyrics/review';
+import { getAlbum, getSentenceText, getSong, getLyrics, libraryStore } from '@kashi-koi/core/store/libraryStore';
+import { appStore } from '@kashi-koi/core/store/appStore';
 import { useNow } from '@/hooks/useNow';
 import { Header } from '@/components/Header';
 import { Cover } from '@/components/Cover';
 import { Icon } from '@/components/Icon';
 import { Button, IconButton, Label, styles } from '@/components/ui';
-import type { ReviewList } from '@/types/domain';
+import type { ReviewList } from '@kashi-koi/core/types/domain';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 

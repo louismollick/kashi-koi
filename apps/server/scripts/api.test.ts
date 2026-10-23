@@ -175,3 +175,26 @@ test('fingerprints the exact line input without changing whitespace', async (t) 
   });
   assert.deepEqual(await response.json(), { fingerprint: fingerprint(spaced), status: 'queued' });
 });
+
+test('browsers can call the API: CORS headers on GET and a preflight for the bearer POST', async (t) => {
+  const { store } = testStore(t);
+  const app = createApi(store, token);
+  const get = await app.request('/health', { headers: { Origin: 'https://kashi.example' } });
+  assert.equal(get.status, 200);
+  assert.equal(get.headers.get('Access-Control-Allow-Origin'), '*');
+  const missing = await app.request('/v1/analyses/missing', { headers: { Origin: 'https://kashi.example' } });
+  assert.equal(missing.status, 404);
+  assert.equal(missing.headers.get('Access-Control-Allow-Origin'), '*');
+  const preflight = await app.request('/v1/analyses', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'https://kashi.example',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'authorization,content-type',
+    },
+  });
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin'), '*');
+  assert.match(preflight.headers.get('Access-Control-Allow-Methods') ?? '', /POST/);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Headers'), 'Authorization,Content-Type');
+});

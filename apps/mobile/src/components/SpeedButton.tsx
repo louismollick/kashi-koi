@@ -1,6 +1,6 @@
 import { Pressable } from 'react-native';
 import { colors } from '@/constants/theme';
-import { settingsStore } from '@/store/settingsStore';
+import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { Label } from './ui';
 
 /** Player header control that cycles 1x, 0.75x and 0.5x. A slowed speed shows in lavender so it isn't forgotten. */

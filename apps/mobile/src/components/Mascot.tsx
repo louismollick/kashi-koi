@@ -9,11 +9,11 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { spriteFrames } from '../../assets/sprites/metadata';
+import { spriteFrames } from '@kashi-koi/design/sprites/metadata';
 
 const strips = {
-  bobbing: require('../../assets/sprites/bobbing.png'),
-  headbang: require('../../assets/sprites/headbang.png'),
+  bobbing: require('@kashi-koi/design/sprites/bobbing.png'),
+  headbang: require('@kashi-koi/design/sprites/headbang.png'),
 };
 
 /**

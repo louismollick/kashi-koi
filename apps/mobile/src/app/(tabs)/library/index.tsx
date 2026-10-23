@@ -3,7 +3,7 @@ import { Pressable, TextInput, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { colors, font } from '@/constants/theme';
-import { getPlaylistSongs, libraryStore } from '@/store/libraryStore';
+import { getPlaylistSongs, libraryStore } from '@kashi-koi/core/store/libraryStore';
 import {
   countBy,
   countedFilters,
@@ -12,7 +12,7 @@ import {
   groupBy,
   syncedIds,
   useLibraryFilters,
-} from '@/data/libraryVisibility';
+} from '@kashi-koi/core/data/libraryVisibility';
 import { Header } from '@/components/Header';
 import { PixelFrame } from '@/components/PixelFrame';
 import { AlbumTile } from '@/components/AlbumTile';
@@ -22,7 +22,7 @@ import { HiddenSongsRow } from '@/components/HiddenSongsRow';
 import { Icon } from '@/components/Icon';
 import { Cover } from '@/components/Cover';
 import { Button, Label, styles } from '@/components/ui';
-import type { Playlist } from '@/types/domain';
+import type { Playlist } from '@kashi-koi/core/types/domain';
 
 const segments = ['Albums', 'Artists', 'Songs', 'Playlists'] as const;
 

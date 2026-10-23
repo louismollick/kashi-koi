@@ -1,0 +1,75 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 21px;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button,
+  a {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-coral-border);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-coral-deep);
+    color: var(--color-text);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-track) transparent;
+  }
+}
+
+@layer components {
+  /* The base of every Label: the RN `styles.text` (15 over 21). Utilities such as `text-[13px]` override it. */
+  .label {
+    color: var(--color-text);
+    font-size: 15px;
+    line-height: 21px;
+  }
+  /* Pixel Labels: Jersey 15's line box is its font size, and it has one weight, so the browser must not fake bold. */
+  .label-pixel {
+    line-height: 1;
+    font-synthesis: none;
+  }
+  .pixelated {
+    image-rendering: pixelated;
+  }
+}
+
+/* The Mascot strip: one step per frame across the whole strip, 8 frames. */
+@keyframes mascot-strip {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* PixelSpinner: a block is lit for a third of the cycle, then dim. */
+@keyframes pixel-block {
+  0%,
+  33.3% {
+    opacity: 1;
+  }
+  33.4%,
+  100% {
+    opacity: 0.25;
+  }
+}

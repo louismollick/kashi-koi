@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { useDownloadSummary } from '@/downloads';
+import { useDownloadSummary } from '@kashi-koi/core/downloads';
 import { downloadSheet, type SheetTarget } from '@/routes';
 import { IconButton } from './ui';
 

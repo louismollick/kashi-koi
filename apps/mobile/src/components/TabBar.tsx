@@ -1,10 +1,10 @@
-import { useAvailableReviewList } from '@/data/reviewVisibility';
+import { useAvailableReviewList } from '@kashi-koi/core/data/reviewVisibility';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { appStore } from '@/store/appStore';
-import { isDue } from '@/lyrics/review';
-import { libraryStore } from '@/store/libraryStore';
+import { appStore } from '@kashi-koi/core/store/appStore';
+import { isDue } from '@kashi-koi/core/lyrics/review';
+import { libraryStore } from '@kashi-koi/core/store/libraryStore';
 import { useNow } from '@/hooks/useNow';
 import { colors } from '@/constants/theme';
 import { PixelFrame } from './PixelFrame';

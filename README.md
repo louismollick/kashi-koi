@@ -19,11 +19,26 @@ npm test
 npm run sprites
 ```
 
-Sprite processing requires Pillow. Generated strips and metadata are included in `apps/mobile/assets/sprites/`.
+Sprite processing requires Pillow. Generated strips and metadata are included in `packages/design/sprites/`.
 
-The Expo app, local native module and app tests live in `apps/mobile/`. Run workspace checks from the repository root. SideStore builds use `scripts/build-sidestore-ipa.sh`; `assets/sidestore-icon.png` remains as a compatibility copy for installed sources.
+The Expo app, local native module and native-side tests live in `apps/mobile/`. Run workspace checks from the repository root. SideStore builds use `scripts/build-sidestore-ipa.sh`; `assets/sidestore-icon.png` remains as a compatibility copy for installed sources.
 
-`packages/shared/` exports lyric ordering, fingerprints, analysis schemas and the Subsonic client as `@kashi-koi/shared/*` subpath modules. Its exports point directly to TypeScript source, which Metro and `tsx` consume without a separate build. The client takes caller-created token and salt values; mobile keeps `expo-crypto`. `getLyricsBySongId` supports an optional `enhanced: true` parameter for future server callers. Mobile keeps its existing request without that parameter.
+`packages/shared/` exports lyric ordering, fingerprints, analysis schemas and the Subsonic client as `@kashi-koi/shared/*` subpath modules. Its exports point directly to TypeScript source, which Metro and `tsx` consume without a separate build. The client takes caller-created token and salt values. `getLyricsBySongId` supports an optional `enhanced: true` parameter for future server callers. Mobile keeps its existing request without that parameter.
+
+`packages/core/` holds everything platform-neutral in the app: domain types, lyrics, review and fog logic, the zustand stores, Navidrome sync and session, the analysis client, the downloads queue and the Node tests for all of it. It exports `@kashi-koi/core/<path under src>` (for example `store/appStore`) plus `fixtures` for tests. Each platform installs what core calls into at start: `setLibraryDb` (the library cache), `setSecrets` (secret storage and random bytes), `setTranslator`, `setDownloadRuntime`, `setAnalysisRuntime` and `setDefaultAnalysisServer`, and it supplies the transport. `audio/playback` has the play rules every transport shares (source choice, played at half or 240 s, scrobbles, going offline). Mobile installs SQLite, SecureStore and expo-audio versions in `apps/mobile/src/app/_layout.tsx`. Core imports nothing from React Native or Expo.
+
+`packages/design/` holds colors, font names, `tint`, `stepped` and `steppedPolygon` (the same pixel corners as a CSS `clip-path`), icon path data, the mascot sprite strips and a Tailwind v4 `@theme` generator (`npx tsx packages/design/scripts/tokens-css.ts <out.css>`). Fonts stay in `apps/mobile/assets/fonts/`.
+
+## Web app
+
+`apps/web/` is a client-only React DOM app (Vite, TanStack Router, Tailwind v4) that reuses `@kashi-koi/core` and `@kashi-koi/design` and looks like the iOS app: the same colors, fonts and pixel corners, phone layout under 1024px and a three-column desktop layout above it (ADR 0005, `docs/web-plan.md`). Browsing works: login, library sync and lyrics scan, Home, Library, albums, artists and playlists. Playback, quiz, review and settings are still to come.
+
+```sh
+npm run web          # dev server on http://localhost:5191
+npm run web:build    # apps/web/dist
+```
+
+Song analyses come from the Kashi server in `kashiServerUrl` (`packages/core/src/analysis/fetcher.ts`); Settings can point elsewhere, and that server must send CORS headers. An https page can only reach an https Navidrome server, except on localhost. The library cache is IndexedDB (`src/platform/db.ts`), learning state and the session are localStorage. After changing the design tokens, run `npm run tokens-css -w @kashi-koi/web`. Vercel uses `apps/web` as the project root, with `vercel.json` for the SPA rewrite and asset caching.
 
 ## Install builds
 
@@ -42,7 +57,7 @@ It lists the latest `main` build plus one app per PR labeled `ios-build`. PR app
 - Results shows missed Lines and their translations. Review groups due, new and due-later Lines by song; edit one to study a different Line of its song or remove it. A right answer schedules a Line one day out and doubles the gap each time; a wrong answer makes it due again. Review Lyrics plays each translated due Line's clip in the quiz layout, keeps each first answer, and moves on 0.8 seconds after you answer. Its play button resumes a paused clip or replays a finished one.
 - Settings offers Sync library, Rescan lyrics and Log out. Sync library retries unchecked and failed songs. Rescan lyrics checks every song. Log out clears local account, library and learning state.
 
-Song analyses are fetched and cached when `EXPO_PUBLIC_KASHI_SERVER_URL` is set or a server URL is saved in Settings. They group lines into sentences and supply contextual translations for learning. Without an analysis, each Japanese line is its own sentence and Apple translations remain the fallback. With an admin token saved in Settings, the song menu offers Analyze song and Re-analyze song. The server is documented in `apps/server/README.md`.
+Song analyses are fetched and cached from https://kashi.louismollick.com, or the server URL saved in Settings. They group lines into sentences and supply contextual translations for learning. Without an analysis, each Japanese line is its own sentence and Apple translations remain the fallback. With an admin token saved in Settings, the song menu offers Analyze song and Re-analyze song. The server is documented in `apps/server/README.md`.
 
 Translations and furigana are cached by Japanese text and survive Rescan lyrics. Apple translates each Line without the rest of the song; translations and dictionary readings can miss what is sung. The Simulator uses `EN: <Japanese text>` translations with the native furigana tokenizer. Real translations and language downloads require a phone.
 

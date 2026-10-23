@@ -1,15 +1,15 @@
-import { setAnalysisToken } from '@/analysis/fetcher';
-import { prepareTranslation } from '@/japanese/translate';
+import { kashiServerUrl, setAnalysisToken } from '@kashi-koi/core/analysis/fetcher';
+import { prepareTranslation } from '@kashi-koi/core/japanese/translate';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Alert, ScrollView, TextInput, View } from 'react-native';
 import { colors, font } from '@/constants/theme';
-import { libraryStore } from '@/store/libraryStore';
-import { hasJapaneseLyrics } from '@/data/libraryVisibility';
-import { setAnalysisServerUrl } from '@/store/appStore';
-import { answerTimes, settingsStore } from '@/store/settingsStore';
+import { libraryStore } from '@kashi-koi/core/store/libraryStore';
+import { hasJapaneseLyrics } from '@kashi-koi/core/data/libraryVisibility';
+import { setAnalysisServerUrl } from '@kashi-koi/core/store/appStore';
+import { answerTimes, settingsStore } from '@kashi-koi/core/store/settingsStore';
 import { refreshAlbumArt } from '@/store/artStore';
-import { sessionStore, logout } from '@/navidrome/session';
-import { syncLibrary, scanLyrics, setOfflineMode } from '@/navidrome/sync';
+import { sessionStore, logout } from '@kashi-koi/core/navidrome/session';
+import { syncLibrary, scanLyrics, setOfflineMode } from '@kashi-koi/core/navidrome/sync';
 import {
   deleteAllDownloads,
   queueDownloads,
@@ -17,7 +17,7 @@ import {
   useDownloadProgress,
   useDownloadStorage,
   useDownloadSummary,
-} from '@/downloads';
+} from '@kashi-koi/core/downloads';
 import { ScreenHeader } from '@/components/Header';
 import { Icon } from '@/components/Icon';
 import { Label, PixelToggle, Row, SectionHeader, Segmented, styles } from '@/components/ui';
@@ -322,7 +322,7 @@ export default function SettingsScreen() {
           <Field
             label="Server"
             value={analysisServerUrl}
-            placeholder={process.env.EXPO_PUBLIC_KASHI_SERVER_URL || 'https://'}
+            placeholder={kashiServerUrl}
             onCommit={setAnalysisServerUrl}
           />
           <Field

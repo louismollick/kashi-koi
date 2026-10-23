@@ -10,6 +10,8 @@
     "sprites": "python3 scripts/process-sprites.py"
   },
   "dependencies": {
+    "@kashi-koi/core": "^1.0.0",
+    "@kashi-koi/design": "^1.0.0",
     "@kashi-koi/shared": "^1.0.0",
     "@shopify/flash-list": "2.0.2",
     "expo": "57.0.26",
