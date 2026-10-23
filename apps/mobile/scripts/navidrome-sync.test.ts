@@ -432,3 +432,47 @@ test('sync saves playlists with their song order, and servers without playlists 
     globalThis.fetch = original;
   }
 });
+
+test('playlist failures never block the library sync', async () => {
+  const original = globalThis.fetch,
+    song = songs[0]!;
+  const ok = (body: object) => Response.json({ 'subsonic-response': { status: 'ok', ...body } });
+  const failed = () =>
+    Response.json({ 'subsonic-response': { status: 'failed', error: { code: 70, message: 'Playlist not found' } } });
+  const saved = { id: 'kept', name: 'Old name', songIds: [song.id] };
+  libraryStore.getState().setLibrary({ songs: [song], albums, artists, lyrics: songLyrics, playlists: [saved] });
+  try {
+    sessionStore.setState({ session });
+    let listFails = false;
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input)),
+        path = url.pathname;
+      if (path.includes('search3')) return ok({ searchResult3: { song: [{ ...song }], album: [] } });
+      if (path.includes('getPlaylists'))
+        return listFails
+          ? failed()
+          : ok({
+              playlists: {
+                playlist: [
+                  { id: 'kept', name: 'Renamed' },
+                  { id: 'gone', name: 'Deleted meanwhile' },
+                ],
+              },
+            });
+      if (path.includes('getPlaylist')) return failed();
+      return ok({ artists: { index: [] }, lyricsList: {} });
+    };
+    await syncLibrary(async () => {});
+    assert.equal(libraryStore.getState().error, null);
+    assert.ok(settingsStore.getState().lastSyncAt);
+    const renamed = { ...saved, name: 'Renamed', coverArt: undefined };
+    assert.deepEqual(libraryStore.getState().playlists, [renamed]);
+    listFails = true;
+    await syncLibrary(async () => {});
+    assert.equal(libraryStore.getState().error, null);
+    assert.deepEqual(libraryStore.getState().playlists, [renamed]);
+  } finally {
+    sessionStore.setState({ session: null });
+    globalThis.fetch = original;
+  }
+});

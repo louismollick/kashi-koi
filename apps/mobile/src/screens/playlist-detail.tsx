@@ -46,7 +46,7 @@ export default function PlaylistDetailScreen() {
         // Playlists can list a song twice.
         keyExtractor={(song, index) => `${index}:${song.id}`}
         contentContainerStyle={styles.content}
-        renderItem={({ item, index }) => <SongRow song={item} number={index + 1} queue={queue} />}
+        renderItem={({ item, index }) => <SongRow song={item} number={index + 1} queue={queue} queueIndex={index} />}
         ListHeaderComponent={
           <View style={{ gap: 16 }}>
             <View style={{ alignItems: 'center' }}>

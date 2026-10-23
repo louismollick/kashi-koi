@@ -8,6 +8,7 @@ import {
   hydrateAppState,
   remoteSkip,
   resetAppState,
+  dropRemovedSong,
   resumePlayback,
   setTransport,
 } from '../src/store/appStore';
@@ -621,4 +622,59 @@ test('playing a playlist queues its visible songs in playlist order, repeats inc
   const before = appStore.getState();
   appStore.getState().startPlaylist('nope');
   assert.equal(appStore.getState(), before);
+  // Tapping the second occurrence plays from there, so Next follows it.
+  appStore.getState().startSong('rain', ['rain', 'dawn', 'rain', 'glass'], 2);
+  assert.equal(appStore.getState().queueIndex, 2);
+  appStore.getState().nextSong();
+  assert.equal(appStore.getState().songId, 'glass');
+  appStore.getState().startSong('rain', ['rain', 'dawn', 'rain', 'glass'], 1);
+  assert.equal(appStore.getState().queueIndex, 0);
+});
+
+test('a malformed or mismatched saved queue hydrates as empty playback', async () => {
+  const values = new Map<string, string>();
+  await hydrateAppState({
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => {
+      values.set(key, value);
+    },
+    removeItem: (key) => {
+      values.delete(key);
+    },
+  });
+  const empty = { songId: null, queue: [], queueIndex: -1, autoplay: [], repeatSongId: null };
+  const restore = async (state: Record<string, unknown>) => {
+    values.set('learning-state', JSON.stringify({ state, version: 0 }));
+    await appStore.persist.rehydrate();
+    const { songId, queue, queueIndex, autoplay, repeatSongId } = appStore.getState();
+    return { songId, queue, queueIndex, autoplay, repeatSongId };
+  };
+  const valid = { songId: 'glass', queue: ['dawn', 'glass'], queueIndex: 1, autoplay: ['rain'], repeatSongId: 'glass' };
+  assert.deepEqual(await restore(valid), valid);
+  assert.deepEqual(await restore({ ...valid, queue: null }), empty);
+  assert.deepEqual(await restore({ ...valid, autoplay: [1] }), empty);
+  assert.deepEqual(await restore({ ...valid, queueIndex: 0 }), empty);
+  assert.deepEqual(await restore({ ...valid, queueIndex: '1' }), empty);
+  assert.deepEqual(await restore({ ...valid, repeatSongId: 'dawn' }), { ...valid, repeatSongId: null });
+});
+
+test('a sync that removes the playing song stops it and empties the queue', () => {
+  const paused: boolean[] = [];
+  setTransport({ load() {}, play() {}, seek() {}, pause: () => paused.push(true) });
+  appStore.getState().startSong('glass', ['dawn', 'glass', 'rain']);
+  dropRemovedSong();
+  assert.equal(appStore.getState().songId, 'glass');
+  libraryStore.getState().setLibrary({
+    songs: songs.filter((song) => song.id !== 'glass'),
+    albums,
+    artists,
+    lyrics: songLyrics,
+  });
+  const before = paused.length;
+  dropRemovedSong();
+  const state = appStore.getState();
+  assert.equal(state.songId, null);
+  assert.deepEqual(state.queue, []);
+  assert.equal(state.playing, false);
+  assert.equal(paused.length, before + 1);
 });

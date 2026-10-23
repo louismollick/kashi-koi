@@ -198,6 +198,9 @@ export function finishSong() {
   else state.nextSong();
 }
 
+/** No song and no queue: a fresh install, an invalid saved queue, or a playing song that left the library. */
+const emptyPlayback = { songId: null, queue: [], queueIndex: -1, autoplay: [], repeatSongId: null };
+
 /** Played songs kept for Previous; older ones drop off so the saved queue stays small. */
 const PLAYED_HISTORY = 100;
 
@@ -246,7 +249,8 @@ type AppState = {
   addedId: string | null;
   addedExpiresAt: number | null;
   nextReviewId: number;
-  startSong: (songId: string, list?: string[]) => void;
+  /** `index` picks which occurrence of a song that appears twice in `list` plays. */
+  startSong: (songId: string, list?: string[], index?: number) => void;
   playNext: (songIds: string[]) => void;
   addToQueue: (songIds: string[]) => void;
   playUpNext: (position: number) => void;
@@ -344,7 +348,7 @@ export const appStore = create<AppState>()(
       addedId: null,
       addedExpiresAt: null,
       nextReviewId: 1,
-      startSong: (songId, list) => {
+      startSong: (songId, list, index) => {
         if (
           !getSong(songId) ||
           (get().loading &&
@@ -363,7 +367,7 @@ export const appStore = create<AppState>()(
               .filter((id) => !queued.has(id)),
           ),
         });
-        playQueueSong(songId, queue.indexOf(songId));
+        playQueueSong(songId, index !== undefined && queue[index] === songId ? index : queue.indexOf(songId));
       },
       startAlbum: (albumId, shuffle = false) => startList(getAlbumSongs(albumId), shuffle),
       startArtist: (artistId, shuffle = false) => startList(getArtistSongs(artistId), shuffle),
@@ -821,9 +825,30 @@ export const appStore = create<AppState>()(
             ? { ...migrated, step: 0, dueAt: 0 }
             : migrated;
         });
+        // A saved queue must be string ids with the current song at its index, or playback starts empty.
+        const ids = (value: unknown) =>
+          Array.isArray(value) && value.every((id) => typeof id === 'string') ? (value as string[]) : null;
+        const queue = ids(saved.queue),
+          autoplay = ids(saved.autoplay),
+          { songId, queueIndex, repeatSongId } = saved;
+        const playback =
+          queue &&
+          autoplay &&
+          typeof songId === 'string' &&
+          Number.isInteger(queueIndex) &&
+          queue[queueIndex!] === songId
+            ? {
+                songId,
+                queue,
+                queueIndex: queueIndex!,
+                autoplay,
+                repeatSongId: repeatSongId === songId ? songId : null,
+              }
+            : emptyPlayback;
         return {
           ...current,
           ...saved,
+          ...playback,
           reviewList,
           run: current.run,
           clipReview: current.clipReview,
@@ -904,9 +929,27 @@ export function resumePlayback() {
       lineIndex: currentOccurrence(getLyrics(song.id).timeline, positionMs),
       quizToggle: state.quizToggle && hasTranslations(song.id),
     });
-  } else if (state.songId || state.queue.length)
-    appStore.setState({ songId: null, queue: [], queueIndex: -1, autoplay: [], repeatSongId: null });
+  } else dropRemovedSong();
   savingPosition = true;
+}
+
+/** A sync or saved queue whose playing song left the library stops it and empties the queue. */
+export function dropRemovedSong() {
+  const state = appStore.getState();
+  if (!state.songId || getSong(state.songId)) return;
+  clearAnswerWait(true);
+  transport.pause();
+  loadedSongId = null;
+  appStore.setState({
+    ...emptyPlayback,
+    playing: false,
+    loading: false,
+    positionMs: 0,
+    durationMs: 0,
+    lineIndex: 0,
+    run: newRun(),
+    clipPlayback: state.clipPlayback?.songId === state.songId ? null : state.clipPlayback,
+  });
 }
 
 /**

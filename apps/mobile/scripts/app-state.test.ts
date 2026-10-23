@@ -622,8 +622,8 @@ test('learning state survives hydration while playback stays transient, and rese
   assert.equal(appStore.getState().perfectRuns.dawn, true);
   assert.equal(settingsStore.getState().showTranslations, true);
   assert.equal(settingsStore.getState().translationPrompted, true);
-  // The playing song is saved with the queue and comes back paused.
-  assert.equal(appStore.getState().songId, 'dawn');
+  // The fixture's song isn't in its (empty) queue, so the saved queue is invalid and playback starts empty.
+  assert.equal(appStore.getState().songId, null);
   assert.equal(settingsStore.getState().hideSongsWithoutSyncedLyrics, false);
   assert.equal(settingsStore.getState().hideSongsWithoutJapanese, false);
   await resetAppState();
