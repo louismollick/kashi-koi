@@ -1,15 +1,25 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "files": { "ignoreUnknown": true },
+  // Generated: routeTree.gen.ts by the TanStack Router plugin, tokens.css by packages/design (kept byte-identical by a test).
+  "files": { "ignoreUnknown": true, "includes": ["**", "!**/routeTree.gen.ts", "!apps/web/src/styles/tokens.css"] },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
   "javascript": { "formatter": { "quoteStyle": "single" } },
   "html": { "formatter": { "enabled": true } },
+  // The web app's CSS uses Tailwind v4 directives (@theme, @layer).
+  "css": { "parser": { "tailwindDirectives": true } },
   "linter": { "enabled": true, "rules": { "preset": "recommended" } },
   "assist": { "enabled": false },
   "overrides": [
     {
-      "includes": ["apps/mobile/**/*.ts", "apps/mobile/**/*.tsx", "packages/core/**/*.ts", "packages/design/**/*.ts"],
+      "includes": [
+        "apps/mobile/**/*.ts",
+        "apps/mobile/**/*.tsx",
+        "apps/web/**/*.ts",
+        "apps/web/**/*.tsx",
+        "packages/core/**/*.ts",
+        "packages/design/**/*.ts"
+      ],
       "linter": {
         "rules": {
           // Existing indexed lookups assert invariants already covered by app tests.
