@@ -3,13 +3,11 @@ import { sessionStore } from '@kashi-koi/core/navidrome/session';
 import { loginError } from '@kashi-koi/core/navidrome/subsonic';
 import { colors } from '@kashi-koi/design/tokens';
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { type FormEvent, type ReactNode, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import logo from '@/assets/kashikoi-logo.webp';
-import { HarborBackdrop } from '@/components/Harbor';
-import { Mascot } from '@/components/Mascot';
+import { HarborScene } from '@/components/Harbor';
 import { PixelFrame } from '@/components/PixelFrame';
 import { Button, Label } from '@/components/ui';
-import { useElementSize } from '@/hooks/useElementSize';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { mixedContentError } from '@/lib/serverUrl';
 
@@ -28,34 +26,18 @@ const fields = [
 
 /** The phone's Home hero, so the first screen already looks like the app. */
 function Hero() {
-  const hero = useRef<HTMLDivElement>(null);
-  const { width, height } = useElementSize(hero);
-  return (
-    <div
-      ref={hero}
-      className="relative shrink-0 overflow-hidden"
-      style={{ height: 'calc(230px + env(safe-area-inset-top))' }}
-    >
-      <HarborBackdrop width={width} height={height} />
-      <div className="absolute bottom-1.5 left-5">
-        <Mascot size={200} />
-      </div>
-    </div>
-  );
+  return <HarborScene className="h-[calc(230px+env(safe-area-inset-top))] shrink-0" left={20} size={() => 200} />;
 }
 
-/** Desktop: the harbor fills the window, she fishes from the dock and the form floats in an RPG dialogue box. */
+/** Desktop: the harbor fills the window, she fishes from the deck and the form floats in an RPG dialogue box. */
 function DesktopScene({ children }: { children: ReactNode }) {
-  const scene = useRef<HTMLDivElement>(null);
-  const { width, height } = useElementSize(scene);
   return (
     <div className="relative h-dvh overflow-y-auto bg-bg">
-      <div ref={scene} aria-hidden className="pointer-events-none fixed inset-0">
-        <HarborBackdrop width={width} height={height} className="pixelated" />
-        <div className="absolute left-[5vw]" style={{ bottom: height * 0.015 }}>
-          <Mascot size={Math.round(Math.min(340, height * 0.4))} />
-        </div>
-      </div>
+      <HarborScene
+        className="pointer-events-none fixed! inset-0"
+        left="5vw"
+        size={(height) => Math.min(340, height * 0.4)}
+      />
       <div className="relative flex min-h-full items-start justify-center px-6 pt-[9vh] pb-6">
         <PixelFrame fill={colors.night} border={null} className="w-full max-w-[440px]" contentStyle={{ padding: 3 }}>
           <PixelFrame fill={colors.night} border={colors.cream}>

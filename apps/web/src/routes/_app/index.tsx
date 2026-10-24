@@ -1,16 +1,13 @@
 import { colors } from '@kashi-koi/design/tokens';
 import { createFileRoute, Link, Navigate } from '@tanstack/react-router';
-import { useRef } from 'react';
-import { HarborBackdrop } from '@/components/Harbor';
+import { HarborScene } from '@/components/Harbor';
 import { TabHeader } from '@/components/Header';
 import { Icon } from '@/components/Icon';
-import { Mascot } from '@/components/Mascot';
 import { PixelFrame } from '@/components/PixelFrame';
 import { RecentlyPlayed } from '@/components/RecentlyPlayed';
 import { Screen } from '@/components/Screen';
 import { useDueCount } from '@/components/TabBar';
 import { Label } from '@/components/ui';
-import { useElementSize } from '@/hooks/useElementSize';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 export const Route = createFileRoute('/_app/')({ component: HomeScreen });
@@ -22,17 +19,17 @@ export const Route = createFileRoute('/_app/')({ component: HomeScreen });
  */
 function HomeScreen() {
   const count = useDueCount();
-  const hero = useRef<HTMLDivElement>(null);
-  const { width, height } = useElementSize(hero);
   if (useIsDesktop()) return <Navigate to="/library" replace />;
   return (
     <Screen header={<TabHeader />}>
-      <div ref={hero} className="relative h-[250px] overflow-hidden">
-        <HarborBackdrop width={width} height={height} />
-        <div className="absolute bottom-2 left-[26px]">
-          <Mascot size={240} pose={count === 0 ? 'catch' : 'play'} />
-        </div>
-      </div>
+      {/* The review card rides 26px over the hero's bottom edge, so she sits on the deck above it. */}
+      <HarborScene
+        className="h-[250px]"
+        covered={26}
+        left={26}
+        size={() => 240}
+        pose={count === 0 ? 'catch' : 'play'}
+      />
       <div className="relative -mt-[26px] flex flex-col gap-[14px] px-4 pb-5">
         <Link
           to="/review"

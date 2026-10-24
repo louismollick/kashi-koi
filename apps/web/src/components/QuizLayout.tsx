@@ -8,8 +8,8 @@ import { Answers, GapSentence } from './Answers';
 import { FogStrip, useSongFog } from './Fog';
 import { Icon } from './Icon';
 import { SentenceLines } from './LineCard';
-import { harborArt } from './Harbor';
-import { Mascot, type Pose } from './Mascot';
+import { deckFeet, harborArt } from './Harbor';
+import { Mascot, type Pose, spriteFoot } from './Mascot';
 import { PixelFrame } from './PixelFrame';
 import { SongIntro } from './SongIntro';
 import { Button, Label, Tag } from './ui';
@@ -45,13 +45,16 @@ export function Stage({
 }) {
   const box = useRef<HTMLDivElement>(null);
   const { width, height } = useElementSize(box);
-  const harbor = harborArt(strip ? 'wide' : 'classic');
-  const dock = strip ? 0 : overlap;
+  const cut = strip ? 'wide' : 'classic';
+  const harbor = harborArt(cut);
   // Zoomed past cover so the art's pixels read at phone size.
   const artWidth = Math.max(width * 1.6, height * harbor.aspect);
-  // The strip leaves her some sky; the quiz stage lets her fill its height.
-  const size = Math.max(0, Math.min(260, width * 0.62, strip ? height * 0.86 : height - 4));
-  const bottom = dock - size * 0.06 + (strip ? 6 : 0);
+  // Her chair legs land on the deck, above the dialogue box riding over its front edge.
+  const feet = deckFeet(cut, artWidth, strip ? 0 : overlap);
+  // Her hat sits about 0.7 of her size above her chair legs, so that much has to fit under the top edge. The strip
+  // leaves her some sky.
+  const size = Math.max(0, Math.min(260, width * 0.62, (height - 6 - feet) / 0.7, strip ? height * 0.8 : Infinity));
+  const bottom = feet - size * spriteFoot;
   const note = {
     position: 'absolute',
     color: colors.coral,

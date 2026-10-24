@@ -10,6 +10,9 @@ const strips = { bobbing, headbang };
 /** Still poses, registered on the sprite frame so swapping one in doesn't move her chair. */
 const poses = { doze, catch: catchPose };
 
+/** The transparent strip under her chair legs, as a fraction of her size: frames end the legs at 420 of 464px. */
+export const spriteFoot = 0.09;
+
 /** `play` bobs (or headbangs on a combo of three); `doze` naps while nothing plays; `catch` holds up a koi. */
 export type Pose = 'play' | keyof typeof poses;
 
