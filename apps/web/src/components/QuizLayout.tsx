@@ -153,10 +153,13 @@ export function Stage({
 
 const column = { display: 'flex', flexDirection: 'column', minHeight: 0 } as const;
 
-/** RPG dialogue box: a cream border inside a dark ring, so it reads over the harbor art. `tag` sits on its top edge. */
+/**
+ * RPG dialogue box: a cream border inside a dark ring, so it reads over the harbor art. `tag` sits on its top edge. It
+ * shrinks (its text scrolls) to keep the answers on screen, down to a floor; past that the whole scene scrolls.
+ */
 function Dialog({ children, tag }: { children: ReactNode; tag?: ReactNode }) {
   return (
-    <div className="relative mx-4 flex min-h-0 shrink flex-col" style={{ marginTop: -overlap }}>
+    <div className="relative mx-4 flex min-h-[72px] shrink flex-col" style={{ marginTop: -overlap }}>
       <PixelFrame fill={colors.night} border={null} style={column} contentStyle={{ ...column, padding: 3 }}>
         <PixelFrame
           fill={colors.night}
@@ -236,7 +239,7 @@ export function DockScene({
 }) {
   const desktop = useIsDesktop();
   return (
-    <div className="flex min-h-0 flex-1 flex-col pb-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-4">
       <Stage combo={combo} nice={nice} best={best} pose={pose} strip={desktop} overlay={overlay} />
       <Dialog tag={tag}>{dialog}</Dialog>
       <div className="shrink-0 px-4 pt-4">{children}</div>

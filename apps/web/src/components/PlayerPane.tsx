@@ -255,8 +255,8 @@ function PlayerBody({ song }: { song: Song }) {
     );
   return (
     <>
-      {desktop && !quizToggle && <Stage strip />}
       {status}
+      {desktop && !quizToggle && <Stage strip />}
       {body}
       {playbackError && (
         <Label className="block px-4 pb-2" style={{ color: colors.red }}>
