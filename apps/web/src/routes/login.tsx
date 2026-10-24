@@ -29,7 +29,10 @@ function Hero() {
   return <HarborScene className="h-[calc(230px+env(safe-area-inset-top))] shrink-0" left={20} size={() => 200} />;
 }
 
-/** Desktop: the harbor fills the window, she fishes from the deck and the form floats in an RPG dialogue box. */
+/**
+ * Desktop: the harbor fills the window, she fishes from the deck and the form floats in an RPG dialogue box, centered
+ * so the gull (or the moon) stays clear above it.
+ */
 function DesktopScene({ children }: { children: ReactNode }) {
   return (
     <div className="relative h-dvh overflow-y-auto bg-bg">
@@ -38,7 +41,7 @@ function DesktopScene({ children }: { children: ReactNode }) {
         left="5vw"
         size={(height) => Math.min(340, height * 0.4)}
       />
-      <div className="relative flex min-h-full items-start justify-center px-6 pt-[9vh] pb-6">
+      <div className="relative flex min-h-full items-center justify-center px-6 py-6">
         <PixelFrame fill={colors.night} border={null} className="w-full max-w-[440px]" contentStyle={{ padding: 3 }}>
           <PixelFrame fill={colors.night} border={colors.cream}>
             {children}

@@ -11,10 +11,8 @@ import { ProgressLine, time } from './ProgressLine';
 import { SpeedButton } from './SpeedButton';
 import { IconButton, Label } from './ui';
 
-/** Elapsed, the scrubber and the length; subscribes on its own so the bar doesn't re-render every tick. */
-function Scrubber() {
-  const position = appStore((state) => state.positionMs),
-    duration = appStore((state) => state.durationMs);
+/** Elapsed, the progress line and the length. Seeks when `onSeek` is given. */
+function Timeline({ position, total, onSeek }: { position: number; total: number; onSeek?: (ms: number) => void }) {
   return (
     <div className="flex items-center gap-3">
       <Label muted className="w-10 text-right text-xs tabular-nums">
@@ -22,36 +20,36 @@ function Scrubber() {
       </Label>
       {/* The scrubber's band reaches 12px above its line; the padding gives that back. */}
       <div className="min-w-0 flex-1 pt-3">
-        <ProgressLine
-          progress={duration ? position / duration : 0}
-          total={duration}
-          onSeek={(ms) => appStore.getState().seek(ms)}
-        />
+        <ProgressLine progress={total ? position / total : 0} total={total} onSeek={onSeek} />
       </div>
       <Label muted className="w-10 text-xs tabular-nums">
-        {time(duration)}
+        {time(total)}
       </Label>
     </div>
   );
 }
 
-/** The clip's progress in clip review; display only, clips don't seek. */
+/** The song's timeline; subscribes on its own so the bar doesn't re-render every tick. */
+function Scrubber() {
+  const position = appStore((state) => state.positionMs),
+    duration = appStore((state) => state.durationMs);
+  return <Timeline position={position} total={duration} onSeek={(ms) => appStore.getState().seek(ms)} />;
+}
+
+/** The clip's timeline in clip review, counted from the clip's start; display only, clips don't seek. */
 function ClipProgress() {
-  const progress = appStore((state) => {
-    const clip = state.clipPlayback;
-    return clip ? Math.max(0, clip.positionMs - clip.startMs) / (clip.endMs - clip.startMs || 1) : 0;
-  });
-  return (
-    <div className="px-[52px] pt-3 pb-1.5">
-      <ProgressLine progress={progress} />
-    </div>
+  const position = appStore((state) =>
+    state.clipPlayback ? Math.max(0, state.clipPlayback.positionMs - state.clipPlayback.startMs) : 0,
   );
+  const length = appStore((state) => (state.clipPlayback ? state.clipPlayback.endMs - state.clipPlayback.startMs : 0));
+  return <Timeline position={position} total={length} />;
 }
 
 /**
  * The desktop's playback bar across the bottom of the window: the song on the left, transport and scrubber in the
- * middle, speed, the quiz switch, Up next and the song menu on the right. During clip review it follows the clip and
- * keeps only play. Nothing renders until there is a song.
+ * middle, speed, the quiz switch, Up next and the song menu on the right. During clip review it follows the clip: the
+ * transport and timeline keep their shape, with the skips disabled and the times counted over the clip, and the
+ * song controls on the right step aside. Nothing renders until there is a song.
  */
 export function NowPlayingBar() {
   const onClipReview = useLocation({ select: (location) => location.pathname === '/clip-review' });
@@ -96,14 +94,13 @@ export function NowPlayingBar() {
       </div>
       <div className="flex flex-col">
         <div className="flex items-center justify-center gap-3">
-          {!clipReview && (
-            <IconButton
-              name="skipPrevious"
-              size={40}
-              label="Previous song"
-              onPress={() => appStore.getState().skipBack()}
-            />
-          )}
+          <IconButton
+            name="skipPrevious"
+            size={40}
+            label="Previous song"
+            disabled={clipReview}
+            onPress={() => appStore.getState().skipBack()}
+          />
           <IconButton
             name={playing ? 'pause' : ended ? 'refresh' : 'play'}
             fill={colors.coral}
@@ -115,9 +112,13 @@ export function NowPlayingBar() {
               ended && !clipReview ? appStore.getState().replayLine() : appStore.getState().setPlaying(!playing)
             }
           />
-          {!clipReview && (
-            <IconButton name="skipNext" size={40} label="Next song" onPress={() => appStore.getState().nextSong()} />
-          )}
+          <IconButton
+            name="skipNext"
+            size={40}
+            label="Next song"
+            disabled={clipReview}
+            onPress={() => appStore.getState().nextSong()}
+          />
         </div>
         {clipReview ? <ClipProgress /> : <Scrubber />}
       </div>

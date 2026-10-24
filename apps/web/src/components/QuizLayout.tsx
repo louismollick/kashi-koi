@@ -4,6 +4,7 @@ import type { Choice, Line, RunEnd, SongLyrics } from '@kashi-koi/core/types/dom
 import { colors } from '@kashi-koi/design/tokens';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { useElementSize } from '@/hooks/useElementSize';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Answers, GapSentence } from './Answers';
 import { FogStrip, useSongFog } from './Fog';
 import { Icon } from './Icon';
@@ -23,21 +24,22 @@ const spring = 'cubic-bezier(.2,.9,.3,1.2)';
 
 /**
  * The harbor behind the quiz: she fishes from the dock, NICE! pops by her head and the combo lands in her bucket as
- * fish. The art and sprite stay pinned to the bottom, so a taller sentence only crops sky. `best` swaps the combo
- * for a finished run's best combo, with a gold koi when it was perfect. `pose` stills her (dozing, holding a koi).
- * `strip` is the short panorama over desktop listen mode: no dialogue box rides over it and there is no combo.
- * `overlay` sits along the top edge, like the desktop sentence count.
+ * fish. The art and sprite stay pinned to the bottom, so a taller sentence only crops sky. Without `combo` there is no
+ * combo box (listen mode, Up next, nothing playing); `best` swaps it for a finished run's best combo, with a gold koi
+ * when it was perfect. `pose` stills her (dozing, holding a koi, looking at an empty hook). `strip` is the desktop
+ * pane's one stage: the panorama at a fixed height in every mode, so toggling the quiz or opening Up next never moves
+ * her. Her chair always clears the dialogue box that can ride over the deck. `overlay` sits along the top edge.
  */
 export function Stage({
   combo,
-  nice,
+  nice = false,
   best,
   pose = 'play',
   strip = false,
   overlay,
 }: {
-  combo: number;
-  nice: boolean;
+  combo?: number;
+  nice?: boolean;
   best?: Best;
   pose?: Pose;
   strip?: boolean;
@@ -50,10 +52,10 @@ export function Stage({
   // Zoomed past cover so the art's pixels read at phone size.
   const artWidth = Math.max(width * 1.6, height * harbor.aspect);
   // Her chair legs land on the deck, above the dialogue box riding over its front edge.
-  const feet = deckFeet(cut, artWidth, strip ? 0 : overlap);
+  const feet = deckFeet(cut, artWidth, overlap);
   // Her hat sits about 0.7 of her size above her chair legs, so that much has to fit under the top edge. The strip
   // leaves her some sky.
-  const size = Math.max(0, Math.min(260, width * 0.62, (height - 6 - feet) / 0.7, strip ? height * 0.8 : Infinity));
+  const size = Math.max(0, Math.min(260, width * 0.62, (height - 6 - feet) / 0.7, strip ? height * 0.67 : Infinity));
   const bottom = feet - size * spriteFoot;
   const note = {
     position: 'absolute',
@@ -68,7 +70,7 @@ export function Stage({
       ref={box}
       className={
         strip
-          ? 'relative h-[clamp(150px,24vh,230px)] shrink-0 overflow-hidden'
+          ? 'relative h-[clamp(200px,36vh,300px)] shrink-0 overflow-hidden'
           : 'relative min-h-[72px] grow basis-0 overflow-hidden'
       }
     >
@@ -81,7 +83,7 @@ export function Stage({
       />
       <div className="absolute left-1" style={{ bottom }}>
         <Mascot combo={combo} size={size} pose={pose} />
-        {combo >= 3 && pose === 'play' && (
+        {(combo ?? 0) >= 3 && pose === 'play' && (
           <>
             <span aria-hidden style={{ ...note, left: 0, top: size * 0.12, fontSize: Math.min(30, size * 0.14) }}>
               ♪
@@ -111,8 +113,7 @@ export function Stage({
           </Label>
         </PixelFrame>
       </div>
-      {/* No combo to count in listen mode's strip or while she dozes with nothing playing. */}
-      {!strip && pose !== 'doze' && (
+      {count !== undefined && (
         <PixelFrame
           fill={colors.night}
           border="#363a5e"
@@ -130,12 +131,12 @@ export function Stage({
           >
             {count}
           </Label>
-          {(best ? best.perfect : combo > 0) && (
+          {(best ? best.perfect : count > 0) && (
             <span className="mt-0.5 flex gap-[3px]">
               {best ? (
                 <Icon name="koi" size={24} color={colors.combo} />
               ) : (
-                Array.from({ length: Math.min(combo, 5) }, (_, index) => (
+                Array.from({ length: Math.min(count, 5) }, (_, index) => (
                   // The koi are identical; only their count matters.
                   // biome-ignore lint/suspicious/noArrayIndexKey: identical icons
                   <Icon key={index} name="koi" size={14} color={colors.koi} />
@@ -147,17 +148,6 @@ export function Stage({
       )}
       {overlay && <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">{overlay}</div>}
     </div>
-  );
-}
-
-/** A count on the stage's top edge, like "3 OF 12", framed like the combo box so it reads over the art. */
-export function StageBadge({ children }: { children: ReactNode }) {
-  return (
-    <PixelFrame fill={colors.night} border="#363a5e" contentClassName="px-2.5 pt-1 pb-1.5">
-      <Label pixel className="text-[20px] tracking-[1px]" style={{ color: colors.cream }}>
-        {children}
-      </Label>
-    </PixelFrame>
   );
 }
 
@@ -222,7 +212,8 @@ function RunSummary({ runEnd }: { runEnd: RunEnd }) {
 
 /**
  * The harbor stage with a dialogue box riding over its dock and `children` (answers or actions) below. Quiz mode,
- * clip review and the review's end screen share it.
+ * clip review and the review's end screen share it. The phone gives the stage whatever the column leaves; the desktop
+ * pane uses the same fixed panorama as listen mode, and the dialogue and answers get the rest.
  */
 export function DockScene({
   combo,
@@ -243,9 +234,10 @@ export function DockScene({
   dialog: ReactNode;
   children?: ReactNode;
 }) {
+  const desktop = useIsDesktop();
   return (
     <div className="flex min-h-0 flex-1 flex-col pb-4">
-      <Stage combo={combo} nice={nice} best={best} pose={pose} overlay={overlay} />
+      <Stage combo={combo} nice={nice} best={best} pose={pose} strip={desktop} overlay={overlay} />
       <Dialog tag={tag}>{dialog}</Dialog>
       <div className="shrink-0 px-4 pt-4">{children}</div>
     </div>
@@ -279,7 +271,9 @@ const actionLabel = 'text-[23px]';
  * or `runEnd`, the song that just finished, with PLAY AGAIN (`onReplay`). The sentence scrolls when it is long, so
  * the answers and, after a miss, EXPLAIN (`onExplain`) and CONTINUE (`onContinue`, when the song is held) always
  * stay on screen. `toast` sits just above the answers, so it never covers the sentence. `notice` replaces the
- * sentence with a short explanation, like a song with no analysis. `overlay` rides the top of the stage.
+ * sentence with a short explanation, like a song with no analysis. `count` ("3 OF 12") is the dialogue box's first tag,
+ * beside NEW or RUN COMPLETE. `overlay` rides the top of the stage. After a miss she looks at the empty hook until
+ * the next sentence.
  */
 export function QuizColumn({
   lines,
@@ -299,6 +293,7 @@ export function QuizColumn({
   continueLabel = 'CONTINUE',
   toast,
   notice,
+  count,
   overlay,
 }: {
   lines?: Line[];
@@ -318,6 +313,7 @@ export function QuizColumn({
   continueLabel?: string;
   toast?: ReactNode;
   notice?: string;
+  count?: string;
   overlay?: ReactNode;
 }) {
   // `nice` is the recorded grade, so the miss actions follow scoring even if cached choices went stale.
@@ -330,10 +326,17 @@ export function QuizColumn({
       combo={combo}
       nice={nice}
       best={summary ? { combo: summary.bestCombo, perfect: summary.perfect } : undefined}
-      // A perfect run lands a koi.
-      pose={summary?.perfect ? 'catch' : 'play'}
+      // A perfect run lands a koi; a miss leaves a bare hook until the next sentence.
+      pose={summary?.perfect ? 'catch' : missed ? 'miss' : 'play'}
       overlay={overlay}
-      tag={summary ? <Tag>RUN COMPLETE</Tag> : isNew ? <Tag>NEW</Tag> : undefined}
+      tag={
+        (count || summary || isNew) && (
+          <span className="flex gap-1.5">
+            {count && <Tag fill="#363a5e">{count}</Tag>}
+            {summary ? <Tag>RUN COMPLETE</Tag> : isNew && <Tag>NEW</Tag>}
+          </span>
+        )
+      }
       dialog={
         <>
           <div className="min-h-0 shrink overflow-y-auto">

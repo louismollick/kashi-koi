@@ -16,7 +16,9 @@ export function QuizSwitch({ song }: { song: Song }) {
   const quizzable = hasTranslations(song.id);
   return (
     <div className="flex items-center gap-1.5" title="Quiz mode (Q)">
-      <Label className="text-xs font-bold">QUIZ</Label>
+      <Label pixel className="text-[18px] tracking-[1px]">
+        QUIZ
+      </Label>
       <PixelToggle
         disabled={!quizzable}
         label={quizzable ? 'Quiz toggle' : `Quiz toggle, ${noAnalysis.toLowerCase()}`}

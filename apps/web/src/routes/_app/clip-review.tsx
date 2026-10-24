@@ -6,7 +6,7 @@ import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react';
 import { ScreenHeader } from '@/components/Header';
 import { PlayerBar } from '@/components/PlayerBar';
-import { DockScene, QuizColumn, RunResult, StageBadge } from '@/components/QuizLayout';
+import { DockScene, QuizColumn, RunResult } from '@/components/QuizLayout';
 import { Button, IconButton, Label, Tag } from '@/components/ui';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { openBreakdown } from '@/lib/panels';
@@ -17,8 +17,8 @@ let stopping: ReturnType<typeof setTimeout> | undefined;
 
 /**
  * Untimed clips in the same layout as quiz mode; each keeps its first answer. The phone shows it full screen; the
- * desktop shell mounts it in the harbor pane beside the review list, with the count and a close button on the stage
- * and the clip in the window's now playing bar.
+ * desktop shell mounts it in the harbor pane beside the review list, with a close button on the stage, the count as the
+ * dialogue box's tag and the clip in the window's now playing bar.
  */
 function ClipReviewScreen() {
   const router = useRouter();
@@ -44,14 +44,13 @@ function ClipReviewScreen() {
   // A tab opened straight on clip review has nothing to go back to, so it lands on the review list.
   const back = () => (router.history.canGoBack() ? router.history.back() : navigate({ to: '/review', replace: true }));
   const close = <IconButton name="close" size={40} label="Close review" onPress={back} />;
-  // The stage's top row on the desktop: the sentence count (if any) left, close right.
-  const overlay = (count?: string) =>
-    desktop ? (
-      <>
-        {count ? <StageBadge>{count}</StageBadge> : <span />}
-        {close}
-      </>
-    ) : undefined;
+  // Close rides the stage's top right on the desktop.
+  const overlay = desktop ? (
+    <>
+      <span />
+      {close}
+    </>
+  ) : undefined;
   if (!clip || !item) {
     const done = last.current,
       results = done ? done.ids.flatMap((id) => done.answers[id] ?? []) : [],
@@ -72,7 +71,7 @@ function ClipReviewScreen() {
           best={results.length ? { combo: best, perfect } : undefined}
           // She lands a koi when at least one clip was right.
           pose={hits > 0 ? 'catch' : 'play'}
-          overlay={overlay()}
+          overlay={overlay}
           tag={results.length ? <Tag>REVIEW DONE</Tag> : undefined}
           dialog={
             results.length ? (
@@ -99,7 +98,8 @@ function ClipReviewScreen() {
     <div className="flex min-h-0 flex-1 flex-col bg-bg">
       {!desktop && <ScreenHeader sheet title={`Sentence ${clip.index + 1} of ${clip.ids.length}`} />}
       <QuizColumn
-        overlay={overlay(`${clip.index + 1} OF ${clip.ids.length}`)}
+        overlay={overlay}
+        count={desktop ? `${clip.index + 1} OF ${clip.ids.length}` : undefined}
         lines={current?.lines}
         isNew={item.kind === 'new'}
         choices={clip.choices[item.sentenceId] ?? []}

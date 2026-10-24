@@ -5,15 +5,24 @@ import catchPose from '@/assets/catch.webp';
 import doze from '@/assets/doze.webp';
 import girl from '@/assets/girl.webp';
 import headbang from '@/assets/headbang.webp';
+import miss from '@/assets/miss.webp';
 
 const strips = { bobbing, headbang };
 /** Still poses, registered on the sprite frame so swapping one in doesn't move her chair. */
-const poses = { doze, catch: catchPose };
+const poses = { doze, catch: catchPose, miss };
+const poseLabels: Record<keyof typeof poses, string> = {
+  doze: 'dozing',
+  catch: 'holding a koi',
+  miss: 'looking at an empty hook',
+};
 
 /** The transparent strip under her chair legs, as a fraction of her size: frames end the legs at 420 of 464px. */
 export const spriteFoot = 0.09;
 
-/** `play` bobs (or headbangs on a combo of three); `doze` naps while nothing plays; `catch` holds up a koi. */
+/**
+ * `play` bobs (or headbangs on a combo of three); `doze` naps while nothing plays; `catch` holds up a koi; `miss` looks
+ * at the bare hook after a wrong answer. Her face stays deadpan in all of them.
+ */
 export type Pose = 'play' | keyof typeof poses;
 
 /**
@@ -27,7 +36,7 @@ export function Mascot({ combo = 0, size = 130, pose = 'play' }: { combo?: numbe
   const width = size * spriteFrames.count;
   if (pose !== 'play')
     return (
-      <span role="img" aria-label={`Mascot ${pose === 'doze' ? 'dozing' : 'holding a koi'}`} className="relative block">
+      <span role="img" aria-label={`Mascot ${poseLabels[pose]}`} className="relative block">
         <img src={poses[pose]} alt="" width={size} height={size} draggable={false} className="block" />
         {pose === 'doze' && <Snore size={size} />}
       </span>

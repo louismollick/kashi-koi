@@ -21,7 +21,7 @@ import { PixelSpinner } from './PixelSpinner';
 import { PlayerBar } from './PlayerBar';
 import { HeaderControls, noAnalysis } from './PlayerControls';
 import { AddedToast, RunEndToast } from './PlayerToasts';
-import { DockScene, QuizColumn, Stage, StageBadge } from './QuizLayout';
+import { QuizColumn, Stage } from './QuizLayout';
 import { SongIntro } from './SongIntro';
 import { UpNext } from './UpNext';
 import { Button, IconButton, Label } from './ui';
@@ -59,8 +59,8 @@ const bigLabel = 'text-[23px] tracking-[0.5px]';
 
 /**
  * ListenMode and QuizMode share one body: analysis status, lyrics or the quiz column, and the playback error. On the
- * desktop, listen mode gets the harbor strip on top (quiz mode's stage takes its place) and the sentence count rides
- * the stage.
+ * desktop both modes sit under the same harbor strip (quiz mode's own stage is that strip too), and the sentence count
+ * tags the quiz's dialogue box.
  */
 function PlayerBody({ song }: { song: Song }) {
   const songId = song.id;
@@ -166,7 +166,7 @@ function PlayerBody({ song }: { song: Song }) {
         onContinue={answerWait ? () => appStore.getState().continueAfterAnswer() : undefined}
         toast={showToast ? <AddedToast /> : runEnd && !beforeLyrics ? <RunEndToast /> : undefined}
         notice={translated ? undefined : noAnalysis}
-        overlay={desktop && count ? <StageBadge>{count.toUpperCase()}</StageBadge> : undefined}
+        count={desktop ? count?.toUpperCase() : undefined}
       />
     );
   else if (!lines.length)
@@ -255,7 +255,7 @@ function PlayerBody({ song }: { song: Song }) {
     );
   return (
     <>
-      {desktop && !quizToggle && <Stage strip combo={0} nice={false} />}
+      {desktop && !quizToggle && <Stage strip />}
       {status}
       {body}
       {playbackError && (
@@ -285,8 +285,6 @@ function PaneQueue() {
     <>
       <Stage
         strip
-        combo={0}
-        nice={false}
         overlay={
           <>
             <span />
@@ -304,7 +302,7 @@ function PaneQueue() {
 /**
  * The player. The desktop shell mounts it as the harbor pane: the one place the harbor and the mascot live, with
  * lyrics or the quiz (or Up next) under her and playback in the bar along the bottom of the window. With nothing
- * playing she dozes on the dock. The phone `/player` route mounts it full screen with a down chevron and its own
+ * playing she dozes on the same strip. The phone `/player` route mounts it full screen with a down chevron and its own
  * bar, like the iOS player sheet.
  */
 export function PlayerPane() {
@@ -315,19 +313,12 @@ export function PlayerPane() {
   const count = useSentenceCount(songId ?? '');
   if (!song)
     return desktop ? (
-      <DockScene
-        combo={0}
-        nice={false}
-        pose="doze"
-        dialog={
-          <div className="flex flex-col gap-1.5">
-            <Label pixel className="text-[29px]">
-              Nothing playing
-            </Label>
-            <Label muted>Pick a song to start.</Label>
-          </div>
-        }
-      />
+      <div className="flex min-h-0 flex-1 flex-col bg-bg">
+        <Stage strip pose="doze" />
+        <Label muted className="block px-4 py-3">
+          Nothing playing
+        </Label>
+      </div>
     ) : (
       <div className="flex min-h-0 flex-1 flex-col bg-bg">
         <ScreenHeader sheet />

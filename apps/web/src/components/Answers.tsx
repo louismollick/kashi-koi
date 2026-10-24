@@ -35,15 +35,15 @@ export function Answers({
             label={label}
             onPress={() => onAnswer(choice.text)}
             fill={correct ? colors.greenDeep : wrong ? '#5c2632' : colors.maroon}
-            border={correct ? colors.green : wrong ? colors.red : '#7a4b56'}
+            border={correct ? colors.green : wrong ? colors.red : '#9a6270'}
             className={selected !== null && !correct && !wrong ? 'opacity-55' : undefined}
             contentClassName="relative min-h-[52px]! px-3! py-2!"
           >
             {selected === null && (
               <Label
                 pixel
-                muted
                 className="pointer-events-none absolute top-[3px] left-2 hidden text-[14px] min-[1024px]:block"
+                style={{ color: colors.cream }}
               >
                 {index + 1}
               </Label>
