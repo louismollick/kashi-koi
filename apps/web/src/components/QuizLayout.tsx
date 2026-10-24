@@ -276,7 +276,7 @@ const actionLabel = 'text-[23px]';
  * stay on screen. `toast` sits just above the answers, so it never covers the sentence. `notice` replaces the
  * sentence with a short explanation, like a song with no analysis. `count` ("3 OF 12") is the dialogue box's first tag,
  * beside NEW or RUN COMPLETE. `overlay` rides the top of the stage. After a miss she looks at the empty hook until
- * the next sentence.
+ * the next sentence. `skip` (a CONTINUE that jumps ahead) takes the action row once there is nothing left to answer.
  */
 export function QuizColumn({
   lines,
@@ -298,6 +298,7 @@ export function QuizColumn({
   notice,
   count,
   overlay,
+  skip,
 }: {
   lines?: Line[];
   current?: number;
@@ -318,6 +319,7 @@ export function QuizColumn({
   notice?: string;
   count?: string;
   overlay?: ReactNode;
+  skip?: ReactNode;
 }) {
   // `nice` is the recorded grade, so the miss actions follow scoring even if cached choices went stale.
   const missed = selected !== null && !nice;
@@ -376,16 +378,17 @@ export function QuizColumn({
       ) : (
         <Answers choices={choices} selected={selected} onAnswer={onAnswer} />
       )}
-      {missed && (onExplain || onContinue) && (
+      {((missed && (onExplain || onContinue)) || skip) && (
         <div className="mt-3 flex gap-[10px]">
-          {onExplain && (
+          {missed && onExplain && (
             <Button label="Explain this sentence" className="flex-1" onPress={onExplain}>
               <Label pixel className={actionLabel}>
                 EXPLAIN
               </Label>
             </Button>
           )}
-          {onContinue && (
+          {/* A held miss continues the song; otherwise CONTINUE skips ahead to the next sentence. */}
+          {missed && onContinue ? (
             <Button
               label={continueLabel}
               className="flex-1"
@@ -397,6 +400,8 @@ export function QuizColumn({
                 {continueLabel}
               </Label>
             </Button>
+          ) : (
+            skip
           )}
         </div>
       )}

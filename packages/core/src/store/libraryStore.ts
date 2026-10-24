@@ -215,6 +215,11 @@ export function sentenceOccurrenceAt(songId: string | null, lineIndex: number) {
   );
 }
 
+/** The first learning occurrence that starts after a displayed timeline line, the quiz's next sentence. */
+export function nextSentenceAfter(songId: string | null, lineIndex: number) {
+  return getLyrics(songId).sentenceTimeline.find((occurrence) => occurrence.start > lineIndex);
+}
+
 /** Sentence lines retain timeline order, repeats and contextual occurrence translations. */
 export function currentSentence(songId: string | null, lineIndex: number) {
   const lyrics = getLyrics(songId);
