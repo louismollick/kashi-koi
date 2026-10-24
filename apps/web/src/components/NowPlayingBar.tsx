@@ -49,7 +49,8 @@ function ClipProgress() {
  * The desktop's playback bar across the bottom of the window: the song on the left, transport and scrubber in the
  * middle, speed, the quiz switch, Up next and the song menu on the right. During clip review it follows the clip: the
  * transport and timeline keep their shape, with the skips disabled and the times counted over the clip, and the
- * song controls on the right step aside. Nothing renders until there is a song.
+ * song controls on the right step aside. Below 1200px the timeline narrows so the right controls keep their column.
+ * Nothing renders until there is a song.
  */
 export function NowPlayingBar() {
   const onClipReview = useLocation({ select: (location) => location.pathname === '/clip-review' });
@@ -68,7 +69,7 @@ export function NowPlayingBar() {
   return (
     <section
       aria-label="Now playing"
-      className="col-span-2 grid h-[84px] grid-cols-[minmax(0,1fr)_minmax(320px,560px)_minmax(0,1fr)] items-center gap-6 border-t border-slate bg-bg px-5"
+      className="col-span-2 grid h-[84px] grid-cols-[minmax(0,1fr)_minmax(320px,420px)_minmax(0,1fr)] items-center gap-6 border-t border-slate bg-bg px-5 min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(320px,560px)_minmax(0,1fr)]"
     >
       <div className="flex min-w-0 items-center gap-3">
         <Cover song={getAlbum(song.albumId) ?? song} size={56} />
