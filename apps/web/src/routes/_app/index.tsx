@@ -1,4 +1,5 @@
 import { useAvailableReviewList } from '@kashi-koi/core/data/reviewVisibility';
+import { nextDue, reviewTime } from '@kashi-koi/core/lyrics/review';
 import { colors } from '@kashi-koi/design/tokens';
 import { createFileRoute, Link, Navigate } from '@tanstack/react-router';
 import { HarborScene } from '@/components/Harbor';
@@ -7,7 +8,6 @@ import { Icon } from '@/components/Icon';
 import { PixelFrame } from '@/components/PixelFrame';
 import { RecentlyPlayed } from '@/components/RecentlyPlayed';
 import { Screen } from '@/components/Screen';
-import { nextDue, reviewTime } from '@/components/ReviewScreen';
 import { useDueCount } from '@/components/TabBar';
 import { Label } from '@/components/ui';
 import { useIsDesktop } from '@/hooks/useIsDesktop';

@@ -1,14 +1,15 @@
 import { useAvailableReviewList } from '@kashi-koi/core/data/reviewVisibility';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@/constants/theme';
-import { dueSentences, isDue, readyReviewSentences } from '@kashi-koi/core/lyrics/review';
+import { dueSentences, isDue, nextDue, readyReviewSentences, reviewTime } from '@kashi-koi/core/lyrics/review';
 import { getAlbum, getSentenceText, getSong, getLyrics, libraryStore } from '@kashi-koi/core/store/libraryStore';
 import { appStore } from '@kashi-koi/core/store/appStore';
 import { useNow } from '@/hooks/useNow';
 import { Header } from '@/components/Header';
 import { Cover } from '@/components/Cover';
+import { Mascot } from '@/components/Mascot';
 import { Icon } from '@/components/Icon';
 import { Button, IconButton, Label, styles } from '@/components/ui';
 import type { ReviewList } from '@kashi-koi/core/types/domain';
@@ -98,6 +99,7 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
 /** Due, new and later sentences grouped by song, with clip review on top. */
 export default function ReviewScreen() {
   const router = useRouter();
+  const { height } = useWindowDimensions();
   // Every song in the list renders its sentences and readiness from lyrics, so any lyrics update re-renders.
   libraryStore((state) => state.lyrics);
   const reviewList = useAvailableReviewList();
@@ -110,31 +112,51 @@ export default function ReviewScreen() {
   return (
     <View style={styles.page}>
       <Header />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Button
-          label="Review lyrics"
-          fill={colors.coral}
-          border={colors.coralBorder}
-          disabled={!ready.length}
-          contentStyle={{ minHeight: 76 }}
-          onPress={() => {
-            appStore.getState().startClipReview();
-            router.push('/clip-review');
-          }}
-        >
-          <View style={styles.row}>
-            <Icon name="play" size={28} color={colors.cream} />
-            <Label pixel style={{ fontSize: 29 }}>
-              Review Lyrics
+      {/* An empty list centers its caught-up message in the screen. */}
+      <ScrollView
+        contentContainerStyle={
+          reviewList.length ? styles.content : [styles.content, { flexGrow: 1, justifyContent: 'center' }]
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Nothing to start once caught up; the empty state below says so instead. */}
+        {reviewList.length > 0 && (
+          <Button
+            label="Review lyrics"
+            fill={colors.coral}
+            border={colors.coralBorder}
+            disabled={!ready.length}
+            contentStyle={{ minHeight: 76 }}
+            onPress={() => {
+              appStore.getState().startClipReview();
+              router.push('/clip-review');
+            }}
+          >
+            <View style={styles.row}>
+              <Icon name="play" size={28} color={colors.cream} />
+              <Label pixel style={{ fontSize: 29 }}>
+                Review Lyrics
+              </Label>
+            </View>
+            {/* With nothing ready yet, the button says when there will be. */}
+            <Label style={{ fontSize: 13, marginTop: 2 }}>
+              {(!ready.length && nextDue(reviewList, now)) || reviewTime}
             </Label>
-          </View>
-          <Label style={{ fontSize: 13, marginTop: 2 }}>~4 min</Label>
-        </Button>
+          </Button>
+        )}
         {waiting > 0 && <Label muted>{plural(waiting, 'sentence')} waiting for translations</Label>}
         <Section title="Due today" items={due} />
         <Section title="New from listening" items={fresh} />
         <Section title="Due later" items={later} />
-        {!reviewList.length && <Label muted>All caught up</Label>}
+        {!reviewList.length && (
+          <View style={{ alignItems: 'center', gap: 8, paddingBottom: height * 0.06 }}>
+            <Mascot pose="catch" size={200} />
+            <Label pixel style={{ fontSize: 29 }}>
+              All caught up
+            </Label>
+            <Label muted>Sentences you mark while listening show up here.</Label>
+          </View>
+        )}
       </ScrollView>
     </View>
   );

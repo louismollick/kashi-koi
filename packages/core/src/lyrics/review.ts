@@ -57,6 +57,21 @@ export const isDue = (item: ReviewList[number], now = Date.now()) => item.kind !
 export const dueSentences = (list: ReviewList, now = Date.now()) =>
   list.filter((item) => item.kind !== 'new' && isDue(item, now));
 
+/** How long a clip review takes, shown on the start button and the Home review row. */
+export const reviewTime = '~4 min';
+
+/**
+ * "next due tomorrow" for the soonest sentence still waiting on its day, counted in calendar days. Undefined when
+ * nothing is scheduled.
+ */
+export function nextDue(list: ReviewList, now: number) {
+  const soonest = Math.min(...list.flatMap((item) => (item.kind === 'later' && item.dueAt > now ? [item.dueAt] : [])));
+  if (!Number.isFinite(soonest)) return undefined;
+  const day = (ms: number) => new Date(ms).setHours(0, 0, 0, 0);
+  const days = Math.round((day(soonest) - day(now)) / dayMs);
+  return days <= 0 ? 'next due later today' : days === 1 ? 'next due tomorrow' : `next due in ${days} days`;
+}
+
 /** Clip review needs an available song with a surviving sentence, fully translated. */
 export const readyReviewSentences = (list: ReviewList, now = Date.now()) =>
   list.filter(

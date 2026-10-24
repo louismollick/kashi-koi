@@ -1,5 +1,5 @@
 import { useAvailableReviewList } from '@kashi-koi/core/data/reviewVisibility';
-import { dueSentences, isDue, readyReviewSentences } from '@kashi-koi/core/lyrics/review';
+import { dueSentences, isDue, nextDue, readyReviewSentences, reviewTime } from '@kashi-koi/core/lyrics/review';
 import { appStore } from '@kashi-koi/core/store/appStore';
 import { getAlbum, getLyrics, getSentenceText, getSong, libraryStore } from '@kashi-koi/core/store/libraryStore';
 import type { ReviewList } from '@kashi-koi/core/types/domain';
@@ -18,23 +18,6 @@ import { useNow } from '@/hooks/useNow';
 import { openEditLine } from '@/lib/panels';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
-const dayMs = 24 * 60 * 60 * 1000;
-
-/** How long a clip review takes, shown on the start button and the phone Home review row. */
-export const reviewTime = '~4 min';
-
-/**
- * "next due tomorrow" for the soonest sentence still waiting on its day, counted in calendar days. Undefined when
- * nothing is scheduled.
- */
-export function nextDue(list: ReviewList, now: number) {
-  const soonest = Math.min(...list.flatMap((item) => (item.kind === 'later' && item.dueAt > now ? [item.dueAt] : [])));
-  if (!Number.isFinite(soonest)) return undefined;
-  const day = (ms: number) => new Date(ms).setHours(0, 0, 0, 0);
-  const days = Math.round((day(soonest) - day(now)) / dayMs);
-  return days <= 0 ? 'next due later today' : days === 1 ? 'next due tomorrow' : `next due in ${days} days`;
-}
-
 /** One song row, like Library's Songs, with its review sentences below. Clicking the song collapses them. */
 function SongGroup({ songId, items }: { songId: string; items: ReviewList }) {
   const [open, setOpen] = useState(true);

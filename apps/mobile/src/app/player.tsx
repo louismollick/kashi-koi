@@ -1,15 +1,18 @@
 import { canExplain } from '@kashi-koi/core/analysis/breakdowns';
 import { analysisRequests } from '@kashi-koi/core/analysis/fetcher';
+import { useSkipTarget } from '@kashi-koi/core/data/skipTarget';
 import { translationHint } from '@kashi-koi/core/japanese/translate';
 import { isJapanese } from '@kashi-koi/core/japanese/text';
-import { memo, useEffect, useMemo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { colors } from '@/constants/theme';
 import { PixelSpinner } from '@/components/PixelSpinner';
 import {
   currentSentence,
   getLineText,
+  getLyrics,
   hasTranslations,
   libraryStore,
   sentenceOccurrenceAt,
@@ -131,6 +134,38 @@ const ListenRow = memo(function ListenRow({
   );
 });
 
+/** CONTINUE that jumps to timeline line `index`, with a bar along its bottom draining as the song reaches it. */
+function SkipAhead({ songId, index }: { songId: string; index: number }) {
+  const targetMs = getLyrics(songId).timeline[index]?.startMs ?? 0;
+  const position = appStore((state) => state.positionMs);
+  const [from] = useState(() => appStore.getState().positionMs);
+  const left = Math.max(0, Math.min(1, (targetMs - position) / (targetMs - from || 1)));
+  const remaining = useSharedValue(left);
+  useEffect(() => {
+    remaining.value = withTiming(left, { duration: 300, easing: Easing.linear });
+  }, [left, remaining]);
+  const fill = useAnimatedStyle(() => ({ width: `${remaining.value * 100}%` }));
+  return (
+    <Button
+      label="Continue to the next sentence"
+      style={{ flex: 1 }}
+      fill={colors.coral}
+      border={colors.coralBorder}
+      onPress={() => appStore.getState().jumpToLine(index)}
+    >
+      <Label pixel style={{ fontSize: 23, letterSpacing: 0.5 }}>
+        CONTINUE
+      </Label>
+      <View
+        pointerEvents="none"
+        style={{ position: 'absolute', left: 8, right: 8, bottom: 5, height: 3, backgroundColor: '#ffffff40' }}
+      >
+        <Animated.View style={[{ height: 3, backgroundColor: colors.cream }, fill]} />
+      </View>
+    </Button>
+  );
+}
+
 /** ListenMode and QuizMode share one sheet: header toggles, lyrics or quiz column, and the PlayerBar. */
 export default function PlayerScreen() {
   const router = useRouter();
@@ -182,6 +217,13 @@ export default function PlayerScreen() {
   const reviewed = new Set(reviewList.filter((item) => item.songId === songId).map((item) => item.sentenceId));
   // Breakdowns explain song analysis sentences, so they follow the listen-mode translation source.
   const explainable = !!songId && canExplain(songId) && (quizToggle || useAnalysis);
+  // Nothing left to answer: the sentence on screen is answered or has no quiz, or no sentence is playing at all.
+  const settled =
+    quizToggle &&
+    !answerWait &&
+    !(runEnd && beforeLyrics) &&
+    (!current?.sentence.translation || selectedAnswer !== null);
+  const skipTo = useSkipTarget(songId, settled);
   const explain = (id: string) => songId && router.push({ pathname: '/breakdown', params: { songId, sentenceId: id } });
 
   useEffect(() => {
@@ -211,7 +253,9 @@ export default function PlayerScreen() {
           <View style={[styles.row, { gap: 14 }]}>
             <SpeedButton />
             <View style={[styles.row, { gap: 6 }]}>
-              <Label style={{ fontSize: 12, fontWeight: '700' }}>QUIZ</Label>
+              <Label pixel style={{ fontSize: 18, letterSpacing: 1 }}>
+                QUIZ
+              </Label>
               <PixelToggle
                 disabled={!hasTranslations(songId)}
                 label="Quiz toggle"
@@ -271,6 +315,7 @@ export default function PlayerScreen() {
           onExplain={explainable && sentenceId ? () => explain(sentenceId) : undefined}
           onContinue={answerWait ? () => appStore.getState().continueAfterAnswer() : undefined}
           toast={showToast ? <AddedToast /> : runEnd && !beforeLyrics ? <RunEndToast /> : undefined}
+          skip={skipTo === undefined ? undefined : <SkipAhead key={skipTo} songId={song.id} index={skipTo} />}
         />
       ) : !lines.length ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>

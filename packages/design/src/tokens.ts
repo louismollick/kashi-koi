@@ -17,7 +17,6 @@ export const colors = {
   combo: '#ffc93c',
   koi: '#e7834a',
   night: '#0d0f22',
-  mini: '#f8f0f1',
   text: '#ffffff',
   muted: '#9a9cb8',
   lavender: '#b4a6e6',

@@ -33,7 +33,7 @@ export function Answers({
             label={label}
             onPress={() => onAnswer(choice.text)}
             fill={correct ? colors.greenDeep : wrong ? '#5c2632' : colors.maroon}
-            border={correct ? colors.green : wrong ? colors.red : '#7a4b56'}
+            border={correct ? colors.green : wrong ? colors.red : '#9a6270'}
             style={{ opacity: selected !== null && !correct && !wrong ? 0.55 : 1 }}
             contentStyle={{ minHeight: 52, paddingHorizontal: 12, paddingVertical: 8 }}
           >

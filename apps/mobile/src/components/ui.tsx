@@ -122,7 +122,10 @@ export function IconButton({
   );
 }
 
-/** Pill switch used for QuizToggle and results review choices. */
+/**
+ * Pixel switch used for the quiz toggle and settings: a stepped track with a square knob that slides right and lights
+ * green when on.
+ */
 export function PixelToggle({
   on,
   onPress,
@@ -139,16 +142,25 @@ export function PixelToggle({
       disabled={disabled}
       accessibilityRole="switch"
       accessibilityLabel={label}
-      accessibilityState={{ checked: on }}
+      accessibilityState={{ checked: on, disabled }}
       onPress={onPress}
       hitSlop={10}
+      style={{ opacity: disabled ? 0.45 : 1 }}
     >
       <PixelFrame
-        fill={on ? colors.green : colors.track}
-        border={null}
-        contentStyle={{ width: 52, height: 30, padding: 4, alignItems: on ? 'flex-end' : 'flex-start' }}
+        fill={on ? colors.greenDeep : '#2a2d4b'}
+        border={on ? '#8af0c0' : '#4c4f7a'}
+        steps={2}
+        contentStyle={{
+          width: 52,
+          height: 30,
+          paddingHorizontal: 7,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: on ? 'flex-end' : 'flex-start',
+        }}
       >
-        <PixelFrame fill="#ffffff" border={null} contentStyle={{ width: 22, height: 22 }} />
+        <View style={{ width: 16, height: 16, backgroundColor: on ? colors.green : 'rgba(255,255,255,0.4)' }} />
       </PixelFrame>
     </Pressable>
   );

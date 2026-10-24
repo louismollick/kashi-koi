@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, font } from '@/constants/theme';
-import { Mascot } from '@/components/Mascot';
+import { HarborScene } from '@/components/Harbor';
 import { PixelFrame } from '@/components/PixelFrame';
 import { Button, Label, styles } from '@/components/ui';
 import { login } from '@kashi-koi/core/navidrome/session';
@@ -26,12 +26,7 @@ export default function LoginScreen() {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
       >
         {/* The Home hero, so the first screen already looks like the app. */}
-        <View style={{ height: 230 + insets.top }}>
-          <Image source={require('../../assets/background.png')} contentFit="cover" style={StyleSheet.absoluteFill} />
-          <View style={{ position: 'absolute', bottom: 6, left: 20 }}>
-            <Mascot size={200} />
-          </View>
-        </View>
+        <HarborScene style={{ height: 230 + insets.top }} left={20} size={() => 200} />
         <View style={{ padding: 24, paddingTop: 20, gap: 18 }}>
           <Image
             source={require('../../assets/kashikoi-logo.png')}

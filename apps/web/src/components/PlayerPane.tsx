@@ -1,19 +1,19 @@
 import { canExplain } from '@kashi-koi/core/analysis/breakdowns';
 import { analysisRequests } from '@kashi-koi/core/analysis/fetcher';
+import { useSkipTarget } from '@kashi-koi/core/data/skipTarget';
 import { appStore } from '@kashi-koi/core/store/appStore';
 import {
   currentSentence,
   getLyrics,
   hasTranslations,
   libraryStore,
-  nextSentenceAfter,
   sentenceOccurrenceAt,
   songAnalysisInfo,
 } from '@kashi-koi/core/store/libraryStore';
 import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import type { Line, Song } from '@kashi-koi/core/types/domain';
 import { colors } from '@kashi-koi/design/tokens';
-import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { openBreakdown, queueStore, toggleQueue } from '@/lib/panels';
 import { openMenuFrom } from '@/lib/songMenu';
@@ -58,26 +58,6 @@ const ListenRow = memo(function ListenRow({
 
 /** Pixel-font action label on the big player buttons. */
 const bigLabel = 'text-[23px] tracking-[0.5px]';
-/** CONTINUE only skips ahead when the next sentence is at least this far off, in listening time. */
-const minSkipMs = 1000;
-
-/**
- * Where CONTINUE can skip to: the next sentence's first line, once the quiz has nothing left to answer (`settled`).
- * Whether it is far enough off is decided once per target, when it is first offered, so the button doesn't flicker
- * out as the song closes in on it.
- */
-function useSkipTarget(songId: string, settled: boolean) {
-  const lineIndex = appStore((state) => state.lineIndex);
-  const target = settled ? nextSentenceAfter(songId, lineIndex) : undefined;
-  const offer = useRef<{ songId: string; start: number; skip: boolean } | null>(null);
-  if (!target) return undefined;
-  if (offer.current?.songId !== songId || offer.current.start !== target.start) {
-    const startMs = getLyrics(songId).timeline[target.start]?.startMs ?? 0;
-    const away = (startMs - appStore.getState().positionMs) / settingsStore.getState().playbackRate;
-    offer.current = { songId, start: target.start, skip: away >= minSkipMs };
-  }
-  return offer.current.skip ? target.start : undefined;
-}
 
 /** CONTINUE that jumps to timeline line `index`, with a bar along its bottom draining as the song reaches it. */
 function SkipAhead({ songId, index }: { songId: string; index: number }) {

@@ -8,23 +8,26 @@ import { stepped, tint } from '@kashi-koi/design/shape';
 /**
  * Shared pixel-cornered shape for every button, card, tag and cover.
  * Draws the fill behind the children and a 2pt outline on top of them. The outline
- * defaults to a lighter tint of the fill, like the banner; pass `border={null}` to hide it.
+ * defaults to a lighter tint of the fill, like the banner; pass `border={null}` to hide it. Corners get three pixel
+ * steps on boxes of 36 points or more in both directions, two on smaller ones; `steps` overrides that.
  */
 export function PixelFrame({
   children,
   fill,
   border,
+  steps: fixedSteps,
   style,
   contentStyle,
 }: {
   children?: ReactNode;
   fill: string;
   border?: string | null;
+  steps?: 2 | 3;
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
   const [{ width, height }, setSize] = useState({ width: 0, height: 0 });
-  const steps = Math.min(width, height) >= 36 ? 3 : 2;
+  const steps = fixedSteps ?? (Math.min(width, height) >= 36 ? 3 : 2);
   const stroke = border === undefined ? tint(fill, 0.22) : border;
   const ready = width > 0 && height > 0;
   return (

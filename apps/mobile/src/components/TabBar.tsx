@@ -25,7 +25,7 @@ const tabs = [
 function MiniProgress() {
   const position = appStore((state) => state.positionMs),
     duration = appStore((state) => state.durationMs);
-  return <ProgressLine progress={duration ? position / duration : 0} height={3} track="#e2d9e8" />;
+  return <ProgressLine progress={duration ? position / duration : 0} height={3} track="#363a5e" />;
 }
 
 /** Mini player and tabs remain mounted while browsing the three main screens. */
@@ -48,27 +48,30 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
           style={{ marginHorizontal: 14, marginBottom: 6 }}
         >
           <PixelFrame
-            fill={colors.mini}
-            border="#d8cfe2"
+            fill={colors.surface}
+            border="#363a5e"
             contentStyle={[styles.row, { height: 64, padding: 8, paddingRight: 6 }]}
           >
             <Cover song={song} size={48} />
             <View style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-              <Marquee key={songId} style={{ color: colors.bg, fontWeight: '700', fontSize: 16 }}>
+              <Marquee key={songId} style={{ fontWeight: '700', fontSize: 16 }}>
                 {song.title}
               </Marquee>
-              <Label numberOfLines={1} style={{ color: '#4a4560', fontSize: 13 }}>
+              <Label muted numberOfLines={1} style={{ fontSize: 13 }}>
                 {song.artist}
               </Label>
             </View>
-            <IconButton
-              plain
-              name={playing ? 'pause' : 'play'}
-              color={colors.bg}
-              iconScale={0.7}
-              label={playing ? 'Pause' : 'Play'}
-              onPress={() => appStore.getState().setPlaying(!playing)}
-            />
+            {/* The 44 point slot the web reserves; the 40 point button sits flush right inside it. */}
+            <View style={{ marginLeft: 4 }}>
+              <IconButton
+                name={playing ? 'pause' : 'play'}
+                fill={colors.coral}
+                border={colors.coralBorder}
+                size={40}
+                label={playing ? 'Pause' : 'Play'}
+                onPress={() => appStore.getState().setPlaying(!playing)}
+              />
+            </View>
             <View style={{ position: 'absolute', left: 6, right: 6, top: 2 }}>
               <MiniProgress />
             </View>
