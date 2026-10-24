@@ -146,7 +146,7 @@ function Ladder({ chunk, on }: { chunk: Chunk; on: boolean }) {
 /**
  * Explains one sentence of an analyzed song. Playback keeps going. The sentence and its translation stay pinned while
  * the chunks scroll; selecting a chunk (or its explanation) lights it everywhere and scrolls to its explanation. The
- * first chunk starts selected so it is clear chunks can be tapped. Fills its parent: the desktop player pane or a
+ * first chunk starts selected so it is clear chunks can be tapped. Fills its parent: the desktop harbor pane or a
  * phone route.
  */
 export function BreakdownView({

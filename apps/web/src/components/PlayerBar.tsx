@@ -2,7 +2,6 @@ import { appStore } from '@kashi-koi/core/store/appStore';
 import { getAlbum, libraryStore } from '@kashi-koi/core/store/libraryStore';
 import { useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Cover } from './Cover';
 import { Marquee } from './Marquee';
 import { ProgressLine } from './ProgressLine';
@@ -10,31 +9,23 @@ import { IconButton, Label } from './ui';
 import { colors } from '@kashi-koi/design/tokens';
 
 /** Bar progress (clip progress in clip review); subscribes on its own so the bar doesn't re-render every tick. */
-function BarProgress({ clipReview, seekable }: { clipReview: boolean; seekable: boolean }) {
+function BarProgress({ clipReview }: { clipReview: boolean }) {
   const progress = appStore((state) => {
     const clip = clipReview ? state.clipPlayback : null;
     const elapsed = clip ? Math.max(0, clip.positionMs - clip.startMs) : state.positionMs;
     const total = clip ? clip.endMs - clip.startMs : state.durationMs;
     return total ? elapsed / total : 0;
   });
-  const total = appStore((state) => state.durationMs);
-  return (
-    <ProgressLine
-      progress={progress}
-      total={total}
-      onSeek={seekable ? (ms) => appStore.getState().seek(ms) : undefined}
-    />
-  );
+  return <ProgressLine progress={progress} />;
 }
 
 /**
- * Progress, song, play/pause and next under the song screen. Tapping the song (or swiping up on the bar) opens the
- * full player on the phone; the desktop pane has no full player, so it adds Previous and a scrubbable line instead.
- * Clip review shows clip progress, keeps only play and doesn't open the full player.
+ * Progress, song, play/pause and next under the phone's song screens. Tapping the song (or swiping up on the bar)
+ * opens the full player, where the scrubber lives. Clip review shows clip progress, keeps only play and doesn't open
+ * the full player. The desktop has `NowPlayingBar` instead.
  */
 export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
   const navigate = useNavigate();
-  const desktop = useIsDesktop();
   const swipe = useRef<{ x: number; y: number } | null>(null);
   const clipEnded = appStore((state) => !!state.clipPlayback?.ended);
   const songId = appStore((state) => (clipReview ? state.clipPlayback?.songId : state.songId));
@@ -45,7 +36,7 @@ export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
   if (!song) return null;
   const ended = clipReview ? clipEnded : waiting;
   const open = () => void navigate({ to: '/full-player' });
-  const fullPlayer = !clipReview && !desktop;
+  const fullPlayer = !clipReview;
   const info = (
     <>
       <Cover song={getAlbum(song.albumId) ?? song} size={50} />
@@ -61,7 +52,7 @@ export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
   );
   return (
     <div className="shrink-0 bg-panel pb-[max(calc(env(safe-area-inset-bottom)-4px),14px)]">
-      <BarProgress clipReview={clipReview} seekable={desktop && !clipReview} />
+      <BarProgress clipReview={clipReview} />
       <div
         className="flex items-center gap-[10px] px-4 pt-3"
         // An upward swipe on the bar opens the full player.
@@ -92,14 +83,6 @@ export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
         ) : (
           <div className="flex min-w-0 flex-1 items-center gap-[10px]">{info}</div>
         )}
-        {desktop && !clipReview && (
-          <IconButton
-            name="skipPrevious"
-            size={40}
-            label="Previous song"
-            onPress={() => appStore.getState().skipBack()}
-          />
-        )}
         <IconButton
           name={playing ? 'pause' : ended ? 'refresh' : 'play'}
           fill={colors.coral}
@@ -111,12 +94,7 @@ export function PlayerBar({ clipReview = false }: { clipReview?: boolean }) {
           }
         />
         {!clipReview && (
-          <IconButton
-            name="skipNext"
-            size={desktop ? 40 : 46}
-            label="Next song"
-            onPress={() => appStore.getState().nextSong()}
-          />
+          <IconButton name="skipNext" size={46} label="Next song" onPress={() => appStore.getState().nextSong()} />
         )}
       </div>
     </div>

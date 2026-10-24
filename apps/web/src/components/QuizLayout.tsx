@@ -3,20 +3,19 @@ import { libraryStore } from '@kashi-koi/core/store/libraryStore';
 import type { Choice, Line, RunEnd, SongLyrics } from '@kashi-koi/core/types/domain';
 import { colors } from '@kashi-koi/design/tokens';
 import { type ReactNode, useEffect, useRef } from 'react';
-import harbor from '@/assets/background.webp';
 import { useElementSize } from '@/hooks/useElementSize';
 import { Answers, GapSentence } from './Answers';
 import { FogStrip, useSongFog } from './Fog';
 import { Icon } from './Icon';
 import { SentenceLines } from './LineCard';
-import { Mascot } from './Mascot';
+import { deckFeet, harborArt } from './Harbor';
+import { Mascot, type Pose, spriteFoot } from './Mascot';
 import { PixelFrame } from './PixelFrame';
 import { SongIntro } from './SongIntro';
 import { Button, Label, Tag } from './ui';
 
 /** A finished run's best combo, shown in place of the live one. */
 type Best = { combo: number; perfect: boolean };
-const harborAspect = 1498 / 1050;
 /** How far the dialogue box rides up over the dock. */
 const overlap = 24;
 /** Springy overshoot for the NICE! pop, the CSS stand-in for the iOS spring. */
@@ -25,15 +24,37 @@ const spring = 'cubic-bezier(.2,.9,.3,1.2)';
 /**
  * The harbor behind the quiz: she fishes from the dock, NICE! pops by her head and the combo lands in her bucket as
  * fish. The art and sprite stay pinned to the bottom, so a taller sentence only crops sky. `best` swaps the combo
- * for a finished run's best combo, with a gold koi when it was perfect.
+ * for a finished run's best combo, with a gold koi when it was perfect. `pose` stills her (dozing, holding a koi).
+ * `strip` is the short panorama over desktop listen mode: no dialogue box rides over it and there is no combo.
+ * `overlay` sits along the top edge, like the desktop sentence count.
  */
-function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Best }) {
+export function Stage({
+  combo,
+  nice,
+  best,
+  pose = 'play',
+  strip = false,
+  overlay,
+}: {
+  combo: number;
+  nice: boolean;
+  best?: Best;
+  pose?: Pose;
+  strip?: boolean;
+  overlay?: ReactNode;
+}) {
   const box = useRef<HTMLDivElement>(null);
   const { width, height } = useElementSize(box);
+  const cut = strip ? 'wide' : 'classic';
+  const harbor = harborArt(cut);
   // Zoomed past cover so the art's pixels read at phone size.
-  const artWidth = Math.max(width * 1.6, height * harborAspect);
-  const size = Math.max(0, Math.min(260, width * 0.62, height - 4));
-  const bottom = overlap - size * 0.06;
+  const artWidth = Math.max(width * 1.6, height * harbor.aspect);
+  // Her chair legs land on the deck, above the dialogue box riding over its front edge.
+  const feet = deckFeet(cut, artWidth, strip ? 0 : overlap);
+  // Her hat sits about 0.7 of her size above her chair legs, so that much has to fit under the top edge. The strip
+  // leaves her some sky.
+  const size = Math.max(0, Math.min(260, width * 0.62, (height - 6 - feet) / 0.7, strip ? height * 0.8 : Infinity));
+  const bottom = feet - size * spriteFoot;
   const note = {
     position: 'absolute',
     color: colors.coral,
@@ -43,17 +64,24 @@ function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Bes
   } as const;
   const count = best ? best.combo : combo;
   return (
-    <div ref={box} className="relative min-h-[72px] grow basis-0 overflow-hidden">
+    <div
+      ref={box}
+      className={
+        strip
+          ? 'relative h-[clamp(150px,24vh,230px)] shrink-0 overflow-hidden'
+          : 'relative min-h-[72px] grow basis-0 overflow-hidden'
+      }
+    >
       <img
-        src={harbor}
+        src={harbor.src}
         alt=""
         draggable={false}
         className="pixelated absolute bottom-0 max-w-none"
-        style={{ left: -(artWidth - width) * 0.3, width: artWidth, height: artWidth / harborAspect }}
+        style={{ left: -(artWidth - width) * 0.3, width: artWidth, height: artWidth / harbor.aspect }}
       />
       <div className="absolute left-1" style={{ bottom }}>
-        <Mascot combo={combo} size={size} />
-        {combo >= 3 && (
+        <Mascot combo={combo} size={size} pose={pose} />
+        {combo >= 3 && pose === 'play' && (
           <>
             <span aria-hidden style={{ ...note, left: 0, top: size * 0.12, fontSize: Math.min(30, size * 0.14) }}>
               ♪
@@ -83,38 +111,53 @@ function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Bes
           </Label>
         </PixelFrame>
       </div>
-      <PixelFrame
-        fill={colors.night}
-        border="#363a5e"
-        className="absolute! right-[14px]"
-        style={{ bottom: overlap + 12 }}
-        contentClassName="flex min-w-[92px] flex-col items-center px-3 pt-1.5 pb-2"
-      >
-        <Label pixel className="text-[18px] tracking-[1px]" style={{ color: colors.combo }}>
-          {best ? 'BEST COMBO' : 'COMBO'}
-        </Label>
-        <Label
-          pixel
-          className="text-[52px]"
-          style={{ color: colors.cream, textShadow: `3px 3px 0 ${colors.coralDeep}` }}
+      {/* No combo to count in listen mode's strip or while she dozes with nothing playing. */}
+      {!strip && pose !== 'doze' && (
+        <PixelFrame
+          fill={colors.night}
+          border="#363a5e"
+          className="absolute! right-[14px]"
+          style={{ bottom: overlap + 12 }}
+          contentClassName="flex min-w-[92px] flex-col items-center px-3 pt-1.5 pb-2"
         >
-          {count}
-        </Label>
-        {(best ? best.perfect : combo > 0) && (
-          <span className="mt-0.5 flex gap-[3px]">
-            {best ? (
-              <Icon name="koi" size={24} color={colors.combo} />
-            ) : (
-              Array.from({ length: Math.min(combo, 5) }, (_, index) => (
-                // The koi are identical; only their count matters.
-                // biome-ignore lint/suspicious/noArrayIndexKey: identical icons
-                <Icon key={index} name="koi" size={14} color={colors.koi} />
-              ))
-            )}
-          </span>
-        )}
-      </PixelFrame>
+          <Label pixel className="text-[18px] tracking-[1px]" style={{ color: colors.combo }}>
+            {best ? 'BEST COMBO' : 'COMBO'}
+          </Label>
+          <Label
+            pixel
+            className="text-[52px]"
+            style={{ color: colors.cream, textShadow: `3px 3px 0 ${colors.coralDeep}` }}
+          >
+            {count}
+          </Label>
+          {(best ? best.perfect : combo > 0) && (
+            <span className="mt-0.5 flex gap-[3px]">
+              {best ? (
+                <Icon name="koi" size={24} color={colors.combo} />
+              ) : (
+                Array.from({ length: Math.min(combo, 5) }, (_, index) => (
+                  // The koi are identical; only their count matters.
+                  // biome-ignore lint/suspicious/noArrayIndexKey: identical icons
+                  <Icon key={index} name="koi" size={14} color={colors.koi} />
+                ))
+              )}
+            </span>
+          )}
+        </PixelFrame>
+      )}
+      {overlay && <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">{overlay}</div>}
     </div>
+  );
+}
+
+/** A count on the stage's top edge, like "3 OF 12", framed like the combo box so it reads over the art. */
+export function StageBadge({ children }: { children: ReactNode }) {
+  return (
+    <PixelFrame fill={colors.night} border="#363a5e" contentClassName="px-2.5 pt-1 pb-1.5">
+      <Label pixel className="text-[20px] tracking-[1px]" style={{ color: colors.cream }}>
+        {children}
+      </Label>
+    </PixelFrame>
   );
 }
 
@@ -185,6 +228,8 @@ export function DockScene({
   combo,
   nice,
   best,
+  pose,
+  overlay,
   tag,
   dialog,
   children,
@@ -192,13 +237,15 @@ export function DockScene({
   combo: number;
   nice: boolean;
   best?: Best;
+  pose?: Pose;
+  overlay?: ReactNode;
   tag?: ReactNode;
   dialog: ReactNode;
   children?: ReactNode;
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col pb-4">
-      <Stage combo={combo} nice={nice} best={best} />
+      <Stage combo={combo} nice={nice} best={best} pose={pose} overlay={overlay} />
       <Dialog tag={tag}>{dialog}</Dialog>
       <div className="shrink-0 px-4 pt-4">{children}</div>
     </div>
@@ -232,7 +279,7 @@ const actionLabel = 'text-[23px]';
  * or `runEnd`, the song that just finished, with PLAY AGAIN (`onReplay`). The sentence scrolls when it is long, so
  * the answers and, after a miss, EXPLAIN (`onExplain`) and CONTINUE (`onContinue`, when the song is held) always
  * stay on screen. `toast` sits just above the answers, so it never covers the sentence. `notice` replaces the
- * sentence with a short explanation, like a song with no analysis.
+ * sentence with a short explanation, like a song with no analysis. `overlay` rides the top of the stage.
  */
 export function QuizColumn({
   lines,
@@ -252,6 +299,7 @@ export function QuizColumn({
   continueLabel = 'CONTINUE',
   toast,
   notice,
+  overlay,
 }: {
   lines?: Line[];
   current?: number;
@@ -270,17 +318,21 @@ export function QuizColumn({
   continueLabel?: string;
   toast?: ReactNode;
   notice?: string;
+  overlay?: ReactNode;
 }) {
   // `nice` is the recorded grade, so the miss actions follow scoring even if cached choices went stale.
   const missed = selected !== null && !nice;
   const gap = gapOf(choices);
   const answer = selected === null ? undefined : choices.find((choice) => choice.correct);
-  const summary = !lines?.length && runEnd;
+  const summary = lines?.length ? undefined : runEnd;
   return (
     <DockScene
       combo={combo}
       nice={nice}
       best={summary ? { combo: summary.bestCombo, perfect: summary.perfect } : undefined}
+      // A perfect run lands a koi.
+      pose={summary?.perfect ? 'catch' : 'play'}
+      overlay={overlay}
       tag={summary ? <Tag>RUN COMPLETE</Tag> : isNew ? <Tag>NEW</Tag> : undefined}
       dialog={
         <>

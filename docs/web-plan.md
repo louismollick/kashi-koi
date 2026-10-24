@@ -20,9 +20,10 @@ The web app is a client-only React DOM app in `apps/web` that shares logic and d
 
 ## Desktop (≥1024px)
 
-- Three columns: a nav rail, the browse column, and a player pane with lyrics that is always visible. No mini player and no full-screen player.
+- The browse column under a top bar (logo, library search, Review with its due count, Settings), the harbor pane beside it, and a now playing bar across the bottom with the transport centered. The Library, headed by Recently played, is the desktop's home. No tab bar, mini player or full-screen player.
+- The harbor pane is the only place the harbor and the mascot appear: a panorama strip over the lyrics in listen mode, the full dock stage in quiz mode and clip review (which takes the pane while the review list stays in the browse column), and a dozing mascot with nothing playing. The harbor art switches to night from 7pm to 6am.
 - Keyboard: Space plays and pauses, `1`/`2`/`3` answer, `L` adds a lost mark, `Q` toggles quiz mode, `S` cycles speed, ←/→ move to the previous or next line.
-- Right-click opens the song menu. Breakdown and edit line open in the player pane.
+- Right-click opens the song menu. Breakdown and edit line open over the harbor pane.
 
 ## Not in web v1
 

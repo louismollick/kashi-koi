@@ -1,5 +1,5 @@
 // Pixelarticons 2.4.1; filled play/pause and skip controls from 1.8.1, MIT. Source SVGs and the license are in apps/mobile/assets/icons.
-// translate, play, musicFilled, homeFilled, down, trash, download, downloaded, fish, koi and more are hand-drawn
+// translate, play, musicFilled, homeFilled, down, trash, download, downloaded, fish, koi, queue and more are hand-drawn
 // on the same 24-unit pixel grid.
 /** Pixel icon path data on a 24-unit grid, one or more filled paths each. */
 export const icons = {
@@ -18,6 +18,8 @@ export const icons = {
     'M9 5h8v2H9zM7 7h12v2H7zM5 9h10v2H5zM17 9h4v2h-4zM5 11h18v2H5zM5 13h16v2H5zM7 15h12v2H7zM9 17h8v2H9zM1 7h2v2H1zM1 9h4v2H1zM3 11h2v2H3zM1 13h4v2H1zM1 15h2v2H1z',
   ],
   more: ['M4 10h4v4H4zM10 10h4v4h-4zM16 10h4v4h-4z'],
+  // Up next: three queued rows and a note.
+  queue: ['M2 4h14v2H2zM2 9h14v2H2zM2 14h8v2H2zM18 8h2v10h-2zM20 8h2v2h-2zM14 16h4v4h-4z'],
   trash: ['M9 2h6v2H9zM3 4h18v2H3zM5 6h2v14H5zM17 6h2v14h-2zM7 20h10v2H7zM9 9h2v8H9zM13 9h2v8h-2z'],
   refresh: [
     'M4 4h2v4h4v2H2V2h2zM6 2h12v2H6zM18 4h2v4h-2zM20 8h2v8h-2zM18 16h2v4h-2zM6 20h12v2H6zM4 16h2v4H4zM2 12h2v4H2z',

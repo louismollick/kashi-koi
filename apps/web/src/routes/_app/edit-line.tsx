@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { EditLineView } from '@/components/EditLineView';
 import { closePanel } from '@/lib/panels';
 
-// The phone layout's edit line sheet. On desktop `openEditLine` shows the same view in the player pane instead.
+// The phone layout's edit line sheet. On desktop `openEditLine` shows the same view over the harbor pane instead.
 export const Route = createFileRoute('/_app/edit-line')({
   validateSearch: z.object({ id: z.string() }),
   component: EditLineScreen,

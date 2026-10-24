@@ -9,7 +9,7 @@ import { MiniPlayer } from './MiniPlayer';
 import { PixelFrame } from './PixelFrame';
 import { Label } from './ui';
 
-/** The destinations in the phone tab bar and the desktop nav rail. */
+/** The destinations in the phone tab bar. */
 export const tabs = [
   { to: '/', title: 'Home', icon: 'home', activeIcon: 'homeFilled' },
   { to: '/library', title: 'Library', icon: 'musicFilled', activeIcon: 'musicFilled' },

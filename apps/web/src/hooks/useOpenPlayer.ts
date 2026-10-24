@@ -3,7 +3,7 @@ import { useIsDesktop } from './useIsDesktop';
 
 /**
  * Start playback and show the player: the phone opens the full player screen first (like iOS), the desktop already
- * has the player pane beside the browse column.
+ * has the harbor pane beside the browse column.
  */
 export function useOpenPlayer() {
   const navigate = useNavigate();
