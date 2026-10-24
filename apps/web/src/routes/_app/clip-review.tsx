@@ -2,7 +2,7 @@ import { canExplain } from '@kashi-koi/core/analysis/breakdowns';
 import { appStore } from '@kashi-koi/core/store/appStore';
 import { getSong, libraryStore, sentenceForReview } from '@kashi-koi/core/store/libraryStore';
 import type { ClipReview } from '@kashi-koi/core/types/domain';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import { ScreenHeader } from '@/components/Header';
 import { PlayerBar } from '@/components/PlayerBar';
@@ -40,7 +40,9 @@ function ClipReviewScreen() {
     };
   }, []);
   if (clip) last.current = clip;
-  const back = () => router.history.back();
+  const navigate = useNavigate();
+  // A tab opened straight on clip review has nothing to go back to, so it lands on the review list.
+  const back = () => (router.history.canGoBack() ? router.history.back() : navigate({ to: '/review', replace: true }));
   const close = <IconButton name="close" size={40} label="Close review" onPress={back} />;
   // The stage's top row on the desktop: the sentence count (if any) left, close right.
   const overlay = (count?: string) =>
@@ -68,7 +70,8 @@ function ClipReviewScreen() {
           combo={0}
           nice={false}
           best={results.length ? { combo: best, perfect } : undefined}
-          pose={results.length ? 'catch' : 'play'}
+          // She lands a koi when at least one clip was right.
+          pose={hits > 0 ? 'catch' : 'play'}
           overlay={overlay()}
           tag={results.length ? <Tag>REVIEW DONE</Tag> : undefined}
           dialog={

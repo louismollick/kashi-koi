@@ -13,6 +13,7 @@ import { Mascot } from './Mascot';
 import { PixelFrame } from './PixelFrame';
 import { Screen } from './Screen';
 import { IconButton, Label } from './ui';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useNow } from '@/hooks/useNow';
 import { openEditLine } from '@/lib/panels';
 
@@ -100,6 +101,7 @@ function Section({ title, items }: { title: string; items: ReviewList }) {
  * desktop it also stays in the browse column while clip review runs in the harbor pane.
  */
 export function ReviewScreen() {
+  const desktop = useIsDesktop();
   const navigate = useNavigate();
   // Every song in the list renders its sentences and readiness from lyrics, so any lyrics update re-renders.
   libraryStore((state) => state.lyrics);
@@ -150,7 +152,8 @@ export function ReviewScreen() {
         <Section title="Due later" items={later} />
         {!reviewList.length && (
           <div className="flex flex-col items-center gap-2 pt-6">
-            <Mascot pose="catch" size={200} />
+            {/* The desktop's mascot lives in the harbor pane, so only the phone shows her catch here. */}
+            {!desktop && <Mascot pose="catch" size={200} />}
             <Label pixel className="text-[29px]">
               All caught up
             </Label>

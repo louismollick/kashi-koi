@@ -54,7 +54,12 @@ function ClipProgress() {
  * keeps only play. Nothing renders until there is a song.
  */
 export function NowPlayingBar() {
-  const clipReview = useLocation({ select: (location) => location.pathname === '/clip-review' });
+  const onClipReview = useLocation({ select: (location) => location.pathname === '/clip-review' });
+  // Clip mode only while a session runs. Its end screen gets the normal bar back, so Play resumes the song that was
+  // playing rather than replaying a finished clip.
+  const clipReview = appStore((state) => onClipReview && !!state.clipReview);
+  // The harbor pane shows playback errors, except during clip review, where it holds the clip instead.
+  const clipError = appStore((state) => (clipReview ? state.playbackError : null));
   const songId = appStore((state) => (clipReview ? state.clipPlayback?.songId : state.songId));
   const song = libraryStore((state) => (songId ? state.bySong[songId] : undefined));
   const playing = appStore((state) => state.playing && (clipReview || !state.clipPlayback));
@@ -73,12 +78,20 @@ export function NowPlayingBar() {
           <Marquee key={song.id} className="text-base font-bold">
             {song.title}
           </Marquee>
-          <span className="flex items-center gap-2">
-            <Label muted lines={1} className="text-[13px]">
-              {song.artist}
-            </Label>
-            {!clipReview && <FogBadge songId={song.id} compact />}
-          </span>
+          {clipError ? (
+            <span role="alert" className="block">
+              <Label lines={1} className="text-[13px]" style={{ color: colors.red }}>
+                {clipError}
+              </Label>
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <Label muted lines={1} className="text-[13px]">
+                {song.artist}
+              </Label>
+              {!clipReview && <FogBadge songId={song.id} compact />}
+            </span>
+          )}
         </span>
       </div>
       <div className="flex flex-col">
