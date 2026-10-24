@@ -65,12 +65,12 @@ export function Mascot({ combo = 0, size = 130, pose = 'play' }: { combo?: numbe
   );
 }
 
-/** A third z that drifts up from the drawn pair and fades, on a slow loop. */
+/** A third z that drifts up from the drawn pair and fades, on a slow loop. Hidden for reduced motion; the drawn pair stays. */
 function Snore({ size }: { size: number }) {
   return (
     <span
       aria-hidden
-      className="font-pixel pointer-events-none absolute text-cream"
+      className="font-pixel pointer-events-none absolute text-cream motion-reduce:hidden"
       style={{
         left: size * 0.62,
         top: size * 0.16,
