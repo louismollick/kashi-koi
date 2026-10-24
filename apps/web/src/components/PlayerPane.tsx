@@ -59,7 +59,7 @@ const ListenRow = memo(function ListenRow({
 /** Pixel-font action label on the big player buttons. */
 const bigLabel = 'text-[23px] tracking-[0.5px]';
 /** CONTINUE only skips ahead when the next sentence is at least this far off, in listening time. */
-const minSkipMs = 3000;
+const minSkipMs = 1000;
 
 /**
  * Where CONTINUE can skip to: the next sentence's first line, once the quiz has nothing left to answer (`settled`).

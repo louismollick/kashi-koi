@@ -12,10 +12,13 @@ import { IconButton, Label } from './ui';
 function MiniProgress() {
   const position = appStore((state) => state.positionMs),
     duration = appStore((state) => state.durationMs);
-  return <ProgressLine progress={duration ? position / duration : 0} height={3} track="#e2d9e8" />;
+  return <ProgressLine progress={duration ? position / duration : 0} height={3} track="#363a5e" />;
 }
 
-/** The current song above the tab bar on the phone layout; opens the full player. Nothing without a song. */
+/**
+ * The current song above the tab bar on the phone layout, in the same navy and coral as the player's own bar; opens
+ * the full player. Nothing without a song.
+ */
 export function MiniPlayer() {
   const songId = appStore((state) => state.songId);
   const song = libraryStore((state) => (songId ? state.bySong[songId] : undefined));
@@ -26,16 +29,16 @@ export function MiniPlayer() {
       {/* The whole card opens the player; the play button sits above it, not inside it. */}
       <Link to="/player" aria-label="Open player" className="block">
         <PixelFrame
-          fill={colors.mini}
-          border="#d8cfe2"
+          fill={colors.surface}
+          border="#363a5e"
           contentClassName="flex h-16 items-center gap-[10px] p-2 pr-[6px]"
         >
           <Cover song={song} size={48} />
           <span className="block min-w-0 flex-1 overflow-hidden">
-            <Marquee key={songId} className="text-base font-bold text-bg">
+            <Marquee key={songId} className="text-base font-bold">
               {song.title}
             </Marquee>
-            <Label lines={1} className="text-[13px]" style={{ color: '#4a4560' }}>
+            <Label muted lines={1} className="text-[13px]">
               {song.artist}
             </Label>
           </span>
@@ -47,10 +50,10 @@ export function MiniPlayer() {
       </Link>
       <span className="absolute top-1/2 right-[6px] -translate-y-1/2">
         <IconButton
-          plain
           name={playing ? 'pause' : 'play'}
-          color={colors.bg}
-          iconScale={0.7}
+          fill={colors.coral}
+          border={colors.coralBorder}
+          size={40}
           label={playing ? 'Pause' : 'Play'}
           onPress={() => appStore.getState().setPlaying(!playing)}
         />
