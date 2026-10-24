@@ -136,12 +136,13 @@ function PlayerBody({ song }: { song: Song }) {
   const canAdd = !!sentenceId && !inReview;
   const reviewed = new Set(reviewList.filter((item) => item.songId === songId).map((item) => item.sentenceId));
   const explainable = canExplain(songId);
-  // Nothing left to answer: the sentence on screen is answered or has no quiz, or no sentence is playing at all.
+  // Nothing left to answer: the sentence on screen is answered (or timed out) or has no quiz, or no sentence is
+  // playing at all.
   const settled =
     quizToggle &&
     !answerWait &&
     !(runEnd && beforeLyrics) &&
-    (!current?.sentence.translation || selectedAnswer !== null);
+    (!current?.sentence.translation || (!!sentenceId && !!run.answers[sentenceId]));
   const skipTo = useSkipTarget(songId, settled);
   const explain = (id: string) => openBreakdown(songId, id);
   // The toast dismisses itself when its undo window closes.

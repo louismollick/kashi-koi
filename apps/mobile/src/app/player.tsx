@@ -217,12 +217,13 @@ export default function PlayerScreen() {
   const reviewed = new Set(reviewList.filter((item) => item.songId === songId).map((item) => item.sentenceId));
   // Breakdowns explain song analysis sentences, so they follow the listen-mode translation source.
   const explainable = !!songId && canExplain(songId) && (quizToggle || useAnalysis);
-  // Nothing left to answer: the sentence on screen is answered or has no quiz, or no sentence is playing at all.
+  // Nothing left to answer: the sentence on screen is answered (or timed out) or has no quiz, or no sentence is
+  // playing at all.
   const settled =
     quizToggle &&
     !answerWait &&
     !(runEnd && beforeLyrics) &&
-    (!current?.sentence.translation || selectedAnswer !== null);
+    (!current?.sentence.translation || (!!sentenceId && !!run.answers[sentenceId]));
   const skipTo = useSkipTarget(songId, settled);
   const explain = (id: string) => songId && router.push({ pathname: '/breakdown', params: { songId, sentenceId: id } });
 

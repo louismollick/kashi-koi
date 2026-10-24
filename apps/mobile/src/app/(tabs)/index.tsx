@@ -71,10 +71,15 @@ export default function HomeScreen() {
                 contentStyle={[styles.row, { height: 56, paddingRight: 10, paddingLeft: 14 }]}
               >
                 <Icon name="musicFilled" size={30} color={colors.cream} />
-                <Label pixel style={{ fontSize: 24, letterSpacing: 0.5 }}>
+                {/* A narrow phone drops the time so the title keeps its count. */}
+                <Label pixel numberOfLines={1} style={{ flex: 1, fontSize: 24, letterSpacing: 0.5 }}>
                   REVIEW {count} {count === 1 ? 'LYRIC' : 'LYRICS'}
                 </Label>
-                <Label style={{ flex: 1, textAlign: 'right', fontSize: 13 }}>{reviewTime}</Label>
+                {width >= 360 && (
+                  <Label numberOfLines={1} style={{ flexShrink: 0, fontSize: 13 }}>
+                    {reviewTime}
+                  </Label>
+                )}
                 <PixelFrame
                   fill={colors.coralSoft}
                   border={null}

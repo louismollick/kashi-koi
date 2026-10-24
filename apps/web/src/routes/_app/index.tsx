@@ -63,10 +63,11 @@ function HomeScreen() {
               contentClassName="flex h-[56px] items-center gap-[10px] pr-[10px] pl-[14px]"
             >
               <Icon name="musicFilled" size={30} color={colors.cream} />
-              <Label pixel className="text-[24px] tracking-[0.5px]">
+              {/* A narrow phone drops the time so the title keeps its count. */}
+              <Label pixel lines={1} className="min-w-0 flex-1 text-[24px] tracking-[0.5px]">
                 REVIEW {count} {count === 1 ? 'LYRIC' : 'LYRICS'}
               </Label>
-              <Label className="ml-auto text-[13px]">{reviewTime}</Label>
+              <Label className="shrink-0 text-[13px] max-[359px]:hidden">{reviewTime}</Label>
               <PixelFrame
                 fill={colors.coralSoft}
                 border={null}

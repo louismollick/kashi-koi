@@ -8,9 +8,8 @@ import type { Choice, Line, RunEnd, SongLyrics } from '@kashi-koi/core/types/dom
 import { PixelFrame } from './PixelFrame';
 import { SentenceLines } from './LineCard';
 import { SongIntro } from './SongIntro';
-import { deckFeet, harborArt } from './Harbor';
+import { deckFeet, useHarborArt } from './Harbor';
 import { Mascot, spriteFoot, type Pose } from './Mascot';
-import { useNow } from '@/hooks/useNow';
 import { Answers, GapSentence } from './Answers';
 import { FogStrip, useSongFog } from './Fog';
 import { Icon } from './Icon';
@@ -29,7 +28,7 @@ const overlap = 24;
  * looking at an empty hook). Her chair always clears the dialogue box that rides over the deck.
  */
 function Stage({ combo, nice, best, pose = 'play' }: { combo: number; nice: boolean; best?: Best; pose?: Pose }) {
-  const harbor = harborArt(useNow());
+  const harbor = useHarborArt();
   const pop = useSharedValue(0);
   const [{ width, height }, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {

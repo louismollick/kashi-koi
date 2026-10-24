@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { useNow } from '@/hooks/useNow';
@@ -21,9 +21,22 @@ export function isNight(now: number) {
   return hour >= 19 || hour < 6;
 }
 
-/** The harbor at the time of day `now` (from `useNow`, so it flips when the app returns to the foreground). */
-export function harborArt(now: number) {
-  return { src: isNight(now) ? art.night : art.day, aspect: art.aspect };
+/**
+ * The harbor at the current time of day, with its aspect ratio (width over height). It flips at 7pm and 6am while the
+ * app stays open, and catches up when the app returns to the foreground.
+ */
+export function useHarborArt() {
+  const now = useNow();
+  const [night, setNight] = useState(() => isNight(Date.now()));
+  useEffect(() => setNight(isNight(now)), [now]);
+  useEffect(() => {
+    const next = new Date();
+    next.setHours(night ? 6 : 19, 0, 0, 0);
+    if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 1);
+    const timer = setTimeout(() => setNight(isNight(Date.now())), next.getTime() - Date.now());
+    return () => clearTimeout(timer);
+  }, [night]);
+  return { src: night ? art.night : art.day, aspect: art.aspect };
 }
 
 /**
@@ -53,7 +66,7 @@ export function HarborScene({
   size: (height: number) => number;
   pose?: Pose;
 }) {
-  const now = useNow();
+  const harbor = useHarborArt();
   const [{ width, height }, setBox] = useState({ width: 0, height: 0 });
   const mascot = Math.round(size(height));
   const feet = deckFeet(Math.max(width, height * art.aspect), covered);
@@ -62,7 +75,7 @@ export function HarborScene({
       onLayout={({ nativeEvent: { layout } }) => setBox({ width: layout.width, height: layout.height })}
       style={[{ overflow: 'hidden' }, style]}
     >
-      <Image source={harborArt(now).src} contentFit="cover" contentPosition="bottom" style={StyleSheet.absoluteFill} />
+      <Image source={harbor.src} contentFit="cover" contentPosition="bottom" style={StyleSheet.absoluteFill} />
       {height > 0 && (
         <View style={{ position: 'absolute', left, bottom: feet - mascot * spriteFoot }}>
           <Mascot size={mascot} pose={pose} />
