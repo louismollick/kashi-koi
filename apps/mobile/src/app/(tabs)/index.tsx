@@ -54,10 +54,10 @@ export default function HomeScreen() {
               <PixelFrame
                 fill={colors.surface}
                 border="#363a5e"
-                contentStyle={[styles.row, { height: 56, paddingRight: 16, paddingLeft: 14 }]}
+                contentStyle={[styles.row, { minHeight: 56, paddingVertical: 8, paddingRight: 16, paddingLeft: 14 }]}
               >
                 <Icon name="check" color={colors.green} size={24} />
-                <Label pixel style={{ fontSize: 24, letterSpacing: 0.5 }}>
+                <Label pixel numberOfLines={1} style={{ flexShrink: 1, fontSize: 24, letterSpacing: 0.5 }}>
                   ALL CAUGHT UP
                 </Label>
                 <Label muted numberOfLines={1} style={{ flex: 1, textAlign: 'right', fontSize: 13 }}>
@@ -68,7 +68,7 @@ export default function HomeScreen() {
               <PixelFrame
                 fill={colors.coralDeep}
                 border="#ff8f9b"
-                contentStyle={[styles.row, { height: 56, paddingRight: 10, paddingLeft: 14 }]}
+                contentStyle={[styles.row, { minHeight: 56, paddingVertical: 8, paddingRight: 10, paddingLeft: 14 }]}
               >
                 <Icon name="musicFilled" size={30} color={colors.cream} />
                 {/* A narrow phone drops the time so the title keeps its count. */}

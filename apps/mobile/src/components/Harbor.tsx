@@ -28,14 +28,18 @@ export function isNight(now: number) {
 export function useHarborArt() {
   const now = useNow();
   const [night, setNight] = useState(() => isNight(Date.now()));
-  useEffect(() => setNight(isNight(now)), [now]);
+  // Bumped at each boundary, so the effect always reads the clock again and schedules the next one, even when a
+  // suspended timer fires late and the time of day hasn't changed.
+  const [boundary, setBoundary] = useState(0);
   useEffect(() => {
-    const next = new Date();
-    next.setHours(night ? 6 : 19, 0, 0, 0);
-    if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 1);
-    const timer = setTimeout(() => setNight(isNight(Date.now())), next.getTime() - Date.now());
+    const at = Date.now();
+    setNight(isNight(at));
+    const next = new Date(at);
+    next.setHours(isNight(at) ? 6 : 19, 0, 0, 0);
+    if (next.getTime() <= at) next.setDate(next.getDate() + 1);
+    const timer = setTimeout(() => setBoundary((count) => count + 1), next.getTime() - at);
     return () => clearTimeout(timer);
-  }, [night]);
+  }, [now, boundary]);
   return { src: night ? art.night : art.day, aspect: art.aspect };
 }
 
