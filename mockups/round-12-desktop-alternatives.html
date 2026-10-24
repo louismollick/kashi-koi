@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Kashi-Koi round 12: desktop layouts not taken</title>
+    <style>
+    @font-face {
+      font-family: "Jersey 15";
+      src: url("../apps/mobile/assets/fonts/Jersey15-Regular.ttf");
+    }
+    @font-face {
+      font-family: "M PLUS Rounded 1c";
+      font-weight: 400;
+      src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Regular.ttf");
+    }
+    @font-face {
+      font-family: "M PLUS Rounded 1c";
+      font-weight: 700;
+      src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Bold.ttf");
+    }
+    :root {
+      --coral: #fb4a5e;
+      --coral-border: #ff9aa5;
+      --cream: #fbf8c6;
+      --night: #0d0f22;
+      --slate: #272945;
+      --surface: #1d1f35;
+      --panel: #1e2033;
+      --track: #3e3d5b;
+      --muted: #9a9cb8;
+      --lavender: #b4a6e6;
+      --combo: #ffc93c;
+      --green: #55ee9c;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #000;
+      color: #fff;
+      font: 15px/1.45 "M PLUS Rounded 1c", sans-serif;
+      padding: 40px 48px 120px;
+    }
+    .px {
+      font-family: "Jersey 15", monospace;
+      line-height: 1;
+      font-weight: 400;
+    }
+    h1 {
+      font: 44px/1 "Jersey 15", monospace;
+      margin-bottom: 10px;
+    }
+    .intro {
+      color: var(--muted);
+      max-width: 860px;
+      margin-bottom: 40px;
+    }
+    section {
+      margin-bottom: 64px;
+    }
+    h2 {
+      font: 32px/1 "Jersey 15", monospace;
+      margin-bottom: 8px;
+    }
+    .why {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 32px;
+      max-width: 1200px;
+      margin-bottom: 16px;
+      color: var(--muted);
+    }
+    .why b {
+      color: #fff;
+    }
+    /* A 1440 x 900 desktop frame, drawn at 0.75. */
+    .frame {
+      width: 1080px;
+      height: 675px;
+      border: 1px solid var(--slate);
+      position: relative;
+      overflow: hidden;
+      background: #000;
+      font-size: 11px;
+    }
+    .pix {
+      image-rendering: pixelated;
+    }
+    .clip {
+      clip-path: polygon(0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px));
+    }
+    .cover {
+      aspect-ratio: 1;
+      border-radius: 0;
+    }
+    .c1 { background: linear-gradient(135deg, #3b7bd8, #9fd1ff); }
+    .c2 { background: linear-gradient(135deg, #1f6b3a, #9be37a); }
+    .c3 { background: linear-gradient(135deg, #e7c37a, #6aa0a5); }
+    .c4 { background: linear-gradient(135deg, #a5c639, #3d6d24); }
+    .c5 { background: linear-gradient(135deg, #f4a7c3, #6a4bb0); }
+    .c6 { background: linear-gradient(135deg, #cfcfd6, #5b5b66); }
+    .c7 { background: linear-gradient(135deg, #fff, #222); }
+    .c8 { background: linear-gradient(135deg, #8fa6a0, #2f3d3a); }
+    .muted { color: var(--muted); }
+    .bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 63px;
+      border-top: 1px solid var(--slate);
+      display: grid;
+      grid-template-columns: 1fr 420px 1fr;
+      align-items: center;
+      padding: 0 15px;
+      background: #000;
+      gap: 18px;
+    }
+    .np { display: flex; gap: 9px; align-items: center; }
+    .np .cover { width: 42px; }
+    .transport { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+    .buttons { display: flex; gap: 9px; align-items: center; }
+    .btn { width: 30px; height: 30px; background: var(--panel); }
+    .btn.play { width: 36px; height: 36px; background: var(--coral); }
+    .line { width: 100%; height: 3px; background: var(--track); }
+    .line i { display: block; width: 32%; height: 100%; background: var(--coral); }
+    .right { display: flex; justify-content: flex-end; gap: 9px; align-items: center; }
+    .toggle { width: 39px; height: 22px; background: var(--green); }
+    .dialog {
+      background: var(--night);
+      outline: 2px solid var(--cream);
+      outline-offset: -5px;
+      padding: 14px 16px;
+    }
+    .lyric { font-size: 17px; line-height: 1.6; }
+    .lyric.dim { color: #5d5f7d; }
+    .answer { background: var(--maroon, #4a3441); padding: 9px; text-align: center; font-size: 14px; }
+    .tag { display: inline-block; background: var(--coral); padding: 1px 6px; font: 13px/1.1 "Jersey 15", monospace; }
+    .note {
+      position: absolute;
+      background: var(--cream);
+      color: #000;
+      font-size: 12px;
+      padding: 4px 8px;
+      max-width: 220px;
+      line-height: 1.35;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Desktop layouts not taken</h1>
+    <p class="intro">
+      Round 12 shipped one harbor pane on the right with the browse column beside it and playback along the bottom. These are three other ways the desktop could have gone, drawn at 1440 by 900 with the same art. Each keeps the one rule the redesign is built on: the harbor and the girl appear once.
+    </p>
+
+    <section>
+      <h2>A. Theater: browse and play are two modes</h2>
+      <div class="why">
+        <span><b>How it works.</b> Browsing gets the whole window: library grid edge to edge. Pressing the bar (or a song) opens Play: the panorama spans the top, the girl on the dock, lyrics or the quiz in one wide centered column.</span>
+        <span><b>Trade.</b> Best reading and quiz focus, closest to Apple Music's full screen lyrics. You can't browse and watch lyrics at once, and every switch is a full repaint of the window.</span>
+      </div>
+      <div class="frame">
+        <img class="pix" src="../apps/web/src/assets/harbor-wide.webp" alt="" style="position:absolute;left:0;top:0;width:100%;height:300px;object-fit:cover;object-position:bottom">
+        <img src="../apps/web/src/assets/girl.webp" alt="" style="position:absolute;left:60px;top:112px;width:190px">
+        <div style="position:absolute;left:15px;top:12px;display:flex;gap:12px;align-items:center">
+          <span class="btn clip" style="background:#0d0f22cc"></span>
+          <span class="px" style="font-size:20px;text-shadow:2px 2px 0 #000">Browse</span>
+        </div>
+        <div class="clip" style="position:absolute;right:20px;top:200px;background:var(--night);padding:6px 12px;text-align:center">
+          <div class="px" style="color:var(--combo);font-size:14px">COMBO</div>
+          <div class="px" style="color:var(--cream);font-size:38px">4</div>
+        </div>
+        <div style="position:absolute;left:50%;transform:translateX(-50%);top:280px;width:620px;display:flex;flex-direction:column;gap:12px">
+          <div class="dialog clip">
+            <div class="muted" style="font-size:11px">か　　　ひつぜん さ　　　　ぐうぜん</div>
+            <div class="lyric">Ah 枯れるは必然 咲かぬは偶然か</div>
+            <div class="muted">Ah, withering is inevitable; is ______ a matter of chance?</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px">
+            <div class="answer clip">not blooming</div>
+            <div class="answer clip">being unable to bloom</div>
+            <div class="answer clip">blooming</div>
+          </div>
+        </div>
+        <div class="bar">
+          <div class="np"><span class="cover c5 clip"></span><span><b>Leave You Behind</b><br><span class="muted">Cö shu Nie</span></span></div>
+          <div class="transport"><div class="buttons"><span class="btn clip"></span><span class="btn play clip"></span><span class="btn clip"></span></div><div class="line"><i></i></div></div>
+          <div class="right"><span class="muted">1x</span><b style="font-size:10px">QUIZ</b><span class="toggle clip"></span><span class="btn clip"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>B. The harbor is the window</h2>
+      <div class="why">
+        <span><b>How it works.</b> The panorama is the app's backdrop, dimmed above the waterline. Browse and lyrics float over it as two dialogue boxes. The bottom bar is drawn as the dock itself, and she sits on it at the left, so playback and the mascot share one strip.</span>
+        <span><b>Trade.</b> The most game-like and the most charming. Least dense, text over art needs scrims everywhere, and the true black background is gone.</span>
+      </div>
+      <div class="frame">
+        <img class="pix" src="../apps/web/src/assets/harbor-wide-night.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:bottom">
+        <div style="position:absolute;inset:0 0 90px 0;background:linear-gradient(#000a,#0006)"></div>
+        <div class="dialog clip" style="position:absolute;left:24px;top:22px;width:560px;bottom:120px;opacity:.96">
+          <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">
+            <img src="../apps/web/src/assets/kashikoi-logo.webp" alt="" style="height:30px">
+            <span class="clip" style="flex:1;background:var(--surface);padding:6px 10px" class="muted">Search songs, albums, artists</span>
+            <span class="tag" style="font-size:16px;padding:3px 8px">REVIEW 3</span>
+          </div>
+          <div class="px" style="font-size:20px;margin-bottom:8px">Recently played</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:14px">
+            <span class="cover c1 clip"></span><span class="cover c2 clip"></span><span class="cover c3 clip"></span><span class="cover c4 clip"></span><span class="cover c5 clip"></span>
+          </div>
+          <div class="px" style="font-size:20px;margin-bottom:8px">Albums</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:9px">
+            <span class="cover c6 clip"></span><span class="cover c7 clip"></span><span class="cover c8 clip"></span><span class="cover c1 clip"></span><span class="cover c3 clip"></span>
+          </div>
+        </div>
+        <div class="dialog clip" style="position:absolute;right:24px;top:22px;width:430px;bottom:120px;display:flex;flex-direction:column;gap:14px;justify-content:center">
+          <div class="lyric dim">咲き誇る花の名前を</div>
+          <div class="lyric" style="font-size:20px">Ah 枯れるは必然 咲かぬは偶然か</div>
+          <div class="muted">Ah, withering is inevitable; is not blooming a matter of chance?</div>
+          <div class="lyric dim">君の隣で数えていた</div>
+        </div>
+        <img src="../apps/web/src/assets/girl.webp" alt="" style="position:absolute;left:14px;bottom:30px;width:150px">
+        <div style="position:absolute;left:180px;right:24px;bottom:26px;display:grid;grid-template-columns:1fr 360px 1fr;align-items:center;gap:18px">
+          <div class="np"><span class="cover c5 clip"></span><span style="text-shadow:1px 1px 0 #000"><b>Leave You Behind</b><br>Cö shu Nie</span></div>
+          <div class="transport"><div class="buttons"><span class="btn clip"></span><span class="btn play clip"></span><span class="btn clip"></span></div><div class="line"><i></i></div></div>
+          <div class="right"><span class="toggle clip"></span><span class="btn clip"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>C. Lyrics first, library as a sidebar</h2>
+      <div class="why">
+        <span><b>How it works.</b> The song is the main column: a harbor strip on top, then big lyrics or the quiz, as wide as the window allows. The library shrinks to a right sidebar of compact rows (search, recents, albums), like a playlist panel.</span>
+        <span><b>Trade.</b> Puts the learning first and makes lyrics huge. Album grids and artwork, the nicest part of browsing, get squeezed into rows, and with nothing playing the main column is empty.</span>
+      </div>
+      <div class="frame">
+        <div style="position:absolute;left:0;top:0;bottom:63px;right:300px;display:flex;flex-direction:column">
+          <div style="position:relative;height:200px;overflow:hidden">
+            <img class="pix" src="../apps/web/src/assets/harbor-wide.webp" alt="" style="position:absolute;left:0;bottom:0;width:100%;height:100%;object-fit:cover;object-position:bottom">
+            <img src="../apps/web/src/assets/girl.webp" alt="" style="position:absolute;left:30px;bottom:-4px;width:180px">
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:0 70px">
+            <div class="lyric dim" style="font-size:22px">咲き誇る花の名前を</div>
+            <div class="lyric" style="font-size:30px;line-height:1.4">Ah 枯れるは必然 咲かぬは偶然か</div>
+            <div class="muted" style="font-size:15px">Ah, withering is inevitable; is not blooming a matter of chance?</div>
+            <div class="lyric dim" style="font-size:22px">君の隣で数えていた</div>
+          </div>
+          <div style="display:flex;gap:9px;padding:0 70px 16px">
+            <span class="clip px" style="background:var(--slate);padding:10px 16px;font-size:18px">EXPLAIN</span>
+            <span class="clip px" style="background:var(--coral);padding:10px 16px;font-size:18px;flex:1;text-align:center">REVIEW LATER</span>
+          </div>
+        </div>
+        <div style="position:absolute;right:0;top:0;bottom:63px;width:300px;border-left:1px solid var(--slate);padding:12px;display:flex;flex-direction:column;gap:10px">
+          <img src="../apps/web/src/assets/kashikoi-logo.webp" alt="" style="height:30px;align-self:flex-start">
+          <span class="clip muted" style="background:var(--surface);padding:6px 10px">Search</span>
+          <span class="tag" style="font-size:16px;padding:4px 8px;align-self:flex-start">REVIEW 3</span>
+          <div class="px" style="font-size:18px;margin-top:4px">Recently played</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="np"><span class="cover c1 clip" style="width:32px"></span><span>ナイトウォッチ<br><span class="muted">KISIDA KYODAN</span></span></div>
+            <div class="np"><span class="cover c2 clip" style="width:32px"></span><span>Tobenai Tsubasa<br><span class="muted">Lily Chou-Chou</span></span></div>
+            <div class="np"><span class="cover c3 clip" style="width:32px"></span><span>春 - HARU<br><span class="muted">Tokyo Syoki Syodo</span></span></div>
+          </div>
+          <div class="px" style="font-size:18px;margin-top:4px">Albums</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="np"><span class="cover c4 clip" style="width:32px"></span><span>天才ヴァガボンド<br><span class="muted">Coil</span></span></div>
+            <div class="np"><span class="cover c5 clip" style="width:32px"></span><span>ベストアルバム<br><span class="muted">KISIDA KYODAN</span></span></div>
+            <div class="np"><span class="cover c6 clip" style="width:32px"></span><span>よそいき<br><span class="muted">tricot</span></span></div>
+          </div>
+        </div>
+        <div class="bar">
+          <div class="np"><span class="cover c5 clip"></span><span><b>Leave You Behind</b><br><span class="muted">Cö shu Nie</span></span></div>
+          <div class="transport"><div class="buttons"><span class="btn clip"></span><span class="btn play clip"></span><span class="btn clip"></span></div><div class="line"><i></i></div></div>
+          <div class="right"><span class="muted">1x</span><b style="font-size:10px">QUIZ</b><span class="toggle clip" style="background:var(--track)"></span><span class="btn clip"></span></div>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>

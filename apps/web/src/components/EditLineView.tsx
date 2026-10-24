@@ -9,7 +9,7 @@ import { IconButton, Label } from './ui';
 /**
  * Moves a review list entry to another sentence of its song, or removes it. Every sentence of the song is listed in
  * song order with the entry's current one centered; sentences already in the review list are marked and disabled.
- * Fills its parent: the desktop player pane or a phone route.
+ * Fills its parent: the desktop harbor pane or a phone route.
  */
 export function EditLineView({ id, onClose }: { id: string; onClose: () => void }) {
   const reviewList = appStore((state) => state.reviewList);

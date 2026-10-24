@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { BreakdownView } from '@/components/BreakdownView';
 import { closePanel } from '@/lib/panels';
 
-// The phone layout's breakdown sheet. On desktop `openBreakdown` shows the same view in the player pane instead.
+// The phone layout's breakdown sheet. On desktop `openBreakdown` shows the same view over the harbor pane instead.
 export const Route = createFileRoute('/_app/breakdown')({
   validateSearch: z.object({ songId: z.string(), sentenceId: z.string() }),
   component: BreakdownScreen,

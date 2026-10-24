@@ -6,7 +6,7 @@ import logo from '@/assets/kashikoi-logo.webp';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { IconButton, Label, Tag } from './ui';
 
-/** Logo band on the three tabs of the phone layout; the desktop nav rail carries the logo instead. */
+/** Logo band on the three tabs of the phone layout; the desktop top bar carries the logo instead. */
 export function Header() {
   const navigate = useNavigate();
   const offline = settingsStore((state) => state.offlineMode);
@@ -40,7 +40,7 @@ export function Header() {
   );
 }
 
-/** Tab screens show the logo header on the phone and nothing on the desktop, where the nav rail has it. */
+/** Tab screens show the logo header on the phone and nothing on the desktop, where the top bar has it. */
 export function TabHeader() {
   return useIsDesktop() ? null : <Header />;
 }

@@ -25,6 +25,8 @@ import { SongRow, songRowHeight } from '@/components/SongRow';
 import { Button, Label } from '@/components/ui';
 import { VirtualGrid, VirtualList } from '@/components/VirtualList';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { cn } from '@/lib/cn';
+import { RecentlyPlayed } from '@/components/RecentlyPlayed';
 
 const tabs = ['albums', 'artists', 'songs', 'playlists'] as const;
 const tabLabels = { albums: 'Albums', artists: 'Artists', songs: 'Songs', playlists: 'Playlists' } as const;
@@ -62,7 +64,10 @@ function PlaylistRow({ playlist, count }: { playlist: Playlist; count: number })
   );
 }
 
-/** Virtualized grids and rows for the entire in-memory library. */
+/**
+ * Virtualized grids and rows for the entire in-memory library. The desktop's home: Recently played heads it, its
+ * search lives in the top bar and the sub-tabs are a pixel tab strip.
+ */
 function LibraryScreen() {
   const { tab, q: query } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
@@ -144,48 +149,75 @@ function LibraryScreen() {
   ];
   return (
     <Screen header={<TabHeader />}>
-      <div className="px-4 pt-4 pb-4">
-        <div className="flex flex-col gap-4 pb-4">
-          <PixelFrame fill={colors.surface} contentClassName="flex items-center gap-[10px] px-3">
-            <Icon name="search" size={20} color={colors.muted} />
-            <input
-              aria-label="Search library"
-              placeholder="Search songs, albums, artists"
-              value={query}
-              onChange={(event) => setSearch({ q: event.target.value })}
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              className="h-[50px] min-w-0 flex-1 bg-transparent text-base text-text outline-none placeholder:text-muted"
-            />
-            {query && (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => setSearch({ q: '' })}
-                className="active:opacity-70"
-              >
-                <Icon name="close" size={20} color={colors.muted} />
-              </button>
-            )}
-          </PixelFrame>
-          <div className="flex gap-1.5">
-            {tabs.map((value) => (
-              <Button
-                key={value}
-                label={tabLabels[value]}
-                fill={tab === value ? colors.coral : colors.slate}
-                onPress={() => setSearch({ tab: value })}
-                className="flex-1"
-                // Four segments leave little width; tighter padding keeps "Playlists" on one line.
-                contentClassName="px-1"
-              >
-                <Label lines={1} className="font-bold">
-                  {tabLabels[value]}
-                </Label>
-              </Button>
-            ))}
-          </div>
+      <div className={desktop ? 'px-5 pt-2 pb-6' : 'px-4 pt-4 pb-4'}>
+        <div className={desktop ? 'flex flex-col gap-5 pb-5' : 'flex flex-col gap-4 pb-4'}>
+          {desktop ? (
+            <>
+              {!query && <RecentlyPlayed rows={1} minTile={minTile} />}
+              <div role="tablist" aria-label="Library" className="flex items-end gap-6 border-b border-slate">
+                {tabs.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === value}
+                    onClick={() => setSearch({ tab: value })}
+                    className={cn(
+                      '-mb-px border-b-2 pb-1.5 transition-[filter] hover:brightness-125',
+                      tab === value ? 'border-coral' : 'border-transparent',
+                    )}
+                  >
+                    <Label pixel className="text-[27px]" style={{ color: tab === value ? colors.text : colors.muted }}>
+                      {tabLabels[value]}
+                    </Label>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <PixelFrame fill={colors.surface} contentClassName="flex items-center gap-[10px] px-3">
+                <Icon name="search" size={20} color={colors.muted} />
+                <input
+                  aria-label="Search library"
+                  placeholder="Search songs, albums, artists"
+                  value={query}
+                  onChange={(event) => setSearch({ q: event.target.value })}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  className="h-[50px] min-w-0 flex-1 bg-transparent text-base text-text outline-none placeholder:text-muted"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setSearch({ q: '' })}
+                    className="active:opacity-70"
+                  >
+                    <Icon name="close" size={20} color={colors.muted} />
+                  </button>
+                )}
+              </PixelFrame>
+              <div className="flex gap-1.5">
+                {tabs.map((value) => (
+                  <Button
+                    key={value}
+                    label={tabLabels[value]}
+                    fill={tab === value ? colors.coral : colors.slate}
+                    onPress={() => setSearch({ tab: value })}
+                    className="flex-1"
+                    // Four segments leave little width; tighter padding keeps "Playlists" on one line.
+                    contentClassName="px-1"
+                  >
+                    <Label lines={1} className="font-bold">
+                      {tabLabels[value]}
+                    </Label>
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
           {kind ? (
             <HiddenSongsRow count={source[kind].length - hidden[kind].length} kind={kind} />
           ) : (
