@@ -43,6 +43,8 @@ export default function ClipReviewScreen() {
           combo={0}
           nice={false}
           best={results.length ? { combo: best, perfect } : undefined}
+          // She lands a koi when at least one clip was right.
+          pose={hits > 0 ? 'catch' : 'play'}
           tag={results.length ? <Tag>REVIEW DONE</Tag> : undefined}
           dialog={
             results.length ? (

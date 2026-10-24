@@ -1,46 +1,41 @@
-import { getRecentlyPlayed, useLibraryFilters } from '@kashi-koi/core/data/libraryVisibility';
-import { appStore } from '@kashi-koi/core/store/appStore';
-import { libraryStore } from '@kashi-koi/core/store/libraryStore';
+import { useAvailableReviewList } from '@kashi-koi/core/data/reviewVisibility';
+import { nextDue, reviewTime } from '@kashi-koi/core/lyrics/review';
 import { colors } from '@kashi-koi/design/tokens';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useMemo, useRef } from 'react';
-import background from '@/assets/background.webp';
-import { Cover } from '@/components/Cover';
-import { FogBadge } from '@/components/Fog';
+import { createFileRoute, Link, Navigate } from '@tanstack/react-router';
+import { HarborScene } from '@/components/Harbor';
 import { TabHeader } from '@/components/Header';
 import { Icon } from '@/components/Icon';
-import { Mascot } from '@/components/Mascot';
 import { PixelFrame } from '@/components/PixelFrame';
+import { RecentlyPlayed } from '@/components/RecentlyPlayed';
 import { Screen } from '@/components/Screen';
 import { useDueCount } from '@/components/TabBar';
-import { Label, SectionHeader } from '@/components/ui';
-import { gridLayout } from '@/components/VirtualList';
-import { useElementWidth } from '@/hooks/useElementWidth';
+import { Label } from '@/components/ui';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { useOpenPlayer } from '@/hooks/useOpenPlayer';
+import { useNow } from '@/hooks/useNow';
 
 export const Route = createFileRoute('/_app/')({ component: HomeScreen });
 
-/** Harbor hero scrolls away; its review card overlaps the dock's bottom edge. */
+/**
+ * Phone Home: the harbor hero scrolls away and its review row overlaps the dock's bottom edge. The row keeps one
+ * height either way: red with the count when something is due, quiet with the next due day once nothing is, when she
+ * holds up her catch. The desktop has no separate Home: the Library, with Recently played on top, is its home,
+ * and the harbor lives in the harbor pane.
+ */
 function HomeScreen() {
-  const songs = libraryStore((state) => state.songs);
-  const filters = useLibraryFilters();
   const count = useDueCount();
-  const openPlayer = useOpenPlayer();
-  const grid = useRef<HTMLDivElement>(null);
-  const width = useElementWidth(grid);
-  const desktop = useIsDesktop();
-  // Three covers across on a phone, as many as fit on the desktop; always two rows of recents.
-  const { columns, size } = gridLayout(width, desktop ? 140 : 100, 12);
-  const recent = useMemo(() => getRecentlyPlayed(filters, columns * 2, songs), [filters, columns, songs]);
+  const reviewList = useAvailableReviewList();
+  const now = useNow();
+  if (useIsDesktop()) return <Navigate to="/library" replace />;
   return (
     <Screen header={<TabHeader />}>
-      <div className="relative h-[250px]">
-        <img src={background} alt="" fetchPriority="high" className="h-full w-full object-cover" />
-        <div className="absolute bottom-2 left-[26px]">
-          <Mascot size={240} />
-        </div>
-      </div>
+      {/* The review row rides 26px over the hero's bottom edge, so she sits on the deck above it. */}
+      <HarborScene
+        className="h-[250px]"
+        covered={26}
+        left={26}
+        size={() => 240}
+        pose={count === 0 ? 'catch' : 'play'}
+      />
       <div className="relative -mt-[26px] flex flex-col gap-[14px] px-4 pb-5">
         <Link
           to="/review"
@@ -48,74 +43,42 @@ function HomeScreen() {
           className="block transition-[filter] active:opacity-70 hover:brightness-110"
         >
           {count === 0 ? (
-            <PixelFrame fill={colors.surface} border="#363a5e" contentClassName="flex items-center gap-[10px] p-[14px]">
-              <Icon name="check" color={colors.green} size={22} />
-              <Label className="font-semibold">All caught up</Label>
+            <PixelFrame
+              fill={colors.surface}
+              border="#363a5e"
+              contentClassName="flex h-[56px] items-center gap-[10px] pr-4 pl-[14px]"
+            >
+              <Icon name="check" color={colors.green} size={24} />
+              <Label pixel className="text-[24px] tracking-[0.5px]">
+                ALL CAUGHT UP
+              </Label>
+              <Label muted lines={1} className="ml-auto text-[13px]">
+                {nextDue(reviewList, now)}
+              </Label>
             </PixelFrame>
           ) : (
             <PixelFrame
               fill={colors.coralDeep}
               border="#ff8f9b"
-              contentClassName="flex min-h-[122px] items-center gap-[10px] px-[18px] py-[14px]"
+              contentClassName="flex h-[56px] items-center gap-[10px] pr-[10px] pl-[14px]"
             >
-              <Icon name="musicFilled" size={54} color={colors.cream} />
-              <span className="flex flex-1 flex-col items-center">
-                <Label pixel className="text-[29px] tracking-[1px]">
-                  REVIEW
-                </Label>
-                <Label pixel className="text-[44px]">
-                  {count}
-                </Label>
-                <Label pixel className="text-[29px] tracking-[1px]">
-                  LYRICS
-                </Label>
-              </span>
+              <Icon name="musicFilled" size={30} color={colors.cream} />
+              {/* A narrow phone drops the time so the title keeps its count. */}
+              <Label pixel lines={1} className="min-w-0 flex-1 text-[24px] tracking-[0.5px]">
+                REVIEW {count} {count === 1 ? 'LYRIC' : 'LYRICS'}
+              </Label>
+              <Label className="shrink-0 text-[13px] max-[359px]:hidden">{reviewTime}</Label>
               <PixelFrame
                 fill={colors.coralSoft}
                 border={null}
-                contentClassName="flex h-[52px] w-[52px] items-center justify-center"
+                contentClassName="flex h-10 w-10 items-center justify-center"
               >
-                <Icon name="next" size={40} />
+                <Icon name="next" size={30} />
               </PixelFrame>
             </PixelFrame>
           )}
         </Link>
-        {recent.length > 0 && <SectionHeader title="Recently played" />}
-        <div
-          ref={grid}
-          className="grid justify-between gap-y-3"
-          style={{ gridTemplateColumns: `repeat(${columns}, ${size}px)` }}
-        >
-          {width > 0 &&
-            recent.map((song) => (
-              <button
-                key={song.id}
-                type="button"
-                aria-label={`Play ${song.title}`}
-                onClick={() =>
-                  openPlayer(() =>
-                    appStore.getState().startSong(
-                      song.id,
-                      recent.map((song) => song.id),
-                    ),
-                  )
-                }
-                className="block text-left transition-[filter] active:opacity-70 hover:brightness-110"
-                style={{ width: size }}
-              >
-                <Cover song={song} size={size} />
-                <Label lines={1} className="mt-1.5 text-[15px] font-bold">
-                  {song.title}
-                </Label>
-                <span className="flex items-center gap-1.5">
-                  <Label muted lines={1} className="flex-1 text-xs">
-                    {song.artist}
-                  </Label>
-                  <FogBadge songId={song.id} compact />
-                </span>
-              </button>
-            ))}
-        </div>
+        <RecentlyPlayed rows={2} minTile={100} />
       </div>
     </Screen>
   );

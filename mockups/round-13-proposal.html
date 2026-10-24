@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Kashi-Koi round 13: her face, and what is around her</title>
+    <style>
+    @font-face {
+      font-family: "Jersey 15";
+      src: url("../apps/mobile/assets/fonts/Jersey15-Regular.ttf");
+    }
+    @font-face {
+      font-family: "M PLUS Rounded 1c";
+      font-weight: 400;
+      src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Regular.ttf");
+    }
+    @font-face {
+      font-family: "M PLUS Rounded 1c";
+      font-weight: 700;
+      src: url("../apps/mobile/assets/fonts/MPLUSRounded1c-Bold.ttf");
+    }
+    :root {
+      --coral: #fb4a5e;
+      --coral-deep: #df475a;
+      --coral-border: #ff9aa5;
+      --cream: #fbf8c6;
+      --night: #0d0f22;
+      --slate: #363a5e;
+      --track: #3e3d5b;
+      --muted: #9a9cb8;
+      --lavender: #b4a6e6;
+      --combo: #ffc93c;
+      --koi: #e7834a;
+      --maroon: #4a3441;
+      --maroon-border: #7a4b56;
+      --green: #55ee9c;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      color: #fff;
+      font:
+        15px / 1.5 "M PLUS Rounded 1c",
+        sans-serif;
+      padding: 24px 0 80px;
+      max-width: 1180px;
+    }
+    body.standalone {
+      background: #000;
+      padding: 40px 48px 120px;
+    }
+    .px {
+      font-family: "Jersey 15", monospace;
+      line-height: 1;
+      font-weight: 400;
+    }
+    h1 {
+      font:
+        44px / 1 "Jersey 15",
+        monospace;
+      margin-bottom: 10px;
+    }
+    h2 {
+      font:
+        32px / 1 "Jersey 15",
+        monospace;
+      margin: 56px 0 6px;
+    }
+    h3 {
+      font:
+        22px / 1 "Jersey 15",
+        monospace;
+      margin: 24px 0 8px;
+      color: var(--cream);
+    }
+    p {
+      max-width: 760px;
+      margin-bottom: 8px;
+    }
+    p.muted,
+    li.muted {
+      color: var(--muted);
+    }
+    ul {
+      padding-left: 18px;
+      max-width: 760px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    b {
+      color: var(--cream);
+    }
+    code,
+    pre {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 13px;
+    }
+    pre {
+      white-space: pre-wrap;
+      color: var(--muted);
+      border-left: 2px solid var(--track);
+      padding: 6px 12px;
+      margin: 8px 0 16px;
+      max-width: 760px;
+    }
+    .pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 12px 0 8px;
+    }
+    .pair.three {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .cap {
+      font:
+        18px / 1 "Jersey 15",
+        monospace;
+      color: var(--muted);
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    .cap.now {
+      color: #f28c9a;
+    }
+    .cap.new {
+      color: var(--green);
+    }
+    .shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid #222;
+    }
+    .faces {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 10px 0 4px;
+    }
+    .faces img,
+    .poses img {
+      display: block;
+      width: 100%;
+      height: auto;
+      image-rendering: pixelated;
+    }
+    .faces .cap,
+    .poses .cap {
+      margin-top: 6px;
+      font-size: 16px;
+    }
+    .poses {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 10px 0 4px;
+    }
+    .poses .cell {
+      background: var(--night);
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .poses .cell.gap {
+      background: transparent;
+      border: 1px dashed var(--track);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 12px;
+    }
+    table {
+      border-collapse: collapse;
+      margin: 8px 0 16px;
+      max-width: 760px;
+      font-size: 14px;
+    }
+    td,
+    th {
+      text-align: left;
+      padding: 5px 14px 5px 0;
+      border-bottom: 1px solid #1c1c1c;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* Fit a natural-size mock into its column. */
+    .fit {
+      overflow: hidden;
+    }
+    .fit > * {
+      transform-origin: top left;
+    }
+
+    /* Pixel frame: a border-colored box clipped to stepped corners, with an inset fill clipped the same way. */
+    .pf {
+      position: relative;
+      background: var(--pf-border, #363a5e);
+    }
+    .pf > .in {
+      position: relative;
+      margin: 2px;
+      background: var(--pf-fill, var(--night));
+      height: calc(100% - 4px);
+    }
+
+    /* The desktop harbor pane, 518 x 818 like the screenshots. */
+    .pane {
+      width: 518px;
+      height: 818px;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .stage {
+      position: relative;
+      height: 300px;
+      overflow: hidden;
+      flex: none;
+    }
+    .stage > img.art {
+      position: absolute;
+      bottom: 0;
+      left: -115px;
+      width: 900px;
+      height: 300px;
+      image-rendering: pixelated;
+    }
+    .stage > img.girl {
+      position: absolute;
+      left: 4px;
+      bottom: 12px;
+      width: 200px;
+      height: 200px;
+      image-rendering: pixelated;
+    }
+    .combo {
+      position: absolute;
+      right: 14px;
+      bottom: 22px;
+      --pf-border: #363a5e;
+    }
+    .combo .in {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 92px;
+      padding: 6px 12px 8px;
+    }
+    .combo .l {
+      font-size: 18px;
+      letter-spacing: 1px;
+      color: var(--combo);
+    }
+    .combo .n {
+      font-size: 52px;
+      color: var(--cream);
+      text-shadow: 3px 3px 0 var(--coral-deep);
+    }
+    .koi {
+      display: flex;
+      gap: 3px;
+      margin-top: 2px;
+    }
+    .koi i {
+      width: 14px;
+      height: 10px;
+      background: var(--koi);
+      clip-path: polygon(0 50%, 30% 0, 75% 15%, 100% 50%, 75% 85%, 30% 100%);
+    }
+    .dialog {
+      margin: -24px 16px 0;
+      --pf-border: var(--cream);
+      flex: none;
+    }
+    .dialog .in {
+      padding: 16px 16px 12px;
+    }
+    .dialog .in::before {
+      content: "";
+      position: absolute;
+      inset: -5px;
+      background: var(--night);
+      z-index: -1;
+    }
+    .jp {
+      font-size: 21px;
+      font-weight: 700;
+      line-height: 1.55;
+      margin-bottom: 4px;
+    }
+    .en {
+      color: #d9d9e6;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    .blank {
+      display: inline-block;
+      width: 110px;
+      border-bottom: 2px solid var(--coral);
+      vertical-align: -3px;
+    }
+    .answers {
+      padding: 16px 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ans {
+      --pf-border: var(--maroon-border);
+      --pf-fill: var(--maroon);
+    }
+    .ans .in {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      padding: 8px 30px;
+      position: relative;
+    }
+    .ans .k {
+      position: absolute;
+      top: 3px;
+      left: 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .tag {
+      position: absolute;
+      top: -8px;
+      left: 14px;
+      --pf-border: var(--coral-border);
+      --pf-fill: var(--coral);
+    }
+    .tag .in {
+      font-size: 14px;
+      letter-spacing: 1px;
+      padding: 3px 7px 4px;
+      color: #fff;
+    }
+    .lyrics {
+      padding: 22px 24px 0;
+      overflow: hidden;
+      flex: 1;
+    }
+    .lyrics .title {
+      color: var(--lavender);
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+    .lyrics .intro {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+    .line {
+      margin-bottom: 14px;
+      padding-left: 14px;
+      position: relative;
+      font-size: 19px;
+      line-height: 1.5;
+    }
+    .line.marked::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 11px;
+      width: 6px;
+      height: 6px;
+      background: var(--coral);
+    }
+    .line.cur {
+      color: #fff;
+      font-weight: 700;
+    }
+    .line.dim {
+      color: var(--muted);
+    }
+    .line .t {
+      display: block;
+      font-size: 14px;
+      color: #d9d9e6;
+      font-weight: 400;
+      margin-top: 2px;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      padding: 0 16px;
+      flex: none;
+    }
+    .btn {
+      --pf-border: #4c4f7a;
+      --pf-fill: #2a2d4b;
+      flex: none;
+    }
+    .btn.wide {
+      flex: 1;
+    }
+    .btn.coral {
+      --pf-border: var(--coral-border);
+      --pf-fill: var(--coral);
+    }
+    .btn.dim {
+      --pf-border: #6b3a44;
+      --pf-fill: #5c2632;
+      opacity: 0.8;
+    }
+    .btn .in {
+      padding: 14px 22px;
+      font-size: 23px;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+    .topbadge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      --pf-border: #363a5e;
+    }
+    .topbadge .in {
+      padding: 4px 10px 5px;
+      font-size: 20px;
+      letter-spacing: 1px;
+      color: var(--cream);
+    }
+    .close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 40px;
+      height: 40px;
+      --pf-border: #4c4f7a;
+      --pf-fill: #2a2d4b;
+    }
+    .close .in {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #fff;
+    }
+
+    /* Phone home, 390 wide. */
+    .phone {
+      width: 390px;
+      background: #000;
+      overflow: hidden;
+      position: relative;
+      padding-bottom: 20px;
+    }
+    .phone .bar {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+    }
+    .phone .bar img {
+      height: 30px;
+    }
+    .phone .gear {
+      width: 22px;
+      height: 22px;
+      border: 3px solid var(--lavender);
+      border-radius: 50%;
+    }
+    .hero {
+      position: relative;
+      height: 220px;
+      overflow: hidden;
+    }
+    .hero img.art {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 390px;
+      height: 260px;
+      object-fit: cover;
+      object-position: bottom;
+      image-rendering: pixelated;
+    }
+    .hero img.girl {
+      position: absolute;
+      left: 12px;
+      bottom: 14px;
+      width: 150px;
+      height: 150px;
+      image-rendering: pixelated;
+    }
+    .slot {
+      margin: 14px 16px 0;
+      --pf-border: var(--coral-border);
+      --pf-fill: var(--coral);
+    }
+    .slot .in {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px 0 16px;
+    }
+    .slot.quiet {
+      --pf-border: #363a5e;
+      --pf-fill: #16182a;
+    }
+    .slot .big {
+      font-size: 24px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .slot .sub {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.85);
+      margin-left: auto;
+    }
+    .slot.quiet .sub {
+      color: var(--muted);
+    }
+    .slot .chev {
+      font-size: 26px;
+      color: #fff;
+    }
+    .slot .check {
+      color: var(--green);
+      font-size: 22px;
+    }
+    .recent {
+      padding: 22px 16px 0;
+    }
+    .recent .h {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .tile {
+      aspect-ratio: 1;
+      --pf-border: #8ad1ff;
+      --pf-fill: #1e2033;
+    }
+    .tile .in {
+      background:
+        radial-gradient(circle at 70% 30%, #b46be0 0 12%, transparent 13%),
+        linear-gradient(#63d86d, #3fb7c7 60%, #1e2033 60%);
+    }
+    .tile.b .in {
+      background:
+        radial-gradient(circle at 70% 30%, #ef9a52 0 12%, transparent 13%),
+        linear-gradient(#5d9bea, #4f4a9c 60%, #1e2033 60%);
+    }
+    .tiles .name {
+      font-size: 14px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .tiles .artist {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .toggle-pair {
+      display: flex;
+      gap: 40px;
+      align-items: center;
+      margin: 8px 0 4px;
+    }
+    .ios {
+      width: 48px;
+      height: 28px;
+      border-radius: 14px;
+      background: var(--green);
+      position: relative;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .ios::after {
+      content: "";
+      position: absolute;
+      right: 3px;
+      top: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .pxbtn {
+      display: inline-block;
+      --pf-border: #4c4f7a;
+      --pf-fill: #2a2d4b;
+      vertical-align: middle;
+    }
+    .pxbtn.on {
+      --pf-border: #8af0c0;
+      --pf-fill: #1c6747;
+    }
+    .pxbtn .in {
+      padding: 6px 12px 7px;
+      font-size: 20px;
+      letter-spacing: 1px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pxbtn .dot {
+      width: 10px;
+      height: 10px;
+      background: #fff;
+      opacity: 0.4;
+    }
+    .pxbtn.on .dot {
+      background: var(--green);
+      opacity: 1;
+    }
+    </style>
+  </head>
+  <body class="standalone">
+    <h1>Round 13: her face, and what is around her</h1>
+    <p class="muted">
+      An audit of the round 12 screenshots. Her two new poses drifted off-model, so they are regenerated first; the
+      layout proposals follow, each with the current screen on the left and the proposal on the right.
+    </p>
+
+    <h2>1. Her face</h2>
+    <p>
+      The sprite that plays in the app is deadpan in the Tsukumizu way: two tall dark slits set wide and low, no mouth
+      at all, and the face does not react to anything. The round 12 poses lost that. The catch pose got closed arc eyes,
+      an open mouth with a tongue and blush. The doze pose kept a mouth line and blush, and its hat and hair outlines
+      got heavier, so her head reads as a different drawing from the frames beside it.
+    </p>
+    <div class="faces">
+      <div>
+        <img src="round-13/face-sprite-play.png" alt="">
+        <div class="cap">In the app: play frame</div>
+      </div>
+      <div>
+        <img src="round-13/face-current-catch.png" alt="">
+        <div class="cap now">Round 12 catch</div>
+      </div>
+      <div>
+        <img src="round-13/face-current-doze.png" alt="">
+        <div class="cap now">Round 12 doze</div>
+      </div>
+      <div>
+        <img src="round-13/gen-tsukumizu-crop.png" alt="">
+        <div class="cap">Reference: Tsukumizu</div>
+      </div>
+    </div>
+    <p>
+      The fix is a hard rule in the prompt rather than a mood word. "Happily", "big smile" and "sparkle" were in the
+      round 12 prompts, and the model drew exactly that. The new prompts pin the face and let only the pose change:
+    </p>
+    <pre>FACE RULES, most important: her face is deadpan and expressionless exactly like the reference: two tiny dark
+dot eyes set wide apart and low on the face, and NO MOUTH drawn at all. Do not draw a smile, an open mouth, blush
+marks, or sparkly eyes. Keep the face calm and flat no matter what is happening.</pre>
+    <p>
+      The joke is the same one Tsukumizu makes: something happens and her face does not. She lands a koi and looks at
+      it. The fish gets away and she looks at the empty hook. Each new frame is keyed and registered on the 464px sprite
+      frame against the chair in the play strip, so swapping poses never moves her chair.
+    </p>
+
+    <h3>Catch (perfect run, all caught up)</h3>
+    <div class="poses">
+      <div class="cell">
+        <img src="round-13/pose-current-catch.png" alt="">
+        <div class="cap now">Round 12</div>
+      </div>
+      <div class="cell">
+        <img src="round-13/pose-new-catch-a.png" alt="">
+        <div class="cap new">Proposed</div>
+      </div>
+      <div class="cell">
+        <img src="round-13/pose-new-catch-b.png" alt="">
+        <div class="cap">Alternate, rounder dot eyes</div>
+      </div>
+      <div>
+        <img src="round-13/face-new-catch-a.png" alt="">
+        <div class="cap new">Proposed, close up</div>
+      </div>
+    </div>
+    <p class="muted">
+      The proposed frame keeps the tall slit eyes of the play strip. The alternate was generated with the Tsukumizu page
+      as a style reference and came out with rounder dots; it is closer to the reference but further from the frames it
+      has to sit next to.
+    </p>
+
+    <h3>Doze (nothing playing)</h3>
+    <div class="poses">
+      <div class="cell">
+        <img src="round-13/pose-current-doze.png" alt="">
+        <div class="cap now">Round 12</div>
+      </div>
+      <div class="cell">
+        <img src="round-13/pose-new-doze.png" alt="">
+        <div class="cap new">Proposed</div>
+      </div>
+      <div>
+        <img src="round-13/face-current-doze.png" alt="">
+        <div class="cap now">Round 12, close up</div>
+      </div>
+      <div>
+        <img src="round-13/face-new-doze.png" alt="">
+        <div class="cap new">Proposed, close up</div>
+      </div>
+    </div>
+    <p class="muted">Eyes closed as two flat lines, no mouth, no blush, hat and hair drawn like the play strip.</p>
+
+    <h3>Miss (new: a wrong answer)</h3>
+    <div class="poses">
+      <div class="cell gap">No pose today. A wrong answer only recolors the button.</div>
+      <div class="cell">
+        <img src="round-13/pose-new-miss.png" alt="">
+        <div class="cap new">Proposed</div>
+      </div>
+      <div>
+        <img src="round-13/face-new-miss.png" alt="">
+        <div class="cap new">Proposed, close up</div>
+      </div>
+      <div></div>
+    </div>
+    <p class="muted">
+      The line hangs slack with a bare hook, a splash where the fish went, and a "..." over her head. Shown for the
+      answer wait after a miss, then back to the play strip on CONTINUE.
+    </p>
+
+    <table>
+      <tr>
+        <th>Pose</th>
+        <th>Where</th>
+        <th>Change</th>
+      </tr>
+      <tr>
+        <td>play</td>
+        <td>Quiz and listen, any song playing</td>
+        <td>None, the strip stays</td>
+      </tr>
+      <tr>
+        <td>doze</td>
+        <td>Desktop pane with nothing playing</td>
+        <td>Replace the frame</td>
+      </tr>
+      <tr>
+        <td>catch</td>
+        <td>Perfect run, phone home when caught up, clip review with hits</td>
+        <td>Replace the frame</td>
+      </tr>
+      <tr>
+        <td>miss</td>
+        <td>Answer wait after a wrong answer</td>
+        <td>New frame, one line in QuizColumn</td>
+      </tr>
+    </table>
+    <p class="muted">
+      Files: <code>mockups/round-13/pose-new-*.png</code>, already 464px and chair-registered. Adopting them is a cwebp
+      into <code>apps/web/src/assets</code> and no code change for doze and catch.
+    </p>
+
+    <h2>2. Desktop pane: one stage for both modes</h2>
+    <p>
+      Today listen mode gets a short strip and quiz mode gets the whole pane. Flipping the QUIZ switch repaints the
+      pane: she jumps from 90px to 200px, the harbor changes cut, and the sentence lands somewhere new. In quiz mode
+      most of the pane is sky, she is the size of the fishing boat, and the combo box floats in the water.
+    </p>
+    <p>
+      Proposal: the pane has one stage, the panorama at a fixed 300px, in every mode. She is the same size whether you
+      are reading lyrics or answering, the combo box sits on the deck beside her, and the sentence box and answers get
+      the room that used to be sky. Nothing moves when you toggle the quiz.
+    </p>
+    <div class="pair">
+      <div class="shot">
+        <div class="cap now">Now: quiz mode</div>
+        <img src="round-13/pane-quiz-day.jpg" alt="">
+      </div>
+      <div>
+        <div class="cap new">Proposed: quiz mode</div>
+        <div class="fit">
+          <div class="pane">
+            <div class="stage">
+              <img class="art" src="../apps/web/src/assets/harbor-wide.webp" alt="">
+              <img class="girl" src="round-13/pose-sprite-play.png" alt="">
+              <div class="pf combo">
+                <div class="in px">
+                  <span class="l">COMBO</span><span class="n">2</span><span class="koi"><i></i><i></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="pf dialog">
+              <div class="in">
+                <div class="jp">まだ眠る街を抜けて</div>
+                <div class="jp">窓に映る君の横顔</div>
+                <div class="en">
+                  As we pass through the town that <span class="blank"></span>, your profile is reflected in the window.
+                </div>
+              </div>
+            </div>
+            <div class="answers">
+              <div class="pf ans">
+                <div class="in"><span class="k px">1</span>is no longer sleeping</div>
+              </div>
+              <div class="pf ans">
+                <div class="in"><span class="k px">2</span>is not sleeping yet</div>
+              </div>
+              <div class="pf ans">
+                <div class="in"><span class="k px">3</span>is still sleeping</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pair">
+      <div class="shot">
+        <div class="cap now">Now: listen mode</div>
+        <img src="round-13/pane-listen-night.jpg" alt="">
+      </div>
+      <div>
+        <div class="cap new">Proposed: listen mode, same stage</div>
+        <div class="fit">
+          <div class="pane">
+            <div class="stage">
+              <img class="art" src="../apps/web/src/assets/harbor-wide-night.webp" alt="">
+              <img class="girl" src="round-13/pose-sprite-play.png" alt="">
+            </div>
+            <div class="lyrics">
+              <div class="title px">The Dawn Bus</div>
+              <div class="intro">The singer addresses a companion on a dawn bus, with words left unsaid.</div>
+              <div class="line marked dim">まだ眠る街を抜けて</div>
+              <div class="line marked cur">
+                窓に映る君の横顔<span class="t"
+                  >As we pass through the town that is still sleeping, your profile is reflected in the window.</span
+                >
+              </div>
+              <div class="line marked dim">遠ざかる街の灯りを</div>
+              <div class="line marked dim">
+                ひとつずつ数えてた<span class="t"
+                  >I was counting the town lights one by one as they faded into the distance.</span
+                >
+              </div>
+              <div class="line dim">言えなかった言葉が</div>
+            </div>
+            <div class="actions">
+              <div class="pf btn"><div class="in px">EXPLAIN</div></div>
+              <div class="pf btn wide dim"><div class="in px">IN REVIEW</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul>
+      <li>
+        <b>Clip review</b>
+        uses the same stage. The "1 OF 2" box leaves the sky and becomes the dialog tag, where NEW and RUN COMPLETE
+        already live, so the art carries only the close button.
+      </li>
+      <li>
+        <b>Nothing playing</b>
+        keeps her dozing on the same stage, with "Nothing playing" as one muted line under it instead of a dialog box
+        over an empty deck.
+      </li>
+      <li><b>Up next</b> already uses this layout. It stops being the odd one out.</li>
+      <li class="muted">
+        The phone keeps its full dock scene. This is a desktop change only; the quiz stage code already has a strip
+        flag, so the work is mostly deleting the other branch.
+      </li>
+    </ul>
+
+    <h2>3. Phone home: one review slot</h2>
+    <p>
+      The hero is good. Under it, the review slot is two different things on two different days: a 130px red card with
+      an icon, a count and a chevron when something is due, and a 56px grey pill when caught up. Everything below it
+      shifts by 74px depending on the day.
+    </p>
+    <p>
+      Proposal: one 56px row in both states. Red with the count and the time it takes when something is due, quiet with
+      the next due day when not. Same slot, same height, same tap target.
+    </p>
+    <div class="pair three">
+      <div class="shot">
+        <div class="cap now">Now: due</div>
+        <img src="round-13/current-phone-home-night.jpg" alt="">
+      </div>
+      <div class="shot">
+        <div class="cap now">Now: caught up</div>
+        <img src="round-13/current-phone-home-caught-up.jpg" alt="">
+      </div>
+      <div>
+        <div class="cap new">Proposed: both states</div>
+        <div class="fit">
+          <div class="phone">
+            <div class="bar">
+              <img src="../apps/web/src/assets/kashikoi-logo.webp" alt=""><span class="gear"></span>
+            </div>
+            <div class="hero">
+              <img class="art" src="../apps/web/src/assets/harbor-night.webp" alt="">
+              <img class="girl" src="round-13/pose-sprite-play.png" alt="">
+            </div>
+            <div class="pf slot">
+              <div class="in">
+                <span class="big px">REVIEW 2 LYRICS</span><span class="sub">~4 min</span><span class="chev px">›</span>
+              </div>
+            </div>
+            <div class="pf slot quiet">
+              <div class="in">
+                <span class="check">✓</span><span class="big px">ALL CAUGHT UP</span
+                ><span class="sub">next due tomorrow</span>
+              </div>
+            </div>
+            <div class="recent">
+              <div class="h px">Recently played</div>
+              <div class="tiles">
+                <div>
+                  <div class="pf tile"><div class="in"></div></div>
+                  <div class="name">春のまにまに</div>
+                  <div class="artist">ヨルシカ</div>
+                </div>
+                <div>
+                  <div class="pf tile b"><div class="in"></div></div>
+                  <div class="name">ひと駅先へ</div>
+                  <div class="artist">雨音カルテット</div>
+                </div>
+                <div>
+                  <div class="pf tile"><div class="in"></div></div>
+                  <div class="name">終点まで</div>
+                  <div class="artist">ミナミ</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="muted">The mock shows both rows at once; the app shows one. Catch pose stays for the caught-up state.</p>
+
+    <h2>4. Smaller things from the audit</h2>
+    <ul>
+      <li>
+        <b>QUIZ switch.</b>
+        The green iOS toggle is the only rounded, glossy control in a pixel UI. A pixel button that lights up reads as
+        part of the same kit.
+        <div class="toggle-pair">
+          <span
+            ><span class="cap now">Now</span><br><span class="px" style="font-size:16px;margin-right:8px">QUIZ</span
+            ><span class="ios"></span></span
+          >
+          <span
+            ><span class="cap new">Proposed</span><br>
+            <span class="pf pxbtn on"
+              ><span class="in px"><span class="dot"></span>QUIZ</span></span
+            ></span
+          >
+        </div>
+      </li>
+      <li>
+        <b>Seagull crop.</b>
+        The classic harbor's seagull sits at the top right of the art, so the 1024px pane and the login dialog both
+        slice it. Either regenerate the classic cut with the gull over the left hills or let the pane use the panorama,
+        which the proposal above does.
+      </li>
+      <li>
+        <b>Empty review page.</b>
+        On desktop "All caught up" hugs the top of an empty black column. Center it and give it one useful line: when
+        the next sentence is due.
+      </li>
+      <li>
+        <b>Answer buttons.</b>
+        The maroon fill is close to the night dialog behind it, so the three choices read as one slab. A one-step
+        lighter border, or the key number in cream, separates them without new color.
+      </li>
+      <li>
+        <b>Now-playing bar on the review page.</b>
+        It drops the skip buttons and the time labels while the same song keeps playing. Keep the bar identical across
+        pages.
+      </li>
+      <li class="muted">Not touched: the album art, which is placeholder data in these screenshots.</li>
+    </ul>
+
+    <script>
+    // Same stepped corners as the app's PixelFrame: three 2px steps on boxes 36px and up, two below.
+    function polygon(steps, size) {
+      const cut = steps * size;
+      const near = (n) => (n ? `${n}px` : '0');
+      const far = (n) => (n ? `calc(100% - ${n}px)` : '100%');
+      const pts = [`${near(cut)} ${near(0)}`, `${far(cut)} ${near(0)}`];
+      for (let i = 1; i <= steps; i++)
+        pts.push(`${far((steps - i + 1) * size)} ${near(i * size)}`, `${far((steps - i) * size)} ${near(i * size)}`);
+      pts.push(`${far(0)} ${far(cut)}`);
+      for (let i = 1; i <= steps; i++)
+        pts.push(`${far(i * size)} ${far((steps - i + 1) * size)}`, `${far(i * size)} ${far((steps - i) * size)}`);
+      pts.push(`${near(cut)} ${far(0)}`);
+      for (let i = 1; i <= steps; i++)
+        pts.push(`${near((steps - i + 1) * size)} ${far(i * size)}`, `${near((steps - i) * size)} ${far(i * size)}`);
+      pts.push(`${near(0)} ${near(cut)}`);
+      for (let i = 1; i <= steps; i++)
+        pts.push(`${near(i * size)} ${near((steps - i + 1) * size)}`, `${near(i * size)} ${near((steps - i) * size)}`);
+      pts.pop();
+      return `polygon(${pts.join(', ')})`;
+    }
+    for (const el of document.querySelectorAll('.pf')) {
+      const steps = Math.min(el.offsetWidth, el.offsetHeight) >= 36 ? 3 : 2;
+      el.style.clipPath = polygon(steps, 2);
+      const inner = el.querySelector(':scope > .in');
+      if (inner) inner.style.clipPath = polygon(steps, 2);
+    }
+    // Scale each natural-size mock down to its column.
+    function fit() {
+      for (const box of document.querySelectorAll('.fit')) {
+        const mock = box.firstElementChild;
+        const scale = Math.min(1, box.clientWidth / mock.offsetWidth);
+        mock.style.transform = `scale(${scale})`;
+        box.style.height = `${mock.offsetHeight * scale}px`;
+      }
+    }
+    fit();
+    window.addEventListener('resize', fit);
+    </script>
+  </body>
+</html>

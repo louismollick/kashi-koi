@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { PlayerPane } from '@/components/PlayerPane';
 import { desktopQuery } from '@/hooks/useIsDesktop';
 
-// The full-screen player is the phone layout's; the desktop shows the same thing in its right pane.
+// The full-screen player is the phone layout's; the desktop shows the same thing in its harbor pane.
 export const Route = createFileRoute('/_app/player')({
   beforeLoad: () => {
     if (window.matchMedia(desktopQuery).matches) throw redirect({ to: '/' });

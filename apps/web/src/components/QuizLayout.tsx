@@ -3,20 +3,20 @@ import { libraryStore } from '@kashi-koi/core/store/libraryStore';
 import type { Choice, Line, RunEnd, SongLyrics } from '@kashi-koi/core/types/domain';
 import { colors } from '@kashi-koi/design/tokens';
 import { type ReactNode, useEffect, useRef } from 'react';
-import harbor from '@/assets/background.webp';
 import { useElementSize } from '@/hooks/useElementSize';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Answers, GapSentence } from './Answers';
 import { FogStrip, useSongFog } from './Fog';
 import { Icon } from './Icon';
 import { SentenceLines } from './LineCard';
-import { Mascot } from './Mascot';
+import { deckFeet, harborArt } from './Harbor';
+import { Mascot, type Pose, spriteFoot } from './Mascot';
 import { PixelFrame } from './PixelFrame';
 import { SongIntro } from './SongIntro';
 import { Button, Label, Tag } from './ui';
 
 /** A finished run's best combo, shown in place of the live one. */
 type Best = { combo: number; perfect: boolean };
-const harborAspect = 1498 / 1050;
 /** How far the dialogue box rides up over the dock. */
 const overlap = 24;
 /** Springy overshoot for the NICE! pop, the CSS stand-in for the iOS spring. */
@@ -24,16 +24,39 @@ const spring = 'cubic-bezier(.2,.9,.3,1.2)';
 
 /**
  * The harbor behind the quiz: she fishes from the dock, NICE! pops by her head and the combo lands in her bucket as
- * fish. The art and sprite stay pinned to the bottom, so a taller sentence only crops sky. `best` swaps the combo
- * for a finished run's best combo, with a gold koi when it was perfect.
+ * fish. The art and sprite stay pinned to the bottom, so a taller sentence only crops sky. Without `combo` there is no
+ * combo box (listen mode, Up next, nothing playing); `best` swaps it for a finished run's best combo, with a gold koi
+ * when it was perfect. `pose` stills her (dozing, holding a koi, looking at an empty hook). `strip` is the desktop
+ * pane's one stage: the panorama at a fixed height in every mode, so toggling the quiz or opening Up next never moves
+ * her. Her chair always clears the dialogue box that can ride over the deck. `overlay` sits along the top edge.
  */
-function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Best }) {
+export function Stage({
+  combo,
+  nice = false,
+  best,
+  pose = 'play',
+  strip = false,
+  overlay,
+}: {
+  combo?: number;
+  nice?: boolean;
+  best?: Best;
+  pose?: Pose;
+  strip?: boolean;
+  overlay?: ReactNode;
+}) {
   const box = useRef<HTMLDivElement>(null);
   const { width, height } = useElementSize(box);
+  const cut = strip ? 'wide' : 'classic';
+  const harbor = harborArt(cut);
   // Zoomed past cover so the art's pixels read at phone size.
-  const artWidth = Math.max(width * 1.6, height * harborAspect);
-  const size = Math.max(0, Math.min(260, width * 0.62, height - 4));
-  const bottom = overlap - size * 0.06;
+  const artWidth = Math.max(width * 1.6, height * harbor.aspect);
+  // Her chair legs land on the deck, above the dialogue box riding over its front edge.
+  const feet = deckFeet(cut, artWidth, overlap);
+  // Her hat sits about 0.7 of her size above her chair legs, so that much has to fit under the top edge. The strip
+  // leaves her some sky.
+  const size = Math.max(0, Math.min(260, width * 0.62, (height - 6 - feet) / 0.7, strip ? height * 0.67 : Infinity));
+  const bottom = feet - size * spriteFoot;
   const note = {
     position: 'absolute',
     color: colors.coral,
@@ -43,17 +66,24 @@ function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Bes
   } as const;
   const count = best ? best.combo : combo;
   return (
-    <div ref={box} className="relative min-h-[72px] grow basis-0 overflow-hidden">
+    <div
+      ref={box}
+      className={
+        strip
+          ? 'relative h-[clamp(200px,36vh,300px)] shrink-0 overflow-hidden'
+          : 'relative min-h-[72px] grow basis-0 overflow-hidden'
+      }
+    >
       <img
-        src={harbor}
+        src={harbor.src}
         alt=""
         draggable={false}
         className="pixelated absolute bottom-0 max-w-none"
-        style={{ left: -(artWidth - width) * 0.3, width: artWidth, height: artWidth / harborAspect }}
+        style={{ left: -(artWidth - width) * 0.3, width: artWidth, height: artWidth / harbor.aspect }}
       />
       <div className="absolute left-1" style={{ bottom }}>
-        <Mascot combo={combo} size={size} />
-        {combo >= 3 && (
+        <Mascot combo={combo} size={size} pose={pose} />
+        {(combo ?? 0) >= 3 && pose === 'play' && (
           <>
             <span aria-hidden style={{ ...note, left: 0, top: size * 0.12, fontSize: Math.min(30, size * 0.14) }}>
               ♪
@@ -83,47 +113,53 @@ function Stage({ combo, nice, best }: { combo: number; nice: boolean; best?: Bes
           </Label>
         </PixelFrame>
       </div>
-      <PixelFrame
-        fill={colors.night}
-        border="#363a5e"
-        className="absolute! right-[14px]"
-        style={{ bottom: overlap + 12 }}
-        contentClassName="flex min-w-[92px] flex-col items-center px-3 pt-1.5 pb-2"
-      >
-        <Label pixel className="text-[18px] tracking-[1px]" style={{ color: colors.combo }}>
-          {best ? 'BEST COMBO' : 'COMBO'}
-        </Label>
-        <Label
-          pixel
-          className="text-[52px]"
-          style={{ color: colors.cream, textShadow: `3px 3px 0 ${colors.coralDeep}` }}
+      {count !== undefined && (
+        <PixelFrame
+          fill={colors.night}
+          border="#363a5e"
+          className="absolute! right-[14px]"
+          style={{ bottom: overlap + 12 }}
+          contentClassName="flex min-w-[92px] flex-col items-center px-3 pt-1.5 pb-2"
         >
-          {count}
-        </Label>
-        {(best ? best.perfect : combo > 0) && (
-          <span className="mt-0.5 flex gap-[3px]">
-            {best ? (
-              <Icon name="koi" size={24} color={colors.combo} />
-            ) : (
-              Array.from({ length: Math.min(combo, 5) }, (_, index) => (
-                // The koi are identical; only their count matters.
-                // biome-ignore lint/suspicious/noArrayIndexKey: identical icons
-                <Icon key={index} name="koi" size={14} color={colors.koi} />
-              ))
-            )}
-          </span>
-        )}
-      </PixelFrame>
+          <Label pixel className="text-[18px] tracking-[1px]" style={{ color: colors.combo }}>
+            {best ? 'BEST COMBO' : 'COMBO'}
+          </Label>
+          <Label
+            pixel
+            className="text-[52px]"
+            style={{ color: colors.cream, textShadow: `3px 3px 0 ${colors.coralDeep}` }}
+          >
+            {count}
+          </Label>
+          {(best ? best.perfect : count > 0) && (
+            <span className="mt-0.5 flex gap-[3px]">
+              {best ? (
+                <Icon name="koi" size={24} color={colors.combo} />
+              ) : (
+                Array.from({ length: Math.min(count, 5) }, (_, index) => (
+                  // The koi are identical; only their count matters.
+                  // biome-ignore lint/suspicious/noArrayIndexKey: identical icons
+                  <Icon key={index} name="koi" size={14} color={colors.koi} />
+                ))
+              )}
+            </span>
+          )}
+        </PixelFrame>
+      )}
+      {overlay && <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">{overlay}</div>}
     </div>
   );
 }
 
 const column = { display: 'flex', flexDirection: 'column', minHeight: 0 } as const;
 
-/** RPG dialogue box: a cream border inside a dark ring, so it reads over the harbor art. `tag` sits on its top edge. */
+/**
+ * RPG dialogue box: a cream border inside a dark ring, so it reads over the harbor art. `tag` sits on its top edge. It
+ * shrinks (its text scrolls) to keep the answers on screen, down to a floor; past that the whole scene scrolls.
+ */
 function Dialog({ children, tag }: { children: ReactNode; tag?: ReactNode }) {
   return (
-    <div className="relative mx-4 flex min-h-0 shrink flex-col" style={{ marginTop: -overlap }}>
+    <div className="relative mx-4 flex min-h-[72px] shrink flex-col" style={{ marginTop: -overlap }}>
       <PixelFrame fill={colors.night} border={null} style={column} contentStyle={{ ...column, padding: 3 }}>
         <PixelFrame
           fill={colors.night}
@@ -179,12 +215,15 @@ function RunSummary({ runEnd }: { runEnd: RunEnd }) {
 
 /**
  * The harbor stage with a dialogue box riding over its dock and `children` (answers or actions) below. Quiz mode,
- * clip review and the review's end screen share it.
+ * clip review and the review's end screen share it. The phone gives the stage whatever the column leaves; the desktop
+ * pane uses the same fixed panorama as listen mode, and the dialogue and answers get the rest.
  */
 export function DockScene({
   combo,
   nice,
   best,
+  pose,
+  overlay,
   tag,
   dialog,
   children,
@@ -192,13 +231,16 @@ export function DockScene({
   combo: number;
   nice: boolean;
   best?: Best;
+  pose?: Pose;
+  overlay?: ReactNode;
   tag?: ReactNode;
   dialog: ReactNode;
   children?: ReactNode;
 }) {
+  const desktop = useIsDesktop();
   return (
-    <div className="flex min-h-0 flex-1 flex-col pb-4">
-      <Stage combo={combo} nice={nice} best={best} />
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-4">
+      <Stage combo={combo} nice={nice} best={best} pose={pose} strip={desktop} overlay={overlay} />
       <Dialog tag={tag}>{dialog}</Dialog>
       <div className="shrink-0 px-4 pt-4">{children}</div>
     </div>
@@ -232,7 +274,9 @@ const actionLabel = 'text-[23px]';
  * or `runEnd`, the song that just finished, with PLAY AGAIN (`onReplay`). The sentence scrolls when it is long, so
  * the answers and, after a miss, EXPLAIN (`onExplain`) and CONTINUE (`onContinue`, when the song is held) always
  * stay on screen. `toast` sits just above the answers, so it never covers the sentence. `notice` replaces the
- * sentence with a short explanation, like a song with no analysis.
+ * sentence with a short explanation, like a song with no analysis. `count` ("3 OF 12") is the dialogue box's first tag,
+ * beside NEW or RUN COMPLETE. `overlay` rides the top of the stage. After a miss she looks at the empty hook until
+ * the next sentence. `skip` (a CONTINUE that jumps ahead) takes the action row once there is nothing left to answer.
  */
 export function QuizColumn({
   lines,
@@ -252,6 +296,9 @@ export function QuizColumn({
   continueLabel = 'CONTINUE',
   toast,
   notice,
+  count,
+  overlay,
+  skip,
 }: {
   lines?: Line[];
   current?: number;
@@ -270,18 +317,31 @@ export function QuizColumn({
   continueLabel?: string;
   toast?: ReactNode;
   notice?: string;
+  count?: string;
+  overlay?: ReactNode;
+  skip?: ReactNode;
 }) {
   // `nice` is the recorded grade, so the miss actions follow scoring even if cached choices went stale.
   const missed = selected !== null && !nice;
   const gap = gapOf(choices);
   const answer = selected === null ? undefined : choices.find((choice) => choice.correct);
-  const summary = !lines?.length && runEnd;
+  const summary = lines?.length ? undefined : runEnd;
   return (
     <DockScene
       combo={combo}
       nice={nice}
       best={summary ? { combo: summary.bestCombo, perfect: summary.perfect } : undefined}
-      tag={summary ? <Tag>RUN COMPLETE</Tag> : isNew ? <Tag>NEW</Tag> : undefined}
+      // A perfect run lands a koi; a miss leaves a bare hook until the next sentence.
+      pose={summary?.perfect ? 'catch' : missed ? 'miss' : 'play'}
+      overlay={overlay}
+      tag={
+        (count || summary || isNew) && (
+          <span className="flex gap-1.5">
+            {count && <Tag fill="#363a5e">{count}</Tag>}
+            {summary ? <Tag>RUN COMPLETE</Tag> : isNew && <Tag>NEW</Tag>}
+          </span>
+        )
+      }
       dialog={
         <>
           <div className="min-h-0 shrink overflow-y-auto">
@@ -318,16 +378,17 @@ export function QuizColumn({
       ) : (
         <Answers choices={choices} selected={selected} onAnswer={onAnswer} />
       )}
-      {missed && (onExplain || onContinue) && (
+      {((missed && (onExplain || onContinue)) || skip) && (
         <div className="mt-3 flex gap-[10px]">
-          {onExplain && (
+          {missed && onExplain && (
             <Button label="Explain this sentence" className="flex-1" onPress={onExplain}>
               <Label pixel className={actionLabel}>
                 EXPLAIN
               </Label>
             </Button>
           )}
-          {onContinue && (
+          {/* A held miss continues the song; otherwise CONTINUE skips ahead to the next sentence. */}
+          {missed && onContinue ? (
             <Button
               label={continueLabel}
               className="flex-1"
@@ -339,6 +400,8 @@ export function QuizColumn({
                 {continueLabel}
               </Label>
             </Button>
+          ) : (
+            skip
           )}
         </div>
       )}

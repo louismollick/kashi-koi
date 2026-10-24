@@ -9,7 +9,7 @@ import { MiniPlayer } from './MiniPlayer';
 import { PixelFrame } from './PixelFrame';
 import { Label } from './ui';
 
-/** The destinations in the phone tab bar and the desktop nav rail. */
+/** The destinations in the phone tab bar. */
 export const tabs = [
   { to: '/', title: 'Home', icon: 'home', activeIcon: 'homeFilled' },
   { to: '/library', title: 'Library', icon: 'musicFilled', activeIcon: 'musicFilled' },
@@ -23,7 +23,7 @@ export function useDueCount() {
   return reviewList.filter((line) => isDue(line, now)).length;
 }
 
-/** Due-count badge on the Review tab and nav item. */
+/** Due-count badge on the Review tab and nav item. Pass `absolute!` to float it: the frame itself is `relative`. */
 export function DueBadge({ count, className }: { count: number; className?: string }) {
   if (count <= 0) return null;
   return (
@@ -60,7 +60,7 @@ export function TabBar() {
                 <>
                   <span className="relative block">
                     <Icon name={isActive ? tab.activeIcon : tab.icon} size={32} color={color} />
-                    {tab.title === 'Review' && <DueBadge count={count} className="absolute -top-2 left-[22px]" />}
+                    {tab.title === 'Review' && <DueBadge count={count} className="absolute! -top-2 left-[22px]" />}
                   </span>
                   <Label pixel className="text-[19px]" style={{ color }}>
                     {tab.title}

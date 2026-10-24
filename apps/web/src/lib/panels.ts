@@ -4,8 +4,8 @@ import { router } from '@/router';
 
 /**
  * Sheets that iOS presents over the player: a sentence's breakdown and the edit line picker. On the phone layout they
- * are routes (`/breakdown`, `/edit-line`), so Back closes them. On desktop they open inside the player pane, which
- * renders `BreakdownView` or `EditLineView` over the player while `panel` is set.
+ * are routes (`/breakdown`, `/edit-line`), so Back closes them. On desktop they open over the harbor pane: the shell
+ * renders `BreakdownView` or `EditLineView` over it while `panel` is set.
  */
 export type Panel = { kind: 'breakdown'; songId: string; sentenceId: string } | { kind: 'edit-line'; id: string };
 
@@ -28,3 +28,8 @@ export function closePanel() {
   if (panelStore.getState().panel) panelStore.setState({ panel: null });
   else router.history.back();
 }
+
+/** Desktop only: whether the harbor pane shows Up next in place of the lyrics. Toggled from the now playing bar. */
+export const queueStore = create<{ open: boolean }>(() => ({ open: false }));
+
+export const toggleQueue = () => queueStore.setState((state) => ({ open: !state.open }));

@@ -1,19 +1,46 @@
 import { spriteFrames } from '@kashi-koi/design/sprites/metadata';
-import bobbing from '@/assets/bobbing.webp';
-import headbang from '@/assets/headbang.webp';
 import { useState } from 'react';
+import bobbing from '@/assets/bobbing.webp';
+import catchPose from '@/assets/catch.webp';
+import doze from '@/assets/doze.webp';
 import girl from '@/assets/girl.webp';
+import headbang from '@/assets/headbang.webp';
+import miss from '@/assets/miss.webp';
 
 const strips = { bobbing, headbang };
+/** Still poses, registered on the sprite frame so swapping one in doesn't move her chair. */
+const poses = { doze, catch: catchPose, miss };
+const poseLabels: Record<keyof typeof poses, string> = {
+  doze: 'dozing',
+  catch: 'holding a koi',
+  miss: 'looking at an empty hook',
+};
+
+/** The transparent strip under her chair legs, as a fraction of her size: frames end the legs at 420 of 464px. */
+export const spriteFoot = 0.09;
+
+/**
+ * `play` bobs (or headbangs on a combo of three); `doze` naps while nothing plays; `catch` holds up a koi; `miss` looks
+ * at the bare hook after a wrong answer. Her face stays deadpan in all of them.
+ */
+export type Pose = 'play' | keyof typeof poses;
 
 /**
  * Step the transparent sprite at 6fps idle or 10fps for a combo of three. The frames advance with a CSS steps()
- * animation across the whole strip, so scoring and playback ticks can't make her stutter.
+ * animation across the whole strip, so scoring and playback ticks can't make her stutter. A still `pose` replaces
+ * the strip.
  */
-export function Mascot({ combo = 0, size = 130 }: { combo?: number; size?: number }) {
+export function Mascot({ combo = 0, size = 130, pose = 'play' }: { combo?: number; size?: number; pose?: Pose }) {
   const mode = combo >= 3 ? 'headbang' : 'bobbing';
   const [failed, setFailed] = useState(false);
   const width = size * spriteFrames.count;
+  if (pose !== 'play')
+    return (
+      <span role="img" aria-label={`Mascot ${poseLabels[pose]}`} className="relative block">
+        <img src={poses[pose]} alt="" width={size} height={size} draggable={false} className="block" />
+        {pose === 'doze' && <Snore size={size} />}
+      </span>
+    );
   return (
     <span
       role="img"
@@ -46,6 +73,24 @@ export function Mascot({ combo = 0, size = 130 }: { combo?: number; size?: numbe
           ))}
         </span>
       )}
+    </span>
+  );
+}
+
+/** A third z that drifts up from the drawn pair and fades, on a slow loop. Hidden for reduced motion; the drawn pair stays. */
+function Snore({ size }: { size: number }) {
+  return (
+    <span
+      aria-hidden
+      className="font-pixel pointer-events-none absolute text-cream motion-reduce:hidden"
+      style={{
+        left: size * 0.62,
+        top: size * 0.16,
+        fontSize: Math.max(12, size * 0.075),
+        animation: 'snore 2.4s steps(6) infinite',
+      }}
+    >
+      z
     </span>
   );
 }

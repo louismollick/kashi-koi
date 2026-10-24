@@ -142,7 +142,10 @@ export function IconButton({
   );
 }
 
-/** Pill switch used for the quiz toggle and review choices. */
+/**
+ * Pixel switch used for the quiz toggle and settings: a stepped track with a square knob that slides right and lights
+ * green when on.
+ */
 export function PixelToggle({
   on,
   onPress,
@@ -165,11 +168,12 @@ export function PixelToggle({
       className="block shrink-0 transition-[filter] enabled:hover:brightness-110 disabled:opacity-45"
     >
       <PixelFrame
-        fill={on ? colors.green : colors.track}
-        border={null}
-        contentClassName={cn('flex h-[30px] w-[52px] p-1', on ? 'justify-end' : 'justify-start')}
+        fill={on ? colors.greenDeep : '#2a2d4b'}
+        border={on ? '#8af0c0' : '#4c4f7a'}
+        steps={2}
+        contentClassName={cn('flex h-[30px] w-[52px] items-center px-[7px]', on ? 'justify-end' : 'justify-start')}
       >
-        <PixelFrame fill="#ffffff" border={null} contentClassName="h-[22px] w-[22px]" />
+        <span className="block h-4 w-4" style={{ background: on ? colors.green : 'rgba(255,255,255,0.4)' }} />
       </PixelFrame>
     </button>
   );

@@ -64,7 +64,7 @@ async function loadScreen(screen: 'player' | 'song-menu', presses = new Map<stri
   const hooks = registerHooks({
     resolve(specifier, context, nextResolve) {
       if (specifier in mocks) return { url: `test:ui:${specifier}`, shortCircuit: true };
-      if (/\.(png|ttf)$/.test(specifier)) return { url: 'test:ui:asset', shortCircuit: true };
+      if (/\.(png|webp|ttf)$/.test(specifier)) return { url: 'test:ui:asset', shortCircuit: true };
       return nextResolve(specifier, context);
     },
     load(url, context, nextLoad) {

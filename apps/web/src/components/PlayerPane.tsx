@@ -1,8 +1,10 @@
 import { canExplain } from '@kashi-koi/core/analysis/breakdowns';
 import { analysisRequests } from '@kashi-koi/core/analysis/fetcher';
+import { useSkipTarget } from '@kashi-koi/core/data/skipTarget';
 import { appStore } from '@kashi-koi/core/store/appStore';
 import {
   currentSentence,
+  getLyrics,
   hasTranslations,
   libraryStore,
   sentenceOccurrenceAt,
@@ -10,28 +12,21 @@ import {
 } from '@kashi-koi/core/store/libraryStore';
 import { settingsStore } from '@kashi-koi/core/store/settingsStore';
 import type { Line, Song } from '@kashi-koi/core/types/domain';
-import { cn } from '@/lib/cn';
 import { colors } from '@kashi-koi/design/tokens';
 import { memo, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { closePanel, openBreakdown, panelStore } from '@/lib/panels';
+import { openBreakdown, queueStore, toggleQueue } from '@/lib/panels';
 import { openMenuFrom } from '@/lib/songMenu';
-import { BreakdownView } from './BreakdownView';
-import { EditLineView } from './EditLineView';
 import { ScreenHeader } from './Header';
-import { Mascot } from './Mascot';
 import { LyricRow, CenteredList } from './Lyrics';
 import { PixelSpinner } from './PixelSpinner';
 import { PlayerBar } from './PlayerBar';
+import { HeaderControls, noAnalysis } from './PlayerControls';
 import { AddedToast, RunEndToast } from './PlayerToasts';
-import { QuizColumn } from './QuizLayout';
+import { QuizColumn, Stage } from './QuizLayout';
 import { SongIntro } from './SongIntro';
-import { SpeedButton } from './SpeedButton';
 import { UpNext } from './UpNext';
-import { Button, IconButton, Label, PixelToggle } from './ui';
-
-/** Shown wherever a song has no translations: web has no on-device translation, only song analyses. */
-const noAnalysis = 'No song analysis yet';
+import { Button, IconButton, Label } from './ui';
 
 /** One tappable listen-mode lyric; a click jumps to the line. Takes only primitives so the memo skips untouched rows. */
 const ListenRow = memo(function ListenRow({
@@ -64,9 +59,43 @@ const ListenRow = memo(function ListenRow({
 /** Pixel-font action label on the big player buttons. */
 const bigLabel = 'text-[23px] tracking-[0.5px]';
 
-/** ListenMode and QuizMode share one body: analysis status, lyrics or the quiz column, and the playback error. */
+/** CONTINUE that jumps to timeline line `index`, with a bar along its bottom draining as the song reaches it. */
+function SkipAhead({ songId, index }: { songId: string; index: number }) {
+  const targetMs = getLyrics(songId).timeline[index]?.startMs ?? 0;
+  const position = appStore((state) => state.positionMs);
+  const [from] = useState(() => appStore.getState().positionMs);
+  const left = Math.max(0, Math.min(1, (targetMs - position) / (targetMs - from || 1)));
+  return (
+    <Button
+      label="Continue to the next sentence"
+      className="flex-1"
+      fill={colors.coral}
+      border={colors.coralBorder}
+      contentClassName="relative"
+      onPress={() => appStore.getState().jumpToLine(index)}
+    >
+      <Label pixel className={bigLabel}>
+        CONTINUE
+      </Label>
+      <span aria-hidden className="absolute inset-x-2 bottom-[5px] h-[3px] bg-[#ffffff40]">
+        <span
+          className="block h-full origin-left bg-cream transition-transform duration-300 ease-linear"
+          style={{ transform: `scaleX(${left})` }}
+        />
+      </span>
+    </Button>
+  );
+}
+
+/**
+ * ListenMode and QuizMode share one body: analysis status, lyrics or the quiz column, and the playback error. On the
+ * desktop both modes sit under the same harbor strip (quiz mode's own stage is that strip too), and the sentence count
+ * tags the quiz's dialogue box.
+ */
 function PlayerBody({ song }: { song: Song }) {
   const songId = song.id;
+  const desktop = useIsDesktop();
+  const count = useSentenceCount(songId);
   const lineIndex = appStore((state) => state.lineIndex);
   const showTranslations = settingsStore((state) => state.showTranslations);
   const quizToggle = appStore((state) => state.quizToggle);
@@ -107,6 +136,14 @@ function PlayerBody({ song }: { song: Song }) {
   const canAdd = !!sentenceId && !inReview;
   const reviewed = new Set(reviewList.filter((item) => item.songId === songId).map((item) => item.sentenceId));
   const explainable = canExplain(songId);
+  // Nothing left to answer: the sentence on screen is answered (or timed out) or has no quiz, or no sentence is
+  // playing at all.
+  const settled =
+    quizToggle &&
+    !answerWait &&
+    !(runEnd && beforeLyrics) &&
+    (!current?.sentence.translation || (!!sentenceId && !!run.answers[sentenceId]));
+  const skipTo = useSkipTarget(songId, settled);
   const explain = (id: string) => openBreakdown(songId, id);
   // The toast dismisses itself when its undo window closes.
   useEffect(() => {
@@ -167,6 +204,8 @@ function PlayerBody({ song }: { song: Song }) {
         onContinue={answerWait ? () => appStore.getState().continueAfterAnswer() : undefined}
         toast={showToast ? <AddedToast /> : runEnd && !beforeLyrics ? <RunEndToast /> : undefined}
         notice={translated ? undefined : noAnalysis}
+        skip={skipTo === undefined ? undefined : <SkipAhead key={skipTo} songId={songId} index={skipTo} />}
+        count={desktop ? count?.toUpperCase() : undefined}
       />
     );
   else if (!lines.length)
@@ -178,7 +217,10 @@ function PlayerBody({ song }: { song: Song }) {
   else
     body = (
       <>
-        <div className="min-h-0 flex-1">
+        {/* On the desktop the lyrics scroll out from under the harbor strip, so their top edge fades. */}
+        <div
+          className={desktop ? 'min-h-0 flex-1 [mask-image:linear-gradient(transparent,#000_28px)]' : 'min-h-0 flex-1'}
+        >
           <CenteredList
             key={songId}
             index={lineIndex}
@@ -253,6 +295,7 @@ function PlayerBody({ song }: { song: Song }) {
   return (
     <>
       {status}
+      {desktop && !quizToggle && <Stage strip />}
       {body}
       {playbackError && (
         <Label className="block px-4 pb-2" style={{ color: colors.red }}>
@@ -260,33 +303,6 @@ function PlayerBody({ song }: { song: Song }) {
         </Label>
       )}
     </>
-  );
-}
-
-/** Speed, the quiz toggle and the song menu, shared by the phone and desktop headers. */
-function HeaderControls({ song, compact = false }: { song: Song; compact?: boolean }) {
-  const quizToggle = appStore((state) => state.quizToggle);
-  libraryStore((state) => state.lyrics[song.id]);
-  const quizzable = hasTranslations(song.id);
-  return (
-    <div className={compact ? 'flex items-center gap-1' : 'flex items-center gap-[14px]'}>
-      <SpeedButton />
-      <div className="flex items-center gap-1.5">
-        <Label className="text-xs font-bold">QUIZ</Label>
-        <PixelToggle
-          disabled={!quizzable}
-          label={quizzable ? 'Quiz toggle' : `Quiz toggle, ${noAnalysis.toLowerCase()}`}
-          on={quizToggle}
-          onPress={() => appStore.getState().setQuizToggle(!quizToggle)}
-        />
-      </div>
-      <IconButton
-        name="more"
-        label="Song menu"
-        size={compact ? 40 : 44}
-        onPress={(event) => openMenuFrom(event.currentTarget, { kind: 'song', id: song.id })}
-      />
-    </div>
   );
 }
 
@@ -302,63 +318,43 @@ function useSentenceCount(songId: string) {
     : undefined;
 }
 
-type Tab = 'player' | 'up-next';
-
-/** Desktop pane header: the two tabs, then the controls. */
-function PaneHeader({ song, tab, onTab }: { song: Song; tab: Tab; onTab: (tab: Tab) => void }) {
-  const count = useSentenceCount(song.id);
+/** Desktop Up next under the harbor strip; the close button on the strip goes back to the lyrics or quiz. */
+function PaneQueue() {
   return (
-    <header className="flex shrink-0 items-center gap-2 px-[12px] pt-3 pb-1">
-      <div role="tablist" aria-label="Player" className="flex min-w-0 flex-1 items-center gap-2.5">
-        {(
-          [
-            ['player', count ?? 'PLAYER'],
-            ['up-next', 'UP NEXT'],
-          ] as const
-        ).map(([id, title]) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => onTab(id)}
-            className={cn(
-              'shrink-0 border-b-2 py-1.5 whitespace-nowrap transition-[filter] hover:brightness-125',
-              tab === id ? 'border-coral' : 'border-transparent',
-            )}
-          >
-            <Label
-              pixel
-              className="text-[18px] tracking-[1px]"
-              style={{ color: tab === id ? colors.text : colors.muted }}
-            >
-              {title}
-            </Label>
-          </button>
-        ))}
+    <>
+      <Stage
+        strip
+        overlay={
+          <>
+            <span />
+            <IconButton name="close" size={40} label="Hide Up next" onPress={toggleQueue} />
+          </>
+        }
+      />
+      <div className="min-h-0 flex-1 overflow-y-auto px-1">
+        <UpNext />
       </div>
-      <HeaderControls song={song} compact />
-    </header>
+    </>
   );
 }
 
 /**
- * The player. The desktop shell mounts it as the right pane (tabs for the player and Up next; a breakdown or edit
- * line opens over it) and the phone `/player` route mounts it full screen with a down chevron, like the iOS player
- * sheet. Both share the body, the controls and the bar.
+ * The player. The desktop shell mounts it as the harbor pane: the one place the harbor and the mascot live, with
+ * lyrics or the quiz (or Up next) under her and playback in the bar along the bottom of the window. With nothing
+ * playing she dozes on the same strip. The phone `/player` route mounts it full screen with a down chevron and its own
+ * bar, like the iOS player sheet.
  */
 export function PlayerPane() {
   const desktop = useIsDesktop();
-  const [tab, setTab] = useState<Tab>('player');
   const songId = appStore((state) => state.songId);
   const song = libraryStore((state) => (songId ? state.bySong[songId] : undefined));
-  const panel = panelStore((state) => state.panel);
+  const queueOpen = queueStore((state) => state.open);
   const count = useSentenceCount(songId ?? '');
   if (!song)
     return desktop ? (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-6 py-8 text-center">
-        <Mascot size={200} />
-        <Label pixel className="text-[29px]">
+      <div className="flex min-h-0 flex-1 flex-col bg-bg">
+        <Stage strip pose="doze" />
+        <Label muted className="block px-4 py-3">
           Nothing playing
         </Label>
       </div>
@@ -370,30 +366,15 @@ export function PlayerPane() {
         </Label>
       </div>
     );
+  if (desktop)
+    return (
+      <div className="flex min-h-0 flex-1 flex-col bg-bg">{queueOpen ? <PaneQueue /> : <PlayerBody song={song} />}</div>
+    );
   return (
     <div className="relative flex min-h-0 flex-1 flex-col bg-bg">
-      {desktop ? (
-        <PaneHeader song={song} tab={tab} onTab={setTab} />
-      ) : (
-        <ScreenHeader sheet title={count} right={<HeaderControls song={song} />} />
-      )}
-      {desktop && tab === 'up-next' ? (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <UpNext />
-        </div>
-      ) : (
-        <PlayerBody song={song} />
-      )}
+      <ScreenHeader sheet title={count} right={<HeaderControls song={song} />} />
+      <PlayerBody song={song} />
       <PlayerBar />
-      {desktop && panel && (
-        <div className="absolute inset-0 z-10 bg-bg">
-          {panel.kind === 'breakdown' ? (
-            <BreakdownView songId={panel.songId} sentenceId={panel.sentenceId} onClose={closePanel} />
-          ) : (
-            <EditLineView id={panel.id} onClose={closePanel} />
-          )}
-        </div>
-      )}
     </div>
   );
 }

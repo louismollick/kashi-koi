@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-/** The desktop layout (three columns) starts here; below it the app is the phone layout. */
+/** The desktop layout (browse column, harbor pane, now playing bar) starts here; below it the app is the phone layout. */
 export const desktopQuery = '(min-width: 1024px)';
 
 const subscribe = (notify: () => void) => {
