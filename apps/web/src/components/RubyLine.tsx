@@ -6,9 +6,11 @@ import { Label } from './ui';
 /**
  * A lyric line with furigana as `<ruby>`: readings at 10px over 12px of space above the text, centered over their
  * kanji. A reading wider than its kanji widens the run instead of overhanging, so neighbouring readings never collide
- * or spill past the line's edges (the iOS `FuriganaLine`). Without `furigana` the line is plain
- * text. Characters from `highlightFrom` on (a ruby run counts if it reaches past it) take `highlightColor`, which
- * the breakdown uses to show what a step added. `compact` left-aligns and shrinks the default size.
+ * or spill past the line's edges (the iOS `FuriganaLine`). Without `furigana` the line is plain text. Runs are
+ * inline-blocks with the reading stacked above, never flex or block boxes: Yomitan reads those as line breaks (and
+ * skips `<rt>`), so a hover lookup would stop after one run. Characters from `highlightFrom` on (a ruby run counts if
+ * it reaches past it) take `highlightColor`, which the breakdown uses to show what a step added. `compact` left-aligns
+ * and shrinks the default size.
  */
 export function RubyLine({
   line,
@@ -36,20 +38,24 @@ export function RubyLine({
   return (
     <span className="block">
       <span className="sr-only">{getLineText(line)}</span>
-      <span
-        aria-hidden
-        className="flex flex-wrap"
-        style={{ rowGap: furigana ? 2 : 0, justifyContent: compact ? 'flex-start' : 'center' }}
-      >
+      <span aria-hidden className="block leading-none" style={{ textAlign: compact ? 'left' : 'center' }}>
         {segments.map((segment, index) => {
           const highlighted = highlightFrom !== undefined && ends[index]! > highlightFrom;
           return (
             <ruby
               // biome-ignore lint/suspicious/noArrayIndexKey: segments never reorder
               key={index}
-              className="flex flex-col-reverse items-center"
-              style={{ paddingTop: furigana && !segment.reading ? 12 : 0 }}
+              className="inline-block text-center"
+              style={{ paddingTop: furigana && !segment.reading ? 12 : 0, marginBottom: furigana ? 2 : 0 }}
             >
+              {furigana && segment.reading && (
+                <rt
+                  className="block text-center text-[10px] leading-3 whitespace-nowrap"
+                  style={{ color: color ?? '#d9d6ea' }}
+                >
+                  {segment.reading}
+                </rt>
+              )}
               <Label
                 className={highlighted ? 'font-bold' : 'font-medium'}
                 style={{
@@ -60,14 +66,6 @@ export function RubyLine({
               >
                 {segment.text}
               </Label>
-              {furigana && segment.reading && (
-                <rt
-                  className="block text-center text-[10px] leading-3 whitespace-nowrap"
-                  style={{ color: color ?? '#d9d6ea' }}
-                >
-                  {segment.reading}
-                </rt>
-              )}
             </ruby>
           );
         })}
