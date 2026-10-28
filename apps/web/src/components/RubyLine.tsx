@@ -38,7 +38,12 @@ export function RubyLine({
   return (
     <span className="block">
       <span className="sr-only">{getLineText(line)}</span>
-      <span aria-hidden className="block leading-none" style={{ textAlign: compact ? 'left' : 'center' }}>
+      {/* Each run's 2px bottom margin is the gap between wrapped rows; the negative margin takes it back off the last. */}
+      <span
+        aria-hidden
+        className="block leading-none"
+        style={{ textAlign: compact ? 'left' : 'center', marginBottom: furigana ? -2 : 0 }}
+      >
         {segments.map((segment, index) => {
           const highlighted = highlightFrom !== undefined && ends[index]! > highlightFrom;
           return (
